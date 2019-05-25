@@ -3,9 +3,9 @@
 
 This project was generated with [Create Redux App](https://github.com/jonidelv/generator-create-redux-app). Refer to `docs/create-redux-app` to find more information on how to perform common tasks.
 
-Once the installation is done, you can run some commands inside the project folder:
+Once the installation is done, you can run some commands inside the project folder (needs HTTPS):
 
-### `npm start` or `yarn start`
+### `env HTTPS=true npm start` or `env HTTPS=true yarn start`
 
 Runs the app in development mode.<br>
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
