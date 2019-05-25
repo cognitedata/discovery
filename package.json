@@ -1,37 +1,66 @@
 {
-  "name": "context",
+  "name": "3d-reviewer",
+  "description": "Review tool for 3D models",
   "version": "0.1.0",
-  "private": true,
+  "author": "Fredrik Anfinsen",
+  "license": "Apache-2.0",
+  "homepage": ".",
   "dependencies": {
-    "@cognite/gearbox": "^0.0.34",
+    "@cognite/3d-viewer": "5",
+    "@cognite/gearbox": "^0.0.32",
     "@cognite/griff-react": "^0.5.0-rc.54",
     "@cognite/react-auth": "^2.2.0",
-    "@cognite/sdk": "^1.7.4",
-    "antd": "^3.18.2",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1",
+    "@cognite/sdk": "^1.7.3",
+    "@emotion/core": "^10.0.9",
+    "@emotion/styled": "^10.0.9",
+    "antd": "^3.18.1",
+    "prop-types": "^15.6.2",
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4",
+    "react-redux": "^6.0.1",
+    "react-router-dom": "^4.3.1",
+    "react-scripts": "^2.1.8",
+    "redux": "^4.0.1",
+    "redux-devtools-extension": "^2.13.2",
+    "redux-thunk": "^2.3.0",
     "styled-components": "^4.2.0"
+  },
+  "devDependencies": {
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-import": "^2.17.2",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-prettier": "^2.6.0",
+    "eslint-plugin-react": "^7.13.0",
+    "husky": "^0.14.3",
+    "prettier": "^1.14.2",
+    "pretty-quick": "^1.6.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "format": "prettier --write '**/*.{js,jsx,json,md}'",
+    "format:changed": "pretty-quick",
+    "format:staged": "pretty-quick --staged",
+    "eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
+    "lint": "eslint '**/*.js' --quiet",
+    "lint-fix": "eslint --fix"
   },
-  "eslintConfig": {
-    "extends": "react-app"
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "engines": {
+    "npm": ">=4",
+    "node": ">=6"
   }
 }
