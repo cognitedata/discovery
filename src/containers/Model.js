@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types'
 import { Model3DViewer } from '@cognite/gearbox';
 import { Route } from 'react-router-dom'
-import CommentDrawer from './CommentDrawer'
+import AssetDrawer from './AssetDrawer'
 
 class Model extends React.Component {
   state = {
@@ -51,7 +51,7 @@ class Model extends React.Component {
           const { nodeId } = props.match.params;
           this.selectNode(Number(nodeId));
           return (
-            <CommentDrawer
+            <AssetDrawer
               loading
               modelId={modelId}
               revisionId={revisionId}
