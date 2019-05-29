@@ -2,8 +2,8 @@ import React from 'react'
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types'
 import { Model3DViewer } from '@cognite/gearbox';
-import { Route } from 'react-router-dom'
-import AssetDrawer from './AssetDrawer'
+import { Route } from 'react-router-dom';
+import AssetDrawer from './AssetDrawer';
 
 class Model extends React.Component {
   state = {
@@ -16,14 +16,14 @@ class Model extends React.Component {
 
   onClick = async (nodeId) => {
     if (!nodeId) {
-      this.onCommentsClose();
+      this.onAssetClose();
       return;
     }
     const { match, history } = this.props;
-    history.push(`${match.url}/comments/${nodeId}`); 
+    history.push(`${match.url}/node/${nodeId}`); 
   }
 
-  onCommentsClose = () => {
+  onAssetClose = () => {
     const { model } = this.state;
     const { match, history } = this.props;
     model.deselectAllNodes();
@@ -38,7 +38,7 @@ class Model extends React.Component {
   }
 
   render() {
-    const { modelId, revisionId, match } = this.props;
+    const { modelId, revisionId, match, history } = this.props;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh'}}>
         <Model3DViewer
@@ -47,7 +47,7 @@ class Model extends React.Component {
           onClick={this.onClick}
           onReady={this.onViewerReady}
         />
-        <Route exact path={`${match.url}/comments/:nodeId`} render={props => {
+        <Route path={`${match.url}/node/:nodeId`} render={props => {
           const { nodeId } = props.match.params;
           this.selectNode(Number(nodeId));
           return (
@@ -56,7 +56,9 @@ class Model extends React.Component {
               modelId={modelId}
               revisionId={revisionId}
               nodeId={Number(nodeId)}
-              onClose={this.onCommentsClose}
+              onClose={this.onAssetClose}
+              match={match}
+              history={history}
             />
           );
         }} />

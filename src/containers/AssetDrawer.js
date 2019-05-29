@@ -5,7 +5,9 @@ import { Drawer, Spin, List, Collapse, Button } from 'antd'
 import styled from 'styled-components';
 import { getAssetIdFromNodeId } from '../helpers/assetMappings'
 import makeCancelable from 'makecancelable';
+import { Route } from 'react-router-dom';
 import * as sdk from '@cognite/sdk';
+import AddTimeseries from '../components/AddTimeseries';
 
 const { Panel } = Collapse;
 
@@ -76,23 +78,33 @@ class AssetDrawer extends React.Component {
       sdk.Events.list({assetId: asset.id, limit: 10000}).then(result => {
         const events = result.items.map(event => ({
           id: event.id,
-          name: event.name
+          description: event.description,
+          startTime: event.startTime,
+          endTime: event.endTime
         }));
+        console.log('Got ', events)
         this.setState({ events });
       }));
   }
 
   addTimeseries = () => {
-    
+    const { match, history, nodeId } = this.props;
+    history.push(`${match.url}/node/${nodeId}/addTimeseries`); 
   }
 
   addEvents = () => {
-    
+    this.setState({ showAddEvents: true })
+  }
+
+  onAddClose = () => {
+    const { match, history, nodeId } = this.props;
+    history.push(`${match.url}/node/${nodeId}`); 
   }
 
   render() {
-    const { onClose } = this.props
+    const { onClose, match } = this.props
     const { asset, timeseries = [], events = [] } = this.state;
+    
     if (asset == null) {
       return (
         <SpinContainer>
@@ -102,6 +114,15 @@ class AssetDrawer extends React.Component {
     }
 
     return (
+      <>
+      {asset != null && <Route exact path={`${match.url}/node/:nodeId/addtimeseries`} render={props => {
+        return (
+          <AddTimeseries
+            assetId={asset.id}
+            onClose={this.onAddClose}
+          />
+        );}}
+      />}
       <Drawer title={asset.name ? asset.name : asset.id} placement="right" width={400} closable onClose={onClose} visible mask={false}>
         {asset.description && <p>{asset.description}</p>}
         {
@@ -110,7 +131,7 @@ class AssetDrawer extends React.Component {
           <Panel header={
             <>
             <span>Timeseries ({timeseries.length})</span>
-            <Button style={{marginLeft: 15}} type="primary">Add</Button>
+            <Button style={{marginLeft: 15}} type="primary" onClick={this.addTimeseries}>Add</Button>
             </>
           } key="timeseries">
             {timeseries.map(ts => (<div key={ts.id}>{ts.name}</div>))}
@@ -121,15 +142,16 @@ class AssetDrawer extends React.Component {
           <Panel header={
             <>
             <span>Events ({events.length})</span>
-            <Button style={{marginLeft: 15}} type="primary">Add</Button>
+            <Button style={{marginLeft: 15}} type="primary" onClick={this.addEvents}>Add</Button>
             </>
           } key="events">
-            {events.map(event => (<div key={event.id}>{event.name}</div>))}
+            {events.map(event => (<div key={event.id}>{event.description}</div>))}
           </Panel>
         </Collapse>
         </>
         }
       </Drawer>
+      </>
     )
   }
 }
@@ -138,6 +160,12 @@ AssetDrawer.propTypes = {
   revisionId: PropTypes.number.isRequired,
   nodeId: PropTypes.number.isRequired,
   onClose: PropTypes.func.isRequired,
+  match: PropTypes.shape({
+    url: PropTypes.string.isRequired,
+  }).isRequired,
+  history: PropTypes.shape({
+    push: PropTypes.func.isRequired,
+  }).isRequired,
 }
 
 const mapStateToProps = (state, ownProps) => {
