@@ -2,7 +2,7 @@ import React from 'react'
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types'
 import { Modal, Button } from 'antd';
-import { addTimeseriesToAsset } from '../actions/timeseries';
+import { addTimeseriesToAsset } from '../modules/timeseries';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { Timeseries} from '@cognite/sdk';
