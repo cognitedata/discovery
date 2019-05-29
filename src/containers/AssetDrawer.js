@@ -1,9 +1,12 @@
-import React from 'react'
-import { connect } from 'react-redux'
-import PropTypes from 'prop-types'
-import { Drawer, Spin, List, Collapse, Button } from 'antd'
+import React from 'react';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
+import { Drawer, Spin, List, Collapse, Button } from 'antd';
 import styled from 'styled-components';
-import { getAssetIdFromNodeId } from '../helpers/assetMappings'
+import { getAssetIdFromNodeId } from '../helpers/assetMappings';
+import { fetchTimeseries } from '../actions/timeseries';
+import { selectTimeseries}  from '../selectors/timeseries';
+import { Timeseries } from '../reducers/timeseries';
 import makeCancelable from 'makecancelable';
 import { Route } from 'react-router-dom';
 import * as sdk from '@cognite/sdk';
@@ -45,9 +48,10 @@ class AssetDrawer extends React.Component {
       this.fetchAssetMapping();
     }
 
+    const { doFetchTimeseries } = this.props;
     const { asset } = this.state;
     if (prevState.asset !== asset) {
-      this.fetchTimeseries();
+      doFetchTimeseries(asset.id);
       this.fetchEvents();
     }
   }
@@ -110,9 +114,10 @@ class AssetDrawer extends React.Component {
 
   render() {
     const { onClose, match } = this.props
-    const { asset, timeseries = [], events = [] } = this.state;
+    const { asset, events = [] } = this.state;
     const { showAddTimeseries = false, showAddEvents = false } = this.state;
     
+    const timeseries = this.props.timeseries.items != null ? this.props.timeseries.items : [];
     if (asset == null) {
       return (
         <SpinContainer>
@@ -177,10 +182,12 @@ AssetDrawer.propTypes = {
 
 const mapStateToProps = (state, ownProps) => {
   const { nodeId } = ownProps
-  return { }
+  return {
+    timeseries: selectTimeseries(state)
+  }
 }
 const mapDispatchToProps = (dispatch) => ({
-  
+  doFetchTimeseries: (...args) => dispatch(fetchTimeseries(...args)),
 })
 export default connect(
   mapStateToProps,
