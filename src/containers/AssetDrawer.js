@@ -82,6 +82,14 @@ class AssetDrawer extends React.Component {
       }));
   }
 
+  addTimeseries = () => {
+    
+  }
+
+  addEvents = () => {
+    
+  }
+
   render() {
     const { onClose } = this.props
     const { asset, timeseries = [], events = [] } = this.state;
@@ -97,15 +105,29 @@ class AssetDrawer extends React.Component {
       <Drawer title={asset.name ? asset.name : asset.id} placement="right" width={400} closable onClose={onClose} visible mask={false}>
         {asset.description && <p>{asset.description}</p>}
         {
+        <>
         <Collapse accordion>
-          <Panel header={`Contextualized timeseries (${timeseries.length})`} key="timeseries">
-            <Button type="primary">Add timeseries</Button>
+          <Panel header={
+            <>
+            <span>Timeseries ({timeseries.length})</span>
+            <Button style={{marginLeft: 15}} type="primary">Add</Button>
+            </>
+          } key="timeseries">
             {timeseries.map(ts => (<div key={ts.id}>{ts.name}</div>))}
           </Panel>
-          <Panel header={`Contextualized events (${events.length})`} key="events">
+        </Collapse>
+        
+        <Collapse accordion>
+          <Panel header={
+            <>
+            <span>Events ({events.length})</span>
+            <Button style={{marginLeft: 15}} type="primary">Add</Button>
+            </>
+          } key="events">
             {events.map(event => (<div key={event.id}>{event.name}</div>))}
           </Panel>
         </Collapse>
+        </>
         }
       </Drawer>
     )
