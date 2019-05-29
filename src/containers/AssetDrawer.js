@@ -94,23 +94,24 @@ class AssetDrawer extends React.Component {
       }));
   }
 
-  addTimeseries = () => {
-    const { match, history, nodeId } = this.props;
-    history.push(`${match.url}/node/${nodeId}/addTimeseries`); 
+  addTimeseries = (event) => {
+    this.setState({ showAddTimeseries: true });
+    event.stopPropagation();
   }
 
-  addEvents = () => {
+  addEvents = (event) => {
     this.setState({ showAddEvents: true })
+    event.stopPropagation();
   }
 
   onAddClose = () => {
-    const { match, history, nodeId } = this.props;
-    history.push(`${match.url}/node/${nodeId}`); 
+    this.setState({ showAddEvents: false, showAddTimeseries: false })
   }
 
   render() {
     const { onClose, match } = this.props
     const { asset, timeseries = [], events = [] } = this.state;
+    const { showAddTimeseries = false, showAddEvents = false } = this.state;
     
     if (asset == null) {
       return (
@@ -122,14 +123,13 @@ class AssetDrawer extends React.Component {
 
     return (
       <>
-      {asset != null && <Route exact path={`${match.url}/node/:nodeId/addtimeseries`} render={props => {
-        return (
-          <AddTimeseries
-            assetId={asset.id}
-            onClose={this.onAddClose}
-          />
-        );}}
-      />}
+      {asset != null && showAddTimeseries && (
+        <AddTimeseries
+          assetId={asset.id}
+          onClose={this.onAddClose}
+          timeseries={timeseries}
+        />
+      )}
       <Drawer title={asset.name ? asset.name : asset.id} placement="right" width={400} closable onClose={onClose} visible mask={false}>
         {asset.description && <p>{asset.description}</p>}
         {
