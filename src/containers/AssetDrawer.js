@@ -18,6 +18,13 @@ const SpinContainer = styled.div`
   justify-content: center;
 `;
 
+const HeaderWithButton = styled.div`
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+`;
+
 class AssetDrawer extends React.Component {
   state = {};
 
@@ -129,10 +136,10 @@ class AssetDrawer extends React.Component {
         <>
         <Collapse accordion>
           <Panel header={
-            <>
+            <HeaderWithButton>
             <span>Timeseries ({timeseries.length})</span>
-            <Button style={{marginLeft: 15}} type="primary" onClick={this.addTimeseries}>Add</Button>
-            </>
+            <Button type="primary" onClick={this.addTimeseries}>Add</Button>
+            </HeaderWithButton>
           } key="timeseries">
             {timeseries.map(ts => (<div key={ts.id}>{ts.name}</div>))}
           </Panel>
@@ -140,10 +147,10 @@ class AssetDrawer extends React.Component {
         
         <Collapse accordion>
           <Panel header={
-            <>
+            <HeaderWithButton>
             <span>Events ({events.length})</span>
-            <Button style={{marginLeft: 15}} type="primary" onClick={this.addEvents}>Add</Button>
-            </>
+            <Button type="primary" onClick={this.addEvents}>Add</Button>
+            </HeaderWithButton>
           } key="events">
             {events.map(event => (<div key={event.id}>{event.description}</div>))}
           </Panel>
