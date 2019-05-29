@@ -1,14 +1,20 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import PropTypes from 'prop-types'
-import { Drawer } from 'antd'
-import CommentSection from '../components/CommentSection'
-import { fetchComments, submitComment } from '../actions/comments'
+import { Drawer, Spin, List, Collapse, Button } from 'antd'
+import styled from 'styled-components';
 import { getAssetIdFromNodeId } from '../helpers/assetMappings'
-import { Comments } from '../reducers/comments'
-import { selectComments } from '../selectors/comments'
 import makeCancelable from 'makecancelable';
 import * as sdk from '@cognite/sdk';
+
+const { Panel } = Collapse;
+
+const SpinContainer = styled.div`
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+`;
 
 class AssetDrawer extends React.Component {
   state = {};
@@ -18,18 +24,20 @@ class AssetDrawer extends React.Component {
   }
 
   componentWillUnmount() {
-    this.assetMappingPromise();
+    this.cancelAssetMappingPromise();
+    this.cancelTimeseriesPromise();
+    this.cancelAssetPromise();
   }
 
   componentDidUpdate(prevProps, prevState) {
     const { nodeId } = this.props;
     if (prevProps.nodeId !== nodeId) {
+      this.asset = undefined;
       this.fetchAssetMapping();
     }
 
-    const { assetId } = this.state;
-    if (prevState.assetId !== assetId) {
-      console.log('Got new asset id: ', assetId);
+    const { asset } = this.state;
+    if (prevState.asset !== asset) {
       this.fetchTimeseries();
       this.fetchEvents();
     }
@@ -37,12 +45,10 @@ class AssetDrawer extends React.Component {
 
   fetchAssetMapping = async () => {
     const { modelId, revisionId, nodeId } = this.props;
-    this.assetMappingPromise = makeCancelable(
+    this.cancelAssetMappingPromise = makeCancelable(
       getAssetIdFromNodeId(modelId, revisionId, nodeId).then(assetId => {
-        this.assetPromise = makeCancelable(sdk.Assets.retrieve(assetId).then(asset => {
-          console.log('Got ', asset);
+        this.cancelAssetPromise = makeCancelable(sdk.Assets.retrieve(assetId).then(asset => {
           this.setState({asset: {id: assetId, name: asset.name, description: asset.description}});
-          console.log('Found ', {id: assetId, name: asset.name, description: asset.description});
         }));
       }));
     
@@ -51,29 +57,56 @@ class AssetDrawer extends React.Component {
   fetchTimeseries = async () => {
     this.setState({timeseries: []});
     
-    const { assetId } = this.state;
-    this.promises.push(makeCancelable(
-      sdk.TimeSeries.list({assetId}).then(result => {
+    const { asset } = this.state;
+    this.cancelTimeseriesPromise = makeCancelable(
+      sdk.TimeSeries.list({assetId: asset.id, limit: 10000}).then(result => {
         const timeseries = result.items.map(ts => ({
           id: ts.id,
           name: ts.name
         }));
         this.setState({ timeseries });
-      })));
+      }));
   }
 
   fetchEvents = async () => {
-
+    this.setState({events: []});
+    
+    const { asset } = this.state;
+    this.cancelEventsPromise = makeCancelable(
+      sdk.Events.list({assetId: asset.id, limit: 10000}).then(result => {
+        const events = result.items.map(event => ({
+          id: event.id,
+          name: event.name
+        }));
+        this.setState({ events });
+      }));
   }
 
   render() {
-    const { comments, onClose } = this.props
-    const { asset } = this.state;
+    const { onClose } = this.props
+    const { asset, timeseries = [], events = [] } = this.state;
+    if (asset == null) {
+      return (
+        <SpinContainer>
+          <Spin />
+        </SpinContainer>
+      );
+    }
+
     return (
-      <Drawer title="Comments" placement="right" width={400} closable onClose={onClose} visible mask={false}>
-        {asset != null && (
-          <h3>{asset.name ? asset.name : asset.id}</h3>
-        )}
+      <Drawer title={asset.name ? asset.name : asset.id} placement="right" width={400} closable onClose={onClose} visible mask={false}>
+        {asset.description && <p>{asset.description}</p>}
+        {
+        <Collapse accordion>
+          <Panel header={`Contextualized timeseries (${timeseries.length})`} key="timeseries">
+            <Button type="primary">Add timeseries</Button>
+            {timeseries.map(ts => (<div key={ts.id}>{ts.name}</div>))}
+          </Panel>
+          <Panel header={`Contextualized events (${events.length})`} key="events">
+            {events.map(event => (<div key={event.id}>{event.name}</div>))}
+          </Panel>
+        </Collapse>
+        }
       </Drawer>
     )
   }
@@ -82,15 +115,12 @@ AssetDrawer.propTypes = {
   modelId: PropTypes.number.isRequired,
   revisionId: PropTypes.number.isRequired,
   nodeId: PropTypes.number.isRequired,
-  comments: Comments.isRequired,
   onClose: PropTypes.func.isRequired,
 }
 
 const mapStateToProps = (state, ownProps) => {
   const { nodeId } = ownProps
-  return {
-    comments: selectComments(state, nodeId),
-  }
+  return { }
 }
 const mapDispatchToProps = (dispatch) => ({
   
