@@ -55,9 +55,10 @@ AddTimeseries.propTypes = {
 }
 
 const mapStateToProps = (_, ownProps) => {
-  const { assetId } = ownProps;
+  const { assetId, timeseries } = ownProps;
   return {
     assetId: Number(assetId),
+    timeseries,
   }
 }
 
