@@ -93,7 +93,6 @@ class AssetDrawer extends React.Component {
           startTime: event.startTime,
           endTime: event.endTime
         }));
-        console.log('Got ', events)
         this.setState({ events });
       }));
   }

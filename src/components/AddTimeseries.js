@@ -2,6 +2,7 @@ import React from 'react'
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types'
 import { Modal, Button } from 'antd';
+import { addTimeseriesToAsset } from '../actions/timeseries';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { Timeseries} from '@cognite/sdk';
@@ -12,11 +13,13 @@ class AddTimeseries extends React.Component {
   };
 
   onTimeserieSelectionChange = (newTimeseriesIds, selectedTimeseries) => {
-    console.log('Selected ', newTimeseriesIds);  
+    this.setState({ selectedTimeseriesIds: newTimeseriesIds });
   }
 
   addToAsset = () => {
-    
+    if (this.state.selectedTimeseriesIds && this.state.selectedTimeseriesIds.length > 0) {
+      this.props.doAddTimeseriesToAsset(this.state.selectedTimeseriesIds, this.props.assetId);
+    }
   }
 
   timeseriesFilter = (timeseries) => {
@@ -27,7 +30,7 @@ class AddTimeseries extends React.Component {
     return (
       <Modal
         visible={true}
-        title="Title"
+        title="Contextualize timeseries"
         onCancel={this.props.onClose}
         footer={[
           <Button key="submit" type="primary" onClick={this.addToAsset}>
@@ -59,7 +62,7 @@ const mapStateToProps = (_, ownProps) => {
 }
 
 const mapDispatchToProps = (dispatch) => ({
-  // onSubmitComment: (...args) => dispatch(submitComment(...args)),
+  doAddTimeseriesToAsset: (...args) => dispatch(addTimeseriesToAsset(...args)),
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(AddTimeseries);

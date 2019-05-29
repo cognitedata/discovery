@@ -7,19 +7,15 @@ export const addTimeseries = (nodeId, comment) => ({
   payload: { nodeId, comment },
 })
 
-// export function addTimeseriesToAsset(timeseriesIds, assetId) {
-//   return async (dispatch) => {
-//     Promise.all(timeseriesIds.forEach(async id => {
-//       await sdk.TimeSeries.update(id, {assetId});
-//     }));
-    
-//     dispatch(addComment(nodeId, {
-//       author: comment.author,
-//       content: comment.content,
-//       datetime: new Date().toDateString(),
-//     }));
-//   }
-// }
+export function addTimeseriesToAsset(timeseriesIds, assetId) {
+  return async (dispatch) => {
+    const changes = timeseriesIds.map(id => ({ id, assetId: {set: assetId} }));
+    const result = await sdk.TimeSeries.updateMultiple(changes);
+    setTimeout(() => {
+      dispatch(fetchTimeseries(assetId));
+    }, 1000);
+  }
+}
 
 export function fetchTimeseries(assetId) {
   return async (dispatch) => {
@@ -28,7 +24,6 @@ export function fetchTimeseries(assetId) {
       id: ts.id,
       name: ts.name
     }));
-    console.log('what: ', timeseries);
     dispatch({ type: ActionTypes.SET_TIMESERIES, payload: { items: timeseries } })
   };
 }
