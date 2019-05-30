@@ -47,6 +47,7 @@ export function fetchEvents(assetId) {
     const events = result.items.map(event => ({
       id: event.id,
       description: event.description,
+      metadata: event.metadata,
       type: event.type,
       subtype: event.subtype,
       startTime: event.startTime,

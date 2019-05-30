@@ -86,7 +86,7 @@ class AssetDrawer extends React.Component {
     
     const timeseries = this.props.timeseries.items != null ? this.props.timeseries.items : [];
     const events = this.props.events.items != null ? this.props.events.items : [];
-    
+
     if (asset == null) {
       return (
         <SpinContainer>
@@ -126,7 +126,7 @@ class AssetDrawer extends React.Component {
             <Button type="primary" onClick={this.addEvents}>Add</Button>
             </HeaderWithButton>
           } key="events">
-            {events.map(event => (<div key={event.id}>{event.description}</div>))}
+            {events.map(event => (<div title={`type: ${event.type}, subtype: ${event.subtype}, metadata: ${JSON.stringify(event.metadata)}`} key={event.id}>{event.description}</div>))}
           </Panel>
         </Collapse>
         </>
