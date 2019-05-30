@@ -4,7 +4,8 @@ import PropTypes from 'prop-types';
 import { Drawer, Spin, List, Collapse, Button } from 'antd';
 import styled from 'styled-components';
 import { getAssetIdFromNodeId } from '../helpers/assetMappings';
-import { Timeseries, fetchTimeseries, selectTimeseries } from '../modules/timeseries';
+import { fetchTimeseries, selectTimeseries } from '../modules/timeseries';
+import { fetchEvents, selectEvents } from '../modules/events';
 import makeCancelable from 'makecancelable';
 import { Route } from 'react-router-dom';
 import * as sdk from '@cognite/sdk';
@@ -35,7 +36,6 @@ class AssetDrawer extends React.Component {
 
   componentWillUnmount() {
     this.cancelAssetMappingPromise();
-    this.cancelTimeseriesPromise();
     this.cancelAssetPromise();
   }
 
@@ -46,11 +46,11 @@ class AssetDrawer extends React.Component {
       this.fetchAssetMapping();
     }
 
-    const { doFetchTimeseries } = this.props;
+    const { doFetchTimeseries, doFetchEvents } = this.props;
     const { asset } = this.state;
     if (prevState.asset !== asset) {
       doFetchTimeseries(asset.id);
-      this.fetchEvents();
+      doFetchEvents(asset.id);
     }
   }
 
@@ -63,36 +63,6 @@ class AssetDrawer extends React.Component {
         }));
       }));
     
-  }
-
-  fetchTimeseries = async () => {
-    this.setState({timeseries: []});
-    
-    const { asset } = this.state;
-    this.cancelTimeseriesPromise = makeCancelable(
-      sdk.TimeSeries.list({assetId: asset.id, limit: 10000}).then(result => {
-        const timeseries = result.items.map(ts => ({
-          id: ts.id,
-          name: ts.name
-        }));
-        this.setState({ timeseries });
-      }));
-  }
-
-  fetchEvents = async () => {
-    this.setState({events: []});
-    
-    const { asset } = this.state;
-    this.cancelEventsPromise = makeCancelable(
-      sdk.Events.list({assetId: asset.id, limit: 10000}).then(result => {
-        const events = result.items.map(event => ({
-          id: event.id,
-          description: event.description,
-          startTime: event.startTime,
-          endTime: event.endTime
-        }));
-        this.setState({ events });
-      }));
   }
 
   addTimeseries = (event) => {
@@ -111,10 +81,12 @@ class AssetDrawer extends React.Component {
 
   render() {
     const { onClose, match } = this.props
-    const { asset, events = [] } = this.state;
+    const { asset } = this.state;
     const { showAddTimeseries = false, showAddEvents = false } = this.state;
     
     const timeseries = this.props.timeseries.items != null ? this.props.timeseries.items : [];
+    const events = this.props.events.items != null ? this.props.events.items : [];
+    
     if (asset == null) {
       return (
         <SpinContainer>
@@ -180,11 +152,13 @@ AssetDrawer.propTypes = {
 const mapStateToProps = (state, ownProps) => {
   const { nodeId } = ownProps
   return {
-    timeseries: selectTimeseries(state)
+    timeseries: selectTimeseries(state),
+    events: selectEvents(state)
   }
 }
 const mapDispatchToProps = (dispatch) => ({
   doFetchTimeseries: (...args) => dispatch(fetchTimeseries(...args)),
+  doFetchEvents: (...args) => dispatch(fetchEvents(...args)),
 })
 export default connect(
   mapStateToProps,
