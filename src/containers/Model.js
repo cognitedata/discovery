@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import { Model3DViewer } from '@cognite/gearbox';
 import { Route } from 'react-router-dom';
 import AssetDrawer from './AssetDrawer';
+import mixpanel from 'mixpanel-browser';
 
 class Model extends React.Component {
   state = {
@@ -15,10 +16,13 @@ class Model extends React.Component {
   }
 
   onClick = async (nodeId) => {
+    mixpanel.context.track('3D.click', { nodeId });
+    
     if (!nodeId) {
       this.onAssetClose();
       return;
     }
+
     const { match, history } = this.props;
     history.push(`${match.url}/node/${nodeId}`); 
   }

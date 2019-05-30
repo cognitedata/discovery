@@ -10,6 +10,7 @@ import makeCancelable from 'makecancelable';
 import { Route } from 'react-router-dom';
 import * as sdk from '@cognite/sdk';
 import AddTimeseries from '../components/AddTimeseries';
+import mixpanel from 'mixpanel-browser';
 
 const { Panel } = Collapse;
 
@@ -49,6 +50,7 @@ class AssetDrawer extends React.Component {
     const { doFetchTimeseries, doFetchEvents } = this.props;
     const { asset } = this.state;
     if (prevState.asset !== asset) {
+      mixpanel.context.track('Asset.changed', { asset });
       doFetchTimeseries(asset.id);
       doFetchEvents(asset.id);
     }
@@ -66,11 +68,15 @@ class AssetDrawer extends React.Component {
   }
 
   addTimeseries = (event) => {
+    const { asset } = this.state;
+    mixpanel.context.track('addTimeseries.click', { asset });
     this.setState({ showAddTimeseries: true });
     event.stopPropagation();
   }
 
   addEvents = (event) => {
+    const { asset } = this.state;
+    mixpanel.context.track('addEvents.click', { asset });
     this.setState({ showAddEvents: true })
     event.stopPropagation();
   }
