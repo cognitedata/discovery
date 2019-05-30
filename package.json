@@ -15,6 +15,7 @@
     "@emotion/styled": "^10.0.9",
     "antd": "^3.18.1",
     "makecancelable": "^1.1.1",
+    "mixpanel": "^0.10.2",
     "prop-types": "^15.6.2",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
