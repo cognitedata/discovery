@@ -1,6 +1,7 @@
 import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
 import { fetchEvents } from './events';
+import mixpanel from 'mixpanel-browser';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -34,6 +35,11 @@ export const selectTimeseries = (state) => state.timeseries || { items: [] }
 
 export function addTimeseriesToAsset(timeseriesIds, assetId) {
   return async (dispatch) => {
+    mixpanel.context.track('Timeseries.addToAsset', {
+      assetId,
+      timeseriesIds
+    });
+    
     const changes = timeseriesIds.map(id => ({ id, assetId: {set: assetId} }));
     let result = await sdk.TimeSeries.updateMultiple(changes);
     

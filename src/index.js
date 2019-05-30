@@ -6,6 +6,9 @@ import Routes from './routes'
 import 'antd/dist/antd.css';
 import './styles/globalStyles.css'
 import * as serviceWorker from './utils/serviceWorker'
+import mixpanel from 'mixpanel-browser';
+
+mixpanel.init('fb25742efb56d116b736515a0ad5f6ef', {}, 'context');
 
 render(
   <Provider store={store}>
