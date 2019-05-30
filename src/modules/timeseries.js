@@ -1,8 +1,8 @@
 import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
+import { fetchEvents } from './events';
 
 // Constants
-export const ADD_TIMESERIES = 'timeseries/ADD_TIMESERIES';
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
 
 // Reducer
@@ -10,13 +10,6 @@ const initialState = { };
 
 export default function timeseries(state = initialState, action) {
   switch (action.type) {
-    case ADD_TIMESERIES: {
-      const { ts } = action.payload;
-      return {
-        ...state,
-        items: [...state.items, ...ts]
-      }
-    }
     case SET_TIMESERIES: {
       const { items } = action.payload;
       return {
@@ -30,11 +23,9 @@ export default function timeseries(state = initialState, action) {
 }
 
 // Action creators
-const add_timeseries = createAction(ADD_TIMESERIES);
 const set_timeseries = createAction(SET_TIMESERIES);
 
 export const actions = {
-  add_timeseries,
   set_timeseries
 };
 
@@ -44,9 +35,24 @@ export const selectTimeseries = (state) => state.timeseries || { items: [] }
 export function addTimeseriesToAsset(timeseriesIds, assetId) {
   return async (dispatch) => {
     const changes = timeseriesIds.map(id => ({ id, assetId: {set: assetId} }));
-    const result = await sdk.TimeSeries.updateMultiple(changes);
+    let result = await sdk.TimeSeries.updateMultiple(changes);
+    
+    const now = Date.now() * 1000; // ms
+    
+    // Create event for this mapping
+    result = await sdk.Events.create([
+      { 
+        startTime: now,
+        description: 'Mapped timeseries to asset',
+        type: 'cognite_contextualization',
+        subtype: 'mapped_timeseries_to_asset',
+        assetIds: [assetId],
+        metadata: {added: JSON.stringify(timeseriesIds)}
+      }
+    ]);
     setTimeout(() => {
       dispatch(fetchTimeseries(assetId));
+      dispatch(fetchEvents(assetId));
     }, 1000);
   }
 }
