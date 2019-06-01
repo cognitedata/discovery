@@ -1,9 +1,9 @@
-import React from 'react'
-import { connect } from 'react-redux'
-import PropTypes from 'prop-types'
+import React from 'react';
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
 import { Spin } from 'antd';
-import { Revisions } from '../reducers/revisions'
-import RevisionCard from '../components/RevisionCard'
+import { Revisions } from '../reducers/revisions';
+import RevisionCard from '../components/RevisionCard';
 import { fetchRevisions } from '../actions/revisions';
 
 class RevisionsContainer extends React.Component {
@@ -13,9 +13,9 @@ class RevisionsContainer extends React.Component {
   }
 
   render() {
-    const { revisions } = this.props
+    const { revisions } = this.props;
     if (revisions.loading) {
-      return (<Spin size="large" />);
+      return <Spin size="large" />;
     }
     return (
       <>
@@ -27,7 +27,7 @@ class RevisionsContainer extends React.Component {
           />
         ))}
       </>
-    )
+    );
   }
 }
 RevisionsContainer.propTypes = {
@@ -36,17 +36,17 @@ RevisionsContainer.propTypes = {
   match: PropTypes.shape({
     params: PropTypes.shape({
       modelId: PropTypes.string.isRequired,
-    }).isRequired
+    }).isRequired,
   }).isRequired,
-}
+};
 
 const mapStateToProps = state => ({
   revisions: state.revisions,
 });
 const mapDispatchToProps = dispatch => ({
   doFetchRevisions: modelId => dispatch(fetchRevisions(modelId)),
-})
+});
 export default connect(
   mapStateToProps,
-  mapDispatchToProps,
-)(RevisionsContainer)
+  mapDispatchToProps
+)(RevisionsContainer);

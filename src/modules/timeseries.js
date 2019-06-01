@@ -1,13 +1,13 @@
 import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
-import { fetchEvents } from './events';
 import mixpanel from 'mixpanel-browser';
+import { fetchEvents } from './events';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
 
 // Reducer
-const initialState = { };
+const initialState = {};
 
 export default function timeseries(state = initialState, action) {
   switch (action.type) {
@@ -16,10 +16,10 @@ export default function timeseries(state = initialState, action) {
       return {
         ...state,
         items,
-      }
+      };
     }
     default:
-      return state
+      return state;
   }
 }
 
@@ -27,50 +27,53 @@ export default function timeseries(state = initialState, action) {
 const set_timeseries = createAction(SET_TIMESERIES);
 
 export const actions = {
-  set_timeseries
+  set_timeseries,
 };
 
 // Selectors
-export const selectTimeseries = (state) => state.timeseries || { items: [] }
+export const selectTimeseries = state => state.timeseries || { items: [] };
 
 export function addTimeseriesToAsset(timeseriesIds, assetId) {
-  return async (dispatch) => {
+  return async dispatch => {
     mixpanel.context.track('Timeseries.addToAsset', {
       assetId,
-      timeseriesIds
+      timeseriesIds,
     });
-    
-    const changes = timeseriesIds.map(id => ({ id, assetId: {set: assetId} }));
+
+    const changes = timeseriesIds.map(id => ({
+      id,
+      assetId: { set: assetId },
+    }));
     let result = await sdk.TimeSeries.updateMultiple(changes);
-    
+
     const now = Date.now() * 1000; // ms
-    
+
     // Create event for this mapping
     result = await sdk.Events.create([
-      { 
+      {
         startTime: now,
         endTime: now,
         description: 'Mapped timeseries to asset',
         type: 'cognite_contextualization',
         subtype: 'mapped_timeseries_to_asset',
         assetIds: [assetId],
-        metadata: {added: JSON.stringify(timeseriesIds)}
-      }
+        metadata: { added: JSON.stringify(timeseriesIds) },
+      },
     ]);
     setTimeout(() => {
       dispatch(fetchTimeseries(assetId));
       dispatch(fetchEvents(assetId));
     }, 1000);
-  }
+  };
 }
 
 export function fetchTimeseries(assetId) {
-  return async (dispatch) => {
-    const result = await sdk.TimeSeries.list({assetId, limit: 10000});
+  return async dispatch => {
+    const result = await sdk.TimeSeries.list({ assetId, limit: 10000 });
     const timeseries = result.items.map(ts => ({
       id: ts.id,
-      name: ts.name
+      name: ts.name,
     }));
-    dispatch({ type: SET_TIMESERIES, payload: { items: timeseries } })
+    dispatch({ type: SET_TIMESERIES, payload: { items: timeseries } });
   };
 }

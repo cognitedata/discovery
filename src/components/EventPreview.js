@@ -1,6 +1,6 @@
-import React from 'react'
+import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types'
+import PropTypes from 'prop-types';
 import { Modal, Button } from 'antd';
 
 import { Event } from '@cognite/sdk';
@@ -10,16 +10,14 @@ class EventPreview extends React.Component {
   render() {
     return (
       <Modal
-        visible={true}
+        visible
         title="Event"
         onCancel={this.props.onClose}
         footer={[null, null]}
       >
-        <GearboxEventPreview 
-          eventId={this.props.eventId}
-        />
+        <GearboxEventPreview eventId={this.props.eventId} />
       </Modal>
-    )
+    );
   }
 }
 

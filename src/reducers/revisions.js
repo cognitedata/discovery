@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types'
-import ActionTypes from '../constants/actionTypes'
+import PropTypes from 'prop-types';
+import ActionTypes from '../constants/actionTypes';
 
 export const Revision = PropTypes.shape({
   id: PropTypes.number.isRequired,
@@ -15,7 +15,7 @@ export const Revisions = PropTypes.shape({
 const initialState = {
   loading: false,
   items: [],
-}
+};
 
 export default function revisions(state = initialState, action) {
   switch (action.type) {
@@ -24,16 +24,16 @@ export default function revisions(state = initialState, action) {
         ...state,
         loading: true,
         items: [],
-      }
+      };
     }
     case ActionTypes.SET_REVISIONS: {
       return {
         ...state,
         loading: false,
         items: action.payload,
-      }
+      };
     }
     default:
-      return state
+      return state;
   }
 }

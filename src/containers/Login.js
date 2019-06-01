@@ -1,8 +1,8 @@
-import React from 'react'
+import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types'
-import { TenantSelector } from '@cognite/gearbox'
-import styled from 'styled-components'
+import PropTypes from 'prop-types';
+import { TenantSelector } from '@cognite/gearbox';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   display: flex;
@@ -27,16 +27,16 @@ const Login = ({ onTenantSelected }) => (
       />
     </TenantSelectorContainer>
   </Wrapper>
-)
+);
 Login.propTypes = {
-  onTenantSelected:  PropTypes.func.isRequired,
-}
+  onTenantSelected: PropTypes.func.isRequired,
+};
 
 const mapStateToProps = (_, ownProps) => {
-  const onTenantSelected = (tenant) => {
+  const onTenantSelected = tenant => {
     ownProps.history.push(`/${tenant}/models`);
-  }
+  };
   return { onTenantSelected };
-}
+};
 
 export default connect(mapStateToProps)(Login);

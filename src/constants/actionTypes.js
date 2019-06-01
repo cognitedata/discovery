@@ -15,5 +15,4 @@ export default {
   // revisions
   FETCH_REVISIONS: 'FETCH_REVISIONS',
   SET_REVISIONS: 'SET_REVISIONS',
-}
-
+};

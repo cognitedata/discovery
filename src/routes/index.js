@@ -1,10 +1,10 @@
-import React from 'react'
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
-import { createBrowserHistory } from 'history'
-import Auth from '../containers/Auth'
-import Login from '../containers/Login'
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { createBrowserHistory } from 'history';
+import Auth from '../containers/Auth';
+import Login from '../containers/Login';
 
-export const history = createBrowserHistory()
+export const history = createBrowserHistory();
 
 function Routes() {
   return (
@@ -14,7 +14,7 @@ function Routes() {
         <Route path="/:tenant" component={Auth} />
       </Switch>
     </Router>
-  )
+  );
 }
 
-export default Routes
+export default Routes;

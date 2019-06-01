@@ -1,5 +1,5 @@
-import React from 'react'
-import PropTypes from 'prop-types'
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Comment as AntDComment } from 'antd';
 
 function Comment({ author, avatar, content, datetime }) {
@@ -10,7 +10,7 @@ function Comment({ author, avatar, content, datetime }) {
       content={content}
       datetime={datetime}
     />
-  )
+  );
 }
 
 Comment.propTypes = {
@@ -18,6 +18,6 @@ Comment.propTypes = {
   avatar: PropTypes.node.isRequired,
   content: PropTypes.string.isRequired,
   datetime: PropTypes.string.isRequired,
-}
+};
 
-export default Comment
+export default Comment;

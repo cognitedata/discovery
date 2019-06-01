@@ -1,4 +1,4 @@
-import * as sdk from '@cognite/sdk'
+import * as sdk from '@cognite/sdk';
 
 const findAssetFromMappings = (nodeId, mappings) => {
   // See if there are any exact matches for this nodeId
@@ -18,7 +18,9 @@ const findAssetFromMappings = (nodeId, mappings) => {
     return filteredMappings[0].assetId;
   }
 
-  const filteredMappings = mappings.filter(mapping => mapping.nodeId !== nodeId);
+  const filteredMappings = mappings.filter(
+    mapping => mapping.nodeId !== nodeId
+  );
   if (filteredMappings.length > 0) {
     // The node has no direct mapping, choose the next parent
     return findAssetFromMappings(
@@ -28,25 +30,25 @@ const findAssetFromMappings = (nodeId, mappings) => {
   }
 
   return null;
-}
+};
 
 const fetchAssetMappingsFromNodeId = async (modelId, revisionId, nodeId) => {
-  const data = await sdk.ThreeD.listAssetMappings(
-    modelId,
-    revisionId,
-    {
-      nodeId,
-    }
-  );
+  const data = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
+    nodeId,
+  });
 
   // Sort in descending order on subtreeSize
   const mappings = data.items.sort((a, b) => b.subtreeSize - a.subtreeSize);
 
   return mappings;
-}
+};
 
 export async function getAssetIdFromNodeId(modelId, revisionId, nodeId) {
-  const mappings = await fetchAssetMappingsFromNodeId(modelId, revisionId, nodeId);
-  const assetId = findAssetFromMappings(nodeId, mappings)
+  const mappings = await fetchAssetMappingsFromNodeId(
+    modelId,
+    revisionId,
+    nodeId
+  );
+  const assetId = findAssetFromMappings(nodeId, mappings);
   return assetId;
 }

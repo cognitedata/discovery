@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types'
-import ActionTypes from '../constants/actionTypes'
+import PropTypes from 'prop-types';
+import ActionTypes from '../constants/actionTypes';
 
 export const Comment = PropTypes.shape({
   author: PropTypes.string.isRequired,
@@ -13,7 +13,7 @@ export const Comments = PropTypes.shape({
 });
 
 // nodeId -> { loading: boolean, items: array of comments }
-const initialState = {}
+const initialState = {};
 
 export default function comments(state = initialState, action) {
   switch (action.type) {
@@ -23,28 +23,25 @@ export default function comments(state = initialState, action) {
         ...state,
         [nodeId]: {
           ...state[nodeId],
-          items: [
-            ...state[nodeId].items,
-            comment,
-          ],
+          items: [...state[nodeId].items, comment],
         },
-      }
+      };
     }
     case ActionTypes.SET_COMMENTS: {
       const { items, nodeId } = action.payload;
       return {
         ...state,
         [nodeId]: { loading: false, items },
-      }
+      };
     }
     case ActionTypes.FETCH_COMMENTS: {
       const { nodeId } = action.payload;
       return {
         ...state,
         [nodeId]: { loading: true, items: [] },
-      }
+      };
     }
     default:
-      return state
+      return state;
   }
 }

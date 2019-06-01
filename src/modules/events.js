@@ -5,7 +5,7 @@ import * as sdk from '@cognite/sdk';
 export const SET_EVENTS = 'events/SET_EVENTS';
 
 // Reducer
-const initialState = { };
+const initialState = {};
 
 export default function events(state = initialState, action) {
   switch (action.type) {
@@ -14,10 +14,10 @@ export default function events(state = initialState, action) {
       return {
         ...state,
         items,
-      }
+      };
     }
     default:
-      return state
+      return state;
   }
 }
 
@@ -25,25 +25,25 @@ export default function events(state = initialState, action) {
 const set_events = createAction(SET_EVENTS);
 
 export const actions = {
-  set_events
+  set_events,
 };
 
 // Selectors
-export const selectEvents = (state) => state.events || { items: [] }
+export const selectEvents = state => state.events || { items: [] };
 
 export function addEventsToAsset(timeseriesIds, assetId) {
-  return async (dispatch) => {
+  return async dispatch => {
     // const changes = timeseriesIds.map(id => ({ id, assetId: {set: assetId} }));
     // const result = await sdk.TimeSeries.updateMultiple(changes);
     // setTimeout(() => {
     //   dispatch(fetchEvents(assetId));
     // }, 1000);
-  }
+  };
 }
 
 export function fetchEvents(assetId) {
-  return async (dispatch) => {
-    const result = await sdk.Events.list({assetId, limit: 10000});
+  return async dispatch => {
+    const result = await sdk.Events.list({ assetId, limit: 10000 });
     const events = result.items.map(event => ({
       id: event.id,
       description: event.description,
@@ -51,8 +51,8 @@ export function fetchEvents(assetId) {
       type: event.type,
       subtype: event.subtype,
       startTime: event.startTime,
-      endTime: event.endTime
+      endTime: event.endTime,
     }));
-    dispatch({ type: SET_EVENTS, payload: { items: events } })
+    dispatch({ type: SET_EVENTS, payload: { items: events } });
   };
 }

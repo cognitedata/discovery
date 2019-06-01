@@ -1,6 +1,6 @@
-import React from 'react'
+import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types'
+import PropTypes from 'prop-types';
 import { Modal, Button } from 'antd';
 
 import { Event } from '@cognite/sdk';
@@ -10,18 +10,18 @@ class TimeseriesPreview extends React.Component {
   render() {
     return (
       <Modal
-        visible={true}
+        visible
         title={this.props.timeseries.name}
         onCancel={this.props.onClose}
         footer={[null, null]}
       >
-        <TimeseriesChart 
+        <TimeseriesChart
           timeseriesIds={[this.props.timeseries.id]}
-          contextChart={true}
-          zoomable={true}
+          contextChart
+          zoomable
         />
       </Modal>
-    )
+    );
   }
 }
 

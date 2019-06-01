@@ -1,1 +1,2 @@
-export const selectComments = (state, nodeId) => state.comments[nodeId] || { items: [], loading: false }
+export const selectComments = (state, nodeId) =>
+  state.comments[nodeId] || { items: [], loading: false };

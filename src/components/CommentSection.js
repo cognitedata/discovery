@@ -1,18 +1,18 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import { Mention, List, Button, Avatar } from 'antd'
-import Comment from './Comment'
+import React from 'react';
+import PropTypes from 'prop-types';
+import { Mention, List, Button, Avatar } from 'antd';
+import Comment from './Comment';
 
 const { toString } = Mention;
 
 function CommentSection({ loading, comments, onComment }) {
   let text = '';
-  const onChange = (editorState) => {
+  const onChange = editorState => {
     text = toString(editorState);
-  }
+  };
   const handleComment = () => {
     onComment(text);
-  }
+  };
 
   return (
     <React.Fragment>
@@ -21,7 +21,7 @@ function CommentSection({ loading, comments, onComment }) {
         itemLayout="horizontal"
         dataSource={comments}
         loading={loading}
-        locale={{emptyText: 'No comments'}}
+        locale={{ emptyText: 'No comments' }}
         renderItem={item => (
           <li>
             <Comment
@@ -34,7 +34,7 @@ function CommentSection({ loading, comments, onComment }) {
           </li>
         )}
       />
-      {loading ||
+      {loading || (
         <>
           <Mention
             style={{ width: '100%', height: 100 }}
@@ -44,21 +44,28 @@ function CommentSection({ loading, comments, onComment }) {
             autoFocus
             placeholder="Type in a new comment here"
           />
-          <Button type="primary" block style={{ top: 10 }} onClick={handleComment}>
+          <Button
+            type="primary"
+            block
+            style={{ top: 10 }}
+            onClick={handleComment}
+          >
             Comment
           </Button>
         </>
-      }
+      )}
     </React.Fragment>
-  )
+  );
 }
 
 CommentSection.propTypes = {
   loading: PropTypes.bool.isRequired,
-  comments: PropTypes.arrayOf(PropTypes.shape({
-    author: PropTypes.string.isRequired,
-  })).isRequired,
+  comments: PropTypes.arrayOf(
+    PropTypes.shape({
+      author: PropTypes.string.isRequired,
+    })
+  ).isRequired,
   onComment: PropTypes.func.isRequired,
-}
+};
 
-export default CommentSection
+export default CommentSection;

@@ -40,35 +40,29 @@ const RevisionCard = ({ thumbnailURL, revisionId }) => {
   // TODO(#2695): Remove this nonsense and just hand it the actual thumbnail.
   const [dataUrl, setDataUrl] = useState('');
 
-  useEffect(
-    () => {
-      let canceled = false;
-      sdk
-        .rawGet(thumbnailURL, { responseType: 'blob' })
-        .then(response => {
-          if (!canceled) {
-            const { data } = response;
-            const url = URL.createObjectURL(data);
-            setDataUrl(url);
-          }
-        })
-        .catch(ex => {
-          console.error(ex);
-        });
-      return () => {
-        canceled = true;
-      };
-    },
-    [thumbnailURL]
-  );
+  useEffect(() => {
+    let canceled = false;
+    sdk
+      .rawGet(thumbnailURL, { responseType: 'blob' })
+      .then(response => {
+        if (!canceled) {
+          const { data } = response;
+          const url = URL.createObjectURL(data);
+          setDataUrl(url);
+        }
+      })
+      .catch(ex => {
+        console.error(ex);
+      });
+    return () => {
+      canceled = true;
+    };
+  }, [thumbnailURL]);
 
   return (
     <RevisionCardWrapper
       cover={
-        <Link
-          to={`revisions/${revisionId}`}
-          style={{ textAlign: 'center' }}
-        >
+        <Link to={`revisions/${revisionId}`} style={{ textAlign: 'center' }}>
           <img
             alt="Single revision"
             src={dataUrl}
@@ -82,10 +76,7 @@ const RevisionCard = ({ thumbnailURL, revisionId }) => {
       }
     >
       <Link to={`revisions/${revisionId}`}>
-        <Meta
-          title="Revision"
-          description="Click to view"
-        />
+        <Meta title="Revision" description="Click to view" />
       </Link>
     </RevisionCardWrapper>
   );
