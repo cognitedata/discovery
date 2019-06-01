@@ -3,6 +3,8 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Drawer, Spin, List, Collapse, Button } from 'antd';
 import styled from 'styled-components';
+import { AssetMeta } from '@cognite/gearbox';
+
 import { getAssetIdFromNodeId } from '../helpers/assetMappings';
 import { fetchTimeseries, selectTimeseries } from '../modules/timeseries';
 import { fetchEvents, selectEvents } from '../modules/events';
@@ -10,6 +12,8 @@ import makeCancelable from 'makecancelable';
 import { Route } from 'react-router-dom';
 import * as sdk from '@cognite/sdk';
 import AddTimeseries from '../components/AddTimeseries';
+import EventPreview from '../components/EventPreview';
+import TimeseriesPreview from '../components/TimeseriesPreview';
 import mixpanel from 'mixpanel-browser';
 
 const { Panel } = Collapse;
@@ -82,13 +86,26 @@ class AssetDrawer extends React.Component {
   }
 
   onAddClose = () => {
-    this.setState({ showAddEvents: false, showAddTimeseries: false })
+    this.setState({
+      showAddEvents: false,
+      showAddTimeseries: false,
+      showEvent: undefined,
+      showTimeseries: undefined
+    });
+  }
+
+  eventOnClick = (eventId) => {
+    this.setState({ showEvent: eventId })
+  }
+
+  timeseriesOnClick = (timeseriesId, timeseriesName) => {
+    this.setState({ showTimeseries: { id: timeseriesId, name: timeseriesName} })
   }
 
   render() {
     const { onClose, match } = this.props
     const { asset } = this.state;
-    const { showAddTimeseries = false, showAddEvents = false } = this.state;
+    const { showTimeseries, showEvent, showAddTimeseries = false, showAddEvents = false } = this.state;
     
     const timeseries = this.props.timeseries.items != null ? this.props.timeseries.items : [];
     const events = this.props.events.items != null ? this.props.events.items : [];
@@ -110,6 +127,18 @@ class AssetDrawer extends React.Component {
           timeseries={timeseries}
         />
       )}
+      {showEvent != null && (
+        <EventPreview
+          eventId={showEvent}
+          onClose={this.onAddClose}
+        />
+      )}
+      {showTimeseries != null && (
+        <TimeseriesPreview
+          timeseries={ {id: showTimeseries.id, name: showTimeseries.name} }
+          onClose={this.onAddClose}
+        />
+      )}
       <Drawer title={asset.name ? asset.name : asset.id} placement="right" width={400} closable onClose={onClose} visible mask={false}>
         {asset.description && <p>{asset.description}</p>}
         {
@@ -121,7 +150,14 @@ class AssetDrawer extends React.Component {
             <Button type="primary" onClick={this.addTimeseries}>Add</Button>
             </HeaderWithButton>
           } key="timeseries">
-            {timeseries.map(ts => (<div key={ts.id}>{ts.name}</div>))}
+            {timeseries.map(ts => (
+              <div 
+                key={ts.id}
+                onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
+              >
+                <a>{ts.name}</a>
+              </div>
+            ))}
           </Panel>
         </Collapse>
         
@@ -132,7 +168,15 @@ class AssetDrawer extends React.Component {
             <Button type="primary" onClick={this.addEvents}>Add</Button>
             </HeaderWithButton>
           } key="events">
-            {events.map(event => (<div title={`type: ${event.type}, subtype: ${event.subtype}, metadata: ${JSON.stringify(event.metadata)}`} key={event.id}>{event.description}</div>))}
+            {events.map(event => (
+              <div 
+                title={`type: ${event.type}, subtype: ${event.subtype}, metadata: ${JSON.stringify(event.metadata)}`} 
+                key={event.id}
+                onClick={() => this.eventOnClick(event.id)}
+              >
+                <a>{event.description}</a>
+              </div>
+            ))}
           </Panel>
         </Collapse>
         </>
