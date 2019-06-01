@@ -49,6 +49,7 @@ export function addTimeseriesToAsset(timeseriesIds, assetId) {
     result = await sdk.Events.create([
       { 
         startTime: now,
+        endTime: now,
         description: 'Mapped timeseries to asset',
         type: 'cognite_contextualization',
         subtype: 'mapped_timeseries_to_asset',
