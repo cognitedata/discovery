@@ -945,10 +945,10 @@
   resolved "https://registry.yarnpkg.com/@cognite/eslint-config/-/eslint-config-1.1.0.tgz#0285a38002018ecd0c4c4ff97d4a2f598be8b326"
   integrity sha512-CwbBY+MSkIJv34B2cTUQO5SlJoyj1RawRq3Pajw5adP1XQZZRrsgJEqa2ihEvR6pDdEoUjz+Tikky8bNBgPcnQ==
 
-"@cognite/gearbox@^0.0.36":
-  version "0.0.36"
-  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-0.0.36.tgz#9347d3fdefa348fb4ed76ff4dd7c72087e82ea76"
-  integrity sha512-NaTfGBT5z2gyWiK6fcxpONWy0BV08jmjEdeqvkGuHX6TqRXJ1IyFtmJNraI3dktQAQNpqiTfXGMOQrJ4ZRqMNw==
+"@cognite/gearbox@^0.0.37":
+  version "0.0.37"
+  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-0.0.37.tgz#028de35b134557cf240013aadf11a96c3cbb03dd"
+  integrity sha512-IUVeKuk6DwmIJoTqM3Duwxo3UCmgG1yd8tKoDzwpcuAFq0Msqm44yn/shj7WXOMPlYyeQD+hltUVbIfzUA5Img==
   dependencies:
     d3 "^5.9.2"
     lodash "^4.17.11"

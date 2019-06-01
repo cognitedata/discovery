@@ -7,7 +7,7 @@
   "homepage": ".",
   "dependencies": {
     "@cognite/3d-viewer": "5",
-    "@cognite/gearbox": "^0.0.36",
+    "@cognite/gearbox": "^0.0.37",
     "@cognite/griff-react": "^0.5.0-rc.54",
     "@cognite/react-auth": "^2.2.0",
     "@cognite/sdk": "^1.7.3",
