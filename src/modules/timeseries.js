@@ -8,8 +8,12 @@ import { fetchEvents } from './events';
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
 
 export const Timeseries = PropTypes.exact({
-  id: PropTypes.number,
-  name: PropTypes.string,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number,
+      name: PropTypes.string,
+    })
+  ),
 });
 
 // Functions

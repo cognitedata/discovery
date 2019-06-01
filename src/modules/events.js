@@ -3,13 +3,17 @@ import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 
 export const Events = PropTypes.exact({
-  id: PropTypes.number,
-  description: PropTypes.string,
-  metadata: PropTypes.any,
-  type: PropTypes.string,
-  subtype: PropTypes.string,
-  startTime: PropTypes.number,
-  endTime: PropTypes.number,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number,
+      description: PropTypes.string,
+      metadata: PropTypes.any,
+      type: PropTypes.string,
+      subtype: PropTypes.string,
+      startTime: PropTypes.number,
+      endTime: PropTypes.number,
+    })
+  ),
 });
 
 // Constants
