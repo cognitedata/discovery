@@ -1,17 +1,19 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Drawer, Spin, List, Collapse, Button } from 'antd';
+import { Drawer, Spin, Collapse, Button } from 'antd';
 import styled from 'styled-components';
-import { AssetMeta } from '@cognite/gearbox';
 
 import makeCancelable from 'makecancelable';
-import { Route } from 'react-router-dom';
 import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
 import { getAssetIdFromNodeId } from '../helpers/assetMappings';
-import { fetchTimeseries, selectTimeseries } from '../modules/timeseries';
-import { fetchEvents, selectEvents } from '../modules/events';
+import {
+  fetchTimeseries,
+  selectTimeseries,
+  Timeseries,
+} from '../modules/timeseries';
+import { fetchEvents, selectEvents, Events } from '../modules/events';
 import AddTimeseries from '../components/AddTimeseries';
 import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
@@ -33,15 +35,12 @@ const HeaderWithButton = styled.div`
 `;
 
 class AssetDrawer extends React.Component {
-  state = {};
+  state = {
+    showAddTimeseries: false,
+  };
 
   componentDidMount() {
     this.fetchAssetMapping();
-  }
-
-  componentWillUnmount() {
-    this.cancelAssetMappingPromise();
-    this.cancelAssetPromise();
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -58,6 +57,11 @@ class AssetDrawer extends React.Component {
       doFetchTimeseries(asset.id);
       doFetchEvents(asset.id);
     }
+  }
+
+  componentWillUnmount() {
+    this.cancelAssetMappingPromise();
+    this.cancelAssetPromise();
   }
 
   fetchAssetMapping = async () => {
@@ -86,16 +90,8 @@ class AssetDrawer extends React.Component {
     event.stopPropagation();
   };
 
-  addEvents = event => {
-    const { asset } = this.state;
-    mixpanel.context.track('addEvents.click', { asset });
-    this.setState({ showAddEvents: true });
-    event.stopPropagation();
-  };
-
   onAddClose = () => {
     this.setState({
-      showAddEvents: false,
       showAddTimeseries: false,
       showEvent: undefined,
       showTimeseries: undefined,
@@ -113,14 +109,9 @@ class AssetDrawer extends React.Component {
   };
 
   render() {
-    const { onClose, match } = this.props;
+    const { onClose } = this.props;
     const { asset } = this.state;
-    const {
-      showTimeseries,
-      showEvent,
-      showAddTimeseries = false,
-      showAddEvents = false,
-    } = this.state;
+    const { showTimeseries, showEvent, showAddTimeseries = false } = this.state;
 
     const timeseries =
       this.props.timeseries.items != null ? this.props.timeseries.items : [];
@@ -178,38 +169,33 @@ class AssetDrawer extends React.Component {
                   key="timeseries"
                 >
                   {timeseries.map(ts => (
-                    <div
+                    <Button
                       key={ts.id}
+                      type="link"
                       onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
                     >
-                      <a>{ts.name}</a>
-                    </div>
+                      {ts.name}
+                    </Button>
                   ))}
                 </Panel>
               </Collapse>
 
               <Collapse accordion>
                 <Panel
-                  header={
-                    <HeaderWithButton>
-                      <span>Events ({events.length})</span>
-                      <Button type="primary" onClick={this.addEvents}>
-                        Add
-                      </Button>
-                    </HeaderWithButton>
-                  }
+                  header={<span>Events ({events.length})</span>}
                   key="events"
                 >
                   {events.map(event => (
-                    <div
+                    <Button
                       title={`type: ${event.type}, subtype: ${
                         event.subtype
                       }, metadata: ${JSON.stringify(event.metadata)}`}
                       key={event.id}
+                      type="link"
                       onClick={() => this.eventOnClick(event.id)}
                     >
-                      <a>{event.description}</a>
-                    </div>
+                      {event.description}
+                    </Button>
                   ))}
                 </Panel>
               </Collapse>
@@ -231,10 +217,13 @@ AssetDrawer.propTypes = {
   history: PropTypes.shape({
     push: PropTypes.func.isRequired,
   }).isRequired,
+  doFetchTimeseries: PropTypes.func.isRequired,
+  doFetchEvents: PropTypes.func.isRequired,
+  timeseries: Timeseries.isRequired,
+  events: Events.isRequired,
 };
 
-const mapStateToProps = (state, ownProps) => {
-  const { nodeId } = ownProps;
+const mapStateToProps = state => {
   return {
     timeseries: selectTimeseries(state),
     events: selectEvents(state),

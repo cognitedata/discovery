@@ -4,15 +4,12 @@ import PropTypes from 'prop-types';
 import { Modal, Button } from 'antd';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
-import { Timeseries } from '@cognite/sdk';
 import { addTimeseriesToAsset } from '../modules/timeseries';
 
 class AddTimeseries extends React.Component {
-  state = {
-    assetId: null,
-  };
+  state = {};
 
-  onTimeserieSelectionChange = (newTimeseriesIds, selectedTimeseries) => {
+  onTimeserieSelectionChange = newTimeseriesIds => {
     this.setState({ selectedTimeseriesIds: newTimeseriesIds });
   };
 
@@ -57,7 +54,7 @@ class AddTimeseries extends React.Component {
 AddTimeseries.propTypes = {
   assetId: PropTypes.number.isRequired,
   onClose: PropTypes.func.isRequired,
-  timeseries: PropTypes.array.isRequired,
+  doAddTimeseriesToAsset: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (_, ownProps) => {

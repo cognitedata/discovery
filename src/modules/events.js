@@ -1,5 +1,16 @@
 import { createAction } from 'redux-actions';
+import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
+
+export const Events = PropTypes.exact({
+  id: PropTypes.number,
+  description: PropTypes.string,
+  metadata: PropTypes.any,
+  type: PropTypes.string,
+  subtype: PropTypes.string,
+  startTime: PropTypes.number,
+  endTime: PropTypes.number,
+});
 
 // Constants
 export const SET_EVENTS = 'events/SET_EVENTS';
@@ -22,29 +33,19 @@ export default function events(state = initialState, action) {
 }
 
 // Action creators
-const set_events = createAction(SET_EVENTS);
+const setEvents = createAction(SET_EVENTS);
 
 export const actions = {
-  set_events,
+  setEvents,
 };
 
 // Selectors
 export const selectEvents = state => state.events || { items: [] };
 
-export function addEventsToAsset(timeseriesIds, assetId) {
-  return async dispatch => {
-    // const changes = timeseriesIds.map(id => ({ id, assetId: {set: assetId} }));
-    // const result = await sdk.TimeSeries.updateMultiple(changes);
-    // setTimeout(() => {
-    //   dispatch(fetchEvents(assetId));
-    // }, 1000);
-  };
-}
-
 export function fetchEvents(assetId) {
   return async dispatch => {
     const result = await sdk.Events.list({ assetId, limit: 10000 });
-    const events = result.items.map(event => ({
+    const events_ = result.items.map(event => ({
       id: event.id,
       description: event.description,
       metadata: event.metadata,
@@ -53,6 +54,6 @@ export function fetchEvents(assetId) {
       startTime: event.startTime,
       endTime: event.endTime,
     }));
-    dispatch({ type: SET_EVENTS, payload: { items: events } });
+    dispatch({ type: SET_EVENTS, payload: { items: events_ } });
   };
 }

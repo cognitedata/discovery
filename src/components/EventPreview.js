@@ -1,12 +1,10 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Modal, Button } from 'antd';
+import { Modal } from 'antd';
 
-import { Event } from '@cognite/sdk';
 import { EventPreview as GearboxEventPreview } from '@cognite/gearbox';
 
-class EventPreview extends React.Component {
+class EventPreview extends React.PureComponent {
   render() {
     return (
       <Modal
@@ -20,5 +18,10 @@ class EventPreview extends React.Component {
     );
   }
 }
+
+EventPreview.propTypes = {
+  eventId: PropTypes.number.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
 
 export default EventPreview;

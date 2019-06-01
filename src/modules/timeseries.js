@@ -1,10 +1,28 @@
 import { createAction } from 'redux-actions';
+import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
 import { fetchEvents } from './events';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
+
+export const Timeseries = PropTypes.exact({
+  id: PropTypes.number,
+  name: PropTypes.string,
+});
+
+// Functions
+export function fetchTimeseries(assetId) {
+  return async dispatch => {
+    const result = await sdk.TimeSeries.list({ assetId, limit: 10000 });
+    const timeseries_ = result.items.map(ts => ({
+      id: ts.id,
+      name: ts.name,
+    }));
+    dispatch({ type: SET_TIMESERIES, payload: { items: timeseries_ } });
+  };
+}
 
 // Reducer
 const initialState = {};
@@ -24,10 +42,10 @@ export default function timeseries(state = initialState, action) {
 }
 
 // Action creators
-const set_timeseries = createAction(SET_TIMESERIES);
+const setTimeseries = createAction(SET_TIMESERIES);
 
 export const actions = {
-  set_timeseries,
+  setTimeseries,
 };
 
 // Selectors
@@ -44,12 +62,12 @@ export function addTimeseriesToAsset(timeseriesIds, assetId) {
       id,
       assetId: { set: assetId },
     }));
-    let result = await sdk.TimeSeries.updateMultiple(changes);
+    await sdk.TimeSeries.updateMultiple(changes);
 
     const now = Date.now() * 1000; // ms
 
     // Create event for this mapping
-    result = await sdk.Events.create([
+    await sdk.Events.create([
       {
         startTime: now,
         endTime: now,
@@ -64,16 +82,5 @@ export function addTimeseriesToAsset(timeseriesIds, assetId) {
       dispatch(fetchTimeseries(assetId));
       dispatch(fetchEvents(assetId));
     }, 1000);
-  };
-}
-
-export function fetchTimeseries(assetId) {
-  return async dispatch => {
-    const result = await sdk.TimeSeries.list({ assetId, limit: 10000 });
-    const timeseries = result.items.map(ts => ({
-      id: ts.id,
-      name: ts.name,
-    }));
-    dispatch({ type: SET_TIMESERIES, payload: { items: timeseries } });
   };
 }

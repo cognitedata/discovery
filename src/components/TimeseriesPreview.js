@@ -1,12 +1,9 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Modal, Button } from 'antd';
-
-import { Event } from '@cognite/sdk';
+import { Modal } from 'antd';
 import { TimeseriesChart } from '@cognite/gearbox';
 
-class TimeseriesPreview extends React.Component {
+class TimeseriesPreview extends React.PureComponent {
   render() {
     return (
       <Modal
@@ -24,5 +21,13 @@ class TimeseriesPreview extends React.Component {
     );
   }
 }
+
+TimeseriesPreview.propTypes = {
+  timeseries: PropTypes.exact({
+    id: PropTypes.number,
+    name: PropTypes.string,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+};
 
 export default TimeseriesPreview;
