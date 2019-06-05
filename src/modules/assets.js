@@ -4,6 +4,7 @@ import * as sdk from '@cognite/sdk';
 
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
+export const ADD_ASSETS = 'assets/ADD_ASSETS';
 
 export const Asset = PropTypes.shape({
   id: PropTypes.number,
@@ -12,7 +13,8 @@ export const Asset = PropTypes.shape({
 });
 
 export const Assets = PropTypes.exact({
-  items: PropTypes.arrayOf(Asset),
+  all: PropTypes.arrayOf(Asset),
+  current: PropTypes.arrayOf(Asset),
 });
 
 let lastRequest = 0;
@@ -29,6 +31,7 @@ export function searchForAsset(query, name) {
       description: asset.description,
     }));
     if (now === lastRequest) {
+      dispatch({ type: ADD_ASSETS, payload: { items: assets_ } });
       dispatch({ type: SET_ASSETS, payload: { items: assets_ } });
     }
   };
@@ -43,7 +46,17 @@ export default function assets(state = initialState, action) {
       const { items } = action.payload;
       return {
         ...state,
-        items,
+        current: items,
+      };
+    }
+    case ADD_ASSETS: {
+      const { items } = action.payload;
+      const existingAssets = state.all ? state.all : [];
+      const allItemsArray = [...items, ...existingAssets];
+      const allItems = [...new Set(allItemsArray)];
+      return {
+        ...state,
+        all: allItems,
       };
     }
     default:
@@ -59,4 +72,4 @@ export const actions = {
 };
 
 // Selectors
-export const selectAssets = state => state.assets || { items: [] };
+export const selectAssets = state => state.assets || { current: [], all: [] };

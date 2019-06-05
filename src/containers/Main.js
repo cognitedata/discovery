@@ -14,10 +14,10 @@ class Main extends React.Component {
     view: '3d',
   };
 
-  onAssetClick = (assetId, query) => {
+  onAssetClick = (asset, query) => {
     const { match, history } = this.props;
     history.push({
-      pathname: `${match.url}/asset/${assetId}`,
+      pathname: `${match.url}/asset/${asset.id}`,
       search: `?query=${query}`,
     });
   };

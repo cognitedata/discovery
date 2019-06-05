@@ -38,8 +38,8 @@ class AssetViewer extends React.Component {
   getAsset() {
     const { assets, assetId } = this.props;
     let asset;
-    if (assets.items) {
-      const filteredAssets = assets.items.filter(a => a.id === assetId);
+    if (assets.all) {
+      const filteredAssets = assets.all.filter(a => a.id === assetId);
       if (filteredAssets.length > 0) {
         [asset] = filteredAssets;
       }

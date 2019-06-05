@@ -34,8 +34,8 @@ class AssetSearch extends React.Component {
   };
 
   render() {
-    const assets = this.props.assets.items
-      ? moveExactMatchToTop(this.props.assets.items, this.state.query.trim())
+    const assets = this.props.assets.current
+      ? moveExactMatchToTop(this.props.assets.current, this.state.query.trim())
       : undefined;
 
     const parsed = queryString.parse(this.props.location.search);
@@ -56,7 +56,7 @@ class AssetSearch extends React.Component {
                 <List.Item.Meta
                   title={<Button type="link">{item.name}</Button>}
                   onClick={() =>
-                    this.props.onAssetClick(item.id, this.state.query)
+                    this.props.onAssetClick(item, this.state.query)
                   }
                   description={item.description}
                 />
