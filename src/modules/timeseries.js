@@ -2,6 +2,7 @@ import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
+import { message } from 'antd';
 import { fetchEvents, createEvent } from './events';
 
 // Constants
@@ -44,6 +45,8 @@ export function removeAssetFromTimeseries(timeseriesId, assetId) {
       type: REMOVE_ASSET_FROM_TIMESERIES,
       payload: { timeseriesId },
     });
+
+    message.info(`Removed 1 timeseries from asset.`);
 
     setTimeout(() => {
       dispatch(fetchTimeseries(assetId));
@@ -105,6 +108,8 @@ export function addTimeseriesToAsset(timeseriesIds, assetId) {
     createEvent('attached_timeseries', 'Attached timeseries', [assetId], {
       added: JSON.stringify(timeseriesIds),
     });
+
+    message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
 
     setTimeout(() => {
       dispatch(fetchTimeseries(assetId));
