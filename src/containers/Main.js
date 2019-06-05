@@ -11,7 +11,7 @@ const { Content, Header, Sider, Footer } = Layout;
 
 class Main extends React.Component {
   state = {
-    view: 'metadata',
+    view: '3d',
   };
 
   onAssetClick = (assetId, query) => {
@@ -56,7 +56,11 @@ class Main extends React.Component {
                   top: '0',
                 }}
               >
-                <Radio.Group onChange={this.onViewChange} defaultValue="3d">
+                <Radio.Group
+                  onChange={this.onViewChange}
+                  defaultValue="3d"
+                  style={{ paddingRight: 400 }}
+                >
                   <Radio.Button value="3d">3D</Radio.Button>
                   <Radio.Button value="P&ID">P&ID</Radio.Button>
                 </Radio.Group>
