@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { AssetMeta, Model3DViewer } from '@cognite/gearbox';
-import styled from 'styled-components';
+import mixpanel from 'mixpanel-browser';
 import { selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 
@@ -25,12 +25,26 @@ class AssetViewer extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.assetId !== this.props.assetId) {
+      const asset = this.getAsset();
+      mixpanel.context.track('Asset.changed', { asset });
       this.getAssetMappingsForAssetId();
     }
 
     if (prevProps.assetMappings !== this.props.assetMappings) {
       this.updateNodeIdFromMappings();
     }
+  }
+
+  getAsset() {
+    const { assets, assetId } = this.props;
+    let asset;
+    if (assets.items) {
+      const filteredAssets = assets.items.filter(a => a.id === assetId);
+      if (filteredAssets.length > 0) {
+        [asset] = filteredAssets;
+      }
+    }
+    return asset;
   }
 
   getAssetMappingsForAssetId() {
@@ -66,35 +80,24 @@ class AssetViewer extends React.Component {
   }
 
   render() {
-    const { assetId, assets } = this.props;
-    let asset;
-    if (assets.items) {
-      asset = assets.items.filter(a => a.id === assetId);
-    }
+    const asset = this.getAsset();
 
     const { nodeId } = this.state;
 
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        {/* {this.props.view === '3d' && <AssetMeta assetId={assetId} />} */}
         {this.props.view === '3d' && (
           <div style={{ height: '100%', paddingRight: 400 }}>
             <Model3DViewer
               modelId={this.state.modelId}
               revisionId={this.state.revisionId}
+              nodeId={nodeId}
               // onClick={this.onClick}
               // onReady={this.onViewerReady}
             />
           </div>
         )}
-        {nodeId != null && (
-          <AssetDrawer
-            loading
-            modelId={this.state.modelId}
-            revisionId={this.state.revisionId}
-            nodeId={Number(nodeId)}
-          />
-        )}
+        {asset != null && <AssetDrawer loading asset={asset} />}
       </div>
     );
   }
@@ -113,7 +116,6 @@ AssetViewer.defaultProps = {
 };
 
 const mapStateToProps = state => {
-  console.log('assets: ', selectAssets(state));
   return {
     assets: selectAssets(state),
     assetMappings: selectAssetMappings(state),

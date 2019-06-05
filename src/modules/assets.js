@@ -5,14 +5,14 @@ import * as sdk from '@cognite/sdk';
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
 
+export const Asset = PropTypes.shape({
+  id: PropTypes.number,
+  name: PropTypes.string,
+  description: PropTypes.string,
+});
+
 export const Assets = PropTypes.exact({
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number,
-      name: PropTypes.string,
-      description: PropTypes.string,
-    })
-  ),
+  items: PropTypes.arrayOf(Asset),
 });
 
 let lastRequest = 0;

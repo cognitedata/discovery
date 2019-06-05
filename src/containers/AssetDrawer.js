@@ -4,15 +4,13 @@ import PropTypes from 'prop-types';
 import { Drawer, Spin, Collapse, Button } from 'antd';
 import styled from 'styled-components';
 
-import makeCancelable from 'makecancelable';
-import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
-import { getAssetIdFromNodeId } from '../helpers/assetMappings';
 import {
   fetchTimeseries,
   selectTimeseries,
   Timeseries,
 } from '../modules/timeseries';
+import { Asset } from '../modules/assets';
 import { fetchEvents, selectEvents, Events } from '../modules/events';
 import AddTimeseries from '../components/AddTimeseries';
 import EventPreview from '../components/EventPreview';
@@ -40,48 +38,18 @@ class AssetDrawer extends React.Component {
   };
 
   componentDidMount() {
-    this.fetchAssetMapping();
+    const { asset, doFetchTimeseries, doFetchEvents } = this.props;
+    doFetchTimeseries(asset.id);
+    doFetchEvents(asset.id);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { nodeId } = this.props;
-    if (prevProps.nodeId !== nodeId) {
-      this.asset = undefined;
-      this.fetchAssetMapping();
-    }
-
-    const { doFetchTimeseries, doFetchEvents } = this.props;
-    const { asset } = this.state;
-    if (prevState.asset !== asset) {
-      mixpanel.context.track('Asset.changed', { asset });
+    const { doFetchTimeseries, doFetchEvents, asset } = this.props;
+    if (prevProps.asset !== asset) {
       doFetchTimeseries(asset.id);
       doFetchEvents(asset.id);
     }
   }
-
-  componentWillUnmount() {
-    this.cancelAssetMappingPromise();
-    this.cancelAssetPromise();
-  }
-
-  fetchAssetMapping = async () => {
-    const { modelId, revisionId, nodeId } = this.props;
-    this.cancelAssetMappingPromise = makeCancelable(
-      getAssetIdFromNodeId(modelId, revisionId, nodeId).then(assetId => {
-        this.cancelAssetPromise = makeCancelable(
-          sdk.Assets.retrieve(assetId).then(asset => {
-            this.setState({
-              asset: {
-                id: assetId,
-                name: asset.name,
-                description: asset.description,
-              },
-            });
-          })
-        );
-      })
-    );
-  };
 
   addTimeseries = event => {
     const { asset } = this.state;
@@ -109,7 +77,7 @@ class AssetDrawer extends React.Component {
   };
 
   render() {
-    const { asset } = this.state;
+    const { asset } = this.props;
     const { showTimeseries, showEvent, showAddTimeseries = false } = this.state;
 
     const timeseries =
@@ -205,9 +173,7 @@ class AssetDrawer extends React.Component {
   }
 }
 AssetDrawer.propTypes = {
-  modelId: PropTypes.number.isRequired,
-  revisionId: PropTypes.number.isRequired,
-  nodeId: PropTypes.number.isRequired,
+  asset: Asset.isRequired,
   doFetchTimeseries: PropTypes.func.isRequired,
   doFetchEvents: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
