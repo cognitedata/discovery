@@ -24,7 +24,6 @@ class Main extends React.Component {
 
   onAssetIdChange = assetId => {
     const { match, history } = this.props;
-    console.log('match: ', match);
     history.push({
       pathname: `${match.url}/asset/${assetId}`,
     });

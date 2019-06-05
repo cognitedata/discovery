@@ -6,7 +6,7 @@ import { Spin } from 'antd';
 import * as THREE from 'three';
 import mixpanel from 'mixpanel-browser';
 import * as sdk from '@cognite/sdk';
-import { selectAssets, Assets } from '../modules/assets';
+import { getAsset, selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 import LoadingScreen from '../components/LoadingScreen';
 
@@ -29,8 +29,12 @@ class AssetViewer extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    const asset = this.getAsset();
+    if (!asset) {
+      this.props.doGetAsset(this.props.assetId);
+    }
+
     if (prevProps.assetId !== this.props.assetId) {
-      const asset = this.getAsset();
       mixpanel.context.track('Asset.changed', { asset });
       this.getAssetMappingsForAssetId();
     }
@@ -185,8 +189,9 @@ AssetViewer.propTypes = {
   assets: Assets.isRequired,
   view: PropTypes.string.isRequired,
   assetMappings: AssetMappings,
-  doGetMappingsFromAssetId: PropTypes.func.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
+  doGetMappingsFromAssetId: PropTypes.func.isRequired,
+  doGetAsset: PropTypes.func.isRequired,
 };
 
 AssetViewer.defaultProps = {
@@ -203,6 +208,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => ({
   doGetMappingsFromAssetId: (...args) =>
     dispatch(getMappingsFromAssetId(...args)),
+  doGetAsset: (...args) => dispatch(getAsset(...args)),
 });
 
 export default connect(

@@ -17,12 +17,11 @@ export const Assets = PropTypes.exact({
   current: PropTypes.arrayOf(Asset),
 });
 
-let lastRequest = 0;
+let searchCounter = 0;
 // Functions
 export function searchForAsset(query, name) {
   return async dispatch => {
-    const now = Date.now();
-    lastRequest = now;
+    const currentCounter = ++searchCounter;
 
     const result = await sdk.Assets.search({ query, name, limit: 100 });
     const assets_ = result.items.map(asset => ({
@@ -30,10 +29,34 @@ export function searchForAsset(query, name) {
       name: asset.name,
       description: asset.description,
     }));
-    if (now === lastRequest) {
+    if (currentCounter === searchCounter) {
       dispatch({ type: ADD_ASSETS, payload: { items: assets_ } });
       dispatch({ type: SET_ASSETS, payload: { items: assets_ } });
     }
+  };
+}
+
+let requestedAssetIds = {};
+export function getAsset(assetId) {
+  return async dispatch => {
+    // Skip if we did it before
+    if (requestedAssetIds[assetId] !== undefined) {
+      return;
+    }
+    requestedAssetIds[assetId] = true;
+
+    const result = await sdk.Assets.retrieve(assetId);
+    const asset = {
+      id: result.id,
+      name: result.name,
+      description: result.description,
+    };
+
+    // Crazy way to reset the list
+    setTimeout(() => {
+      requestedAssetIds = {};
+    }, 1000);
+    dispatch({ type: ADD_ASSETS, payload: { items: [asset] } });
   };
 }
 
