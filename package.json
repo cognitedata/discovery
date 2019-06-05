@@ -17,6 +17,7 @@
     "makecancelable": "^1.1.1",
     "mixpanel": "^0.10.2",
     "prop-types": "^15.6.2",
+    "query-string": "^6.5.0",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
     "react-redux": "^6.0.1",
