@@ -56,7 +56,7 @@ class Main extends React.Component {
                   top: '0',
                 }}
               >
-                <Radio.Group onChange={this.onViewChange} defaultValue="a">
+                <Radio.Group onChange={this.onViewChange} defaultValue="3d">
                   <Radio.Button value="3d">3D</Radio.Button>
                   <Radio.Button value="P&ID">P&ID</Radio.Button>
                 </Radio.Group>
