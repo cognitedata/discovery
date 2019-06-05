@@ -1,13 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Drawer, Spin, Collapse, Button } from 'antd';
+import { Drawer, Spin, Collapse, Button, Icon, Popconfirm } from 'antd';
 import styled from 'styled-components';
 
 import mixpanel from 'mixpanel-browser';
 import {
   fetchTimeseries,
   selectTimeseries,
+  removeAssetFromTimeseries,
   Timeseries,
 } from '../modules/timeseries';
 import { Asset } from '../modules/assets';
@@ -76,6 +77,11 @@ class AssetDrawer extends React.Component {
     });
   };
 
+  removeTimeseriesFromAsset = timeseriesId => {
+    const { asset } = this.props;
+    this.props.doRemoveAssetFromTimeseries(timeseriesId, asset.id);
+  };
+
   render() {
     const { asset } = this.props;
     const { showTimeseries, showEvent, showAddTimeseries = false } = this.state;
@@ -135,13 +141,25 @@ class AssetDrawer extends React.Component {
                   key="timeseries"
                 >
                   {timeseries.map(ts => (
-                    <Button
-                      key={ts.id}
-                      type="link"
-                      onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
-                    >
-                      {ts.name}
-                    </Button>
+                    <HeaderWithButton key={`ts_${ts.id}`}>
+                      <Button
+                        key={ts.id}
+                        type="link"
+                        onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
+                      >
+                        {ts.name}
+                      </Button>
+                      <Popconfirm
+                        title="Are you sure？"
+                        okText="Yes"
+                        cancelText="No"
+                        onConfirm={() => this.removeTimeseriesFromAsset(ts.id)}
+                      >
+                        <Button type="danger">
+                          <Icon type="delete" />
+                        </Button>
+                      </Popconfirm>
+                    </HeaderWithButton>
                   ))}
                 </Panel>
               </Collapse>
@@ -176,6 +194,7 @@ AssetDrawer.propTypes = {
   asset: Asset.isRequired,
   doFetchTimeseries: PropTypes.func.isRequired,
   doFetchEvents: PropTypes.func.isRequired,
+  doRemoveAssetFromTimeseries: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
   events: Events.isRequired,
 };
@@ -189,6 +208,8 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => ({
   doFetchTimeseries: (...args) => dispatch(fetchTimeseries(...args)),
   doFetchEvents: (...args) => dispatch(fetchEvents(...args)),
+  doRemoveAssetFromTimeseries: (...args) =>
+    dispatch(removeAssetFromTimeseries(...args)),
 });
 export default connect(
   mapStateToProps,

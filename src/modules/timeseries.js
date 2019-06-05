@@ -2,10 +2,12 @@ import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
-import { fetchEvents } from './events';
+import { fetchEvents, createEvent } from './events';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
+export const REMOVE_ASSET_FROM_TIMESERIES =
+  'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
 
 export const Timeseries = PropTypes.exact({
   items: PropTypes.arrayOf(
@@ -28,6 +30,28 @@ export function fetchTimeseries(assetId) {
   };
 }
 
+export function removeAssetFromTimeseries(timeseriesId, assetId) {
+  return async dispatch => {
+    await sdk.TimeSeries.update(timeseriesId, {
+      assetId: { setNull: true },
+    });
+
+    createEvent('detached_timeseries', 'Detached timeseries', [assetId], {
+      removed: timeseriesId,
+    });
+
+    dispatch({
+      type: REMOVE_ASSET_FROM_TIMESERIES,
+      payload: { timeseriesId },
+    });
+
+    setTimeout(() => {
+      dispatch(fetchTimeseries(assetId));
+      dispatch(fetchEvents(assetId));
+    }, 1000);
+  };
+}
+
 // Reducer
 const initialState = {};
 
@@ -35,6 +59,15 @@ export default function timeseries(state = initialState, action) {
   switch (action.type) {
     case SET_TIMESERIES: {
       const { items } = action.payload;
+      return {
+        ...state,
+        items,
+      };
+    }
+
+    case REMOVE_ASSET_FROM_TIMESERIES: {
+      const { timeseriesId } = action.payload;
+      const items = state.items.filter(ts => ts.id !== timeseriesId);
       return {
         ...state,
         items,
@@ -68,20 +101,11 @@ export function addTimeseriesToAsset(timeseriesIds, assetId) {
     }));
     await sdk.TimeSeries.updateMultiple(changes);
 
-    const now = Date.now() * 1000; // ms
-
     // Create event for this mapping
-    await sdk.Events.create([
-      {
-        startTime: now,
-        endTime: now,
-        description: 'Mapped timeseries to asset',
-        type: 'cognite_contextualization',
-        subtype: 'mapped_timeseries_to_asset',
-        assetIds: [assetId],
-        metadata: { added: JSON.stringify(timeseriesIds) },
-      },
-    ]);
+    createEvent('attached_timeseries', 'Attached timeseries', [assetId], {
+      added: JSON.stringify(timeseriesIds),
+    });
+
     setTimeout(() => {
       dispatch(fetchTimeseries(assetId));
       dispatch(fetchEvents(assetId));

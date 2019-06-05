@@ -46,6 +46,22 @@ export const actions = {
 // Selectors
 export const selectEvents = state => state.events || { items: [] };
 
+export async function createEvent(subtype, description, assetIds, metadata) {
+  const now = Date.now(); // ms
+  // Create event for this mapping
+  await sdk.Events.create([
+    {
+      startTime: now,
+      endTime: now,
+      description,
+      type: 'cognite_contextualization',
+      subtype,
+      assetIds,
+      metadata,
+    },
+  ]);
+}
+
 export function fetchEvents(assetId) {
   return async dispatch => {
     const result = await sdk.Events.list({ assetId, limit: 10000 });
