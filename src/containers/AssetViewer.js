@@ -30,7 +30,7 @@ class AssetViewer extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     const asset = this.getAsset();
-    if (!asset) {
+    if (this.props.assetId && !asset) {
       this.props.doGetAsset(this.props.assetId);
     }
 
@@ -40,7 +40,16 @@ class AssetViewer extends React.Component {
     }
 
     if (prevState.nodeId !== this.state.nodeId) {
-      this.getBoundingBoxForNodeId(this.state.nodeId);
+      if (this.model) {
+        this.model.deselectAllNodes();
+      }
+      if (this.state.nodeId !== undefined) {
+        if (this.model && this.model._getTreeIndex(this.state.nodeId) != null) {
+          this.select3DNode(this.state.nodeId, true);
+        } else {
+          this.getBoundingBoxForNodeId(this.state.nodeId);
+        }
+      }
     }
 
     if (prevProps.assetMappings !== this.props.assetMappings) {
@@ -98,9 +107,9 @@ class AssetViewer extends React.Component {
     const { nodeId } = this.state;
     this.viewer = viewer;
     this.model = model;
-    model.selectNode(nodeId);
-    const boundingBox = model.getBoundingBox(nodeId);
-    viewer.fitCameraToBoundingBox(boundingBox, 0);
+    window.viewer = viewer;
+    window.model = model;
+    this.select3DNode(nodeId, false);
   };
 
   getAssetMappingsForAssetId() {
@@ -137,7 +146,18 @@ class AssetViewer extends React.Component {
       if (assetId != null) {
         this.props.onAssetIdChange(assetId);
       }
+    } else {
+      const { assetId } = filteredMappings[0];
+      this.props.onAssetIdChange(assetId);
     }
+  };
+
+  select3DNode = (nodeId, animate) => {
+    this.model.deselectAllNodes();
+    this.model.selectNode(nodeId);
+    const boundingBox = this.model.getBoundingBox(nodeId);
+    const duration = animate ? 500 : 0;
+    this.viewer.fitCameraToBoundingBox(boundingBox, duration);
   };
 
   updateNodeIdFromMappings() {
