@@ -10,11 +10,30 @@ import {
 } from '../modules/assetmappings';
 
 class AssetViewer extends React.Component {
+  state = {
+    nodeId: undefined,
+  };
+
   componentDidMount() {
-    this.getAssetMappingForAssetId();
+    this.getAssetMappingsForAssetId();
   }
 
-  getAssetMappingForAssetId() {
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.assetId !== this.props.assetId) {
+      console.log('Got new asset id: ', this.props.assetId);
+      this.getAssetMappingsForAssetId();
+    }
+
+    if (prevState.nodeId !== this.state.nodeId) {
+      console.log('Got new nodeId: ', this.state.nodeId);
+    }
+
+    if (prevProps.assetMappings !== this.props.assetMappings) {
+      this.updateNodeIdFromMappings();
+    }
+  }
+
+  getAssetMappingsForAssetId() {
     const modelId = 2495544803289093;
     const revisionId = 3041181389296996;
 
@@ -22,19 +41,40 @@ class AssetViewer extends React.Component {
     const assetMappings = this.props.assetMappings.items
       ? this.props.assetMappings.items
       : [];
+    const nodeId = this.updateNodeIdFromMappings();
 
-    console.log('Got asset mappings: ', assetMappings);
-    if (assetMappings.length === 0) {
+    if (nodeId == null || assetMappings.length === 0) {
       doGetMappingsFromAssetId(modelId, revisionId, assetId);
     }
+  }
+
+  updateNodeIdFromMappings() {
+    const assetMappings = this.props.assetMappings.items
+      ? this.props.assetMappings.items
+      : [];
+
+    const matchedMappings = assetMappings
+      .filter(m => m.assetId === this.props.assetId)
+      .sort((a, b) => a.subtreeSize - b.subtreeSize);
+
+    const nodeId =
+      matchedMappings.length > 0 ? matchedMappings[0].nodeId : undefined;
+    console.log('Got node id: ', nodeId);
+    // eslint-disable-next-line react/no-did-update-set-state
+    this.setState({ nodeId });
+    return nodeId;
   }
 
   render() {
     const { assetId } = this.props;
 
+    const assetMappings = this.props.assetMappings.items
+      ? this.props.assetMappings.items
+      : [];
+
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        {this.props.view === 'metadata' && <AssetMeta assetId={assetId} />}
+        {this.props.view === '3d' && <AssetMeta assetId={assetId} />}
       </div>
     );
   }
@@ -48,7 +88,7 @@ AssetViewer.propTypes = {
 };
 
 AssetViewer.defaultProps = {
-  assetMappings: [],
+  assetMappings: {},
 };
 
 const mapStateToProps = state => {
