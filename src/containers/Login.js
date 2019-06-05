@@ -34,7 +34,7 @@ Login.propTypes = {
 
 const mapStateToProps = (_, ownProps) => {
   const onTenantSelected = tenant => {
-    ownProps.history.push(`/${tenant}/models`);
+    ownProps.history.push(`/${tenant}`);
   };
   return { onTenantSelected };
 };

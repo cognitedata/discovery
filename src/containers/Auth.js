@@ -6,6 +6,7 @@ import { Route, Redirect, Switch } from 'react-router-dom';
 import Model from './Model';
 import Models from './Models';
 import Revisions from './Revisions';
+import Main from './Main';
 
 const revisionUrl = `models/:modelId/revisions/:revisionId`;
 const Auth = ({ tenant, match }) => (
@@ -32,6 +33,7 @@ const Auth = ({ tenant, match }) => (
         component={Revisions}
       />
       <Route path={`${match.url}/models`} component={Models} />
+      <Route component={Main} />
     </Switch>
   </ReactAuthProvider>
 );
