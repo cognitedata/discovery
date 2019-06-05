@@ -1,8 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AssetMeta } from '@cognite/gearbox';
+import { AssetMeta, Model3DViewer } from '@cognite/gearbox';
+
 import { selectAssets, Assets } from '../modules/assets';
+import AssetDrawer from './AssetDrawer';
+
 import {
   getMappingsFromAssetId,
   selectAssetMappings,
@@ -12,6 +15,8 @@ import {
 class AssetViewer extends React.Component {
   state = {
     nodeId: undefined,
+    modelId: 2495544803289093,
+    revisionId: 3041181389296996,
   };
 
   componentDidMount() {
@@ -20,12 +25,7 @@ class AssetViewer extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.assetId !== this.props.assetId) {
-      console.log('Got new asset id: ', this.props.assetId);
       this.getAssetMappingsForAssetId();
-    }
-
-    if (prevState.nodeId !== this.state.nodeId) {
-      console.log('Got new nodeId: ', this.state.nodeId);
     }
 
     if (prevProps.assetMappings !== this.props.assetMappings) {
@@ -34,9 +34,6 @@ class AssetViewer extends React.Component {
   }
 
   getAssetMappingsForAssetId() {
-    const modelId = 2495544803289093;
-    const revisionId = 3041181389296996;
-
     const { assetId, doGetMappingsFromAssetId } = this.props;
     const assetMappings = this.props.assetMappings.items
       ? this.props.assetMappings.items
@@ -44,7 +41,11 @@ class AssetViewer extends React.Component {
     const nodeId = this.updateNodeIdFromMappings();
 
     if (nodeId == null || assetMappings.length === 0) {
-      doGetMappingsFromAssetId(modelId, revisionId, assetId);
+      doGetMappingsFromAssetId(
+        this.state.modelId,
+        this.state.revisionId,
+        assetId
+      );
     }
   }
 
@@ -59,22 +60,38 @@ class AssetViewer extends React.Component {
 
     const nodeId =
       matchedMappings.length > 0 ? matchedMappings[0].nodeId : undefined;
-    console.log('Got node id: ', nodeId);
     // eslint-disable-next-line react/no-did-update-set-state
     this.setState({ nodeId });
     return nodeId;
   }
 
   render() {
-    const { assetId } = this.props;
+    const { assetId, assets } = this.props;
+    let asset;
+    if (assets.items) {
+      asset = assets.items.filter(a => a.id === assetId);
+    }
 
-    const assetMappings = this.props.assetMappings.items
-      ? this.props.assetMappings.items
-      : [];
+    const { nodeId } = this.state;
 
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        {this.props.view === '3d' && <AssetMeta assetId={assetId} />}
+        {/* {this.props.view === '3d' && <AssetMeta assetId={assetId} />} */}
+        <Model3DViewer
+          modelId={this.state.modelId}
+          revisionId={this.state.revisionId}
+          // onClick={this.onClick}
+          // onReady={this.onViewerReady}
+        />
+        {nodeId != null && (
+          <AssetDrawer
+            loading
+            modelId={this.state.modelId}
+            revisionId={this.state.revisionId}
+            nodeId={Number(nodeId)}
+            onClose={this.onAssetClose}
+          />
+        )}
       </div>
     );
   }
@@ -82,6 +99,7 @@ class AssetViewer extends React.Component {
 
 AssetViewer.propTypes = {
   assetId: PropTypes.number.isRequired,
+  assets: Assets.isRequired,
   view: PropTypes.string.isRequired,
   assetMappings: AssetMappings,
   doGetMappingsFromAssetId: PropTypes.func.isRequired,
@@ -92,6 +110,7 @@ AssetViewer.defaultProps = {
 };
 
 const mapStateToProps = state => {
+  console.log('assets: ', selectAssets(state));
   return {
     assets: selectAssets(state),
     assetMappings: selectAssetMappings(state),

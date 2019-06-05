@@ -211,12 +211,6 @@ AssetDrawer.propTypes = {
   revisionId: PropTypes.number.isRequired,
   nodeId: PropTypes.number.isRequired,
   onClose: PropTypes.func.isRequired,
-  match: PropTypes.shape({
-    url: PropTypes.string.isRequired,
-  }).isRequired,
-  history: PropTypes.shape({
-    push: PropTypes.func.isRequired,
-  }).isRequired,
   doFetchTimeseries: PropTypes.func.isRequired,
   doFetchEvents: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
