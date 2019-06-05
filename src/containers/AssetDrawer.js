@@ -109,7 +109,6 @@ class AssetDrawer extends React.Component {
   };
 
   render() {
-    const { onClose } = this.props;
     const { asset } = this.state;
     const { showTimeseries, showEvent, showAddTimeseries = false } = this.state;
 
@@ -148,8 +147,7 @@ class AssetDrawer extends React.Component {
           title={asset.name ? asset.name : asset.id}
           placement="right"
           width={400}
-          closable
-          onClose={onClose}
+          closable={false}
           visible
           mask={false}
         >
@@ -210,7 +208,6 @@ AssetDrawer.propTypes = {
   modelId: PropTypes.number.isRequired,
   revisionId: PropTypes.number.isRequired,
   nodeId: PropTypes.number.isRequired,
-  onClose: PropTypes.func.isRequired,
   doFetchTimeseries: PropTypes.func.isRequired,
   doFetchEvents: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,

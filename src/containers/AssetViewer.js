@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { AssetMeta, Model3DViewer } from '@cognite/gearbox';
-
+import styled from 'styled-components';
 import { selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 
@@ -77,19 +77,22 @@ class AssetViewer extends React.Component {
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         {/* {this.props.view === '3d' && <AssetMeta assetId={assetId} />} */}
-        <Model3DViewer
-          modelId={this.state.modelId}
-          revisionId={this.state.revisionId}
-          // onClick={this.onClick}
-          // onReady={this.onViewerReady}
-        />
+        {this.props.view === '3d' && (
+          <div style={{ height: '100%', paddingRight: 400 }}>
+            <Model3DViewer
+              modelId={this.state.modelId}
+              revisionId={this.state.revisionId}
+              // onClick={this.onClick}
+              // onReady={this.onViewerReady}
+            />
+          </div>
+        )}
         {nodeId != null && (
           <AssetDrawer
             loading
             modelId={this.state.modelId}
             revisionId={this.state.revisionId}
             nodeId={Number(nodeId)}
-            onClose={this.onAssetClose}
           />
         )}
       </div>
