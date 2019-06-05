@@ -77,6 +77,14 @@ class AssetViewer extends React.Component {
     return asset;
   }
 
+  on3DProgress = progress => {
+    this.setState({ progress });
+  };
+
+  on3DComplete = () => {
+    this.setState({ progress: undefined });
+  };
+
   on3DClick = nodeId => {};
 
   on3DReady = (viewer, model, revision) => {
@@ -127,13 +135,17 @@ class AssetViewer extends React.Component {
         {this.props.view === '3d' && this.state.boundingBox != null && (
           <div style={{ height: '100%', paddingRight: 400 }}>
             <>
-              {/* <LoadingScreen /> */}
+              {this.state.progress && (
+                <LoadingScreen progress={this.state.progress} />
+              )}
               <Model3DViewer
                 modelId={this.state.modelId}
                 revisionId={this.state.revisionId}
                 boundingBox={this.state.boundingBox}
                 onClick={this.on3DClick}
                 onReady={this.on3DReady}
+                onProgress={this.on3DProgress}
+                onComplete={this.on3DComplete}
               />
             </>
           </div>
