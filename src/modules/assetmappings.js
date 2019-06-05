@@ -3,39 +3,39 @@ import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 
 // Constants
-export const SET_ASSET_MAPPINGS = 'assetmappings/SET_ASSET_MAPPINGS';
+export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
 
-// const findAssetFromMappings = (nodeId, mappings) => {
-//   // See if there are any exact matches for this nodeId
-//   const assetIds = mappings
-//     .filter(mapping => mapping.nodeId === nodeId)
-//     .map(mapping => mapping.assetId);
+export function findAssetIdFromMappings(nodeId, mappings) {
+  // See if there are any exact matches for this nodeId
+  const assetIds = mappings
+    .filter(mapping => mapping.nodeId === nodeId)
+    .map(mapping => mapping.assetId);
 
-//   if (assetIds.length > 0) {
-//     // We found at least one exact match. There should not be more than one, but we'll choose the first one.
-//     const assetId = assetIds[0];
+  if (assetIds.length > 0) {
+    // We found at least one exact match. There should not be more than one, but we'll choose the first one.
+    const assetId = assetIds[0];
 
-//     // Now find all mappings pointing to this assetId as multiple 3D nodes may point to the same assetId.
-//     // Sort the list in descending order so first element has the largest subtreeSize.
-//     const filteredMappings = mappings.filter(
-//       mapping => mapping.assetId === assetId
-//     );
-//     return filteredMappings[0].assetId;
-//   }
+    // Now find all mappings pointing to this assetId as multiple 3D nodes may point to the same assetId.
+    // Sort the list in descending order so first element has the largest subtreeSize.
+    const filteredMappings = mappings.filter(
+      mapping => mapping.assetId === assetId
+    );
+    return filteredMappings[0].assetId;
+  }
 
-//   const filteredMappings = mappings.filter(
-//     mapping => mapping.nodeId !== nodeId
-//   );
-//   if (filteredMappings.length > 0) {
-//     // The node has no direct mapping, choose the next parent
-//     return findAssetFromMappings(
-//       filteredMappings[filteredMappings.length - 1].nodeId,
-//       filteredMappings
-//     );
-//   }
+  const filteredMappings = mappings.filter(
+    mapping => mapping.nodeId !== nodeId
+  );
+  if (filteredMappings.length > 0) {
+    // The node has no direct mapping, choose the next parent
+    return findAssetIdFromMappings(
+      filteredMappings[filteredMappings.length - 1].nodeId,
+      filteredMappings
+    );
+  }
 
-//   return null;
-// };
+  return null;
+}
 
 // const fetchAssetMappingsFromNodeId = async (modelId, revisionId, nodeId) => {
 //   const data = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
@@ -76,7 +76,7 @@ export function getAllAssetMappings(modelId, revisionId, assetId) {
       cursor = result.nextCursor;
     } while (cursor !== undefined);
 
-    dispatch({ type: SET_ASSET_MAPPINGS, payload: { items: mappings } });
+    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { items: mappings } });
   };
 }
 
@@ -87,7 +87,18 @@ export function getMappingsFromAssetId(modelId, revisionId, assetId) {
     });
 
     const mappings = result.items;
-    dispatch({ type: SET_ASSET_MAPPINGS, payload: { items: mappings } });
+    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { items: mappings } });
+  };
+}
+
+export function getMappingsFromNodeId(modelId, revisionId, nodeId) {
+  return async dispatch => {
+    const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
+      nodeId,
+    });
+
+    const mappings = result.items;
+    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { items: mappings } });
   };
 }
 
@@ -105,13 +116,16 @@ export const AssetMappings = PropTypes.exact({
 // Reducer
 const initialState = {};
 
-export default function assets(state = initialState, action) {
+export default function assetmappings(state = initialState, action) {
   switch (action.type) {
-    case SET_ASSET_MAPPINGS: {
+    case ADD_ASSET_MAPPINGS: {
       const { items } = action.payload;
+      const existingMappings = state.items ? state.items : [];
+      const allMappingsArray = [...items, ...existingMappings];
+      const allMappings = [...new Set(allMappingsArray)];
       return {
         ...state,
-        items,
+        items: allMappings,
       };
     }
     default:
@@ -120,10 +134,10 @@ export default function assets(state = initialState, action) {
 }
 
 // Action creators
-const setAssetMappings = createAction(SET_ASSET_MAPPINGS);
+const addAssetMappings = createAction(ADD_ASSET_MAPPINGS);
 
 export const actions = {
-  setAssetMappings,
+  addAssetMappings,
 };
 
 // Selectors

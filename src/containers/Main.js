@@ -22,6 +22,14 @@ class Main extends React.Component {
     });
   };
 
+  onAssetIdChange = assetId => {
+    const { match, history } = this.props;
+    console.log('match: ', match);
+    history.push({
+      pathname: `${match.url}/asset/${assetId}`,
+    });
+  };
+
   onViewChange = value => {
     const view = value.target.value;
     this.setState({ view });
@@ -73,6 +81,7 @@ class Main extends React.Component {
                     <AssetViewer
                       assetId={Number(assetId)}
                       view={this.state.view}
+                      onAssetIdChange={this.onAssetIdChange}
                     />
                   );
                 }}

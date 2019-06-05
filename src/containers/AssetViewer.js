@@ -11,6 +11,7 @@ import AssetDrawer from './AssetDrawer';
 import LoadingScreen from '../components/LoadingScreen';
 
 import {
+  findAssetIdFromMappings,
   getMappingsFromAssetId,
   selectAssetMappings,
   AssetMappings,
@@ -85,7 +86,9 @@ class AssetViewer extends React.Component {
     this.setState({ progress: undefined });
   };
 
-  on3DClick = nodeId => {};
+  on3DClick = nodeId => {
+    this.getAssetMappingsForNodeId(nodeId);
+  };
 
   on3DReady = (viewer, model, revision) => {
     const { nodeId } = this.state;
@@ -111,6 +114,27 @@ class AssetViewer extends React.Component {
       );
     }
   }
+
+  getAssetMappingsForNodeId = async nodeId => {
+    const assetMappings = this.props.assetMappings.items
+      ? this.props.assetMappings.items
+      : [];
+
+    const filteredMappings = assetMappings.filter(
+      mapping => mapping.nodeId === nodeId
+    );
+    if (filteredMappings.length === 0) {
+      const result = await sdk.ThreeD.listAssetMappings(
+        this.state.modelId,
+        this.state.revisionId,
+        { nodeId }
+      );
+      const assetId = findAssetIdFromMappings(nodeId, result.items);
+      if (assetId != null) {
+        this.props.onAssetIdChange(assetId);
+      }
+    }
+  };
 
   updateNodeIdFromMappings() {
     const assetMappings = this.props.assetMappings.items
@@ -162,6 +186,7 @@ AssetViewer.propTypes = {
   view: PropTypes.string.isRequired,
   assetMappings: AssetMappings,
   doGetMappingsFromAssetId: PropTypes.func.isRequired,
+  onAssetIdChange: PropTypes.func.isRequired,
 };
 
 AssetViewer.defaultProps = {
