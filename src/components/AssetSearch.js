@@ -29,25 +29,25 @@ class AssetSearch extends React.Component {
 
   onChange = change => {
     const query = change.target.value;
-    this.props.doSearchForAsset(query);
     this.setState({ query });
+    this.props.doSearchForAsset(query);
   };
 
   render() {
     const assets = this.props.assets.current
       ? moveExactMatchToTop(this.props.assets.current, this.state.query.trim())
       : undefined;
-
+    const { query } = this.state;
     const parsed = queryString.parse(this.props.location.search);
     const defaultSearchQuery = parsed.query ? parsed.query : '';
     return (
       <>
         <Input
-          placeholder="Search for tag"
+          placeholder="Search for tag (13FV1234)"
           defaultValue={defaultSearchQuery}
           onChange={this.onChange}
         />
-        {assets && (
+        {assets && query !== '' && (
           <List
             itemLayout="horizontal"
             dataSource={assets}
