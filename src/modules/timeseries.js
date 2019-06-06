@@ -37,7 +37,7 @@ export function removeAssetFromTimeseries(timeseriesId, assetId) {
       assetId: { setNull: true },
     });
 
-    createEvent('detached_timeseries', 'Detached timeseries', [assetId], {
+    createEvent('removed_timeseries', 'Removed timeseries', [assetId], {
       removed: timeseriesId,
     });
 
