@@ -19,11 +19,17 @@ export const Assets = PropTypes.exact({
 
 let searchCounter = 0;
 // Functions
-export function searchForAsset(query, name) {
+export function searchForAsset(query) {
   return async dispatch => {
     const currentCounter = ++searchCounter;
 
-    const result = await sdk.Assets.search({ query, name, limit: 100 });
+    // const result = await sdk.Assets.search({ query, name, limit: 100 });
+    const { project } = sdk.configure({});
+    const requestResult = await sdk.rawGet(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100`
+    );
+    const result = requestResult.data.data;
+
     const assets_ = result.items.map(asset => ({
       id: asset.id,
       name: asset.name,
@@ -45,7 +51,13 @@ export function getAsset(assetId) {
     }
     requestedAssetIds[assetId] = true;
 
-    const result = await sdk.Assets.retrieve(assetId);
+    // const result = await sdk.Assets.retrieve(assetId);
+    const { project } = sdk.configure({});
+    const requestResult = await sdk.rawGet(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${assetId}`
+    );
+    const result = requestResult.data.data;
+
     const asset = {
       id: result.id,
       name: result.name,
