@@ -12,9 +12,10 @@ import {
   Timeseries,
 } from '../modules/timeseries';
 import { Asset } from '../modules/assets';
-import { Types, selectTypes } from '../modules/types';
+import { Types, selectTypes, removeTypeFromAsset } from '../modules/types';
 import { fetchEvents, selectEvents, Events } from '../modules/events';
 import AddTimeseries from '../components/AddTimeseries';
+import AddTypes from '../components/AddTypes';
 import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
 
@@ -53,10 +54,17 @@ class AssetDrawer extends React.Component {
     }
   }
 
-  addTimeseries = event => {
+  addTimeseriesClick = event => {
     const { asset } = this.state;
     mixpanel.context.track('addTimeseries.click', { asset });
     this.setState({ showAddTimeseries: true });
+    event.stopPropagation();
+  };
+
+  addTypeClick = event => {
+    const { asset } = this.state;
+    mixpanel.context.track('addType.click', { asset });
+    this.setState({ showAddTypes: true });
     event.stopPropagation();
   };
 
@@ -78,18 +86,13 @@ class AssetDrawer extends React.Component {
     });
   };
 
-  removeTimeseriesFromAsset = timeseriesId => {
-    const { asset } = this.props;
-    this.props.doRemoveAssetFromTimeseries(timeseriesId, asset.id);
-  };
-
-  renderTypes = types => (
+  renderTypes = (asset, types) => (
     <Collapse accordion>
       <Panel
         header={
           <HeaderWithButton>
             <span>Types ({types.length})</span>
-            <Button type="primary" onClick={this.addType}>
+            <Button type="primary" onClick={this.addTypeClick}>
               Add
             </Button>
           </HeaderWithButton>
@@ -101,7 +104,7 @@ class AssetDrawer extends React.Component {
             <Button
               key={type.id}
               type="link"
-              // onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
+              // onClick={() => this.doRemoveTypeFromAsset(type.id, asset)}
             >
               {type.name}
             </Button>
@@ -109,7 +112,7 @@ class AssetDrawer extends React.Component {
               title="Are you sure？"
               okText="Yes"
               cancelText="No"
-              // onConfirm={() => this.removeTimeseriesFromAsset(ts.id)}
+              onConfirm={() => this.props.doRemoveTypeFromAsset(type.id, asset)}
             >
               <Button type="danger">
                 <Icon type="delete" />
@@ -121,13 +124,13 @@ class AssetDrawer extends React.Component {
     </Collapse>
   );
 
-  renderTimeseries = timeseries => (
+  renderTimeseries = (asset, timeseries) => (
     <Collapse accordion>
       <Panel
         header={
           <HeaderWithButton>
             <span>Timeseries ({timeseries.length})</span>
-            <Button type="primary" onClick={this.addTimeseries}>
+            <Button type="primary" onClick={this.addTimeseriesClick}>
               Add
             </Button>
           </HeaderWithButton>
@@ -147,7 +150,9 @@ class AssetDrawer extends React.Component {
               title="Are you sure？"
               okText="Yes"
               cancelText="No"
-              onConfirm={() => this.removeTimeseriesFromAsset(ts.id)}
+              onConfirm={() =>
+                this.props.doRemoveAssetFromTimeseries(ts.id, asset.id)
+              }
             >
               <Button type="danger">
                 <Icon type="delete" />
@@ -180,12 +185,20 @@ class AssetDrawer extends React.Component {
 
   render() {
     const { asset } = this.props;
-    const { showTimeseries, showEvent, showAddTimeseries = false } = this.state;
+    const {
+      showTimeseries,
+      showEvent,
+      showAddTimeseries = false,
+      showAddTypes = false,
+    } = this.state;
 
     const timeseries =
       this.props.timeseries.items != null ? this.props.timeseries.items : [];
     const events =
       this.props.events.items != null ? this.props.events.items : [];
+
+    const allTypes =
+      this.props.types.items != null ? this.props.types.items : [];
 
     const types = asset.types ? asset.types : [];
 
@@ -199,6 +212,9 @@ class AssetDrawer extends React.Component {
 
     return (
       <>
+        {asset != null && showAddTypes && (
+          <AddTypes asset={asset} onClose={this.onAddClose} types={allTypes} />
+        )}
         {asset != null && showAddTimeseries && (
           <AddTimeseries
             assetId={asset.id}
@@ -226,8 +242,8 @@ class AssetDrawer extends React.Component {
           {asset.description && <p>{asset.description}</p>}
           {
             <>
-              {this.renderTypes(types)}
-              {this.renderTimeseries(timeseries)}
+              {this.renderTypes(asset, types)}
+              {this.renderTimeseries(asset, timeseries)}
               {this.renderEvents(events)}
             </>
           }
@@ -241,6 +257,7 @@ AssetDrawer.propTypes = {
   doFetchTimeseries: PropTypes.func.isRequired,
   doFetchEvents: PropTypes.func.isRequired,
   doRemoveAssetFromTimeseries: PropTypes.func.isRequired,
+  doRemoveTypeFromAsset: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
   events: Events.isRequired,
   types: Types.isRequired,
@@ -258,6 +275,7 @@ const mapDispatchToProps = dispatch => ({
   doFetchEvents: (...args) => dispatch(fetchEvents(...args)),
   doRemoveAssetFromTimeseries: (...args) =>
     dispatch(removeAssetFromTimeseries(...args)),
+  doRemoveTypeFromAsset: (...args) => dispatch(removeTypeFromAsset(...args)),
 });
 export default connect(
   mapStateToProps,

@@ -24,6 +24,56 @@ export const Types = PropTypes.exact({
 });
 
 // Functions
+export function removeTypeFromAsset(typeId, asset) {
+  return async dispatch => {
+    const body = {
+      id: asset.id,
+      types: {
+        remove: [typeId],
+      },
+    };
+
+    const { project } = sdk.configure({});
+    const result = await sdk.rawPost(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${
+        asset.id
+      }/update`,
+      { data: body }
+    );
+  };
+}
+export function addTypesToAsset(typeIds, asset, types) {
+  return async dispatch => {
+    const formattedTypes = typeIds.map(id => ({
+      id,
+      fields: [
+        {
+          id: 6545982454552263,
+          value: 1.0,
+        },
+        {
+          id: 6199669604428227,
+          value: 'expert',
+        },
+      ],
+    }));
+
+    const body = {
+      id: asset.id,
+      types: {
+        add: formattedTypes,
+      },
+    };
+
+    const { project } = sdk.configure({});
+    const result = await sdk.rawPost(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${
+        asset.id
+      }/update`,
+      { data: body }
+    );
+  };
+}
 
 export function fetchTypes() {
   return async dispatch => {
