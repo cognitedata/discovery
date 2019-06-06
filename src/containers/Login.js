@@ -21,9 +21,9 @@ const Login = ({ onTenantSelected }) => (
   <Wrapper>
     <TenantSelectorContainer>
       <TenantSelector
-        title="3D Reviewer"
+        title="Cognite Digital Twin Explorer"
         onTenantSelected={onTenantSelected}
-        placeholder="itera-dev"
+        placeholder=""
       />
     </TenantSelectorContainer>
   </Wrapper>

@@ -8,7 +8,7 @@ export const history = createBrowserHistory();
 
 function Routes() {
   return (
-    <Router basename="/3d-reviewer">
+    <Router>
       <Switch>
         <Route exact path="/" component={Login} />
         <Route path="/:tenant" component={Auth} />
