@@ -1,6 +1,9 @@
 import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
+// TODO(anders.hafreager) Fix this cycle import
+// eslint-disable-next-line import/no-cycle
+import { fetchAsset } from './assets';
 
 // Constants
 export const SET_TYPES = 'types/SET_TYPES';
@@ -40,6 +43,8 @@ export function removeTypeFromAsset(typeId, asset) {
       }/update`,
       { data: body }
     );
+
+    dispatch(fetchAsset(asset.id));
   };
 }
 export function addTypesToAsset(typeIds, asset, types) {
@@ -72,6 +77,8 @@ export function addTypesToAsset(typeIds, asset, types) {
       }/update`,
       { data: body }
     );
+
+    dispatch(fetchAsset(asset.id));
   };
 }
 
@@ -84,16 +91,16 @@ export function fetchTypes() {
       `https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`
     );
 
-    const types = result.data.data.items;
+    const types_ = result.data.data.items;
 
-    dispatch({ type: SET_TYPES, payload: { items: types } });
+    dispatch({ type: SET_TYPES, payload: { items: types_ } });
   };
 }
 
 // Reducer
 const initialState = {};
 
-export default function assets(state = initialState, action) {
+export default function types(state = initialState, action) {
   switch (action.type) {
     case SET_TYPES: {
       const { items } = action.payload;
