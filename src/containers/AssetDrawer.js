@@ -12,6 +12,7 @@ import {
   Timeseries,
 } from '../modules/timeseries';
 import { Asset } from '../modules/assets';
+import { Types, selectTypes } from '../modules/types';
 import { fetchEvents, selectEvents, Events } from '../modules/events';
 import AddTimeseries from '../components/AddTimeseries';
 import EventPreview from '../components/EventPreview';
@@ -82,6 +83,101 @@ class AssetDrawer extends React.Component {
     this.props.doRemoveAssetFromTimeseries(timeseriesId, asset.id);
   };
 
+  renderTypes = types => (
+    <Collapse accordion>
+      <Panel
+        header={
+          <HeaderWithButton>
+            <span>Types ({types.length})</span>
+            <Button type="primary" onClick={this.addType}>
+              Add
+            </Button>
+          </HeaderWithButton>
+        }
+        key="types"
+      >
+        {types.map(type => (
+          <HeaderWithButton key={`ts_${type.id}`}>
+            <Button
+              key={type.id}
+              type="link"
+              // onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
+            >
+              {type.name}
+            </Button>
+            <Popconfirm
+              title="Are you sure？"
+              okText="Yes"
+              cancelText="No"
+              // onConfirm={() => this.removeTimeseriesFromAsset(ts.id)}
+            >
+              <Button type="danger">
+                <Icon type="delete" />
+              </Button>
+            </Popconfirm>
+          </HeaderWithButton>
+        ))}
+      </Panel>
+    </Collapse>
+  );
+
+  renderTimeseries = timeseries => (
+    <Collapse accordion>
+      <Panel
+        header={
+          <HeaderWithButton>
+            <span>Timeseries ({timeseries.length})</span>
+            <Button type="primary" onClick={this.addTimeseries}>
+              Add
+            </Button>
+          </HeaderWithButton>
+        }
+        key="timeseries"
+      >
+        {timeseries.map(ts => (
+          <HeaderWithButton key={`ts_${ts.id}`}>
+            <Button
+              key={ts.id}
+              type="link"
+              onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
+            >
+              {ts.name}
+            </Button>
+            <Popconfirm
+              title="Are you sure？"
+              okText="Yes"
+              cancelText="No"
+              onConfirm={() => this.removeTimeseriesFromAsset(ts.id)}
+            >
+              <Button type="danger">
+                <Icon type="delete" />
+              </Button>
+            </Popconfirm>
+          </HeaderWithButton>
+        ))}
+      </Panel>
+    </Collapse>
+  );
+
+  renderEvents = events => (
+    <Collapse accordion>
+      <Panel header={<span>Events ({events.length})</span>} key="events">
+        {events.map(event => (
+          <Button
+            title={`type: ${event.type}, subtype: ${
+              event.subtype
+            }, metadata: ${JSON.stringify(event.metadata)}`}
+            key={event.id}
+            type="link"
+            onClick={() => this.eventOnClick(event.id)}
+          >
+            {event.description}
+          </Button>
+        ))}
+      </Panel>
+    </Collapse>
+  );
+
   render() {
     const { asset } = this.props;
     const { showTimeseries, showEvent, showAddTimeseries = false } = this.state;
@@ -90,6 +186,8 @@ class AssetDrawer extends React.Component {
       this.props.timeseries.items != null ? this.props.timeseries.items : [];
     const events =
       this.props.events.items != null ? this.props.events.items : [];
+
+    const types = asset.types ? asset.types : [];
 
     if (asset == null) {
       return (
@@ -128,61 +226,9 @@ class AssetDrawer extends React.Component {
           {asset.description && <p>{asset.description}</p>}
           {
             <>
-              <Collapse accordion>
-                <Panel
-                  header={
-                    <HeaderWithButton>
-                      <span>Timeseries ({timeseries.length})</span>
-                      <Button type="primary" onClick={this.addTimeseries}>
-                        Add
-                      </Button>
-                    </HeaderWithButton>
-                  }
-                  key="timeseries"
-                >
-                  {timeseries.map(ts => (
-                    <HeaderWithButton key={`ts_${ts.id}`}>
-                      <Button
-                        key={ts.id}
-                        type="link"
-                        onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
-                      >
-                        {ts.name}
-                      </Button>
-                      <Popconfirm
-                        title="Are you sure？"
-                        okText="Yes"
-                        cancelText="No"
-                        onConfirm={() => this.removeTimeseriesFromAsset(ts.id)}
-                      >
-                        <Button type="danger">
-                          <Icon type="delete" />
-                        </Button>
-                      </Popconfirm>
-                    </HeaderWithButton>
-                  ))}
-                </Panel>
-              </Collapse>
-
-              <Collapse accordion>
-                <Panel
-                  header={<span>Events ({events.length})</span>}
-                  key="events"
-                >
-                  {events.map(event => (
-                    <Button
-                      title={`type: ${event.type}, subtype: ${
-                        event.subtype
-                      }, metadata: ${JSON.stringify(event.metadata)}`}
-                      key={event.id}
-                      type="link"
-                      onClick={() => this.eventOnClick(event.id)}
-                    >
-                      {event.description}
-                    </Button>
-                  ))}
-                </Panel>
-              </Collapse>
+              {this.renderTypes(types)}
+              {this.renderTimeseries(timeseries)}
+              {this.renderEvents(events)}
             </>
           }
         </Drawer>
@@ -197,12 +243,14 @@ AssetDrawer.propTypes = {
   doRemoveAssetFromTimeseries: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
   events: Events.isRequired,
+  types: Types.isRequired,
 };
 
 const mapStateToProps = state => {
   return {
     timeseries: selectTimeseries(state),
     events: selectEvents(state),
+    types: selectTypes(state),
   };
 };
 const mapDispatchToProps = dispatch => ({
