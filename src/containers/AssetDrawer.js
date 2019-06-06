@@ -70,9 +70,10 @@ class AssetDrawer extends React.Component {
 
   onAddClose = () => {
     this.setState({
-      showAddTimeseries: false,
+      showAddTimeseries: undefined,
       showEvent: undefined,
       showTimeseries: undefined,
+      showAddTypes: undefined,
     });
   };
 
