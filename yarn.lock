@@ -945,15 +945,16 @@
   resolved "https://registry.yarnpkg.com/@cognite/eslint-config/-/eslint-config-1.1.0.tgz#0285a38002018ecd0c4c4ff97d4a2f598be8b326"
   integrity sha512-CwbBY+MSkIJv34B2cTUQO5SlJoyj1RawRq3Pajw5adP1XQZZRrsgJEqa2ihEvR6pDdEoUjz+Tikky8bNBgPcnQ==
 
-"@cognite/gearbox@^0.0.37":
-  version "0.0.37"
-  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-0.0.37.tgz#028de35b134557cf240013aadf11a96c3cbb03dd"
-  integrity sha512-IUVeKuk6DwmIJoTqM3Duwxo3UCmgG1yd8tKoDzwpcuAFq0Msqm44yn/shj7WXOMPlYyeQD+hltUVbIfzUA5Img==
+"@cognite/gearbox@^0.0.38":
+  version "0.0.38"
+  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-0.0.38.tgz#7b63c19a48e72a2f798620c53400d12a8f043774"
+  integrity sha512-DwsP++i4PFqkdnKglLQjxvVjnLfSyGQ5XhQIRvj1NMUe9157jGQH3W+kYXrcieGlL/cmOxDLI+QCWsSDycNdfA==
   dependencies:
     d3 "^5.9.2"
     lodash "^4.17.11"
     moment-timezone "^0.5.23"
     numeral "^2.0.6"
+    pinch-zoom-js "^2.3.4"
     react-dnd "^7.4.5"
     react-dnd-html5-backend "^7.4.4"
     react-odometerjs "^2.1.1"
@@ -8524,6 +8525,11 @@ pify@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/pify/-/pify-4.0.1.tgz#4b2cd25c50d598735c50292224fd8c6df41e3231"
   integrity sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==
+
+pinch-zoom-js@^2.3.4:
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/pinch-zoom-js/-/pinch-zoom-js-2.3.4.tgz#b1019eb2af88b33a546cc7b67eaeb11f8a209e8c"
+  integrity sha512-w6aw3vsXtDEH0RZPtiSKFihhqKPbLvqtT7HvMOeZVDPqQ5M1RLfrF83dfpr8WdWUEyQSlH+8pTIsNskZwjorag==
 
 pinkie-promise@^2.0.0:
   version "2.0.1"
