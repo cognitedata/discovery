@@ -1,14 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AssetMeta, Model3DViewer } from '@cognite/gearbox';
-import { Spin } from 'antd';
+import { SVGViewer, Model3DViewer } from '@cognite/gearbox';
 import * as THREE from 'three';
 import mixpanel from 'mixpanel-browser';
 import * as sdk from '@cognite/sdk';
 import { getAsset, selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 import LoadingScreen from '../components/LoadingScreen';
+import PNIDViewer from './PNIDViewer';
 
 import {
   findAssetIdFromMappings,
@@ -16,6 +16,12 @@ import {
   selectAssetMappings,
   AssetMappings,
 } from '../modules/assetmappings';
+
+const cache = {};
+let isSelectingSoon = false;
+
+const getTextFromMetadataNode = node =>
+  (node.textContent || '').replace(/\s/g, '');
 
 class AssetViewer extends React.Component {
   state = {
@@ -26,6 +32,9 @@ class AssetViewer extends React.Component {
 
   componentDidMount() {
     this.getAssetMappingsForAssetId();
+    if (this.state.nodeId) {
+      this.select3DNode(this.state.nodeId);
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -37,6 +46,19 @@ class AssetViewer extends React.Component {
     if (prevProps.assetId !== this.props.assetId) {
       mixpanel.context.track('Asset.changed', { asset });
       this.getAssetMappingsForAssetId();
+    }
+
+    if (
+      this.state.nodeId &&
+      this.model &&
+      !this.model._selectedNodes.has(this.state.nodeId) &&
+      !isSelectingSoon
+    ) {
+      isSelectingSoon = true;
+      setTimeout(() => {
+        this.select3DNode(this.state.nodeId);
+        isSelectingSoon = false;
+      }, 100);
     }
 
     if (prevState.nodeId !== this.state.nodeId) {
@@ -157,7 +179,24 @@ class AssetViewer extends React.Component {
     this.model.selectNode(nodeId);
     const boundingBox = this.model.getBoundingBox(nodeId);
     const duration = animate ? 500 : 0;
-    this.viewer.fitCameraToBoundingBox(boundingBox, duration);
+    if (boundingBox.isEmpty()) {
+      this.viewer.fitCameraToModel(this.model, duration);
+    } else {
+      this.viewer.fitCameraToBoundingBox(boundingBox, duration);
+    }
+  };
+
+  onPNIDClick = item => {
+    console.log('Clicked ', item);
+  };
+
+  searchAndSelectAssetName = async name => {
+    const result = await sdk.Assets.search({ name });
+    const exactMatches = result.items.filter(asset => asset.name === name);
+    if (exactMatches.length > 0) {
+      const assetId = exactMatches[0].id;
+      this.props.onAssetIdChange(assetId);
+    }
   };
 
   updateNodeIdFromMappings() {
@@ -189,13 +228,33 @@ class AssetViewer extends React.Component {
               <Model3DViewer
                 modelId={this.state.modelId}
                 revisionId={this.state.revisionId}
-                boundingBox={this.state.boundingBox}
+                // boundingBox={this.state.boundingBox}
                 onClick={this.on3DClick}
                 onReady={this.on3DReady}
                 onProgress={this.on3DProgress}
                 onComplete={this.on3DComplete}
+                cache={cache}
               />
             </>
+          </div>
+        )}
+        {this.props.view === 'PNID' && (
+          <div style={{ height: '100%', paddingRight: 400, paddingTop: 50 }}>
+            <SVGViewer
+              documentId={8910925076675219}
+              title="Title"
+              description="Description"
+              isCurrentAsset={metadata => {
+                if (asset) {
+                  return getTextFromMetadataNode(metadata) === asset.name;
+                }
+              }}
+              handleItemClick={item => {
+                window.item = item;
+                const name = window.item.children[0].children[0].innerHTML;
+                this.searchAndSelectAssetName(name);
+              }}
+            />
           </div>
         )}
         {asset != null && <AssetDrawer loading asset={asset} />}

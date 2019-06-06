@@ -69,7 +69,7 @@ class Main extends React.Component {
                   style={{ paddingRight: 400 }}
                 >
                   <Radio.Button value="3d">3D</Radio.Button>
-                  <Radio.Button value="P&ID">P&ID</Radio.Button>
+                  <Radio.Button value="PNID">P&ID</Radio.Button>
                 </Radio.Group>
               </Header>
               <Route

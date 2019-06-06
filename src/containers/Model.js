@@ -2,11 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
-import { Route } from 'react-router-dom';
 import mixpanel from 'mixpanel-browser';
-import AssetDrawer from './AssetDrawer';
 
 class Model extends React.Component {
+  cache = {};
+
   state = {
     model: null,
   };
@@ -42,7 +42,7 @@ class Model extends React.Component {
   };
 
   render() {
-    const { modelId, revisionId, match, history } = this.props;
+    const { modelId, revisionId } = this.props;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Model3DViewer
@@ -50,24 +50,7 @@ class Model extends React.Component {
           revisionId={revisionId}
           onClick={this.onClick}
           onReady={this.onViewerReady}
-        />
-        <Route
-          path={`${match.url}/node/:nodeId`}
-          render={props => {
-            const { nodeId } = props.match.params;
-            this.selectNode(Number(nodeId));
-            return (
-              <AssetDrawer
-                loading
-                modelId={modelId}
-                revisionId={revisionId}
-                nodeId={Number(nodeId)}
-                onClose={this.onAssetClose}
-                match={match}
-                history={history}
-              />
-            );
-          }}
+          cache={this.cache}
         />
       </div>
     );

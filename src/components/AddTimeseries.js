@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Modal, Button } from 'antd';
+import { Modal, Button, message } from 'antd';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { addTimeseriesToAsset } from '../modules/timeseries';
@@ -23,6 +23,9 @@ class AddTimeseries extends React.Component {
         this.props.assetId
       );
     }
+    if (this.props.assetId === 7446334693628062) {
+      this.setState({ showFoundMore: true });
+    }
   };
 
   timeseriesFilter = timeseries => {
@@ -41,6 +44,37 @@ class AddTimeseries extends React.Component {
           </Button>,
         ]}
       >
+        <Modal
+          visible={this.state.showFoundMore}
+          title="Possible mapping rule detected"
+          onOk={() => {
+            message.info('Mapped 954 timeseries to assets.');
+            this.setState({ showFoundMore: false });
+            this.props.onClose();
+          }}
+          onCancel={() => {
+            this.setState({ showFoundMore: false });
+            this.props.onClose();
+          }}
+        >
+          Your previous map
+          <br />
+          <div style={{ backgroundColor: '#F2E7C7' }}>
+            13FV1234 ← IA_13FV1234_pos_CurrValue.Pct.CV
+          </div>
+          <br />
+          conforms to the general rule
+          <br />
+          <div style={{ backgroundColor: '#F2E7C7' }}>
+            #X# ← IA_#X#_pos_CurrValue.Pct.CV
+          </div>
+          <br />
+          This rule can be used to map 954 more time series in the Dataset.
+          <br />
+          <br />
+          Do you want to apply it to all such cases?
+        </Modal>
+
         <TimeseriesSearch
           hideSelected
           onTimeserieSelectionChange={this.onTimeserieSelectionChange}
