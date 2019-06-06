@@ -35,7 +35,6 @@ export function fetchTypes() {
     );
 
     const types = result.data.data.items;
-    console.log('Got the types: ', types);
 
     dispatch({ type: SET_TYPES, payload: { items: types } });
   };
