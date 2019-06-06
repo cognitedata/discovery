@@ -6,6 +6,8 @@ import { Route } from 'react-router-dom';
 import mixpanel from 'mixpanel-browser';
 import AssetSearch from '../components/AssetSearch';
 import AssetViewer from './AssetViewer';
+import { fetchTypes } from '../modules/types';
+
 // 13FV1234 is useful asset
 const { Content, Header, Sider, Footer } = Layout;
 
@@ -13,6 +15,10 @@ class Main extends React.Component {
   state = {
     view: '3d',
   };
+
+  componentDidMount() {
+    this.props.doFetchTypes();
+  }
 
   onAssetClick = (asset, query) => {
     const { match, history } = this.props;
@@ -105,6 +111,7 @@ Main.propTypes = {
     pathname: PropTypes.string.isRequired,
     search: PropTypes.string,
   }).isRequired,
+  doFetchTypes: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (_, ownProps) => {
@@ -112,4 +119,11 @@ const mapStateToProps = (_, ownProps) => {
   return {};
 };
 
-export default connect(mapStateToProps)(Main);
+const mapDispatchToProps = dispatch => ({
+  doFetchTypes: (...args) => dispatch(fetchTypes(...args)),
+});
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Main);
