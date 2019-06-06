@@ -1,8 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { AssetMeta, Model3DViewer } from '@cognite/gearbox';
-import { Spin } from 'antd';
+import { Model3DViewer } from '@cognite/gearbox';
 import * as THREE from 'three';
 import mixpanel from 'mixpanel-browser';
 import * as sdk from '@cognite/sdk';
