@@ -113,7 +113,7 @@ class AssetDrawer extends React.Component {
               title="Are you sure？"
               okText="Yes"
               cancelText="No"
-              onConfirm={() => this.props.doRemoveTypeFromAsset(type.id, asset)}
+              onConfirm={() => this.props.doRemoveTypeFromAsset(type, asset)}
             >
               <Button type="danger">
                 <Icon type="delete" />

@@ -1,9 +1,11 @@
 import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
+import { message } from 'antd';
 // TODO(anders.hafreager) Fix this cycle import
 // eslint-disable-next-line import/no-cycle
 import { fetchAsset } from './assets';
+import { fetchEvents, createEvent } from './events';
 
 // Constants
 export const SET_TYPES = 'types/SET_TYPES';
@@ -27,12 +29,12 @@ export const Types = PropTypes.exact({
 });
 
 // Functions
-export function removeTypeFromAsset(typeId, asset) {
+export function removeTypeFromAsset(type, asset) {
   return async dispatch => {
     const body = {
       id: asset.id,
       types: {
-        remove: [typeId],
+        remove: [type.id],
       },
     };
 
@@ -44,10 +46,16 @@ export function removeTypeFromAsset(typeId, asset) {
       { data: body }
     );
 
+    createEvent('removed_type', 'Removed type', [asset.id], {
+      removed: JSON.stringify({ id: type.id, name: type.name }),
+    });
+
+    message.info(`Removed ${type.name} from ${asset.name}.`);
     dispatch(fetchAsset(asset.id));
+    dispatch(fetchEvents(asset.id));
   };
 }
-export function addTypesToAsset(typeIds, asset, types) {
+export function addTypesToAsset(typeIds, asset) {
   return async dispatch => {
     const formattedTypes = typeIds.map(id => ({
       id,
@@ -78,7 +86,13 @@ export function addTypesToAsset(typeIds, asset, types) {
       { data: body }
     );
 
+    createEvent('added_type', 'Added type', [asset.id], {
+      added: JSON.stringify({ typeIds }),
+    });
+
+    message.info(`Added ${typeIds} types to ${asset.name}.`);
     dispatch(fetchAsset(asset.id));
+    dispatch(fetchEvents(asset.id));
   };
 }
 

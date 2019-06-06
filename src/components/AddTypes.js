@@ -13,11 +13,7 @@ class AddTypes extends React.Component {
   selectedIds = [];
 
   addToAsset = () => {
-    this.props.doAddTypesToAsset(
-      this.selectedIds,
-      this.props.asset,
-      this.props.types
-    );
+    this.props.doAddTypesToAsset(this.selectedIds, this.props.asset);
   };
 
   typesChanged = change => {
