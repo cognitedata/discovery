@@ -5,10 +5,10 @@ import { SVGViewer, Model3DViewer } from '@cognite/gearbox';
 import * as THREE from 'three';
 import mixpanel from 'mixpanel-browser';
 import * as sdk from '@cognite/sdk';
+import styled from 'styled-components';
 import { getAsset, selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 import LoadingScreen from '../components/LoadingScreen';
-import PNIDViewer from './PNIDViewer';
 
 import {
   findAssetIdFromMappings,
@@ -17,6 +17,31 @@ import {
   AssetMappings,
 } from '../modules/assetmappings';
 
+const StyledSVGViewerContainer = styled.div`
+  height: 100%;
+  padding-right: 400px;
+  padding-top: 50px;
+  .myCoolThing {
+    outline: auto 2px #3838ff;
+    transition: all 0.2s ease;
+    > {
+      text {
+        stroke: #3838ff;
+        fill: #3838ff;
+        transition: all 0.2s ease;
+        text-decoration: none;
+      }
+      path {
+        stroke: #3838ff;
+        transition: all 0.2s ease;
+      }
+    }
+    &:hover,
+    &:focus {
+      outline: auto 2px #36a2c2;
+    }
+  }
+`;
 const cache = {};
 let isSelectingSoon = false;
 
@@ -125,7 +150,7 @@ class AssetViewer extends React.Component {
     this.getAssetMappingsForNodeId(nodeId);
   };
 
-  on3DReady = (viewer, model, revision) => {
+  on3DReady = (viewer, model) => {
     const { nodeId } = this.state;
     this.viewer = viewer;
     this.model = model;
@@ -239,7 +264,7 @@ class AssetViewer extends React.Component {
           </div>
         )}
         {this.props.view === 'PNID' && (
-          <div style={{ height: '100%', paddingRight: 400, paddingTop: 50 }}>
+          <StyledSVGViewerContainer>
             <SVGViewer
               documentId={8910925076675219}
               title="Title"
@@ -248,14 +273,23 @@ class AssetViewer extends React.Component {
                 if (asset) {
                   return getTextFromMetadataNode(metadata) === asset.name;
                 }
+                return false;
               }}
+              metadataClassesConditions={[
+                {
+                  condition: node => {
+                    return getTextFromMetadataNode(node) === '13PST1233';
+                  },
+                  className: 'myCoolThing',
+                },
+              ]}
               handleItemClick={item => {
                 window.item = item;
                 const name = window.item.children[0].children[0].innerHTML;
                 this.searchAndSelectAssetName(name);
               }}
             />
-          </div>
+          </StyledSVGViewerContainer>
         )}
         {asset != null && <AssetDrawer loading asset={asset} />}
       </div>
