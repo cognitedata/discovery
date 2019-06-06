@@ -46,7 +46,7 @@ export function searchForAsset(query) {
 }
 
 let requestedAssetIds = {};
-export function getAsset(assetId) {
+export function fetchAsset(assetId) {
   return async dispatch => {
     // Skip if we did it before
     if (requestedAssetIds[assetId] !== undefined) {
