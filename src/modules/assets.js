@@ -2,6 +2,7 @@ import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import { message } from 'antd';
+// eslint-disable-next-line import/no-cycle
 import { Type } from './types';
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';

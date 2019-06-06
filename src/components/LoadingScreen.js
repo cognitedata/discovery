@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Progress, Tooltip } from 'antd';
+import { Modal, Progress } from 'antd';
 import styled from 'styled-components';
 
 const FlexDiv = styled.div`

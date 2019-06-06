@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Layout, Radio } from 'antd';
 import { Route } from 'react-router-dom';
-import mixpanel from 'mixpanel-browser';
 import AssetSearch from '../components/AssetSearch';
 import AssetViewer from './AssetViewer';
 import { fetchTypes } from '../modules/types';
@@ -50,7 +49,6 @@ class Main extends React.Component {
               style={{
                 overflow: 'auto',
                 height: '100vh',
-                background: '#fff',
               }}
             >
               <AssetSearch
@@ -114,8 +112,7 @@ Main.propTypes = {
   doFetchTypes: PropTypes.func.isRequired,
 };
 
-const mapStateToProps = (_, ownProps) => {
-  // const {  } = ownProps.match.params;
+const mapStateToProps = () => {
   return {};
 };
 

@@ -46,7 +46,7 @@ class AssetDrawer extends React.Component {
     doFetchEvents(asset.id);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     const { doFetchTimeseries, doFetchEvents, asset } = this.props;
     if (prevProps.asset !== asset) {
       doFetchTimeseries(asset.id);

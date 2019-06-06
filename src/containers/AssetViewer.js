@@ -102,7 +102,7 @@ class AssetViewer extends React.Component {
     this.getAssetMappingsForNodeId(nodeId);
   };
 
-  on3DReady = (viewer, model, revision) => {
+  on3DReady = (viewer, model) => {
     const { nodeId } = this.state;
     this.viewer = viewer;
     this.model = model;

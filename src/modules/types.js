@@ -39,7 +39,7 @@ export function removeTypeFromAsset(type, asset) {
     };
 
     const { project } = sdk.configure({});
-    const result = await sdk.rawPost(
+    await sdk.rawPost(
       `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${
         asset.id
       }/update`,
@@ -79,7 +79,7 @@ export function addTypesToAsset(typeIds, asset) {
     };
 
     const { project } = sdk.configure({});
-    const result = await sdk.rawPost(
+    await sdk.rawPost(
       `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${
         asset.id
       }/update`,
