@@ -22,6 +22,7 @@ class AssetViewer extends React.Component {
     nodeId: undefined,
     modelId: 2495544803289093,
     revisionId: 3041181389296996,
+    documentId: 8910925076675219,
   };
 
   componentDidMount() {
@@ -199,7 +200,13 @@ class AssetViewer extends React.Component {
 
   renderPNID() {
     const asset = this.getAsset();
-    return <PNIDViewer documentId={8910925076675219} asset={asset} />;
+    return (
+      <PNIDViewer
+        documentId={this.state.documentId}
+        asset={asset}
+        onAssetIdChange={this.props.onAssetIdChange}
+      />
+    );
   }
 
   render() {

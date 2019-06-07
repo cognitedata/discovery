@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
+import * as sdk from '@cognite/sdk';
 import { Asset } from '../modules/assets';
 
 const getTextFromMetadataNode = node =>
@@ -34,6 +35,15 @@ const StyledSVGViewerContainer = styled.div`
 `;
 
 class PNIDViewer extends React.Component {
+  searchAndSelectAssetName = async name => {
+    const result = await sdk.Assets.search({ name });
+    const exactMatches = result.items.filter(asset => asset.name === name);
+    if (exactMatches.length > 0) {
+      const assetId = exactMatches[0].id;
+      this.props.onAssetIdChange(assetId);
+    }
+  };
+
   render() {
     const { asset, documentId } = this.props;
     return (
@@ -48,17 +58,16 @@ class PNIDViewer extends React.Component {
             }
             return false;
           }}
-          metadataClassesConditions={[
-            {
-              condition: node => {
-                return getTextFromMetadataNode(node) === '13PST1233';
-              },
-              className: 'myCoolThing',
-            },
-          ]}
+          // metadataClassesConditions={[
+          //   {
+          //     condition: node => {
+          //       return getTextFromMetadataNode(node) === '13PST1233';
+          //     },
+          //     className: 'myCoolThing',
+          //   },
+          // ]}
           handleItemClick={item => {
-            window.item = item;
-            const name = window.item.children[0].children[0].innerHTML;
+            const name = item.children[0].children[0].innerHTML;
             this.searchAndSelectAssetName(name);
           }}
         />
@@ -68,8 +77,13 @@ class PNIDViewer extends React.Component {
 }
 
 PNIDViewer.propTypes = {
-  asset: Asset.isRequired,
+  asset: Asset,
   documentId: PropTypes.number.isRequired,
+  onAssetIdChange: PropTypes.func.isRequired,
+};
+
+PNIDViewer.defaultProps = {
+  asset: undefined,
 };
 
 export default PNIDViewer;
