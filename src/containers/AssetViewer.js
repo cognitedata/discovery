@@ -5,6 +5,7 @@ import { Model3DViewer } from '@cognite/gearbox';
 import * as THREE from 'three';
 import mixpanel from 'mixpanel-browser';
 import * as sdk from '@cognite/sdk';
+import PNIDViewer from '../components/PNIDViewer';
 import { fetchAsset, selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 import LoadingScreen from '../components/LoadingScreen';
@@ -196,6 +197,11 @@ class AssetViewer extends React.Component {
     );
   }
 
+  renderPNID() {
+    const asset = this.getAsset();
+    return <PNIDViewer documentId={8910925076675219} asset={asset} />;
+  }
+
   render() {
     const asset = this.getAsset();
     return (
@@ -203,6 +209,7 @@ class AssetViewer extends React.Component {
         {this.props.view === '3d' &&
           this.state.boundingBox != null &&
           this.render3D()}
+        {this.props.view === 'PNID' && this.renderPNID()}
         {asset != null && <AssetDrawer loading asset={asset} />}
       </div>
     );
