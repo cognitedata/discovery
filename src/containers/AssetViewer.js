@@ -175,28 +175,34 @@ class AssetViewer extends React.Component {
     return nodeId;
   }
 
+  render3D() {
+    return (
+      <div style={{ height: '100%', paddingRight: 400 }}>
+        <>
+          {this.state.progress && (
+            <LoadingScreen progress={this.state.progress} />
+          )}
+          <Model3DViewer
+            modelId={this.state.modelId}
+            revisionId={this.state.revisionId}
+            boundingBox={this.state.boundingBox}
+            onClick={this.on3DClick}
+            onReady={this.on3DReady}
+            onProgress={this.on3DProgress}
+            onComplete={this.on3DComplete}
+          />
+        </>
+      </div>
+    );
+  }
+
   render() {
     const asset = this.getAsset();
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        {this.props.view === '3d' && this.state.boundingBox != null && (
-          <div style={{ height: '100%', paddingRight: 400 }}>
-            <>
-              {this.state.progress && (
-                <LoadingScreen progress={this.state.progress} />
-              )}
-              <Model3DViewer
-                modelId={this.state.modelId}
-                revisionId={this.state.revisionId}
-                boundingBox={this.state.boundingBox}
-                onClick={this.on3DClick}
-                onReady={this.on3DReady}
-                onProgress={this.on3DProgress}
-                onComplete={this.on3DComplete}
-              />
-            </>
-          </div>
-        )}
+        {this.props.view === '3d' &&
+          this.state.boundingBox != null &&
+          this.render3D()}
         {asset != null && <AssetDrawer loading asset={asset} />}
       </div>
     );
