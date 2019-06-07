@@ -5,7 +5,7 @@ import * as sdk from '@cognite/sdk';
 // Constants
 export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
 
-export function findAssetIdFromMappings(nodeId, mappings) {
+export function findBestMappingForNodeId(nodeId, mappings) {
   // See if there are any exact matches for this nodeId
   const assetIds = mappings
     .filter(mapping => mapping.nodeId === nodeId)
@@ -20,7 +20,7 @@ export function findAssetIdFromMappings(nodeId, mappings) {
     const filteredMappings = mappings.filter(
       mapping => mapping.assetId === assetId
     );
-    return filteredMappings[0].assetId;
+    return filteredMappings[0];
   }
 
   const filteredMappings = mappings.filter(
@@ -28,7 +28,7 @@ export function findAssetIdFromMappings(nodeId, mappings) {
   );
   if (filteredMappings.length > 0) {
     // The node has no direct mapping, choose the next parent
-    return findAssetIdFromMappings(
+    return findBestMappingForNodeId(
       filteredMappings[filteredMappings.length - 1].nodeId,
       filteredMappings
     );
@@ -87,7 +87,13 @@ export function getMappingsFromAssetId(modelId, revisionId, assetId) {
     });
 
     const mappings = result.items;
-    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { items: mappings } });
+    if (mappings.length === 0) {
+      return;
+    }
+
+    // Choose largest mapping
+    mappings.sort((a, b) => a.subtreeSize - b.subtreeSize);
+    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
   };
 }
 
@@ -98,14 +104,25 @@ export function getMappingsFromNodeId(modelId, revisionId, nodeId) {
     });
 
     const mappings = result.items;
-    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { items: mappings } });
+    if (mappings.length === 0) {
+      return;
+    }
+
+    const mapping = findBestMappingForNodeId(nodeId, mappings);
+    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping } });
   };
 }
 
 export const AssetMappings = PropTypes.exact({
-  items: PropTypes.arrayOf(
-    PropTypes.exact({
+  byNodeId: PropTypes.objectOf(
+    PropTypes.shape({
       assetId: PropTypes.number,
+      treeIndex: PropTypes.number,
+      subtreeSize: PropTypes.number,
+    })
+  ),
+  byAssetId: PropTypes.objectOf(
+    PropTypes.shape({
       nodeId: PropTypes.number,
       treeIndex: PropTypes.number,
       subtreeSize: PropTypes.number,
@@ -114,18 +131,19 @@ export const AssetMappings = PropTypes.exact({
 });
 
 // Reducer
-const initialState = {};
+const initialState = { byNodeId: {}, byAssetId: {} };
 
 export default function assetmappings(state = initialState, action) {
   switch (action.type) {
     case ADD_ASSET_MAPPINGS: {
-      const { items } = action.payload;
-      const existingMappings = state.items ? state.items : [];
-      const allMappingsArray = [...items, ...existingMappings];
-      const allMappings = [...new Set(allMappingsArray)];
+      const { mapping } = action.payload;
+      state.byNodeId[mapping.nodeId] = mapping;
+      state.byAssetId[mapping.assetId] = mapping;
+
       return {
         ...state,
-        items: allMappings,
+        byNodeId: state.byNodeId,
+        byAssetId: state.byAssetId,
       };
     }
     default:
@@ -142,4 +160,4 @@ export const actions = {
 
 // Selectors
 export const selectAssetMappings = state =>
-  state.assetMappings || { items: [] };
+  state.assetMappings || { byNodeId: {}, byAssetId: {} };
