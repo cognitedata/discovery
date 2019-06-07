@@ -1,0 +1,75 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+import styled from 'styled-components';
+import { SVGViewer } from '@cognite/gearbox';
+import { Asset } from '../modules/assets';
+
+const getTextFromMetadataNode = node =>
+  (node.textContent || '').replace(/\s/g, '');
+
+const StyledSVGViewerContainer = styled.div`
+  height: 100%;
+  padding-right: 400px;
+  padding-top: 50px;
+  .myCoolThing {
+    outline: auto 2px #3838ff;
+    transition: all 0.2s ease;
+    > {
+      text {
+        stroke: #3838ff;
+        fill: #3838ff;
+        transition: all 0.2s ease;
+        text-decoration: none;
+      }
+      path {
+        stroke: #3838ff;
+        transition: all 0.2s ease;
+      }
+    }
+    &:hover,
+    &:focus {
+      outline: auto 2px #36a2c2;
+    }
+  }
+`;
+
+class PNIDViewer extends React.Component {
+  render() {
+    const { asset, documentId } = this.props;
+    return (
+      <StyledSVGViewerContainer>
+        <SVGViewer
+          documentId={documentId}
+          title="Title"
+          description="Description"
+          isCurrentAsset={metadata => {
+            if (asset) {
+              return getTextFromMetadataNode(metadata) === asset.name;
+            }
+            return false;
+          }}
+          metadataClassesConditions={[
+            {
+              condition: node => {
+                return getTextFromMetadataNode(node) === '13PST1233';
+              },
+              className: 'myCoolThing',
+            },
+          ]}
+          handleItemClick={item => {
+            window.item = item;
+            const name = window.item.children[0].children[0].innerHTML;
+            this.searchAndSelectAssetName(name);
+          }}
+        />
+      </StyledSVGViewerContainer>
+    );
+  }
+}
+
+PNIDViewer.propTypes = {
+  asset: Asset.isRequired,
+  documentId: PropTypes.number.isRequired,
+};
+
+export default PNIDViewer;
