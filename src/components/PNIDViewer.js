@@ -50,9 +50,10 @@ class PNIDViewer extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     // Workaround https://github.com/cognitedata/gearbox.js/issues/300
     if (prevState.currentFile !== this.state.currentFile) {
+      const delay = this.state.currentFile ? 1000 : 50;
       setTimeout(() => {
         this.setState({ currentAsset: this.props.asset });
-      }, 500);
+      }, delay);
     }
 
     if (prevProps.asset !== this.props.asset) {
@@ -73,6 +74,7 @@ class PNIDViewer extends React.Component {
 
   renderSVGViewer() {
     const { currentAsset } = this.state;
+
     return (
       <StyledSVGViewerContainer>
         <SVGViewer
@@ -134,6 +136,7 @@ class PNIDViewer extends React.Component {
               type="link"
               onClick={() => {
                 this.setState({
+                  currentAsset: undefined, // due to bug described in componentDidUpdate
                   currentFile: { id: item.id, name: item.fileName },
                 });
               }}
