@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
+// import { Model3DViewer } from './Model3DViewer';
 import { THREE } from '@cognite/3d-viewer';
 import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
@@ -86,6 +87,10 @@ class Model3D extends React.Component {
   }
 
   getAssetIdForNodeId = nodeId => {
+    if (!nodeId) {
+      return null;
+    }
+
     if (this.props.assetMappings.byNodeId[nodeId]) {
       const mapping = this.props.assetMappings.byNodeId[nodeId];
       return mapping.assetId;
@@ -106,8 +111,13 @@ class Model3D extends React.Component {
 
   on3DComplete = () => {
     this.setState({ progress: undefined });
-    if (this.props.nodeId) {
-      this.select3DNode(this.props.nodeId);
+    let { nodeId } = this.props;
+    if (this.state.nodeId) {
+      ({ nodeId } = this.state);
+    }
+
+    if (nodeId) {
+      this.select3DNode(nodeId, false);
     }
   };
 
@@ -116,12 +126,10 @@ class Model3D extends React.Component {
   };
 
   on3DReady = (viewer, model) => {
-    const { nodeId } = this.state;
     this.viewer = viewer;
     this.model = model;
     window.viewer = viewer;
     window.model = model;
-    this.select3DNode(nodeId, false);
   };
 
   select3DNode = (nodeId, animate) => {
@@ -165,7 +173,7 @@ Model3D.propTypes = {
   modelId: PropTypes.number.isRequired,
   revisionId: PropTypes.number.isRequired,
   // eslint-disable-next-line react/forbid-prop-types
-  cache: PropTypes.object.isRequired,
+  cache: PropTypes.object,
   asset: Asset,
   nodeId: PropTypes.number,
   onAssetIdChange: PropTypes.func.isRequired,
@@ -178,6 +186,7 @@ Model3D.defaultProps = {
   assetMappings: { byNodeId: {}, byAssetId: {} },
   asset: undefined,
   nodeId: undefined,
+  cache: undefined,
 };
 
 const mapStateToProps = state => {
