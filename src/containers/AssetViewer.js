@@ -105,7 +105,7 @@ class AssetViewer extends React.Component {
 
   render() {
     const asset = this.getAsset();
-    const assetDrawerWidth = 275;
+    const { assetDrawerWidth } = this.props;
 
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
@@ -124,6 +124,7 @@ class AssetViewer extends React.Component {
 }
 
 AssetViewer.propTypes = {
+  assetDrawerWidth: PropTypes.number.isRequired,
   assetId: PropTypes.number.isRequired,
   assets: Assets.isRequired,
   show3D: PropTypes.bool.isRequired,

@@ -14,7 +14,7 @@ const getTextFromMetadataNode = node =>
 const ViewerContainer = styled.div`
   height: 100%;
   width: 100%;
-  padding-top: 50px;
+  padding-top: 75px;
 `;
 
 const StyledSVGViewerContainer = styled.div`

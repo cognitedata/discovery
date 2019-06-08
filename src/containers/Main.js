@@ -45,6 +45,7 @@ class Main extends React.Component {
 
   render() {
     const { match, history, location } = this.props;
+    const assetDrawerWidth = 275;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
@@ -71,7 +72,7 @@ class Main extends React.Component {
                   top: '0',
                 }}
               >
-                <div style={{ paddingRight: 400 }}>
+                <div style={{ paddingRight: assetDrawerWidth - 30 }}>
                   <Switch
                     checked={this.state.show3D}
                     checkedChildren="3D"
@@ -96,6 +97,7 @@ class Main extends React.Component {
                       show3D={this.state.show3D}
                       showPNID={this.state.showPNID}
                       onAssetIdChange={this.onAssetIdChange}
+                      assetDrawerWidth={assetDrawerWidth}
                     />
                   );
                 }}
