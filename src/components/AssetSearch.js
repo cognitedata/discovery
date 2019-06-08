@@ -1,7 +1,9 @@
+// Disable linting problems with <a>
+/* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Input, List, Button, Icon, Divider } from 'antd';
+import { Input, List, Divider } from 'antd';
 import queryString from 'query-string';
 import { searchForAsset, selectAssets, Assets } from '../modules/assets';
 
@@ -51,6 +53,7 @@ class AssetSearch extends React.Component {
             paddingLeft: 10,
             paddingRight: 10,
             paddingTop: 10,
+            paddingBottom: 10,
             width: '100%',
           }}
         >
@@ -68,19 +71,57 @@ class AssetSearch extends React.Component {
             }}
           />
         </div>
-        <Divider type="horizontal" />
+        <Divider
+          type="horizontal"
+          style={{ margin: 10, backgroundColor: '#333333' }}
+        />
         {assets && query !== '' && (
           <List
+            split={false}
             itemLayout="horizontal"
             dataSource={assets}
             renderItem={item => (
-              <List.Item>
+              <List.Item
+                style={{
+                  padding: 10,
+                  width: '100%',
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                }}
+              >
                 <List.Item.Meta
-                  title={<Button type="link">{item.name}</Button>}
+                  title={
+                    <div
+                      style={{
+                        paddingLeft: 10,
+                        color: 'rgb(255, 255, 255)',
+                        fontWeight: 'bold',
+                        fontSize: 12,
+                      }}
+                    >
+                      <a>{item.name.toUpperCase()}</a>
+                    </div>
+                  }
                   onClick={() =>
                     this.props.onAssetClick(item, this.state.query)
                   }
-                  description={item.description}
+                  description={
+                    <div
+                      style={{
+                        paddingLeft: 10,
+                        color: 'rgb(255, 255, 255)',
+                        fontSize: 12,
+                      }}
+                    >
+                      {item.description.toUpperCase()}
+                    </div>
+                  }
+                  style={{
+                    background:
+                      item.id === this.props.assetId
+                        ? 'rgb(80, 80, 80)'
+                        : 'rgb(51, 51, 51)',
+                  }}
                 />
               </List.Item>
             )}
@@ -94,11 +135,16 @@ class AssetSearch extends React.Component {
 AssetSearch.propTypes = {
   doSearchForAsset: PropTypes.func.isRequired,
   assets: Assets.isRequired,
+  assetId: PropTypes.number,
   onAssetClick: PropTypes.func.isRequired,
   location: PropTypes.shape({
     pathname: PropTypes.string.isRequired,
     search: PropTypes.string,
   }).isRequired,
+};
+
+AssetSearch.defaultProps = {
+  assetId: undefined,
 };
 
 const mapStateToProps = state => {

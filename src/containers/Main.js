@@ -44,6 +44,7 @@ class Main extends React.Component {
       pathname: `${match.url}/asset/${asset.id}`,
       search: `?query=${query}`,
     });
+    this.setState({ assetId: asset.id });
   };
 
   onAssetIdChange = assetId => {
@@ -74,12 +75,14 @@ class Main extends React.Component {
               style={{
                 overflow: 'auto',
                 height: '100vh',
+                background: 'rgb(38, 38, 38)',
               }}
             >
               <AssetSearch
                 history={history}
                 location={location}
                 onAssetClick={this.onAssetClick}
+                assetId={this.state.assetId}
               />
             </Sider>
             <Content>
