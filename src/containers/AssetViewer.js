@@ -8,7 +8,7 @@ import PNIDViewer from '../components/PNIDViewer';
 import { fetchAsset, selectAssets, Assets } from '../modules/assets';
 import AssetDrawer from './AssetDrawer';
 import {
-  getMappingsFromAssetId,
+  fetchMappingsFromAssetId,
   selectAssetMappings,
   AssetMappings,
 } from '../modules/assetmappings';
@@ -31,10 +31,31 @@ class AssetViewer extends React.Component {
 
   componentDidMount() {
     this.loadAssetIfMissing();
+    this.getNodeId(true);
   }
 
   componentDidUpdate() {
     this.loadAssetIfMissing();
+    this.getNodeId(true);
+  }
+
+  getNodeId(fetchIfMissing) {
+    if (!this.props.assetId) {
+      return null;
+    }
+
+    const { assetId, assetMappings } = this.props;
+    if (assetMappings.byAssetId[assetId]) {
+      const mapping = assetMappings.byAssetId[assetId];
+      return mapping.nodeId;
+    }
+
+    if (fetchIfMissing) {
+      const { modelId, revisionId } = this.state;
+      this.props.doFetchMappingsFromAssetId(modelId, revisionId, assetId);
+    }
+
+    return null;
   }
 
   getAsset() {
@@ -49,22 +70,6 @@ class AssetViewer extends React.Component {
     return asset;
   }
 
-  getNodeIdForAssetId(assetId) {
-    console.log('this.props.assetMappings: ', this.props.assetMappings);
-    if (this.props.assetMappings.byAssetId[assetId]) {
-      const mapping = this.props.assetMappings.byAssetId[assetId];
-      return mapping.nodeId;
-    }
-
-    this.props.doGetMappingsFromAssetId(
-      this.state.modelId,
-      this.state.revisionId,
-      assetId
-    );
-
-    return null;
-  }
-
   loadAssetIfMissing() {
     const asset = this.getAsset();
     if (this.props.assetId && !asset) {
@@ -73,11 +78,7 @@ class AssetViewer extends React.Component {
   }
 
   render3D() {
-    const asset = this.getAsset();
-    let nodeId;
-    if (asset) {
-      nodeId = this.getNodeIdForAssetId(asset.id);
-    }
+    const nodeId = this.getNodeId(false);
     return (
       <Model3D
         modelId={this.state.modelId}
@@ -128,7 +129,7 @@ AssetViewer.propTypes = {
   showPNID: PropTypes.bool.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
   doFetchAsset: PropTypes.func.isRequired,
-  doGetMappingsFromAssetId: PropTypes.func.isRequired,
+  doFetchMappingsFromAssetId: PropTypes.func.isRequired,
   assetMappings: AssetMappings,
 };
 
@@ -145,8 +146,8 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => ({
   doFetchAsset: (...args) => dispatch(fetchAsset(...args)),
-  doGetMappingsFromAssetId: (...args) =>
-    dispatch(getMappingsFromAssetId(...args)),
+  doFetchMappingsFromAssetId: (...args) =>
+    dispatch(fetchMappingsFromAssetId(...args)),
 });
 
 export default connect(

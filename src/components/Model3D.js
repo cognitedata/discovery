@@ -8,8 +8,8 @@ import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
 import { Asset } from '../modules/assets';
 import {
-  getMappingsFromNodeId,
-  getMappingsFromAssetId,
+  fetchMappingsFromNodeId,
+  fetchMappingsFromAssetId,
   selectAssetMappings,
   AssetMappings,
 } from '../modules/assetmappings';
@@ -20,7 +20,9 @@ class Model3D extends React.Component {
   cache = {};
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.nodeId !== this.state.nodeId) {
+    if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
+      this.select3DNode(this.state.nodeId, true);
+
       const assetId = this.getAssetIdForNodeId(this.state.nodeId);
       if (assetId) {
         this.props.onAssetIdChange(assetId);
@@ -41,10 +43,8 @@ class Model3D extends React.Component {
         this.model.deselectAllNodes();
       }
 
-      if (this.state.nodeId !== undefined) {
-        if (this.model && this.model._getTreeIndex(this.state.nodeId) != null) {
-          this.select3DNode(this.state.nodeId, true);
-        }
+      if (this.model && this.model._getTreeIndex(this.props.nodeId) != null) {
+        this.select3DNode(this.props.nodeId, true);
       }
     }
   }
@@ -71,21 +71,6 @@ class Model3D extends React.Component {
   //   this.setState({ boundingBox });
   // }
 
-  getNodeIdForAssetId(assetId) {
-    if (this.props.assetMappings.byAssetId[assetId]) {
-      const mapping = this.props.assetMappings.byAssetId[assetId];
-      return mapping.nodeId;
-    }
-
-    this.props.doGetMappingsFromAssetId(
-      this.props.modelId,
-      this.props.revisionId,
-      assetId
-    );
-
-    return null;
-  }
-
   getAssetIdForNodeId = nodeId => {
     if (!nodeId) {
       return null;
@@ -96,7 +81,7 @@ class Model3D extends React.Component {
       return mapping.assetId;
     }
 
-    this.props.doGetMappingsFromNodeId(
+    this.props.doFetchMappingsFromNodeId(
       this.props.modelId,
       this.props.revisionId,
       nodeId
@@ -177,8 +162,8 @@ Model3D.propTypes = {
   asset: Asset,
   nodeId: PropTypes.number,
   onAssetIdChange: PropTypes.func.isRequired,
-  doGetMappingsFromAssetId: PropTypes.func.isRequired,
-  doGetMappingsFromNodeId: PropTypes.func.isRequired,
+  doFetchMappingsFromAssetId: PropTypes.func.isRequired,
+  doFetchMappingsFromNodeId: PropTypes.func.isRequired,
   assetMappings: AssetMappings,
 };
 
@@ -196,10 +181,10 @@ const mapStateToProps = state => {
 };
 
 const mapDispatchToProps = dispatch => ({
-  doGetMappingsFromAssetId: (...args) =>
-    dispatch(getMappingsFromAssetId(...args)),
-  doGetMappingsFromNodeId: (...args) =>
-    dispatch(getMappingsFromNodeId(...args)),
+  doFetchMappingsFromAssetId: (...args) =>
+    dispatch(fetchMappingsFromAssetId(...args)),
+  doFetchMappingsFromNodeId: (...args) =>
+    dispatch(fetchMappingsFromNodeId(...args)),
 });
 
 export default connect(

@@ -80,7 +80,7 @@ export function getAllAssetMappings(modelId, revisionId, assetId) {
   };
 }
 
-export function getMappingsFromAssetId(modelId, revisionId, assetId) {
+export function fetchMappingsFromAssetId(modelId, revisionId, assetId) {
   return async dispatch => {
     const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
       assetId,
@@ -97,7 +97,7 @@ export function getMappingsFromAssetId(modelId, revisionId, assetId) {
   };
 }
 
-export function getMappingsFromNodeId(modelId, revisionId, nodeId) {
+export function fetchMappingsFromNodeId(modelId, revisionId, nodeId) {
   return async dispatch => {
     const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
       nodeId,
