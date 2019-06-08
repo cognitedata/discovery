@@ -47,6 +47,21 @@ class PNIDViewer extends React.Component {
     currentFile: undefined,
   };
 
+  componentDidUpdate(prevProps, prevState) {
+    // Workaround https://github.com/cognitedata/gearbox.js/issues/300
+    if (prevState.currentFile !== this.state.currentFile) {
+      setTimeout(() => {
+        this.setState({ currentAsset: this.props.asset });
+      }, 500);
+    }
+
+    if (prevProps.asset !== this.props.asset) {
+      setTimeout(() => {
+        this.setState({ currentAsset: this.props.asset });
+      }, 100);
+    }
+  }
+
   searchAndSelectAssetName = async name => {
     const result = await sdk.Assets.search({ name });
     const exactMatches = result.items.filter(asset => asset.name === name);
@@ -57,8 +72,7 @@ class PNIDViewer extends React.Component {
   };
 
   renderSVGViewer() {
-    const { asset } = this.props;
-
+    const { currentAsset } = this.state;
     return (
       <StyledSVGViewerContainer>
         <SVGViewer
@@ -69,8 +83,8 @@ class PNIDViewer extends React.Component {
             this.setState({ currentFile: undefined });
           }}
           isCurrentAsset={metadata => {
-            if (asset) {
-              return getTextFromMetadataNode(metadata) === asset.name;
+            if (currentAsset) {
+              return getTextFromMetadataNode(metadata) === currentAsset.name;
             }
             return false;
           }}
@@ -120,7 +134,7 @@ class PNIDViewer extends React.Component {
               type="link"
               onClick={() => {
                 this.setState({
-                  currentFile: { id: item.id, title: item.fileName },
+                  currentFile: { id: item.id, name: item.fileName },
                 });
               }}
             >
