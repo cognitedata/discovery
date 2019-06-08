@@ -63,6 +63,10 @@ class PNIDViewer extends React.Component {
     }
   }
 
+  onClick(name) {
+    this.searchAndSelectAssetName(name);
+  }
+
   searchAndSelectAssetName = async name => {
     const result = await sdk.Assets.search({ name });
     const exactMatches = result.items.filter(asset => asset.name === name);
@@ -100,7 +104,7 @@ class PNIDViewer extends React.Component {
           // ]}
           handleItemClick={item => {
             const name = item.children[0].children[0].innerHTML;
-            this.searchAndSelectAssetName(name);
+            this.onClick(name);
           }}
         />
       </StyledSVGViewerContainer>
