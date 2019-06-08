@@ -2,13 +2,9 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ReactAuthProvider } from '@cognite/react-auth';
-import { Route, Redirect, Switch } from 'react-router-dom';
-import Model from './Model';
-import Models from './Models';
-import Revisions from './Revisions';
+import { Route, Switch } from 'react-router-dom';
 import Main from './Main';
 
-const revisionUrl = `models/:modelId/revisions/:revisionId`;
 const Auth = ({ tenant, match }) => (
   <ReactAuthProvider
     project={tenant}
@@ -18,21 +14,6 @@ const Auth = ({ tenant, match }) => (
     enableTokenCaching
   >
     <Switch>
-      <Redirect
-        exact
-        strict
-        from={`${match.url}/${revisionUrl}/`}
-        to={`${match.url}/${revisionUrl}`}
-      />
-      <Route
-        path={`${match.url}/models/:modelId/revisions/:revisionId`}
-        component={Model}
-      />
-      <Route
-        path={`${match.url}/models/:modelId/revisions`}
-        component={Revisions}
-      />
-      <Route path={`${match.url}/models`} component={Models} />
       <Route component={Main} />
     </Switch>
   </ReactAuthProvider>
