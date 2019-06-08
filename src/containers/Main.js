@@ -1,14 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Layout, Radio, Switch } from 'antd';
+import { Layout, Switch } from 'antd';
 import { Route } from 'react-router-dom';
 import AssetSearch from '../components/AssetSearch';
 import AssetViewer from './AssetViewer';
 import { fetchTypes } from '../modules/types';
 
 // 13FV1234 is useful asset
-const { Content, Header, Sider, Footer } = Layout;
+const { Content, Header, Sider } = Layout;
 
 class Main extends React.Component {
   state = {

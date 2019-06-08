@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import mixpanel from 'mixpanel-browser';
 import styled from 'styled-components';
 import Model3D from '../components/Model3D';
 import PNIDViewer from '../components/PNIDViewer';

@@ -2,14 +2,10 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
-// import { Model3DViewer } from './Model3DViewer';
-import { THREE } from '@cognite/3d-viewer';
-import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
 import { Asset } from '../modules/assets';
 import {
   fetchMappingsFromNodeId,
-  fetchMappingsFromAssetId,
   selectAssetMappings,
   AssetMappings,
 } from '../modules/assetmappings';
@@ -162,7 +158,6 @@ Model3D.propTypes = {
   asset: Asset,
   nodeId: PropTypes.number,
   onAssetIdChange: PropTypes.func.isRequired,
-  doFetchMappingsFromAssetId: PropTypes.func.isRequired,
   doFetchMappingsFromNodeId: PropTypes.func.isRequired,
   assetMappings: AssetMappings,
 };
@@ -181,8 +176,6 @@ const mapStateToProps = state => {
 };
 
 const mapDispatchToProps = dispatch => ({
-  doFetchMappingsFromAssetId: (...args) =>
-    dispatch(fetchMappingsFromAssetId(...args)),
   doFetchMappingsFromNodeId: (...args) =>
     dispatch(fetchMappingsFromNodeId(...args)),
 });
