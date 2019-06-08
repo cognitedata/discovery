@@ -2,18 +2,14 @@ import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 
+export const File = PropTypes.shape({
+  id: PropTypes.number,
+  fileName: PropTypes.string,
+  fileType: PropTypes.string,
+});
+
 export const Files = PropTypes.exact({
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number,
-      description: PropTypes.string,
-      metadata: PropTypes.any,
-      type: PropTypes.string,
-      subtype: PropTypes.string,
-      startTime: PropTypes.number,
-      endTime: PropTypes.number,
-    })
-  ),
+  byAssetId: PropTypes.objectOf(PropTypes.arrayOf(File)),
 });
 
 // Constants
@@ -42,7 +38,7 @@ export const actions = {
 };
 
 // Selectors
-export const selectFiles = state => state.files || { items: [] };
+export const selectFiles = state => state.files || { byAssetId: {} };
 
 export function fetchFiles(assetId) {
   return async dispatch => {
@@ -53,7 +49,6 @@ export function fetchFiles(assetId) {
         id: file.id,
         fileName: file.fileName,
         fileType: file.fileType,
-        metadata: file.metadata,
       }));
     dispatch({ type: ADD_FILES, payload: { assetId, items } });
   };
