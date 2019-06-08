@@ -235,7 +235,7 @@ class AssetDrawer extends React.Component {
         <Drawer
           title={asset.name ? asset.name : asset.id}
           placement="right"
-          width={400}
+          width={this.props.width}
           closable={false}
           visible
           mask={false}
@@ -262,6 +262,7 @@ AssetDrawer.propTypes = {
   timeseries: Timeseries.isRequired,
   events: Events.isRequired,
   types: Types.isRequired,
+  width: PropTypes.number.isRequired,
 };
 
 const mapStateToProps = state => {

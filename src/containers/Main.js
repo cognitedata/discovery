@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Layout, Radio } from 'antd';
+import { Layout, Radio, Switch } from 'antd';
 import { Route } from 'react-router-dom';
 import AssetSearch from '../components/AssetSearch';
 import AssetViewer from './AssetViewer';
@@ -12,7 +12,8 @@ const { Content, Header, Sider, Footer } = Layout;
 
 class Main extends React.Component {
   state = {
-    view: '3d',
+    show3D: true,
+    showPNID: false,
   };
 
   componentDidMount() {
@@ -34,9 +35,12 @@ class Main extends React.Component {
     });
   };
 
-  onViewChange = value => {
-    const view = value.target.value;
-    this.setState({ view });
+  on3DVisibleChange = value => {
+    this.setState({ show3D: value });
+  };
+
+  onPNIDVisibleChange = value => {
+    this.setState({ showPNID: value });
   };
 
   render() {
@@ -67,14 +71,20 @@ class Main extends React.Component {
                   top: '0',
                 }}
               >
-                <Radio.Group
-                  onChange={this.onViewChange}
-                  defaultValue="3d"
-                  style={{ paddingRight: 400 }}
-                >
-                  <Radio.Button value="3d">3D</Radio.Button>
-                  <Radio.Button value="PNID">P&ID</Radio.Button>
-                </Radio.Group>
+                <div style={{ paddingRight: 400 }}>
+                  <Switch
+                    checked={this.state.show3D}
+                    checkedChildren="3D"
+                    unCheckedChildren="3D"
+                    onChange={this.on3DVisibleChange}
+                  />
+                  <Switch
+                    checked={this.state.showPNID}
+                    checkedChildren="P&ID"
+                    unCheckedChildren="P&ID"
+                    onChange={this.onPNIDVisibleChange}
+                  />
+                </div>
               </Header>
               <Route
                 path={`${match.url}/asset/:assetId`}
@@ -83,7 +93,8 @@ class Main extends React.Component {
                   return (
                     <AssetViewer
                       assetId={Number(assetId)}
-                      view={this.state.view}
+                      show3D={this.state.show3D}
+                      showPNID={this.state.showPNID}
                       onAssetIdChange={this.onAssetIdChange}
                     />
                   );
@@ -91,7 +102,6 @@ class Main extends React.Component {
               />
             </Content>
           </Layout>
-          <Footer>footer</Footer>
         </Layout>
       </div>
     );

@@ -10,7 +10,7 @@ const getTextFromMetadataNode = node =>
 
 const StyledSVGViewerContainer = styled.div`
   height: 100%;
-  padding-right: 400px;
+  width: 100%;
   padding-top: 50px;
   .myCoolThing {
     outline: auto 2px #3838ff;

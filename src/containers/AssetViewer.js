@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import mixpanel from 'mixpanel-browser';
+import styled from 'styled-components';
 import Model3D from '../components/Model3D';
 import PNIDViewer from '../components/PNIDViewer';
 import { fetchAsset, selectAssets, Assets } from '../modules/assets';
@@ -12,6 +13,13 @@ import {
   AssetMappings,
 } from '../modules/assetmappings';
 
+const ViewerContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+`;
+
 class AssetViewer extends React.Component {
   cache = {};
 
@@ -21,15 +29,12 @@ class AssetViewer extends React.Component {
     documentId: 8910925076675219,
   };
 
-  componentDidUpdate(prevProps) {
-    const asset = this.getAsset();
-    if (this.props.assetId && !asset) {
-      this.props.doFetchAsset(this.props.assetId);
-    }
+  componentDidMount() {
+    this.loadAssetIfMissing();
+  }
 
-    if (prevProps.assetId !== this.props.assetId) {
-      mixpanel.context.track('Asset.changed', { asset });
-    }
+  componentDidUpdate() {
+    this.loadAssetIfMissing();
   }
 
   getAsset() {
@@ -60,6 +65,13 @@ class AssetViewer extends React.Component {
     return null;
   }
 
+  loadAssetIfMissing() {
+    const asset = this.getAsset();
+    if (this.props.assetId && !asset) {
+      this.props.doFetchAsset(this.props.assetId);
+    }
+  }
+
   render3D() {
     const asset = this.getAsset();
     let nodeId;
@@ -67,16 +79,14 @@ class AssetViewer extends React.Component {
       nodeId = this.getNodeIdForAssetId(asset.id);
     }
     return (
-      <div style={{ height: '100%', paddingRight: 400 }}>
-        <Model3D
-          modelId={this.state.modelId}
-          revisionId={this.state.revisionId}
-          asset={this.asset}
-          nodeId={nodeId}
-          onAssetIdChange={this.props.onAssetIdChange}
-          cache={this.cache}
-        />
-      </div>
+      <Model3D
+        modelId={this.state.modelId}
+        revisionId={this.state.revisionId}
+        asset={this.asset}
+        nodeId={nodeId}
+        onAssetIdChange={this.props.onAssetIdChange}
+        cache={this.cache}
+      />
     );
   }
 
@@ -93,11 +103,19 @@ class AssetViewer extends React.Component {
 
   render() {
     const asset = this.getAsset();
+    const assetDrawerWidth = 275;
+
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        {this.props.view === '3d' && this.render3D()}
-        {this.props.view === 'PNID' && this.renderPNID()}
-        {asset != null && <AssetDrawer loading asset={asset} />}
+        <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
+          <ViewerContainer>
+            {this.props.show3D && this.render3D()}
+            {this.props.showPNID && this.renderPNID()}
+          </ViewerContainer>
+          {asset != null && (
+            <AssetDrawer width={assetDrawerWidth} loading asset={asset} />
+          )}
+        </div>
       </div>
     );
   }
@@ -106,7 +124,8 @@ class AssetViewer extends React.Component {
 AssetViewer.propTypes = {
   assetId: PropTypes.number.isRequired,
   assets: Assets.isRequired,
-  view: PropTypes.string.isRequired,
+  show3D: PropTypes.bool.isRequired,
+  showPNID: PropTypes.bool.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
   doFetchAsset: PropTypes.func.isRequired,
   doGetMappingsFromAssetId: PropTypes.func.isRequired,
