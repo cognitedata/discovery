@@ -113,7 +113,7 @@ class AssetSearch extends React.Component {
                         fontSize: 12,
                       }}
                     >
-                      {item.description.toUpperCase()}
+                      {item.description ? item.description.toUpperCase() : ''}
                     </div>
                   }
                   style={{
