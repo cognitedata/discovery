@@ -55,17 +55,25 @@ export function removeTypeFromAsset(type, asset) {
     dispatch(fetchEvents(asset.id));
   };
 }
-export function addTypesToAsset(typeIds, asset) {
+export function addTypesToAsset(typeIds, asset, allTypes) {
   return async dispatch => {
+    // Convert allTypes array to object with id as key
+    const typesById = allTypes.reduce((obj, type) => {
+      obj[type.id] = type;
+      return obj;
+    }, {});
+
+    // We here assume that we have the two fields confidence and source on all types
     const formattedTypes = typeIds.map(id => ({
       id,
       fields: [
         {
-          id: 6545982454552263,
+          id: typesById[id].fields.filter(type => type.name === 'confidence')[0]
+            .id,
           value: 1.0,
         },
         {
-          id: 6199669604428227,
+          id: typesById[id].fields.filter(type => type.name === 'source')[0].id,
           value: 'expert',
         },
       ],
