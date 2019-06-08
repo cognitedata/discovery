@@ -113,9 +113,9 @@ export function fetchTypes() {
       `https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`
     );
 
-    const types_ = result.data.data.items;
+    const { items } = result.data.data;
 
-    dispatch({ type: SET_TYPES, payload: { items: types_ } });
+    dispatch({ type: SET_TYPES, payload: { items } });
   };
 }
 
