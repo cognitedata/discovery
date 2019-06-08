@@ -83,7 +83,6 @@ class AssetViewer extends React.Component {
       <Model3D
         modelId={this.state.modelId}
         revisionId={this.state.revisionId}
-        asset={this.asset}
         nodeId={nodeId}
         onAssetIdChange={this.props.onAssetIdChange}
         cache={this.cache}

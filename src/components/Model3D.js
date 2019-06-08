@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
 import { message } from 'antd';
 import LoadingScreen from './LoadingScreen';
-import { Asset } from '../modules/assets';
 import {
   fetchMappingsFromNodeId,
   selectAssetMappings,
@@ -50,7 +49,7 @@ class Model3D extends React.Component {
       }
 
       if (this.model && this.model._getTreeIndex(this.props.nodeId) != null) {
-        this.selectNode(this.props.nodeId, true);
+        this.selectNode(this.props.nodeId, true, 500);
       }
     }
   }
@@ -108,7 +107,7 @@ class Model3D extends React.Component {
     }
 
     if (nodeId) {
-      this.selectNode(nodeId, false);
+      this.selectNode(nodeId, true, 0);
     }
   };
 
@@ -123,23 +122,16 @@ class Model3D extends React.Component {
     window.model = model;
   };
 
-  selectNode = (nodeId, animate) => {
+  selectNode = (nodeId, animate, duration = 500) => {
     this.model.deselectAllNodes();
     this.model.selectNode(nodeId);
     const boundingBox = this.model.getBoundingBox(nodeId);
-    const duration = animate ? 500 : 0;
-    this.viewer.fitCameraToBoundingBox(boundingBox, duration);
+    if (animate) {
+      this.viewer.fitCameraToBoundingBox(boundingBox, duration);
+    }
   };
 
-  routerWillLeave() {
-    return false;
-  }
-
   render() {
-    let assetId;
-    if (this.props.asset) {
-      assetId = assetId.id;
-    }
     return (
       <>
         {this.state.progress && (
@@ -153,7 +145,6 @@ class Model3D extends React.Component {
           onProgress={this.onProgress}
           onComplete={this.onComplete}
           cache={this.props.cache}
-          assetId={assetId}
         />
       </>
     );
@@ -165,7 +156,6 @@ Model3D.propTypes = {
   revisionId: PropTypes.number.isRequired,
   // eslint-disable-next-line react/forbid-prop-types
   cache: PropTypes.object,
-  asset: Asset,
   nodeId: PropTypes.number,
   onAssetIdChange: PropTypes.func.isRequired,
   doFetchMappingsFromNodeId: PropTypes.func.isRequired,
@@ -174,7 +164,6 @@ Model3D.propTypes = {
 
 Model3D.defaultProps = {
   assetMappings: { byNodeId: {}, byAssetId: {} },
-  asset: undefined,
   nodeId: undefined,
   cache: undefined,
 };
