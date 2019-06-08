@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import Model3D from '../components/Model3D';
 import PNIDViewer from '../components/PNIDViewer';
 import { fetchAsset, selectAssets, Assets } from '../modules/assets';
+import { fetchFiles } from '../modules/files';
 import AssetDrawer from './AssetDrawer';
 import {
   fetchMappingsFromAssetId,
@@ -30,20 +31,20 @@ class AssetViewer extends React.Component {
   };
 
   componentDidMount() {
+    this.props.doFetchFiles(this.props.assetId);
     this.loadAssetIfMissing();
     this.getNodeId(true);
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
+    if (prevProps.assetId !== this.props.assetId) {
+      this.props.doFetchFiles(this.props.assetId);
+    }
     this.loadAssetIfMissing();
     this.getNodeId(true);
   }
 
   getNodeId(fetchIfMissing) {
-    if (!this.props.assetId) {
-      return null;
-    }
-
     const { assetId, assetMappings } = this.props;
     if (assetMappings.byAssetId[assetId]) {
       const mapping = assetMappings.byAssetId[assetId];
@@ -72,7 +73,7 @@ class AssetViewer extends React.Component {
 
   loadAssetIfMissing() {
     const asset = this.getAsset();
-    if (this.props.assetId && !asset) {
+    if (!asset) {
       this.props.doFetchAsset(this.props.assetId);
     }
   }
@@ -129,6 +130,7 @@ AssetViewer.propTypes = {
   showPNID: PropTypes.bool.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
   doFetchAsset: PropTypes.func.isRequired,
+  doFetchFiles: PropTypes.func.isRequired,
   doFetchMappingsFromAssetId: PropTypes.func.isRequired,
   assetMappings: AssetMappings,
 };
@@ -146,6 +148,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => ({
   doFetchAsset: (...args) => dispatch(fetchAsset(...args)),
+  doFetchFiles: (...args) => dispatch(fetchFiles(...args)),
   doFetchMappingsFromAssetId: (...args) =>
     dispatch(fetchMappingsFromAssetId(...args)),
 });
