@@ -55,28 +55,15 @@ export function removeTypeFromAsset(type, asset) {
     dispatch(fetchEvents(asset.id));
   };
 }
-export function addTypesToAsset(typeIds, asset, allTypes) {
+export function addTypesToAsset(selectedTypes, asset) {
   return async dispatch => {
-    // Convert allTypes array to object with id as key
-    const typesById = allTypes.reduce((obj, type) => {
-      obj[type.id] = type;
-      return obj;
-    }, {});
-
     // We here assume that we have the two fields confidence and source on all types
-    const formattedTypes = typeIds.map(id => ({
-      id,
-      fields: [
-        {
-          id: typesById[id].fields.filter(type => type.name === 'confidence')[0]
-            .id,
-          value: 1.0,
-        },
-        {
-          id: typesById[id].fields.filter(type => type.name === 'source')[0].id,
-          value: 'expert',
-        },
-      ],
+    const formattedTypes = selectedTypes.map(type => ({
+      id: type.id,
+      fields: type.fields.map(field => ({
+        id: field.id,
+        value: field.name === 'confidence' ? 1.0 : 'expert',
+      })),
     }));
 
     const body = {
@@ -95,10 +82,10 @@ export function addTypesToAsset(typeIds, asset, allTypes) {
     );
 
     createEvent('added_type', 'Added type', [asset.id], {
-      added: JSON.stringify({ typeIds }),
+      added: JSON.stringify({ types: selectedTypes }),
     });
 
-    message.info(`Added ${typeIds} types to ${asset.name}.`);
+    message.info(`Added ${selectedTypes.length} types to ${asset.name}.`);
     dispatch(fetchAsset(asset.id));
     dispatch(fetchEvents(asset.id));
   };

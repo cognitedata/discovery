@@ -13,15 +13,17 @@ class AddTypes extends React.Component {
   selectedIds = [];
 
   addToAsset = () => {
-    this.props.doAddTypesToAsset(
-      this.selectedIds,
-      this.props.asset,
-      this.props.types
-    );
+    this.props.doAddTypesToAsset(this.selectedTypes, this.props.asset);
   };
 
   typesChanged = change => {
-    this.selectedIds = change;
+    // Convert allTypes array to object with id as key
+    const typesByName = this.props.types.reduce((obj, type) => {
+      obj[type.name] = type;
+      return obj;
+    }, {});
+
+    this.selectedTypes = change.map(name => typesByName[name]);
   };
 
   render() {
@@ -48,7 +50,9 @@ class AddTypes extends React.Component {
           onChange={this.typesChanged}
         >
           {nonUsedTypes.map(type => (
-            <Option key={type.id}>{type.description}</Option>
+            <Option key={type.id} value={type.name}>
+              {type.description}
+            </Option>
           ))}
         </Select>
         ,
