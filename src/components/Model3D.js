@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
+import { message } from 'antd';
 import LoadingScreen from './LoadingScreen';
 import { Asset } from '../modules/assets';
 import {
@@ -11,13 +12,13 @@ import {
 } from '../modules/assetmappings';
 
 class Model3D extends React.Component {
-  state = {};
+  state = { hasWarnedAboutNode: {} };
 
   cache = {};
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
-      this.selectNode(this.state.nodeId, true);
+      // this.selectNode(this.state.nodeId, true);
 
       const assetId = this.getAssetIdForNodeId(this.state.nodeId);
       if (assetId) {
@@ -30,6 +31,15 @@ class Model3D extends React.Component {
         const assetId = this.getAssetIdForNodeId(this.state.nodeId);
         if (assetId) {
           this.props.onAssetIdChange(assetId);
+        } else if (!this.state.hasWarnedAboutNode[this.state.nodeId]) {
+          message.info('Did not find asset associated to this 3D object.');
+          setTimeout(() => {
+            const { hasWarnedAboutNode } = this.state;
+            hasWarnedAboutNode[this.state.nodeId] = true;
+            this.setState({
+              hasWarnedAboutNode,
+            });
+          }, 10);
         }
       }
     }
