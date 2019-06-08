@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Input, List, Button } from 'antd';
+import { Input, List, Button, Icon, Divider } from 'antd';
 import queryString from 'query-string';
 import { searchForAsset, selectAssets, Assets } from '../modules/assets';
 
@@ -41,17 +41,34 @@ class AssetSearch extends React.Component {
     const parsed = queryString.parse(this.props.location.search);
     const defaultSearchQuery = parsed.query ? parsed.query : '';
     return (
-      <>
-        <Input
-          placeholder="Search for tag (13FV1234)"
-          defaultValue={defaultSearchQuery}
-          onChange={this.onChange}
+      <div
+        style={{
+          background: 'rgb(38, 38, 38)',
+        }}
+      >
+        <div
           style={{
-            background: '#333333',
-            mixBlendMode: 'normal',
-            color: '#fff',
+            paddingLeft: 10,
+            paddingRight: 10,
+            paddingTop: 10,
+            width: '100%',
           }}
-        />
+        >
+          <Input
+            placeholder="Search for tag (13FV1234)"
+            defaultValue={defaultSearchQuery}
+            onChange={this.onChange}
+            style={{
+              background: 'rgb(51, 51, 51)',
+              mixBlendMode: 'normal',
+              color: '#fff',
+              borderRadius: 0,
+              border: 0,
+              height: 50,
+            }}
+          />
+        </div>
+        <Divider type="horizontal" />
         {assets && query !== '' && (
           <List
             itemLayout="horizontal"
@@ -69,7 +86,7 @@ class AssetSearch extends React.Component {
             )}
           />
         )}
-      </>
+      </div>
     );
   }
 }
