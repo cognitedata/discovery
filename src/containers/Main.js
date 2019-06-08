@@ -10,14 +10,32 @@ import { fetchTypes } from '../modules/types';
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
 
+// default is false
+function stringToBool(string) {
+  return string === 'true';
+}
+
 class Main extends React.Component {
   state = {
-    show3D: true,
-    showPNID: false,
+    show3D:
+      localStorage.getItem('show3D') != null
+        ? stringToBool(localStorage.getItem('show3D'))
+        : true,
+    showPNID:
+      localStorage.getItem('showPNID') != null
+        ? stringToBool(localStorage.getItem('showPNID'))
+        : true,
   };
 
   componentDidMount() {
     this.props.doFetchTypes();
+    // Another workaround for a bug in SVGViewer
+    if (this.state.showPNID) {
+      this.setState({ showPNID: false });
+      setTimeout(() => {
+        this.setState({ showPNID: true });
+      }, 500);
+    }
   }
 
   onAssetClick = (asset, query) => {
@@ -37,10 +55,12 @@ class Main extends React.Component {
 
   on3DVisibleChange = value => {
     this.setState({ show3D: value });
+    localStorage.setItem('show3D', value);
   };
 
   onPNIDVisibleChange = value => {
     this.setState({ showPNID: value });
+    localStorage.setItem('showPNID', value);
   };
 
   render() {
