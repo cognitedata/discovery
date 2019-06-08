@@ -21,7 +21,7 @@ class Model3D extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
-      this.select3DNode(this.state.nodeId, true);
+      this.selectNode(this.state.nodeId, true);
 
       const assetId = this.getAssetIdForNodeId(this.state.nodeId);
       if (assetId) {
@@ -44,7 +44,7 @@ class Model3D extends React.Component {
       }
 
       if (this.model && this.model._getTreeIndex(this.props.nodeId) != null) {
-        this.select3DNode(this.props.nodeId, true);
+        this.selectNode(this.props.nodeId, true);
       }
     }
   }
@@ -90,11 +90,11 @@ class Model3D extends React.Component {
     return null;
   };
 
-  on3DProgress = progress => {
+  onProgress = progress => {
     this.setState({ progress });
   };
 
-  on3DComplete = () => {
+  onComplete = () => {
     this.setState({ progress: undefined });
     let { nodeId } = this.props;
     if (this.state.nodeId) {
@@ -102,22 +102,22 @@ class Model3D extends React.Component {
     }
 
     if (nodeId) {
-      this.select3DNode(nodeId, false);
+      this.selectNode(nodeId, false);
     }
   };
 
-  on3DClick = nodeId => {
+  onClick = nodeId => {
     this.setState({ nodeId });
   };
 
-  on3DReady = (viewer, model) => {
+  onReady = (viewer, model) => {
     this.viewer = viewer;
     this.model = model;
     window.viewer = viewer;
     window.model = model;
   };
 
-  select3DNode = (nodeId, animate) => {
+  selectNode = (nodeId, animate) => {
     this.model.deselectAllNodes();
     this.model.selectNode(nodeId);
     const boundingBox = this.model.getBoundingBox(nodeId);
@@ -142,10 +142,10 @@ class Model3D extends React.Component {
         <Model3DViewer
           modelId={this.props.modelId}
           revisionId={this.props.revisionId}
-          onClick={this.on3DClick}
-          onReady={this.on3DReady}
-          onProgress={this.on3DProgress}
-          onComplete={this.on3DComplete}
+          onClick={this.onClick}
+          onReady={this.onReady}
+          onProgress={this.onProgress}
+          onComplete={this.onComplete}
           cache={this.props.cache}
           assetId={assetId}
         />
