@@ -46,6 +46,11 @@ class AssetSearch extends React.Component {
           placeholder="Search for tag (13FV1234)"
           defaultValue={defaultSearchQuery}
           onChange={this.onChange}
+          style={{
+            background: '#333333',
+            mixBlendMode: 'normal',
+            color: '#fff',
+          }}
         />
         {assets && query !== '' && (
           <List
