@@ -1,17 +1,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { List, Button } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
 import * as sdk from '@cognite/sdk';
 import { Asset } from '../modules/assets';
+import { Files, selectFiles } from '../modules/files';
 
 const getTextFromMetadataNode = node =>
   (node.textContent || '').replace(/\s/g, '');
 
-const StyledSVGViewerContainer = styled.div`
+const ViewerContainer = styled.div`
   height: 100%;
   width: 100%;
   padding-top: 50px;
+`;
+
+const StyledSVGViewerContainer = styled.div`
+  height: 100%;
+  width: 100%;
   .myCoolThing {
     outline: auto 2px #3838ff;
     transition: all 0.2s ease;
@@ -35,6 +43,10 @@ const StyledSVGViewerContainer = styled.div`
 `;
 
 class PNIDViewer extends React.Component {
+  state = {
+    currentFile: undefined,
+  };
+
   searchAndSelectAssetName = async name => {
     const result = await sdk.Assets.search({ name });
     const exactMatches = result.items.filter(asset => asset.name === name);
@@ -44,14 +56,18 @@ class PNIDViewer extends React.Component {
     }
   };
 
-  render() {
-    const { asset, documentId } = this.props;
+  renderSVGViewer() {
+    const { asset } = this.props;
+
     return (
       <StyledSVGViewerContainer>
         <SVGViewer
-          documentId={documentId}
-          title="Title"
-          description="Description"
+          documentId={this.state.currentFile.id}
+          title={this.state.currentFile.name}
+          description="P&ID"
+          handleCancel={() => {
+            this.setState({ currentFile: undefined });
+          }}
           isCurrentAsset={metadata => {
             if (asset) {
               return getTextFromMetadataNode(metadata) === asset.name;
@@ -74,11 +90,63 @@ class PNIDViewer extends React.Component {
       </StyledSVGViewerContainer>
     );
   }
+
+  renderFileList() {
+    if (!this.props.asset) {
+      return null;
+    }
+
+    const filesForThisAsset = this.props.files.byAssetId[this.props.asset.id];
+    if (!filesForThisAsset) {
+      return null;
+    }
+
+    const pNIDFiles = filesForThisAsset.filter(
+      file =>
+        file.fileName.includes('-XB-') &&
+        file.fileType.toLowerCase() === 'svg' &&
+        file.fileName.toLowerCase().endsWith('svg')
+    );
+
+    return (
+      <List
+        size="small"
+        header={<div>P&ID documents</div>}
+        bordered
+        dataSource={pNIDFiles}
+        renderItem={item => (
+          <List.Item>
+            <Button
+              type="link"
+              onClick={() => {
+                this.setState({
+                  currentFile: { id: item.id, title: item.fileName },
+                });
+              }}
+            >
+              {item.fileName}
+            </Button>
+          </List.Item>
+        )}
+      />
+    );
+  }
+
+  render() {
+    const { currentFile } = this.state;
+
+    return (
+      <ViewerContainer>
+        {currentFile && this.renderSVGViewer()}
+        {!currentFile && this.renderFileList()}
+      </ViewerContainer>
+    );
+  }
 }
 
 PNIDViewer.propTypes = {
   asset: Asset,
-  documentId: PropTypes.number.isRequired,
+  files: Files.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
 };
 
@@ -86,4 +154,8 @@ PNIDViewer.defaultProps = {
   asset: undefined,
 };
 
-export default PNIDViewer;
+const mapStateToProps = state => {
+  return { files: selectFiles(state) };
+};
+
+export default connect(mapStateToProps)(PNIDViewer);
