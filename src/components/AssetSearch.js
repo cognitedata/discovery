@@ -35,19 +35,11 @@ class AssetSearch extends React.Component {
     this.props.doSearchForAsset(query);
   };
 
-  render() {
-    const assets = this.props.assets.current
-      ? moveExactMatchToTop(this.props.assets.current, this.state.query.trim())
-      : undefined;
-    const { query } = this.state;
+  renderSearchField() {
     const parsed = queryString.parse(this.props.location.search);
     const defaultSearchQuery = parsed.query ? parsed.query : '';
     return (
-      <div
-        style={{
-          background: 'rgb(38, 38, 38)',
-        }}
-      >
+      <>
         <div
           style={{
             paddingLeft: 10,
@@ -75,6 +67,18 @@ class AssetSearch extends React.Component {
           type="horizontal"
           style={{ margin: 10, backgroundColor: '#333333' }}
         />
+      </>
+    );
+  }
+
+  renderSearchResults() {
+    const { query } = this.state;
+    const assets = this.props.assets.current
+      ? moveExactMatchToTop(this.props.assets.current, this.state.query.trim())
+      : undefined;
+
+    return (
+      <>
         {assets && query !== '' && (
           <List
             split={false}
@@ -127,6 +131,19 @@ class AssetSearch extends React.Component {
             )}
           />
         )}
+      </>
+    );
+  }
+
+  render() {
+    return (
+      <div
+        style={{
+          background: 'rgb(38, 38, 38)',
+        }}
+      >
+        {this.renderSearchField()}
+        {this.renderSearchResults()}
       </div>
     );
   }
