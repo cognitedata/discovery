@@ -5,7 +5,7 @@ import { List, Button } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
 import * as sdk from '@cognite/sdk';
-import { Asset } from '../modules/assets';
+import { Asset, Assets, selectAssets } from '../modules/assets';
 import { Files, selectFiles } from '../modules/files';
 
 const getTextFromMetadataNode = node =>
@@ -68,12 +68,20 @@ class PNIDViewer extends React.Component {
   }
 
   searchAndSelectAssetName = async name => {
-    const result = await sdk.Assets.search({ name });
-    const exactMatches = result.items.filter(asset => asset.name === name);
-    if (exactMatches.length > 0) {
-      const assetId = exactMatches[0].id;
-      this.props.onAssetIdChange(assetId);
+    let asset;
+    const matches = this.props.assets.all.filter(a => a.name === name);
+    if (matches.length === 0) {
+      const result = await sdk.Assets.search({ name });
+      const exactMatches = result.items.filter(a => a.name === name);
+      if (exactMatches.length > 0) {
+        [asset] = exactMatches;
+      } else {
+        return;
+      }
+    } else {
+      [asset] = matches;
     }
+    this.props.onAssetIdChange(asset.id);
   };
 
   renderSVGViewer() {
@@ -167,6 +175,7 @@ class PNIDViewer extends React.Component {
 
 PNIDViewer.propTypes = {
   asset: Asset,
+  assets: Assets.isRequired,
   files: Files.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
 };
@@ -176,7 +185,7 @@ PNIDViewer.defaultProps = {
 };
 
 const mapStateToProps = state => {
-  return { files: selectFiles(state) };
+  return { files: selectFiles(state), assets: selectAssets(state) };
 };
 
 export default connect(mapStateToProps)(PNIDViewer);
