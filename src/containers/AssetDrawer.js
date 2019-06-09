@@ -13,7 +13,11 @@ import {
 } from '../modules/timeseries';
 import { Asset } from '../modules/assets';
 import { Types, selectTypes, removeTypeFromAsset } from '../modules/types';
-import { fetchEvents, selectEvents, Events } from '../modules/events';
+import {
+  fetchEvents,
+  selectEventsByAssetId,
+  EventList,
+} from '../modules/events';
 import AddTimeseries from '../components/AddTimeseries';
 import AddTypes from '../components/AddTypes';
 import EventPreview from '../components/EventPreview';
@@ -195,8 +199,6 @@ class AssetDrawer extends React.Component {
 
     const timeseries =
       this.props.timeseries.items != null ? this.props.timeseries.items : [];
-    const events =
-      this.props.events.items != null ? this.props.events.items : [];
 
     const allTypes =
       this.props.types.items != null ? this.props.types.items : [];
@@ -245,7 +247,7 @@ class AssetDrawer extends React.Component {
             <>
               {this.renderTypes(asset, types)}
               {this.renderTimeseries(asset, timeseries)}
-              {this.renderEvents(events)}
+              {this.renderEvents(this.props.events.items)}
             </>
           }
         </Drawer>
@@ -260,15 +262,15 @@ AssetDrawer.propTypes = {
   doRemoveAssetFromTimeseries: PropTypes.func.isRequired,
   doRemoveTypeFromAsset: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
-  events: Events.isRequired,
+  events: EventList.isRequired,
   types: Types.isRequired,
   width: PropTypes.number.isRequired,
 };
 
-const mapStateToProps = state => {
+const mapStateToProps = (state, ownProps) => {
   return {
     timeseries: selectTimeseries(state),
-    events: selectEvents(state),
+    events: selectEventsByAssetId(state, ownProps.asset.id),
     types: selectTypes(state),
   };
 };
