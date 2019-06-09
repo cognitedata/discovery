@@ -7,6 +7,7 @@ import { SVGViewer } from '@cognite/gearbox';
 import * as sdk from '@cognite/sdk';
 import { Asset, Assets, selectAssets } from '../modules/assets';
 import { Files, selectFiles } from '../modules/files';
+import { sleep } from '../utils/utils';
 
 const getTextFromMetadataNode = node =>
   (node.textContent || '').replace(/\s/g, '');
@@ -47,18 +48,37 @@ class PNIDViewer extends React.Component {
     currentFile: undefined,
   };
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidMount() {
     // Workaround https://github.com/cognitedata/gearbox.js/issues/300
-    if (prevState.currentFile !== this.state.currentFile) {
-      const delay = this.state.currentFile ? 1000 : 50;
-      setTimeout(() => {
-        this.setState({ currentAsset: this.props.asset });
-      }, delay);
-    }
+    setInterval(() => {
+      if (!this.svgviewer) {
+        return;
+      }
 
+      if (this.svgviewer.pinchZoomInstance) {
+        this.svgviewer.pinchZoomInstance.offset = this.svgviewer.pinchZoomInstance.sanitizeOffset(
+          this.svgviewer.pinchZoomInstance.offset
+        );
+        this.svgviewer.pinchZoomInstance.updateAspectRatio();
+        this.svgviewer.pinchZoomInstance.update();
+      }
+    }, 500);
+  }
+
+  componentDidUpdate(prevProps) {
     if (prevProps.asset !== this.props.asset) {
-      setTimeout(() => {
-        this.setState({ currentAsset: this.props.asset });
+      setTimeout(async () => {
+        if (!this.svgviewer) {
+          return;
+        }
+        this.svgviewer.zoomOnCurrentAsset(
+          document.querySelector(`.${'current-asset'}`)
+        );
+
+        // Workaround https://github.com/cognitedata/gearbox.js/issues/300
+        await sleep(250);
+        this.svgviewer.pinchZoomInstance.updateAspectRatio();
+        this.svgviewer.pinchZoomInstance.update();
       }, 100);
     }
   }
@@ -84,24 +104,33 @@ class PNIDViewer extends React.Component {
     this.props.onAssetIdChange(asset.id);
   };
 
-  renderSVGViewer() {
-    const { currentAsset } = this.state;
+  isCurrentAsset = metadata => {
+    if (!this.props.asset) {
+      return false;
+    }
 
+    return getTextFromMetadataNode(metadata) === this.props.asset.name;
+
+    // if (this.state.currentAsset) {
+    //   return getTextFromMetadataNode(metadata) === this.state.currentAsset.name;
+    // }
+    // return false;
+  };
+
+  renderSVGViewer() {
     return (
       <StyledSVGViewerContainer>
         <SVGViewer
+          ref={c => {
+            this.svgviewer = c;
+          }}
           documentId={this.state.currentFile.id}
           title={this.state.currentFile.name}
           description="P&ID"
           handleCancel={() => {
             this.setState({ currentFile: undefined });
           }}
-          isCurrentAsset={metadata => {
-            if (currentAsset) {
-              return getTextFromMetadataNode(metadata) === currentAsset.name;
-            }
-            return false;
-          }}
+          isCurrentAsset={this.isCurrentAsset}
           // metadataClassesConditions={[
           //   {
           //     condition: node => {
