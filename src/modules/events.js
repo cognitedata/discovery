@@ -49,7 +49,13 @@ export const actions = {
 };
 
 // Selectors
-export const selectEvents = state => state.events || { items: [] };
+export const selectEvents = state => state.events || { items: {} };
+export const selectEventList = state => {
+  const items = Object.keys(state.events.items).map(
+    key => state.events.items[key]
+  ); // to array
+  return { items };
+};
 export const selectEventsByAssetId = (state, assetId) => {
   const items = Object.keys(state.events.items)
     .map(key => state.events.items[key]) // to array

@@ -2,10 +2,16 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
 import { connect } from 'react-redux';
+// import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { Input, List, Divider } from 'antd';
+import { Input, List, Divider, Collapse, DatePicker } from 'antd';
 import queryString from 'query-string';
-import { searchForAsset, selectAssets, Assets } from '../modules/assets';
+import { searchForAsset, selectAssets } from '../modules/assets';
+import { setFilters, selectFilteredSearch, Filters } from '../modules/filters';
+
+const { RangePicker } = DatePicker;
+const { Panel } = Collapse;
+// const { OptGroup, Option } = Select;
 
 const moveExactMatchToTop = (list, query) => {
   const exactMatchIndex = list.findIndex(asset => asset.name === query);
@@ -17,7 +23,7 @@ const moveExactMatchToTop = (list, query) => {
 };
 
 class AssetSearch extends React.Component {
-  state = {};
+  state = { query: '' };
 
   componentDidMount() {
     const parsed = queryString.parse(this.props.location.search);
@@ -33,6 +39,20 @@ class AssetSearch extends React.Component {
     const query = change.target.value;
     this.setState({ query });
     this.props.doSearchForAsset(query);
+  };
+
+  onRangeChange = change => {
+    if (change.length < 2) {
+      this.props.doSetFilters([]);
+      return;
+    }
+
+    const filter = {
+      type: 'event',
+      from: change[0].unix() * 1000, // ms
+      to: change[1].unix() * 1000, // ms
+    };
+    this.props.doSetFilters([filter]);
   };
 
   renderSearchField() {
@@ -73,9 +93,10 @@ class AssetSearch extends React.Component {
 
   renderSearchResults() {
     const { query } = this.state;
-    const assets = this.props.assets.current
-      ? moveExactMatchToTop(this.props.assets.current, this.state.query.trim())
-      : undefined;
+    const assets = moveExactMatchToTop(
+      this.props.filteredSearch.items,
+      this.state.query.trim()
+    );
 
     return (
       <>
@@ -135,6 +156,48 @@ class AssetSearch extends React.Component {
     );
   }
 
+  renderFilters() {
+    return (
+      <Collapse
+        accordion
+        style={{
+          width: '100%',
+          borderRadius: 0,
+          padding: 10,
+          paddingLeft: 10,
+          paddingRight: 10,
+          // color: '#fff',
+          // background: 'rgb(51, 51, 51)',
+        }}
+      >
+        <Panel
+          header="Event filter"
+          key="context"
+          style={{
+            border: 0,
+            width: '100%',
+            color: '#fff',
+          }}
+        >
+          {/* <Select
+            defaultValue="lucy"
+            style={{ width: '100%' }}
+            // onChange={handleChange}
+          >
+            <OptGroup label="Manager">
+              <Option value="jack">Jack</Option>
+              <Option value="lucy">Lucy</Option>
+            </OptGroup>
+            <OptGroup label="Engineer">
+              <Option value="Yiminghe">yiminghe</Option>
+            </OptGroup>
+          </Select> */}
+          <RangePicker onChange={this.onRangeChange} />
+        </Panel>
+      </Collapse>
+    );
+  }
+
   render() {
     return (
       <div
@@ -143,6 +206,7 @@ class AssetSearch extends React.Component {
         }}
       >
         {this.renderSearchField()}
+        {this.renderFilters()}
         {this.renderSearchResults()}
       </div>
     );
@@ -151,7 +215,8 @@ class AssetSearch extends React.Component {
 
 AssetSearch.propTypes = {
   doSearchForAsset: PropTypes.func.isRequired,
-  assets: Assets.isRequired,
+  doSetFilters: PropTypes.func.isRequired,
+  filteredSearch: Filters.isRequired,
   assetId: PropTypes.number,
   onAssetClick: PropTypes.func.isRequired,
   location: PropTypes.shape({
@@ -167,11 +232,13 @@ AssetSearch.defaultProps = {
 const mapStateToProps = state => {
   return {
     assets: selectAssets(state),
+    filteredSearch: selectFilteredSearch(state),
   };
 };
 
 const mapDispatchToProps = dispatch => ({
   doSearchForAsset: (...args) => dispatch(searchForAsset(...args)),
+  doSetFilters: (...args) => dispatch(setFilters(...args)),
 });
 
 export default connect(

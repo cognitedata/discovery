@@ -78,6 +78,7 @@ class Main extends React.Component {
                 height: '100vh',
                 background: 'rgb(38, 38, 38)',
               }}
+              width={250}
             >
               <AssetSearch
                 history={history}

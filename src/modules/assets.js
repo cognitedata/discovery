@@ -84,7 +84,7 @@ export function fetchAsset(assetId) {
 }
 
 // Reducer
-const initialState = {};
+const initialState = { current: [], all: [] };
 
 export default function assets(state = initialState, action) {
   switch (action.type) {
