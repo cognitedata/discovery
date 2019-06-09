@@ -160,7 +160,6 @@ class PNIDViewer extends React.Component {
               type="link"
               onClick={() => {
                 this.setState({
-                  currentAsset: undefined, // due to bug described in componentDidUpdate
                   currentFile: { id: item.id, name: item.fileName },
                 });
               }}
