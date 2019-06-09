@@ -48,23 +48,6 @@ class PNIDViewer extends React.Component {
     currentFile: undefined,
   };
 
-  componentDidMount() {
-    // Workaround https://github.com/cognitedata/gearbox.js/issues/300
-    setInterval(() => {
-      if (!this.svgviewer) {
-        return;
-      }
-
-      if (this.svgviewer.pinchZoomInstance) {
-        this.svgviewer.pinchZoomInstance.offset = this.svgviewer.pinchZoomInstance.sanitizeOffset(
-          this.svgviewer.pinchZoomInstance.offset
-        );
-        this.svgviewer.pinchZoomInstance.updateAspectRatio();
-        this.svgviewer.pinchZoomInstance.update();
-      }
-    }, 500);
-  }
-
   componentDidUpdate(prevProps) {
     if (prevProps.asset !== this.props.asset) {
       setTimeout(async () => {
@@ -122,7 +105,7 @@ class PNIDViewer extends React.Component {
       <StyledSVGViewerContainer>
         <SVGViewer
           ref={c => {
-            this.svgviewer = c;
+            this.svgviewer = c; // Will direct access this
           }}
           documentId={this.state.currentFile.id}
           title={this.state.currentFile.name}
