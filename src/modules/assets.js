@@ -14,6 +14,7 @@ export const Asset = PropTypes.shape({
   name: PropTypes.string,
   description: PropTypes.string,
   types: PropTypes.arrayOf(Type),
+  metadata: PropTypes.objectOf(PropTypes.string),
 });
 
 export const Assets = PropTypes.exact({
@@ -43,6 +44,7 @@ export function searchForAsset(query) {
       name: asset.name,
       description: asset.description,
       types: asset.types,
+      metadata: asset.metadata,
     }));
     if (currentCounter === searchCounter) {
       dispatch({ type: ADD_ASSETS, payload: { items: assets_ } });
@@ -73,6 +75,7 @@ export function fetchAsset(assetId) {
           name: asset.name,
           description: asset.description,
           types: asset.types,
+          metadata: asset.metadata,
         }))
       );
 
@@ -111,6 +114,7 @@ export function fetchAssets(assetIds) {
           name: asset.name,
           description: asset.description,
           types: asset.types,
+          metadata: asset.metadata,
         }))
       );
 

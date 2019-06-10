@@ -22,6 +22,7 @@ import AddTimeseries from '../components/AddTimeseries';
 import AddTypes from '../components/AddTypes';
 import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
+import { createAssetTitle } from '../utils/utils';
 
 const { Panel } = Collapse;
 
@@ -234,7 +235,7 @@ class AssetDrawer extends React.Component {
           />
         )}
         <Drawer
-          title={asset.name ? asset.name : asset.id}
+          title={createAssetTitle(asset)}
           placement="right"
           width={this.props.width}
           closable={false}
