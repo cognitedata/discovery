@@ -77,8 +77,17 @@ const applyFilters = (state, asset) => {
 };
 
 export const selectFilteredSearch = state => {
-  const currentAssets = selectAssets(state).current;
-  return { items: currentAssets.filter(asset => applyFilters(state, asset)) };
+  let assets = selectAssets(state).current;
+
+  if (assets.length === 0) {
+    // If we don't have a search result, use all cached assets and filter on events instead
+    assets = Object.keys(selectAssets(state).all).map(
+      assetId => selectAssets(state).all[assetId]
+    );
+  }
+
+  const items = assets.filter(asset => applyFilters(state, asset));
+  return { items };
 };
 
 export function setFilters(filters) {

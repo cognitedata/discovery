@@ -27,6 +27,10 @@ export function searchForAsset(query) {
   return async dispatch => {
     const currentCounter = ++searchCounter;
 
+    if (query === '') {
+      dispatch({ type: SET_ASSETS, payload: { items: [] } });
+      return;
+    }
     // const result = await sdk.Assets.search({ query, name, limit: 100 });
     const { project } = sdk.configure({});
     const requestResult = await sdk.rawGet(
@@ -100,7 +104,6 @@ export function fetchAssets(assetIds) {
       );
 
       const result = requestResult.data;
-      console.log('Got result: ', result);
 
       const items = arrayToObjectById(
         result.items.map(asset => ({

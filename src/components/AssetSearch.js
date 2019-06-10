@@ -29,7 +29,10 @@ const moveExactMatchToTop = (list, query) => {
 };
 
 class AssetSearch extends React.Component {
-  state = { query: '', eventFilter: { type: 'event' } };
+  state = {
+    query: '',
+    eventFilter: { type: 'event' },
+  };
 
   componentDidMount() {
     const parsed = queryString.parse(this.props.location.search);
@@ -137,7 +140,6 @@ class AssetSearch extends React.Component {
   }
 
   renderSearchResults() {
-    const { query } = this.state;
     const assets = moveExactMatchToTop(
       this.props.filteredSearch.items,
       this.state.query.trim()
@@ -145,7 +147,7 @@ class AssetSearch extends React.Component {
 
     return (
       <>
-        {assets && query !== '' && (
+        {assets && (
           <List
             split={false}
             itemLayout="horizontal"
