@@ -7,7 +7,6 @@ import * as sdk from '@cognite/sdk';
 import Main from './Main';
 
 const Auth = ({ tenant, match }) => {
-  const { project } = sdk.configure({});
   return (
     <ReactAuthProvider
       project={tenant}
@@ -17,7 +16,7 @@ const Auth = ({ tenant, match }) => {
       enableTokenCaching
     >
       <Switch>
-        {project === 'akerbp' && (
+        {tenant === 'akerbp' && (
           <Redirect
             exact
             strict

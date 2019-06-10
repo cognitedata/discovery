@@ -159,10 +159,9 @@ class Main extends React.Component {
               <Route
                 path={`${match.url}/asset/:assetId`}
                 render={props => {
-                  const { assetId } = props.match.params;
                   return (
                     <AssetViewer
-                      assetId={Number(assetId)}
+                      assetId={Number(props.match.params.assetId)}
                       show3D={model3D != null && this.state.show3D}
                       model3D={
                         model3D
