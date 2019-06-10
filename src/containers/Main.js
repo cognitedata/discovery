@@ -103,8 +103,10 @@ class Main extends React.Component {
 
   render() {
     let model3D;
+    let assetId;
     if (this.viewer) {
       model3D = this.hasModelForAsset(this.viewer.props.assetId);
+      ({ assetId } = this.viewer.props);
     }
 
     const { match, history, location } = this.props;
@@ -121,19 +123,11 @@ class Main extends React.Component {
               }}
               width={250}
             >
-              <Route
-                path={`${match.url}/asset/:assetId`}
-                render={props => {
-                  const { assetId } = props.match.params;
-                  return (
-                    <AssetSearch
-                      history={history}
-                      location={location}
-                      onAssetClick={this.onAssetClick}
-                      assetId={Number(assetId)}
-                    />
-                  );
-                }}
+              <AssetSearch
+                history={history}
+                location={location}
+                onAssetClick={this.onAssetClick}
+                assetId={Number(assetId)}
               />
             </Sider>
             <Content>
