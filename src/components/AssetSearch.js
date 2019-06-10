@@ -33,6 +33,7 @@ const { OptGroup, Option } = Select;
 const HeaderWithButton = styled.div`
   display: flex;
   width: 100%;
+  height: 10px;
   align-items: center;
   justify-content: space-between;
 `;
@@ -272,9 +273,6 @@ class AssetSearch extends React.Component {
         style={{
           width: '100%',
           borderRadius: 0,
-          padding: 10,
-          paddingLeft: 10,
-          paddingRight: 10,
         }}
       >
         <Panel
@@ -348,9 +346,6 @@ class AssetSearch extends React.Component {
         style={{
           width: '100%',
           borderRadius: 0,
-          padding: 10,
-          paddingLeft: 10,
-          paddingRight: 10,
         }}
       >
         <Panel
