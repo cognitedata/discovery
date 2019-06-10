@@ -31,16 +31,16 @@ class AssetViewer extends React.Component {
 
   componentDidMount() {
     this.props.doFetchFiles(this.props.assetId);
-    this.loadAssetIfMissing();
+    this.props.doFetchAsset(this.props.assetId);
     this.getNodeId(true);
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.assetId !== this.props.assetId) {
       this.props.doFetchFiles(this.props.assetId);
+      this.props.doFetchAsset(this.props.assetId);
+      this.getNodeId(true);
     }
-    this.loadAssetIfMissing();
-    this.getNodeId(true);
   }
 
   getNodeId(fetchIfMissing) {
@@ -62,13 +62,6 @@ class AssetViewer extends React.Component {
     const { assets, assetId } = this.props;
 
     return assets.all[assetId];
-  }
-
-  loadAssetIfMissing() {
-    const asset = this.getAsset();
-    if (!asset) {
-      this.props.doFetchAsset(this.props.assetId);
-    }
   }
 
   render3D() {
