@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
 import { connect } from 'react-redux';
-// import styled from 'styled-components';
+import * as sdk from '@cognite/sdk';
 import PropTypes from 'prop-types';
 import {
   Icon,
@@ -389,10 +389,11 @@ class AssetSearch extends React.Component {
   }
 
   renderFilters() {
+    const { project } = sdk.configure({});
     return (
       <>
         {this.renderEventFilter()}
-        {this.renderLocationFilter()}
+        {project === 'akerbp' && this.renderLocationFilter()}
       </>
     );
   }
