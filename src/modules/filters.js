@@ -64,15 +64,29 @@ const applyLocationFilter = (state, asset, filter) => {
   if (filter.area === undefined) {
     return true;
   }
-  return asset.metadata && asset.metadata.AREA === filter.area;
+
+  if (asset.metadata === undefined) {
+    return false;
+  }
+
+  // The key can be Area or AREA
+  const areaKeys = Object.keys(asset.metadata).filter(
+    keys => keys.toUpperCase() === 'AREA'
+  );
+  if (areaKeys.length > 0) {
+    return asset.metadata[areaKeys[0]] === filter.area;
+  }
+  return false;
 };
 
 const applyFilter = (state, asset, filter) => {
   if (filter.type === 'event') {
-    return applyEventFilter(state, asset, filter);
+    const result = applyEventFilter(state, asset, filter);
+    return result;
   }
   if (filter.type === 'location') {
-    return applyLocationFilter(state, asset, filter);
+    const result = applyLocationFilter(state, asset, filter);
+    return result;
   }
   return true;
 };
