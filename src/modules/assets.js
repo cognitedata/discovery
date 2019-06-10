@@ -30,7 +30,7 @@ export function searchForAsset(query) {
     // const result = await sdk.Assets.search({ query, name, limit: 100 });
     const { project } = sdk.configure({});
     const requestResult = await sdk.rawGet(
-      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100`
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
     );
     const result = requestResult.data.data;
 
