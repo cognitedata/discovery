@@ -45,7 +45,6 @@ class Main extends React.Component {
       pathname: `${match.url}/asset/${asset.id}`,
       search: `?query=${query}`,
     });
-    this.setState({ assetId: asset.id });
   };
 
   onAssetIdChange = assetId => {
@@ -80,11 +79,19 @@ class Main extends React.Component {
               }}
               width={250}
             >
-              <AssetSearch
-                history={history}
-                location={location}
-                onAssetClick={this.onAssetClick}
-                assetId={this.state.assetId}
+              <Route
+                path={`${match.url}/asset/:assetId`}
+                render={props => {
+                  const { assetId } = props.match.params;
+                  return (
+                    <AssetSearch
+                      history={history}
+                      location={location}
+                      onAssetClick={this.onAssetClick}
+                      assetId={Number(assetId)}
+                    />
+                  );
+                }}
               />
             </Sider>
             <Content>
