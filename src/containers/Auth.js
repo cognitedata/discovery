@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ReactAuthProvider } from '@cognite/react-auth';
 import { Route, Redirect, Switch } from 'react-router-dom';
-import * as sdk from '@cognite/sdk';
 import Main from './Main';
 
 const Auth = ({ tenant, match }) => {
