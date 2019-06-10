@@ -239,9 +239,10 @@ class AssetSearch extends React.Component {
               <Option value="Workorder">Work order</Option>
               <Option value="Workpermit">Work permit</Option>
             </OptGroup>
-            {/* <OptGroup label="Other">
-              <Option value="Yiminghe">yiminghe</Option>
-            </OptGroup> */}
+            <OptGroup label="Other">
+              <Option value="OilSample">Oil sample</Option>
+              <Option value="leakLog">Leak log</Option>
+            </OptGroup>
           </Select>
         </Panel>
       </Collapse>
