@@ -23,11 +23,7 @@ const ViewerContainer = styled.div`
 class AssetViewer extends React.Component {
   cache = {};
 
-  state = {
-    modelId: 2495544803289093,
-    revisionId: 3041181389296996,
-    documentId: 8910925076675219,
-  };
+  state = {};
 
   componentDidMount() {
     this.props.doFetchFiles(this.props.assetId);
@@ -50,8 +46,8 @@ class AssetViewer extends React.Component {
       return mapping.nodeId;
     }
 
-    if (fetchIfMissing) {
-      const { modelId, revisionId } = this.state;
+    if (fetchIfMissing && this.props.model3D) {
+      const { modelId, revisionId } = this.props.model3D;
       this.props.doFetchMappingsFromAssetId(modelId, revisionId, assetId);
     }
 
@@ -68,8 +64,8 @@ class AssetViewer extends React.Component {
     const nodeId = this.getNodeId(false);
     return (
       <Model3D
-        modelId={this.state.modelId}
-        revisionId={this.state.revisionId}
+        modelId={this.props.model3D.modelId}
+        revisionId={this.props.model3D.revisionId}
         nodeId={nodeId}
         onAssetIdChange={this.props.onAssetIdChange}
         cache={this.cache}
@@ -112,6 +108,10 @@ AssetViewer.propTypes = {
   assetDrawerWidth: PropTypes.number.isRequired,
   assetId: PropTypes.number.isRequired,
   assets: Assets.isRequired,
+  model3D: PropTypes.shape({
+    modelId: PropTypes.number,
+    revisionId: PropTypes.number,
+  }),
   show3D: PropTypes.bool.isRequired,
   showPNID: PropTypes.bool.isRequired,
   onAssetIdChange: PropTypes.func.isRequired,
@@ -123,6 +123,7 @@ AssetViewer.propTypes = {
 
 AssetViewer.defaultProps = {
   assetMappings: { byNodeId: {}, byAssetId: {} },
+  model3D: undefined,
 };
 
 const mapStateToProps = state => {
