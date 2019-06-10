@@ -15,6 +15,7 @@ export const Event = PropTypes.shape({
 
 export const Events = PropTypes.exact({
   items: PropTypes.objectOf(Event),
+  types: PropTypes.arrayOf(PropTypes.string),
 });
 
 export const EventList = PropTypes.exact({
