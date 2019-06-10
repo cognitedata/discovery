@@ -1,6 +1,6 @@
 import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
-import { selectEventList } from './events';
+import { selectEventList, fetchEventsByFilter } from './events';
 import { selectAssets } from './assets';
 
 export const EventFilter = PropTypes.shape({
@@ -43,37 +43,37 @@ export const selectFilters = state => state.filters || { items: [] };
 
 const applyEventFilter = (state, asset, filter) => {
   const events_ = selectEventList(state).items;
-  if (!events_.some(event => event.assetIds.indexOf(asset.id) !== -1)) {
-    // Did not find any event for this asset
-    return true;
+  const eventsForThisAsset = events_.filter(
+    event => event.assetIds.indexOf(asset.id) !== -1
+  );
+  if (eventsForThisAsset.length === 0) {
+    // Did not find any events for this asset
+    return false;
   }
 
-  const anyBadEvents = events_.some(event => {
+  // Check if at least of the remaining assets obey all criteria
+  return eventsForThisAsset.some(event => {
     return (
-      event.startTime < filter.from ||
-      event.startTime > filter.to ||
-      event.assetIds.indexOf(asset.id) === -1
+      (filter.eventType == null || event.type === filter.eventType) &&
+      (filter.from == null || event.startTime >= filter.from) &&
+      (filter.to == null || event.startTime <= filter.to)
     );
   });
-
-  return anyBadEvents;
 };
 
 const applyFilter = (state, asset, filter) => {
   if (filter.type === 'event') {
     return applyEventFilter(state, asset, filter);
   }
-  return false;
+  return true;
 };
 
 const applyFilters = (state, asset) => {
   const filters = selectFilters(state).items;
   // Loop through all filters and see if anyone rejects this asset
-  const anyBadFilters = filters.some(filter =>
-    applyFilter(state, asset, filter)
+  return Object.keys(filters).every(filterKey =>
+    applyFilter(state, asset, filters[filterKey])
   );
-
-  return !anyBadFilters;
 };
 
 export const selectFilteredSearch = state => {
@@ -83,6 +83,15 @@ export const selectFilteredSearch = state => {
 
 export function setFilters(filters) {
   return async dispatch => {
+    if (filters.event) {
+      if (
+        filters.event.from != null ||
+        filters.event.to != null ||
+        filters.event.eventType != null
+      ) {
+        dispatch(fetchEventsByFilter(filters.event));
+      }
+    }
     dispatch({ type: SET_FILTERS, payload: { items: filters } });
   };
 }
