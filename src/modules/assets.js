@@ -56,11 +56,9 @@ export function fetchAsset(assetId) {
     }
     requestedAssetIds[assetId] = true;
 
-    // const result = await sdk.Assets.retrieve(assetId);
     const { project } = sdk.configure({});
-    let requestResult;
     try {
-      requestResult = await sdk.rawGet(
+      const requestResult = await sdk.rawGet(
         `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${assetId}`
       );
 
@@ -80,6 +78,43 @@ export function fetchAsset(assetId) {
       return;
     }
     requestedAssetIds[assetId] = false;
+  };
+}
+
+export function fetchAssets(assetIds) {
+  return async dispatch => {
+    if (assetIds.length === 0) {
+      return;
+    }
+
+    const { project } = sdk.configure({});
+    const body = {
+      items: assetIds.map(id => ({
+        id,
+      })),
+    };
+    try {
+      const requestResult = await sdk.rawPost(
+        `https://api.cognitedata.com/api/v1/projects/${project}/assets/byids`,
+        { data: body }
+      );
+
+      const result = requestResult.data;
+      console.log('Got result: ', result);
+
+      const items = arrayToObjectById(
+        result.items.map(asset => ({
+          id: asset.id,
+          name: asset.name,
+          description: asset.description,
+          types: asset.types,
+        }))
+      );
+
+      dispatch({ type: ADD_ASSETS, payload: { items } });
+    } catch (ex) {
+      message.error(`Could not fetch asset.`);
+    }
   };
 }
 

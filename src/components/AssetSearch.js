@@ -6,8 +6,13 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Input, List, Divider, Collapse, DatePicker, Select } from 'antd';
 import queryString from 'query-string';
-import { searchForAsset, selectAssets, Assets } from '../modules/assets';
-import { selectEvents, Events } from '../modules/events';
+import {
+  fetchAssets,
+  searchForAsset,
+  selectAssets,
+  Assets,
+} from '../modules/assets';
+import { EventList, selectEventList } from '../modules/events';
 import { setFilters, selectFilteredSearch, Filters } from '../modules/filters';
 
 const { RangePicker } = DatePicker;
@@ -37,16 +42,19 @@ class AssetSearch extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // if (prevProps.events !== this.props.events) {
-    //   // Find unique list of assetIds
-    //   const assetIds = [
-    //     ...this.props.events.items.reduce(
-    //       (set, event) => new Set([...set, ...event.assetIds]),
-    //       new Set()
-    //     ),
-    //   ];
-    //   const missingAssetIds = assetIds.filter(assetId => this.assets);
-    // }
+    if (prevProps.events !== this.props.events) {
+      // Find unique list of assetIds
+      const assetIds = [
+        ...this.props.events.items.reduce(
+          (set, event) => new Set([...set, ...event.assetIds]),
+          new Set()
+        ),
+      ];
+      const missingAssetIds = assetIds.filter(
+        assetId => this.props.assets.all[assetId] === undefined
+      );
+      this.props.doFetchAssets(missingAssetIds);
+    }
   }
 
   onChange = change => {
@@ -256,8 +264,9 @@ class AssetSearch extends React.Component {
 AssetSearch.propTypes = {
   doSearchForAsset: PropTypes.func.isRequired,
   doSetFilters: PropTypes.func.isRequired,
+  doFetchAssets: PropTypes.func.isRequired,
   filteredSearch: Filters.isRequired,
-  events: Events.isRequired,
+  events: EventList.isRequired,
   assets: Assets.isRequired,
   assetId: PropTypes.number,
   onAssetClick: PropTypes.func.isRequired,
@@ -274,13 +283,14 @@ AssetSearch.defaultProps = {
 const mapStateToProps = state => {
   return {
     assets: selectAssets(state),
-    events: selectEvents(state),
+    events: selectEventList(state),
     filteredSearch: selectFilteredSearch(state),
   };
 };
 
 const mapDispatchToProps = dispatch => ({
   doSearchForAsset: (...args) => dispatch(searchForAsset(...args)),
+  doFetchAssets: (...args) => dispatch(fetchAssets(...args)),
   doSetFilters: (...args) => dispatch(setFilters(...args)),
 });
 
