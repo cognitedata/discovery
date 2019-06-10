@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Drawer, Spin, Collapse, Button, Icon, Popconfirm } from 'antd';
+import { List, Drawer, Spin, Collapse, Button, Icon, Popconfirm } from 'antd';
 import styled from 'styled-components';
 
 import mixpanel from 'mixpanel-browser';
@@ -172,18 +172,17 @@ class AssetDrawer extends React.Component {
   renderEvents = events => (
     <Collapse accordion>
       <Panel header={<span>Events ({events.length})</span>} key="events">
-        {events.map(event => (
-          <Button
-            title={`type: ${event.type}, subtype: ${
-              event.subtype
-            }, metadata: ${JSON.stringify(event.metadata)}`}
-            key={event.id}
-            type="link"
-            onClick={() => this.eventOnClick(event.id)}
-          >
-            {event.description}
-          </Button>
-        ))}
+        <List
+          size="small"
+          dataSource={events}
+          renderItem={event => (
+            <List.Item>
+              <Button type="link" onClick={() => this.eventOnClick(event.id)}>
+                {event.type}
+              </Button>
+            </List.Item>
+          )}
+        />
       </Panel>
     </Collapse>
   );
