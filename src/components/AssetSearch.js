@@ -4,14 +4,15 @@ import React from 'react';
 import { connect } from 'react-redux';
 // import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { Input, List, Divider, Collapse, DatePicker } from 'antd';
+import { Input, List, Divider, Collapse, DatePicker, Select } from 'antd';
 import queryString from 'query-string';
-import { searchForAsset, selectAssets } from '../modules/assets';
+import { searchForAsset, selectAssets, Assets } from '../modules/assets';
+import { selectEvents, Events } from '../modules/events';
 import { setFilters, selectFilteredSearch, Filters } from '../modules/filters';
 
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
-// const { OptGroup, Option } = Select;
+const { OptGroup, Option } = Select;
 
 const moveExactMatchToTop = (list, query) => {
   const exactMatchIndex = list.findIndex(asset => asset.name === query);
@@ -23,7 +24,7 @@ const moveExactMatchToTop = (list, query) => {
 };
 
 class AssetSearch extends React.Component {
-  state = { query: '' };
+  state = { query: '', eventFilter: { type: 'event' } };
 
   componentDidMount() {
     const parsed = queryString.parse(this.props.location.search);
@@ -35,24 +36,60 @@ class AssetSearch extends React.Component {
     }
   }
 
+  componentDidUpdate(prevProps) {
+    // if (prevProps.events !== this.props.events) {
+    //   // Find unique list of assetIds
+    //   const assetIds = [
+    //     ...this.props.events.items.reduce(
+    //       (set, event) => new Set([...set, ...event.assetIds]),
+    //       new Set()
+    //     ),
+    //   ];
+    //   const missingAssetIds = assetIds.filter(assetId => this.assets);
+    // }
+  }
+
   onChange = change => {
     const query = change.target.value;
     this.setState({ query });
     this.props.doSearchForAsset(query);
   };
 
+  onEventTypeChange = change => {
+    const { eventFilter } = this.state;
+
+    if (change === 'none') {
+      eventFilter.eventType = undefined;
+    } else {
+      eventFilter.eventType = change;
+    }
+
+    this.setState({ eventFilter });
+    this.props.doSetFilters({ event: eventFilter });
+  };
+
   onRangeChange = change => {
+    const { eventFilter } = this.state;
+
     if (change.length < 2) {
-      this.props.doSetFilters([]);
+      eventFilter.from = undefined;
+      eventFilter.to = undefined;
+      eventFilter.eventType = undefined;
+
+      this.setState({
+        eventFilter,
+      });
+      this.props.doSetFilters({});
       return;
     }
 
-    const filter = {
-      type: 'event',
-      from: change[0].unix() * 1000, // ms
-      to: change[1].unix() * 1000, // ms
-    };
-    this.props.doSetFilters([filter]);
+    eventFilter.from = change[0].unix() * 1000; // ms
+    eventFilter.to = change[1].unix() * 1000; // ms
+    this.setState({
+      eventFilter,
+    });
+
+    this.props.doSetFilters({ event: eventFilter });
   };
 
   renderSearchField() {
@@ -179,20 +216,23 @@ class AssetSearch extends React.Component {
             color: '#fff',
           }}
         >
-          {/* <Select
-            defaultValue="lucy"
-            style={{ width: '100%' }}
-            // onChange={handleChange}
-          >
-            <OptGroup label="Manager">
-              <Option value="jack">Jack</Option>
-              <Option value="lucy">Lucy</Option>
-            </OptGroup>
-            <OptGroup label="Engineer">
-              <Option value="Yiminghe">yiminghe</Option>
-            </OptGroup>
-          </Select> */}
           <RangePicker onChange={this.onRangeChange} />
+          <Select
+            defaultValue="none"
+            style={{ width: '100%' }}
+            onChange={this.onEventTypeChange}
+            disabled={this.state.eventFilter.from === undefined}
+            value={this.state.eventFilter.eventType || 'none'}
+          >
+            <Option value="none">Type</Option>
+            <OptGroup label="Work orders">
+              <Option value="Workorder">Work order</Option>
+              <Option value="Workpermit">Work permit</Option>
+            </OptGroup>
+            {/* <OptGroup label="Other">
+              <Option value="Yiminghe">yiminghe</Option>
+            </OptGroup> */}
+          </Select>
         </Panel>
       </Collapse>
     );
@@ -217,6 +257,8 @@ AssetSearch.propTypes = {
   doSearchForAsset: PropTypes.func.isRequired,
   doSetFilters: PropTypes.func.isRequired,
   filteredSearch: Filters.isRequired,
+  events: Events.isRequired,
+  assets: Assets.isRequired,
   assetId: PropTypes.number,
   onAssetClick: PropTypes.func.isRequired,
   location: PropTypes.shape({
@@ -232,6 +274,7 @@ AssetSearch.defaultProps = {
 const mapStateToProps = state => {
   return {
     assets: selectAssets(state),
+    events: selectEvents(state),
     filteredSearch: selectFilteredSearch(state),
   };
 };

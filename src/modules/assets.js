@@ -2,6 +2,7 @@ import { createAction } from 'redux-actions';
 import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import { message } from 'antd';
+import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
 // Constants
@@ -16,7 +17,7 @@ export const Asset = PropTypes.shape({
 });
 
 export const Assets = PropTypes.exact({
-  all: PropTypes.arrayOf(Asset),
+  all: PropTypes.objectOf(Asset),
   current: PropTypes.arrayOf(Asset),
 });
 
@@ -46,11 +47,11 @@ export function searchForAsset(query) {
   };
 }
 
-let requestedAssetIds = {};
+const requestedAssetIds = {};
 export function fetchAsset(assetId) {
   return async dispatch => {
     // Skip if we did it before
-    if (requestedAssetIds[assetId] !== undefined) {
+    if (requestedAssetIds[assetId]) {
       return;
     }
     requestedAssetIds[assetId] = true;
@@ -62,29 +63,28 @@ export function fetchAsset(assetId) {
       requestResult = await sdk.rawGet(
         `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${assetId}`
       );
+
+      const result = requestResult.data.data;
+      const items = arrayToObjectById(
+        result.items.map(asset => ({
+          id: asset.id,
+          name: asset.name,
+          description: asset.description,
+          types: asset.types,
+        }))
+      );
+
+      dispatch({ type: ADD_ASSETS, payload: { items } });
     } catch (ex) {
       message.error(`Could not fetch asset.`);
       return;
     }
-
-    const result = requestResult.data.data;
-    const assets_ = result.items.map(asset => ({
-      id: asset.id,
-      name: asset.name,
-      description: asset.description,
-      types: asset.types,
-    }));
-
-    // Crazy way to reset the list
-    setTimeout(() => {
-      requestedAssetIds = {};
-    }, 1000);
-    dispatch({ type: ADD_ASSETS, payload: { items: assets_ } });
+    requestedAssetIds[assetId] = false;
   };
 }
 
 // Reducer
-const initialState = { current: [], all: [] };
+const initialState = { current: [], all: {} };
 
 export default function assets(state = initialState, action) {
   switch (action.type) {
@@ -96,13 +96,10 @@ export default function assets(state = initialState, action) {
       };
     }
     case ADD_ASSETS: {
-      const { items } = action.payload;
-      const existingAssets = state.all ? state.all : [];
-      const allItemsArray = [...items, ...existingAssets];
-      const allItems = [...new Set(allItemsArray)];
+      const all = { ...state.all, ...action.payload.items };
       return {
         ...state,
-        all: allItems,
+        all,
       };
     }
     default:
@@ -118,4 +115,4 @@ export const actions = {
 };
 
 // Selectors
-export const selectAssets = state => state.assets || { current: [], all: [] };
+export const selectAssets = state => state.assets || { current: [], all: {} };
