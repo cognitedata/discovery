@@ -123,11 +123,12 @@ class Model3D extends React.Component {
 
   selectNode = async (nodeId, animate, duration = 500) => {
     this.model.deselectAllNodes();
-    if (nodeId === undefined) {
+    if (nodeId == null) {
       return;
     }
 
     let mapping = this.props.assetMappings.byNodeId[nodeId];
+
     if (!mapping) {
       const nodes = await sdk.ThreeD.listNodes(
         this.props.modelId,
