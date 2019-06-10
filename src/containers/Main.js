@@ -10,22 +10,20 @@ import { fetchTypes } from '../modules/types';
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
 
-// function stringToBool(string) {
-//   return string === 'true';
-// }
+function stringToBool(string) {
+  return string === 'true';
+}
 
 class Main extends React.Component {
   state = {
-    // show3D:
-    //   localStorage.getItem('show3D') != null
-    //     ? stringToBool(localStorage.getItem('show3D'))
-    //     : true,
-    // showPNID:
-    //   localStorage.getItem('showPNID') != null
-    //     ? stringToBool(localStorage.getItem('showPNID'))
-    //     : true,
-    show3D: true,
-    showPNID: false,
+    show3D:
+      localStorage.getItem('show3D') != null
+        ? stringToBool(localStorage.getItem('show3D'))
+        : true,
+    showPNID:
+      localStorage.getItem('showPNID') != null
+        ? stringToBool(localStorage.getItem('showPNID'))
+        : true,
   };
 
   componentDidMount() {
