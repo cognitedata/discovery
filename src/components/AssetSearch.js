@@ -4,8 +4,18 @@ import React from 'react';
 import { connect } from 'react-redux';
 // import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { Input, List, Divider, Collapse, DatePicker, Select } from 'antd';
+import {
+  Icon,
+  Button,
+  Input,
+  List,
+  Divider,
+  Collapse,
+  DatePicker,
+  Select,
+} from 'antd';
 import queryString from 'query-string';
+import styled from 'styled-components';
 import {
   fetchAssets,
   searchForAsset,
@@ -19,6 +29,13 @@ import { createAssetTitle } from '../utils/utils';
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
 const { OptGroup, Option } = Select;
+
+const HeaderWithButton = styled.div`
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+`;
 
 const moveExactMatchToTop = (list, query) => {
   const exactMatchIndex = list.findIndex(asset => asset.name === query);
@@ -128,9 +145,7 @@ class AssetSearch extends React.Component {
     const newFilter = Object.assign({ type: 'event' }, eventFilter);
 
     if (change.length < 2) {
-      this.setState({
-        eventFilter: undefined,
-      });
+      this.removeEventFilter();
       return;
     }
 
@@ -140,6 +155,14 @@ class AssetSearch extends React.Component {
     this.setState({
       eventFilter: newFilter,
     });
+  };
+
+  removeEventFilter = () => {
+    this.setState({ eventFilter: undefined });
+  };
+
+  removeLocationFilter = () => {
+    this.setState({ locationFilter: undefined });
   };
 
   renderSearchField() {
@@ -255,7 +278,21 @@ class AssetSearch extends React.Component {
         }}
       >
         <Panel
-          header="Event filter"
+          header={
+            <HeaderWithButton>
+              <span>Event filter</span>
+              <Button
+                hidden={this.state.eventFilter === undefined}
+                type="primary"
+                onClick={e => {
+                  this.removeEventFilter();
+                  e.stopPropagation();
+                }}
+              >
+                <Icon type="delete" />
+              </Button>
+            </HeaderWithButton>
+          }
           key="context"
           style={{
             border: 0,
@@ -317,7 +354,21 @@ class AssetSearch extends React.Component {
         }}
       >
         <Panel
-          header="Location filter"
+          header={
+            <HeaderWithButton>
+              <span>Location filter</span>
+              <Button
+                hidden={this.state.locationFilter === undefined}
+                type="primary"
+                onClick={e => {
+                  this.removeLocationFilter();
+                  e.stopPropagation();
+                }}
+              >
+                <Icon type="delete" />
+              </Button>
+            </HeaderWithButton>
+          }
           key="context"
           style={{
             border: 0,
