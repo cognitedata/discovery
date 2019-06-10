@@ -35,8 +35,8 @@ class AssetViewer extends React.Component {
     if (prevProps.assetId !== this.props.assetId) {
       this.props.doFetchFiles(this.props.assetId);
       this.props.doFetchAsset(this.props.assetId);
-      this.getNodeId(true);
     }
+    this.getNodeId(true);
   }
 
   getNodeId(fetchIfMissing) {
