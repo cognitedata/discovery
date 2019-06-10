@@ -22,18 +22,26 @@ export const EventList = PropTypes.exact({
 });
 
 // Constants
-export const SET_EVENTS = 'events/SET_EVENTS';
+export const ADD_EVENTS = 'events/ADD_EVENTS';
+export const ADD_UNIQUE_EVENT_TYPES = 'events/ADD_UNIQUE_EVENT_TYPES';
 
 // Reducer
-const initialState = { items: [] };
+const initialState = { items: {}, types: [] };
 
 export default function events(state = initialState, action) {
   switch (action.type) {
-    case SET_EVENTS: {
+    case ADD_EVENTS: {
       const items = { ...state.items, ...action.payload.items };
       return {
         ...state,
         items,
+      };
+    }
+    case ADD_UNIQUE_EVENT_TYPES: {
+      const items = [...new Set([...state.types, ...action.payload.items])];
+      return {
+        ...state,
+        types: items,
       };
     }
     default:
@@ -42,14 +50,18 @@ export default function events(state = initialState, action) {
 }
 
 // Action creators
-const setEvents = createAction(SET_EVENTS);
+const addEvents = createAction(ADD_EVENTS);
+const addUniqueEventTypes = createAction(ADD_UNIQUE_EVENT_TYPES);
 
 export const actions = {
-  setEvents,
+  addEvents,
+  addUniqueEventTypes,
 };
 
 // Selectors
-export const selectEvents = state => state.events || { items: {} };
+export const selectEvents = state => state.events || { items: {}, types: [] };
+export const selectEventTypes = state =>
+  state.events ? state.events.types : [];
 export const selectEventList = state => {
   const items = Object.keys(state.events.items).map(
     key => state.events.items[key]
@@ -82,24 +94,29 @@ export async function createEvent(subtype, description, assetIds, metadata) {
 export function fetchEvents(assetId) {
   return async dispatch => {
     const result = await sdk.Events.list({ assetId, limit: 10000 });
+
+    const types = result.items.map(event => event.type);
     const items = arrayToObjectById(result.items);
 
-    dispatch({ type: SET_EVENTS, payload: { items } });
+    dispatch({ type: ADD_UNIQUE_EVENT_TYPES, payload: { items: types } });
+    dispatch({ type: ADD_EVENTS, payload: { items } });
   };
 }
 
 export function fetchEventsByFilter(eventFilter) {
   return async dispatch => {
-    const result = await sdk.Events.search({
-      type: eventFilter.type,
+    const result = await sdk.Events.list({
+      type: eventFilter.eventType,
       subtype: 'IAA',
       minStartTime: eventFilter.from,
       maxStartTime: eventFilter.to,
       limit: 10000,
     });
 
+    const types = result.items.map(event => event.type);
     const items = arrayToObjectById(result.items);
 
-    dispatch({ type: SET_EVENTS, payload: { items } });
+    dispatch({ type: ADD_UNIQUE_EVENT_TYPES, payload: { items: types } });
+    dispatch({ type: ADD_EVENTS, payload: { items } });
   };
 }
