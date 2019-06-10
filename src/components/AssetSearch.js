@@ -92,7 +92,7 @@ class AssetSearch extends React.Component {
     }
 
     eventFilter.from = change[0].unix() * 1000; // ms
-    eventFilter.to = change[1].unix() * 1000; // ms
+    eventFilter.to = (change[1].unix() + 86400) * 1000; // the day after, ms
     this.setState({
       eventFilter,
     });
