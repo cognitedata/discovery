@@ -18,15 +18,14 @@ export const Filters = PropTypes.exact({
 export const SET_FILTERS = 'filters/SET_FILTERS';
 
 // Reducer
-const initialState = { items: [] };
+const initialState = {};
 
 export default function events(state = initialState, action) {
   switch (action.type) {
     case SET_FILTERS: {
       const { items } = action.payload;
       return {
-        ...state,
-        items,
+        ...items,
       };
     }
     default:
@@ -39,7 +38,7 @@ export const actions = {
 };
 
 // Selectors
-export const selectFilters = state => state.filters || { items: [] };
+export const selectFilters = state => state.filters || {};
 
 const applyEventFilter = (state, asset, filter) => {
   const events_ = selectEventList(state).items;
@@ -54,22 +53,32 @@ const applyEventFilter = (state, asset, filter) => {
   // Check if at least of the remaining assets obey all criteria
   return eventsForThisAsset.some(event => {
     return (
-      (filter.eventType == null || event.type === filter.eventType) &&
-      (filter.from == null || event.startTime >= filter.from) &&
-      (filter.to == null || event.startTime <= filter.to)
+      (filter.eventType === undefined || event.type === filter.eventType) &&
+      (filter.from === undefined || event.startTime >= filter.from) &&
+      (filter.to === undefined || event.startTime <= filter.to)
     );
   });
+};
+
+const applyLocationFilter = (state, asset, filter) => {
+  if (filter.area === undefined) {
+    return true;
+  }
+  return asset.metadata && asset.metadata.AREA === filter.area;
 };
 
 const applyFilter = (state, asset, filter) => {
   if (filter.type === 'event') {
     return applyEventFilter(state, asset, filter);
   }
+  if (filter.type === 'location') {
+    return applyLocationFilter(state, asset, filter);
+  }
   return true;
 };
 
 const applyFilters = (state, asset) => {
-  const filters = selectFilters(state).items;
+  const filters = selectFilters(state);
   // Loop through all filters and see if anyone rejects this asset
   return Object.keys(filters).every(filterKey =>
     applyFilter(state, asset, filters[filterKey])
@@ -87,6 +96,7 @@ export const selectFilteredSearch = state => {
   }
 
   const items = assets.filter(asset => applyFilters(state, asset));
+
   return { items };
 };
 
@@ -101,6 +111,7 @@ export function setFilters(filters) {
         dispatch(fetchEventsByFilter(filters.event));
       }
     }
+
     dispatch({ type: SET_FILTERS, payload: { items: filters } });
   };
 }

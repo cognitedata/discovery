@@ -14,6 +14,7 @@ import {
 } from '../modules/assets';
 import { EventList, selectEventList } from '../modules/events';
 import { setFilters, selectFilteredSearch, Filters } from '../modules/filters';
+import { createAssetTitle } from '../utils/utils';
 
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
@@ -32,6 +33,14 @@ class AssetSearch extends React.Component {
   state = {
     query: '',
     eventFilter: { type: 'event' },
+    locationFilter: { type: 'location' },
+  };
+
+  areas = {
+    'Cellar deck': ['M110', 'M210', 'M310', 'Z00'],
+    'Upper deck': ['M50', 'M520', 'M40', 'M420'],
+    'Middle deck': ['M120', 'M220', 'M320'],
+    'Weather deck': ['M130', 'M230', 'M400', 'M330'],
   };
 
   componentDidMount() {
@@ -44,7 +53,7 @@ class AssetSearch extends React.Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (prevProps.events !== this.props.events) {
       // Find unique list of assetIds
       const assetIds = [
@@ -58,7 +67,45 @@ class AssetSearch extends React.Component {
       );
       this.props.doFetchAssets(missingAssetIds);
     }
+
+    if (
+      prevState.eventFilter !== this.state.eventFilter ||
+      prevState.locationFilter !== this.state.locationFilter
+    ) {
+      const filters = {};
+
+      const { eventFilter } = this.state;
+      if (
+        eventFilter.from != null ||
+        eventFilter.to != null ||
+        eventFilter.eventType != null
+      ) {
+        filters.event = eventFilter;
+      }
+
+      const { locationFilter } = this.state;
+      if (locationFilter.area != null) {
+        filters.location = locationFilter;
+      }
+
+      this.props.doSetFilters(filters);
+    }
   }
+
+  onAreaChange = change => {
+    const { locationFilter } = this.state;
+    const newFilter = Object.assign({}, locationFilter);
+
+    if (change === 'none') {
+      newFilter.area = undefined;
+    } else {
+      newFilter.area = change;
+    }
+
+    this.setState({
+      locationFilter: newFilter,
+    });
+  };
 
   onChange = change => {
     const query = change.target.value;
@@ -68,39 +115,40 @@ class AssetSearch extends React.Component {
 
   onEventTypeChange = change => {
     const { eventFilter } = this.state;
+    const newFilter = Object.assign({}, eventFilter);
 
     if (change === 'none') {
-      eventFilter.eventType = undefined;
+      newFilter.eventType = undefined;
     } else {
-      eventFilter.eventType = change;
+      newFilter.eventType = change;
     }
 
-    this.setState({ eventFilter });
-    this.props.doSetFilters({ event: eventFilter });
+    this.setState({
+      eventFilter: newFilter,
+    });
   };
 
   onRangeChange = change => {
     const { eventFilter } = this.state;
+    const newFilter = Object.assign({}, eventFilter);
 
     if (change.length < 2) {
-      eventFilter.from = undefined;
-      eventFilter.to = undefined;
-      eventFilter.eventType = undefined;
+      newFilter.from = undefined;
+      newFilter.to = undefined;
+      newFilter.eventType = undefined;
 
       this.setState({
-        eventFilter,
+        eventFilter: newFilter,
       });
-      this.props.doSetFilters({});
       return;
     }
 
-    eventFilter.from = change[0].unix() * 1000; // ms
-    eventFilter.to = (change[1].unix() + 86400) * 1000; // the day after, ms
-    this.setState({
-      eventFilter,
-    });
+    newFilter.from = change[0].unix() * 1000; // ms
+    newFilter.to = (change[1].unix() + 86400) * 1000; // the day after, ms
 
-    this.props.doSetFilters({ event: eventFilter });
+    this.setState({
+      eventFilter: newFilter,
+    });
   };
 
   renderSearchField() {
@@ -171,7 +219,7 @@ class AssetSearch extends React.Component {
                         fontSize: 12,
                       }}
                     >
-                      <a>{item.name.toUpperCase()}</a>
+                      <a>{createAssetTitle(item).toUpperCase()}</a>
                     </div>
                   }
                   onClick={() =>
@@ -203,7 +251,7 @@ class AssetSearch extends React.Component {
     );
   }
 
-  renderFilters() {
+  renderEventFilter() {
     return (
       <Collapse
         accordion
@@ -213,8 +261,6 @@ class AssetSearch extends React.Component {
           padding: 10,
           paddingLeft: 10,
           paddingRight: 10,
-          // color: '#fff',
-          // background: 'rgb(51, 51, 51)',
         }}
       >
         <Panel
@@ -246,6 +292,62 @@ class AssetSearch extends React.Component {
           </Select>
         </Panel>
       </Collapse>
+    );
+  }
+
+  renderAreas() {
+    return Object.keys(this.areas).map(areaClass => (
+      <OptGroup key={areaClass} label={areaClass}>
+        {this.areas[areaClass].map(area => (
+          <Option key={area} value={area}>
+            {area}
+          </Option>
+        ))}
+      </OptGroup>
+    ));
+  }
+
+  renderLocationFilter() {
+    return (
+      <Collapse
+        accordion
+        style={{
+          width: '100%',
+          borderRadius: 0,
+          padding: 10,
+          paddingLeft: 10,
+          paddingRight: 10,
+        }}
+      >
+        <Panel
+          header="Location filter"
+          key="context"
+          style={{
+            border: 0,
+            width: '100%',
+            color: '#fff',
+          }}
+        >
+          <Select
+            defaultValue="none"
+            style={{ width: '100%' }}
+            onChange={this.onAreaChange}
+            value={this.state.locationFilter.area || 'none'}
+          >
+            <Option value="none">Area</Option>
+            {this.renderAreas()}
+          </Select>
+        </Panel>
+      </Collapse>
+    );
+  }
+
+  renderFilters() {
+    return (
+      <>
+        {this.renderEventFilter()}
+        {this.renderLocationFilter()}
+      </>
     );
   }
 
