@@ -181,7 +181,7 @@ class AssetSearch extends React.Component {
           }}
         >
           <Input
-            placeholder="Search for tag (13FV1234)"
+            placeholder="Search for asset"
             defaultValue={defaultSearchQuery}
             onChange={this.onChange}
             style={{
