@@ -2,8 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
+import { THREE } from '@cognite/3d-viewer';
 import { message } from 'antd';
+import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
+
 import {
   fetchMappingsFromNodeId,
   selectAssetMappings,
@@ -45,10 +48,6 @@ class Model3D extends React.Component {
 
     if (prevProps.nodeId !== this.props.nodeId) {
       if (this.model) {
-        this.model.deselectAllNodes();
-      }
-
-      if (this.model && this.model._getTreeIndex(this.props.nodeId) != null) {
         this.selectNode(this.props.nodeId, true, 500);
       }
     }
@@ -122,10 +121,37 @@ class Model3D extends React.Component {
     window.model = model;
   };
 
-  selectNode = (nodeId, animate, duration = 500) => {
+  selectNode = async (nodeId, animate, duration = 500) => {
     this.model.deselectAllNodes();
-    this.model.selectNode(nodeId);
-    const boundingBox = this.model.getBoundingBox(nodeId);
+    if (nodeId === undefined) {
+      return;
+    }
+
+    let mapping = this.props.assetMappings.byNodeId[nodeId];
+    if (!mapping) {
+      const nodes = await sdk.ThreeD.listNodes(
+        this.props.modelId,
+        this.props.revisionId,
+        { nodeId, depth: 0 }
+      );
+      [mapping] = nodes.items;
+    }
+
+    const boundingBox = new THREE.Box3();
+    // The node may not have geometries in the scene, so we need to
+    // find all children and select them + compute bounding box
+    for (
+      let { treeIndex } = mapping;
+      treeIndex < mapping.treeIndex + mapping.subtreeSize;
+      treeIndex++
+    ) {
+      const thisNodeId = this.model._getNodeId(treeIndex);
+      if (thisNodeId != null) {
+        this.model.selectNode(thisNodeId);
+        boundingBox.union(this.model.getBoundingBox(thisNodeId));
+      }
+    }
+
     if (animate) {
       this.viewer.fitCameraToBoundingBox(boundingBox, duration);
     }
