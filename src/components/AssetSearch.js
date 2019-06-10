@@ -32,8 +32,8 @@ const moveExactMatchToTop = (list, query) => {
 class AssetSearch extends React.Component {
   state = {
     query: '',
-    eventFilter: { type: 'event' },
-    locationFilter: { type: 'location' },
+    eventFilter: undefined,
+    locationFilter: undefined,
   };
 
   areas = {
@@ -74,18 +74,12 @@ class AssetSearch extends React.Component {
     ) {
       const filters = {};
 
-      const { eventFilter } = this.state;
-      if (
-        eventFilter.from != null ||
-        eventFilter.to != null ||
-        eventFilter.eventType != null
-      ) {
-        filters.event = eventFilter;
+      if (this.state.eventFilter) {
+        filters.event = this.state.eventFilter;
       }
 
-      const { locationFilter } = this.state;
-      if (locationFilter.area != null) {
-        filters.location = locationFilter;
+      if (this.state.locationFilter) {
+        filters.location = this.state.locationFilter;
       }
 
       this.props.doSetFilters(filters);
@@ -93,17 +87,18 @@ class AssetSearch extends React.Component {
   }
 
   onAreaChange = change => {
-    const { locationFilter } = this.state;
-    const newFilter = Object.assign({}, locationFilter);
-
     if (change === 'none') {
-      newFilter.area = undefined;
-    } else {
-      newFilter.area = change;
+      this.setState({
+        locationFilter: undefined,
+      });
+      return;
     }
 
     this.setState({
-      locationFilter: newFilter,
+      locationFilter: {
+        type: 'location',
+        area: change,
+      },
     });
   };
 
@@ -115,7 +110,7 @@ class AssetSearch extends React.Component {
 
   onEventTypeChange = change => {
     const { eventFilter } = this.state;
-    const newFilter = Object.assign({}, eventFilter);
+    const newFilter = Object.assign({ type: 'event' }, eventFilter);
 
     if (change === 'none') {
       newFilter.eventType = undefined;
@@ -130,15 +125,11 @@ class AssetSearch extends React.Component {
 
   onRangeChange = change => {
     const { eventFilter } = this.state;
-    const newFilter = Object.assign({}, eventFilter);
+    const newFilter = Object.assign({ type: 'event' }, eventFilter);
 
     if (change.length < 2) {
-      newFilter.from = undefined;
-      newFilter.to = undefined;
-      newFilter.eventType = undefined;
-
       this.setState({
-        eventFilter: newFilter,
+        eventFilter: undefined,
       });
       return;
     }
@@ -277,8 +268,14 @@ class AssetSearch extends React.Component {
             defaultValue="none"
             style={{ width: '100%' }}
             onChange={this.onEventTypeChange}
-            disabled={this.state.eventFilter.from === undefined}
-            value={this.state.eventFilter.eventType || 'none'}
+            disabled={
+              this.state.eventFilter === undefined ||
+              this.state.eventFilter.from === undefined
+            }
+            value={
+              (this.state.eventFilter && this.state.eventFilter.eventType) ||
+              'none'
+            }
           >
             <Option value="none">Type</Option>
             <OptGroup label="Work orders">
@@ -332,7 +329,10 @@ class AssetSearch extends React.Component {
             defaultValue="none"
             style={{ width: '100%' }}
             onChange={this.onAreaChange}
-            value={this.state.locationFilter.area || 'none'}
+            value={
+              (this.state.locationFilter && this.state.locationFilter.area) ||
+              'none'
+            }
           >
             <Option value="none">Area</Option>
             {this.renderAreas()}
