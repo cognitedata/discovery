@@ -98,11 +98,6 @@ class PNIDViewer extends React.Component {
     }
 
     return getTextFromMetadataNode(metadata) === this.props.asset.name;
-
-    // if (this.state.currentAsset) {
-    //   return getTextFromMetadataNode(metadata) === this.state.currentAsset.name;
-    // }
-    // return false;
   };
 
   renderSVGViewer() {
