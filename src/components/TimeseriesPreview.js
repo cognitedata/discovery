@@ -1,22 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Modal } from 'antd';
-import { TimeseriesChart } from '@cognite/gearbox';
+import { TimeseriesChartMeta } from '@cognite/gearbox';
 
 class TimeseriesPreview extends React.PureComponent {
   render() {
     return (
       <Modal
         visible
+        width={1000}
         title={this.props.timeseries.name}
         onCancel={this.props.onClose}
         footer={[null, null]}
       >
-        <TimeseriesChart
-          timeseriesIds={[this.props.timeseries.id]}
-          contextChart
-          zoomable
-        />
+        <TimeseriesChartMeta timeseriesId={this.props.timeseries.id} />
       </Modal>
     );
   }
