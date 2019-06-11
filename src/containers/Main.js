@@ -110,7 +110,7 @@ class Main extends React.Component {
     }
 
     const { match, history, location } = this.props;
-    const assetDrawerWidth = 275;
+    const assetDrawerWidth = 350;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
@@ -119,7 +119,7 @@ class Main extends React.Component {
               style={{
                 overflow: 'auto',
                 height: '100vh',
-                background: 'rgb(38, 38, 38)',
+                background: 'rgb(255,255,255)',
               }}
               width={250}
             >

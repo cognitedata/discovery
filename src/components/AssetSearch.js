@@ -4,16 +4,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import * as sdk from '@cognite/sdk';
 import PropTypes from 'prop-types';
-import {
-  Icon,
-  Button,
-  Input,
-  List,
-  Divider,
-  Collapse,
-  DatePicker,
-  Select,
-} from 'antd';
+import { Icon, Button, Input, List, Collapse, DatePicker, Select } from 'antd';
 import queryString from 'query-string';
 import styled from 'styled-components';
 import {
@@ -26,7 +17,6 @@ import { EventList, selectEventList } from '../modules/events';
 import { setFilters, selectFilteredSearch, Filters } from '../modules/filters';
 import { createAssetTitle } from '../utils/utils';
 
-const { Search } = Input;
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
 const { OptGroup, Option } = Select;
@@ -181,19 +171,12 @@ class AssetSearch extends React.Component {
             width: '100%',
           }}
         >
-          <Search
+          <Input
             placeholder="Search for asset"
             defaultValue={defaultSearchQuery}
             onChange={this.onChange}
-            style={{
-              color: '#fff',
-            }}
           />
         </div>
-        <Divider
-          type="horizontal"
-          style={{ margin: 10, backgroundColor: '#333333' }}
-        />
       </>
     );
   }
@@ -225,7 +208,6 @@ class AssetSearch extends React.Component {
                     <div
                       style={{
                         paddingLeft: 10,
-                        color: 'rgb(255, 255, 255)',
                         fontWeight: 'bold',
                         fontSize: 12,
                       }}
@@ -240,7 +222,6 @@ class AssetSearch extends React.Component {
                     <div
                       style={{
                         paddingLeft: 10,
-                        color: 'rgb(255, 255, 255)',
                         fontSize: 12,
                       }}
                     >
@@ -250,8 +231,8 @@ class AssetSearch extends React.Component {
                   style={{
                     background:
                       item.id === this.props.assetId
-                        ? 'rgb(80, 80, 80)'
-                        : 'rgb(51, 51, 51)',
+                        ? 'rgb(230,230,230)'
+                        : 'rgb(245,245,245)',
                   }}
                 />
               </List.Item>
@@ -314,7 +295,6 @@ class AssetSearch extends React.Component {
           style={{
             border: 0,
             width: '100%',
-            color: '#fff',
           }}
         >
           <RangePicker onChange={this.onRangeChange} />
@@ -367,7 +347,6 @@ class AssetSearch extends React.Component {
           style={{
             border: 0,
             width: '100%',
-            color: '#fff',
           }}
         >
           <Select
@@ -399,15 +378,11 @@ class AssetSearch extends React.Component {
 
   render() {
     return (
-      <div
-        style={{
-          background: 'rgb(38, 38, 38)',
-        }}
-      >
+      <>
         {this.renderSearchField()}
         {this.renderFilters()}
         {this.renderSearchResults()}
-      </div>
+      </>
     );
   }
 }
