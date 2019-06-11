@@ -80,20 +80,32 @@ export function getAllAssetMappings(modelId, revisionId, assetId) {
   };
 }
 
+const currentFetching = { asset: {}, node: {} };
 export function fetchMappingsFromAssetId(modelId, revisionId, assetId) {
   return async dispatch => {
-    const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
-      assetId,
-    });
-
-    const mappings = result.items;
-    if (mappings.length === 0) {
+    if (currentFetching.asset[assetId]) {
+      // Currently fetching this
       return;
     }
+    currentFetching.asset[assetId] = true;
+    try {
+      const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
+        assetId,
+      });
 
-    // Choose largest mapping
-    mappings.sort((a, b) => a.subtreeSize - b.subtreeSize);
-    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
+      const mappings = result.items;
+      if (mappings.length === 0) {
+        return;
+      }
+
+      // Choose largest mapping
+      mappings.sort((a, b) => a.subtreeSize - b.subtreeSize);
+      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
+    } catch (ex) {
+      // Could not fetch
+    }
+
+    currentFetching.asset[assetId] = false;
   };
 }
 
