@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { List, Button } from 'antd';
+import { List, Button, message } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
 import * as sdk from '@cognite/sdk';
@@ -83,6 +83,7 @@ class PNIDViewer extends React.Component {
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
       } else {
+        message.info('Did not find any asset associated to this object.');
         return;
       }
     } else {
