@@ -266,6 +266,29 @@ class AssetSearch extends React.Component {
     );
   }
 
+  renderEventType() {
+    return (
+      <Select
+        defaultValue="none"
+        style={{ width: '100%' }}
+        onChange={this.onEventTypeChange}
+        value={
+          (this.state.eventFilter && this.state.eventFilter.eventType) || 'none'
+        }
+      >
+        <Option value="none">Type</Option>
+        <OptGroup label="Work orders">
+          <Option value="Workorder">Work order</Option>
+          <Option value="Workpermit">Work permit</Option>
+        </OptGroup>
+        <OptGroup label="Other">
+          <Option value="OilSample">Oil sample</Option>
+          <Option value="leakLog">Leak log</Option>
+        </OptGroup>
+      </Select>
+    );
+  }
+
   renderEventFilter() {
     return (
       <Collapse
@@ -299,29 +322,9 @@ class AssetSearch extends React.Component {
           }}
         >
           <RangePicker onChange={this.onRangeChange} />
-          <Select
-            defaultValue="none"
-            style={{ width: '100%' }}
-            onChange={this.onEventTypeChange}
-            disabled={
-              this.state.eventFilter === undefined ||
-              this.state.eventFilter.from === undefined
-            }
-            value={
-              (this.state.eventFilter && this.state.eventFilter.eventType) ||
-              'none'
-            }
-          >
-            <Option value="none">Type</Option>
-            <OptGroup label="Work orders">
-              <Option value="Workorder">Work order</Option>
-              <Option value="Workpermit">Work permit</Option>
-            </OptGroup>
-            <OptGroup label="Other">
-              <Option value="OilSample">Oil sample</Option>
-              <Option value="leakLog">Leak log</Option>
-            </OptGroup>
-          </Select>
+          {this.state.eventFilter &&
+            this.state.eventFilter.from &&
+            this.renderEventType()}
         </Panel>
       </Collapse>
     );
