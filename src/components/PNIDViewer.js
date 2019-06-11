@@ -136,10 +136,8 @@ class PNIDViewer extends React.Component {
       return null;
     }
 
-    const filesForThisAsset = this.props.files.byAssetId[this.props.asset.id];
-    if (!filesForThisAsset) {
-      return null;
-    }
+    const filesForThisAsset =
+      this.props.files.byAssetId[this.props.asset.id] || [];
 
     const pNIDFiles = filesForThisAsset.filter(
       file =>
