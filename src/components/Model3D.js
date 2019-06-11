@@ -55,7 +55,7 @@ class Model3D extends React.Component {
 
     if (prevProps.nodeId !== this.props.nodeId) {
       if (this.model) {
-        this.selectNode(this.props.nodeId, true, 500);
+        this.selectNode(this.props.nodeId, true, 1500);
       }
     }
 
@@ -217,7 +217,7 @@ class Model3D extends React.Component {
 
     const plane = new THREE.Plane(
       new THREE.Vector3(0, -1, 0),
-      boundingBox.max.y
+      boundingBox.max.y + 0.5
     );
     this.viewer.setSlicingPlanes([plane]);
   };
