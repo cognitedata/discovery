@@ -209,11 +209,20 @@ class Model3D extends React.Component {
     return false;
   };
 
-  colorSearchResult() {
-    if (!this.model) {
-      return;
-    }
+  setSlicingForCurrentAsset = () => {
+    const boundingBox = new THREE.Box3();
+    this.iterateNodeSubtree(this.props.nodeId, id => {
+      boundingBox.union(this.model.getBoundingBox(id));
+    });
 
+    const plane = new THREE.Plane(
+      new THREE.Vector3(0, -1, 0),
+      boundingBox.max.y
+    );
+    this.viewer.setSlicingPlanes([plane]);
+  };
+
+  colorSearchResult() {
     this.currentColoredNodes.forEach(nodeId => {
       this.iterateNodeSubtree(nodeId, id => {
         this.model.setNodeColor(id, 100, 100, 100);
@@ -239,7 +248,10 @@ class Model3D extends React.Component {
   }
 
   render() {
-    this.colorSearchResult();
+    if (this.model) {
+      this.colorSearchResult();
+      this.setSlicingForCurrentAsset();
+    }
     return (
       <>
         {this.state.progress && (
