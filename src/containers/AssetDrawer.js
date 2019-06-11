@@ -107,13 +107,7 @@ class AssetDrawer extends React.Component {
       >
         {types.map(type => (
           <HeaderWithButton key={`ts_${type.id}`}>
-            <Button
-              key={type.id}
-              type="link"
-              // onClick={() => this.doRemoveTypeFromAsset(type.id, asset)}
-            >
-              {type.name}
-            </Button>
+            {type.name}
             <Popconfirm
               title="Are you sure？"
               okText="Yes"
