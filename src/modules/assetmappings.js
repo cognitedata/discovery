@@ -111,17 +111,27 @@ export function fetchMappingsFromAssetId(modelId, revisionId, assetId) {
 
 export function fetchMappingsFromNodeId(modelId, revisionId, nodeId) {
   return async dispatch => {
-    const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
-      nodeId,
-    });
-
-    const mappings = result.items;
-    if (mappings.length === 0) {
+    if (currentFetching.node[nodeId]) {
+      // Currently fetching this
       return;
     }
+    currentFetching.node[nodeId] = true;
+    try {
+      const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
+        nodeId,
+      });
 
-    const mapping = findBestMappingForNodeId(nodeId, mappings);
-    dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping } });
+      const mappings = result.items;
+      if (mappings.length === 0) {
+        return;
+      }
+
+      const mapping = findBestMappingForNodeId(nodeId, mappings);
+      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping } });
+    } catch (ex) {
+      // Could not fetch
+    }
+    currentFetching.node[nodeId] = false;
   };
 }
 
