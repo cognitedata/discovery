@@ -23,9 +23,12 @@ class Model3D extends React.Component {
   cache = {};
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
-      // this.selectNode(this.state.nodeId, true);
+    if (prevProps.nodeId !== this.props.nodeId) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ nodeId: undefined });
+    }
 
+    if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
       const assetId = this.getAssetIdForNodeId(this.state.nodeId);
       if (assetId) {
         this.props.onAssetIdChange(assetId);
