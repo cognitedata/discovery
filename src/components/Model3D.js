@@ -60,18 +60,15 @@ class Model3D extends React.Component {
     }
 
     if (prevProps.filteredSearch !== this.props.filteredSearch) {
-      let missing3D = this.props.filteredSearch.items.filter(
-        asset => this.props.assetMappings.byAssetId[asset.id] === undefined
+      const { assetMappings, filteredSearch, modelId, revisionId } = this.props;
+      let missing3D = filteredSearch.items.filter(
+        asset => assetMappings.byAssetId[asset.id] === undefined
       );
       // Max 20 requests
       missing3D = missing3D.slice(0, Math.min(missing3D.length, 20));
 
       missing3D.forEach(asset => {
-        this.props.doFetchMappingsFromAssetId(
-          this.props.modelId,
-          this.props.revisionId,
-          asset.id
-        );
+        this.props.doFetchMappingsFromAssetId(modelId, revisionId, asset.id);
       });
     }
   }
