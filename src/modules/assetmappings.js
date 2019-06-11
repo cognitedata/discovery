@@ -127,7 +127,7 @@ export function fetchMappingsFromNodeId(modelId, revisionId, nodeId) {
       }
 
       const mapping = findBestMappingForNodeId(nodeId, mappings);
-      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping } });
+      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping, nodeId } });
     } catch (ex) {
       // Could not fetch
     }
@@ -158,9 +158,14 @@ const initialState = { byNodeId: {}, byAssetId: {} };
 export default function assetmappings(state = initialState, action) {
   switch (action.type) {
     case ADD_ASSET_MAPPINGS: {
-      const { mapping } = action.payload;
+      const { mapping, nodeId } = action.payload;
       state.byNodeId[mapping.nodeId] = mapping;
       state.byAssetId[mapping.assetId] = mapping;
+      if (nodeId) {
+        // We may have an asset mapping that is for a parent node.
+        // So make sure this node also gets mapped.
+        state.byNodeId[nodeId] = mapping;
+      }
 
       return {
         ...state,
