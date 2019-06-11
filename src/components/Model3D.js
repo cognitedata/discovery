@@ -144,7 +144,10 @@ class Model3D extends React.Component {
   onReady = (viewer, model) => {
     this.viewer = viewer;
     this.model = model;
+    // Temp disable screen space culling
+    model._screenRatioLimit = 0.0;
     window.viewer = viewer;
+    window.THREE = THREE;
     window.model = model;
   };
 
