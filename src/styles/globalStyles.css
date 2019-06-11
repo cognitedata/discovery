@@ -22,3 +22,11 @@ code {
 .ant-empty-description {
   color: #fff
 }
+
+.ant-input {
+  background: rgb(51, 51, 51);
+  color: #fff;
+  border-radius: 0;
+  border: 0;
+  height: 50;
+}

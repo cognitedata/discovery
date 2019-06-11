@@ -26,6 +26,7 @@ import { EventList, selectEventList } from '../modules/events';
 import { setFilters, selectFilteredSearch, Filters } from '../modules/filters';
 import { createAssetTitle } from '../utils/utils';
 
+const { Search } = Input;
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
 const { OptGroup, Option } = Select;
@@ -180,17 +181,12 @@ class AssetSearch extends React.Component {
             width: '100%',
           }}
         >
-          <Input
+          <Search
             placeholder="Search for asset"
             defaultValue={defaultSearchQuery}
             onChange={this.onChange}
             style={{
-              background: 'rgb(51, 51, 51)',
-              mixBlendMode: 'normal',
               color: '#fff',
-              borderRadius: 0,
-              border: 0,
-              height: 50,
             }}
           />
         </div>
