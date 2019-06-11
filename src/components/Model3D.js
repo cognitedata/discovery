@@ -11,10 +11,14 @@ import {
   fetchMappingsFromNodeId,
   selectAssetMappings,
   AssetMappings,
+  fetchMappingsFromAssetId,
 } from '../modules/assetmappings';
+import { selectFilteredSearch, Filters } from '../modules/filters';
 
 class Model3D extends React.Component {
   state = { hasWarnedAboutNode: {} };
+
+  currentColoredNodes = [];
 
   cache = {};
 
@@ -50,6 +54,22 @@ class Model3D extends React.Component {
       if (this.model) {
         this.selectNode(this.props.nodeId, true, 500);
       }
+    }
+
+    if (prevProps.filteredSearch !== this.props.filteredSearch) {
+      let missing3D = this.props.filteredSearch.items.filter(
+        asset => this.props.assetMappings.byAssetId[asset.id] === undefined
+      );
+      // Max 20 requests
+      missing3D = missing3D.slice(0, Math.min(missing3D.length, 20));
+
+      missing3D.forEach(asset => {
+        this.props.doFetchMappingsFromAssetId(
+          this.props.modelId,
+          this.props.revisionId,
+          asset.id
+        );
+      });
     }
   }
 
@@ -108,6 +128,10 @@ class Model3D extends React.Component {
     if (nodeId) {
       this.selectNode(nodeId, true, 0);
     }
+
+    this.model._treeIndexNodeIdMap.forEach(id => {
+      this.model.setNodeColor(id, 100, 100, 100);
+    });
   };
 
   onClick = nodeId => {
@@ -158,7 +182,58 @@ class Model3D extends React.Component {
     }
   };
 
+  iterateNodeSubtree = (nodeId, action) => {
+    const mapping = this.props.assetMappings.byNodeId[nodeId];
+    if (mapping) {
+      for (
+        let { treeIndex } = mapping;
+        treeIndex < mapping.treeIndex + mapping.subtreeSize;
+        treeIndex++
+      ) {
+        const id = this.model._getNodeId(treeIndex);
+        if (id != null) {
+          action(id);
+        }
+      }
+
+      // Did execute
+      return true;
+    }
+    // Did not execute
+    return false;
+  };
+
+  colorSearchResult() {
+    if (!this.model) {
+      return;
+    }
+
+    this.currentColoredNodes.forEach(nodeId => {
+      this.iterateNodeSubtree(nodeId, id => {
+        this.model.setNodeColor(id, 100, 100, 100);
+      });
+    });
+
+    this.currentColoredNodes = [];
+
+    // Reset color on old ones
+    this.props.filteredSearch.items.forEach(asset => {
+      const mapping = this.props.assetMappings.byAssetId[asset.id];
+      if (mapping) {
+        const { nodeId } = mapping;
+        const didColor = this.iterateNodeSubtree(nodeId, id => {
+          this.model.resetNodeColor(id);
+        });
+
+        if (didColor) {
+          this.currentColoredNodes.push(nodeId);
+        }
+      }
+    });
+  }
+
   render() {
+    this.colorSearchResult();
     return (
       <>
         {this.state.progress && (
@@ -186,7 +261,9 @@ Model3D.propTypes = {
   nodeId: PropTypes.number,
   onAssetIdChange: PropTypes.func.isRequired,
   doFetchMappingsFromNodeId: PropTypes.func.isRequired,
+  doFetchMappingsFromAssetId: PropTypes.func.isRequired,
   assetMappings: AssetMappings,
+  filteredSearch: Filters.isRequired,
 };
 
 Model3D.defaultProps = {
@@ -198,12 +275,15 @@ Model3D.defaultProps = {
 const mapStateToProps = state => {
   return {
     assetMappings: selectAssetMappings(state),
+    filteredSearch: selectFilteredSearch(state),
   };
 };
 
 const mapDispatchToProps = dispatch => ({
   doFetchMappingsFromNodeId: (...args) =>
     dispatch(fetchMappingsFromNodeId(...args)),
+  doFetchMappingsFromAssetId: (...args) =>
+    dispatch(fetchMappingsFromAssetId(...args)),
 });
 
 export default connect(
