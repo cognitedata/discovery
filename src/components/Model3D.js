@@ -41,7 +41,7 @@ class Model3D extends React.Component {
         if (assetId) {
           this.props.onAssetIdChange(assetId);
         } else if (!this.state.hasWarnedAboutNode[this.state.nodeId]) {
-          message.info('Did not find asset associated to this 3D object.');
+          message.info('Did not find any asset associated to this 3D object.');
           setTimeout(() => {
             const { hasWarnedAboutNode } = this.state;
             hasWarnedAboutNode[this.state.nodeId] = true;
