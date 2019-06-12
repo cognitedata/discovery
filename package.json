@@ -15,6 +15,7 @@
     "antd": "^3.18.1",
     "makecancelable": "^1.1.1",
     "mixpanel": "^0.10.2",
+    "moment": "^2.24.0",
     "prop-types": "^15.6.2",
     "query-string": "^6.5.0",
     "react": "^16.8.4",
