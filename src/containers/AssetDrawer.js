@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { List, Drawer, Spin, Collapse, Button, Icon, Popconfirm } from 'antd';
 import styled from 'styled-components';
-
+import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
 import {
   fetchTimeseries,
@@ -164,23 +164,32 @@ class AssetDrawer extends React.Component {
     </Collapse>
   );
 
-  renderEvents = events => (
-    <Collapse accordion>
-      <Panel header={<span>Events ({events.length})</span>} key="events">
-        <List
-          size="small"
-          dataSource={events}
-          renderItem={event => (
-            <List.Item>
-              <Button type="link" onClick={() => this.eventOnClick(event.id)}>
-                {event.type}
-              </Button>
-            </List.Item>
-          )}
-        />
-      </Panel>
-    </Collapse>
-  );
+  renderEvents = events => {
+    events = events.sort((a, b) => b.startTime - a.startTime);
+    return (
+      <Collapse accordion>
+        <Panel header={<span>Events ({events.length})</span>} key="events">
+          <List
+            size="small"
+            dataSource={events}
+            renderItem={event => (
+              <List.Item.Meta
+                title={
+                  <Button type="link">
+                    {moment
+                      .unix(event.startTime / 1000)
+                      .format('YYYY-MM-DD HH:mm')}
+                  </Button>
+                }
+                description={event.type}
+                onClick={() => this.eventOnClick(event.id)}
+              />
+            )}
+          />
+        </Panel>
+      </Collapse>
+    );
+  };
 
   render() {
     const { asset } = this.props;
