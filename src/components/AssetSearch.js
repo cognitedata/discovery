@@ -172,7 +172,7 @@ class AssetSearch extends React.Component {
           }}
         >
           <Input
-            placeholder="Search for asset"
+            placeholder="Search for tag"
             defaultValue={defaultSearchQuery}
             onChange={this.onChange}
           />
