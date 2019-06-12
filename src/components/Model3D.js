@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
 import { THREE } from '@cognite/3d-viewer';
-import { message } from 'antd';
+import { message, Slider } from 'antd';
 import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
 
@@ -219,6 +219,12 @@ class Model3D extends React.Component {
     this.viewer.setSlicingPlanes([plane]);
   };
 
+  onSliderChange = change => {
+    const plane1 = new THREE.Plane(new THREE.Vector3(0, -1, 0), change[1]);
+    const plane2 = new THREE.Plane(new THREE.Vector3(0, 1, 0), -change[0]);
+    this.viewer.setSlicingPlanes([plane1, plane2]);
+  };
+
   colorSearchResult() {
     this.currentColoredNodes.forEach(nodeId => {
       this.iterateNodeSubtree(nodeId, id => {
@@ -247,7 +253,7 @@ class Model3D extends React.Component {
   render() {
     if (this.model) {
       this.colorSearchResult();
-      this.setSlicingForCurrentAsset();
+      // this.setSlicingForCurrentAsset();
     }
     return (
       <>
@@ -262,6 +268,21 @@ class Model3D extends React.Component {
           onProgress={this.onProgress}
           onComplete={this.onComplete}
           cache={this.props.cache}
+        />
+        <Slider
+          vertical
+          step={0.1}
+          defaultValue={[495, 510]}
+          range
+          min={495}
+          max={510}
+          style={{
+            position: 'absolute',
+            paddingLeft: 10,
+            paddingTop: 10,
+            height: '50%',
+          }}
+          onChange={this.onSliderChange}
         />
       </>
     );
