@@ -20,7 +20,7 @@ const Auth = ({ tenant, match }) => {
             exact
             strict
             from={`${match.url}`}
-            to={`${match.url}/asset/7446334693628062`}
+            to={`${match.url}/asset/735563410190978`}
           />
         )}
         <Route component={Main} />
