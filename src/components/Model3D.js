@@ -130,7 +130,7 @@ class Model3D extends React.Component {
     }
 
     this.model._treeIndexNodeIdMap.forEach(id => {
-      this.model.setNodeColor(id, 100, 100, 100);
+      this.model.setNodeColor(id, 170, 170, 170);
     });
   };
 
