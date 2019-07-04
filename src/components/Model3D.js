@@ -127,6 +127,7 @@ class Model3D extends React.Component {
       viewer,
     });
 
+    model._screenSpaceRatio = 0.01;
     window.viewer = viewer;
     viewer.disableKeyboardNavigation();
     window.THREE = THREE;

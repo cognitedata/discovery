@@ -42,7 +42,6 @@ class Main extends React.Component {
     if (hideMode > 2) {
       hideMode = 0;
     }
-    console.log('Choosing new state: ', hideMode);
     this.setState(() => {
       return { hideMode };
     });

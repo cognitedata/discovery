@@ -53,7 +53,6 @@ export const selectIsLoading = state => state.search.loading || false;
 
 export function runQuery(query) {
   return async dispatch => {
-    console.log('Loading is now true');
     dispatch({ type: SET_LOADING, payload: { loading: true } });
     dispatch({ type: SET_RESULTS, payload: { items: [] } });
     const requestResult = await sdk.rawPost(`http://localhost:3000/search`, {
