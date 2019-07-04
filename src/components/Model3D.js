@@ -127,6 +127,7 @@ class Model3D extends React.Component {
     });
 
     window.viewer = viewer;
+    viewer.disableKeyboardNavigation();
     window.THREE = THREE;
     window.model = model;
   };
@@ -242,6 +243,7 @@ class Model3D extends React.Component {
           onProgress={this.onProgress}
           onComplete={this.onComplete}
           cache={this.props.cache}
+          enableKeyboardNavigation={false}
         />
       </>
     );
@@ -256,6 +258,7 @@ Model3D.propTypes = {
   // eslint-disable-next-line react/forbid-prop-types
   result: PropTypes.any.isRequired,
   hideMode: PropTypes.number.isRequired,
+  keyboard3DEnabled: PropTypes.bool.isRequired,
 };
 
 Model3D.defaultProps = {

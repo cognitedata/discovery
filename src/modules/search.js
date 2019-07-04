@@ -28,10 +28,10 @@ const initialState = { items: [], loading: false };
 export default function search(state = initialState, action) {
   switch (action.type) {
     case SET_RESULTS: {
-      return { items: action.payload.items };
+      return { ...state, items: action.payload.items };
     }
     case SET_LOADING: {
-      return { loading: action.payload.loading };
+      return { ...state, loading: action.payload.loading };
     }
     default:
       return state;
@@ -53,7 +53,9 @@ export const selectIsLoading = state => state.search.loading || false;
 
 export function runQuery(query) {
   return async dispatch => {
+    console.log('Loading is now true');
     dispatch({ type: SET_LOADING, payload: { loading: true } });
+    dispatch({ type: SET_RESULTS, payload: { items: [] } });
     const requestResult = await sdk.rawPost(`http://localhost:3000/search`, {
       data: { query },
     });

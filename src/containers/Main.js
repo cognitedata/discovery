@@ -95,12 +95,12 @@ class Main extends React.Component {
                 placeholder="Search Cognite"
                 enterButton
                 onSearch={this.onSearch}
-                onFocus={() => {
-                  this.setState({ keyboard3DEnabled: false });
-                }}
-                onBlur={() => {
-                  this.setState({ keyboard3DEnabled: true });
-                }}
+                // onFocus={() => {
+                //   this.setState({ keyboard3DEnabled: false });
+                // }}
+                // onBlur={() => {
+                //   this.setState({ keyboard3DEnabled: true });
+                // }}
                 style={{
                   width: '25%',
                   position: 'fixed',
@@ -112,7 +112,7 @@ class Main extends React.Component {
 
               <SearchResult
                 assetDrawerWidth={assetDrawerWidth}
-                keyboard3DEnabled={this.state.keyboard3DEnabled}
+                keyboard3DEnabled={false}
                 hideMode={this.state.hideMode}
                 ref={c => {
                   this.viewer = c; // Will direct access this

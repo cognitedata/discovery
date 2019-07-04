@@ -20,7 +20,6 @@ class SearchResult extends React.Component {
   componentDidMount() {}
 
   componentDidUpdate(prevProps) {
-    console.log(this.props);
     if (prevProps.result !== this.props.result) {
       this.props.result.forEach(result => {
         if (result.kind === '3d') {
@@ -43,20 +42,10 @@ class SearchResult extends React.Component {
         revisionId={revisionId}
         cache={this.cache}
         hideMode={this.props.hideMode}
-        enableKeyboardNavigation={this.props.keyboard3DEnabled}
+        keyboard3DEnabled={this.props.keyboard3DEnabled}
       />
     );
   }
-
-  // renderPNID() {
-  //   const asset = this.getAsset();
-  //   return (
-  //     <PNIDViewer
-  //       documentId={this.state.documentId}
-  //       asset={asset}
-  //     />
-  //   );
-  // }
 
   render() {
     // const asset = this.getAsset();
@@ -65,10 +54,7 @@ class SearchResult extends React.Component {
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
-          <ViewerContainer>
-            {this.render3D()}
-            {/* {this.props.showPNID && this.renderPNID()} */}
-          </ViewerContainer>
+          <ViewerContainer>{this.render3D()}</ViewerContainer>
         </div>
       </div>
     );
