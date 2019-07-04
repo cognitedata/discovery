@@ -10,14 +10,12 @@ function clamp(val, min, max) {
   return Math.max(min, Math.min(val, max));
 }
 
-function animateCamera(position, target, viewer, duration = 1000) {
+function animateCamera(position, target, viewer, boundingBox) {
   const { _camera: camera } = viewer;
 
-  if (duration == null) {
-    const distance = position.distanceTo(camera.position);
-    duration = distance * 125; // 250ms per unit distance
-    duration = clamp(duration, 600, 2500); // min duration 600ms and 2500ms as max duration
-  }
+  const distance = position.distanceTo(camera.position);
+  let duration = distance * 125; // 250ms per unit distance
+  duration = clamp(duration, 600, 1500); // min duration 600ms and 2500ms as max duration
 
   const startTarget = viewer.getCameraTarget();
 
@@ -29,6 +27,7 @@ function animateCamera(position, target, viewer, duration = 1000) {
     targetY: startTarget.y,
     targetZ: startTarget.z,
   };
+
   const to = {
     x: position.x,
     y: position.y,
@@ -42,6 +41,7 @@ function animateCamera(position, target, viewer, duration = 1000) {
 
   const tmpTarget = new THREE.Vector3();
   const tmpPosition = new THREE.Vector3();
+  const boundingBoxHeight = boundingBox.max.y - boundingBox.min.y;
   tween
     .to(to, duration)
     .easing(TWEEN.Easing.Circular.Out)
@@ -52,27 +52,29 @@ function animateCamera(position, target, viewer, duration = 1000) {
       viewer.setCameraPosition(tmpPosition);
       viewer.setCameraTarget(tmpTarget);
 
+      // center point plus half of bounding box height
+      const y = tmpTarget.y + 0.5 * boundingBoxHeight;
       // Set slicing to show the result
-      const plane = new THREE.Plane(
-        new THREE.Vector3(0, -1, 0),
-        tmpTarget.y + 0.5
-      );
+      const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), y);
       viewer.setSlicingPlanes([plane]);
     })
     .start();
 }
 
-function fitCameraToBoundingBox(box, viewer, duration) {
+function fitCameraToBoundingBox(
+  box,
+  viewer,
+  direction = new THREE.Vector3(0, 1, 0.7)
+) {
   const boundingSphere = new THREE.Sphere();
   box.getBoundingSphere(boundingSphere);
   const target = boundingSphere.center;
 
   const distance = Math.max(
     2.0 * viewer._getSmallestMeanObjectSize(), // this is the smallest value controls.minDistance can have
-    boundingSphere.radius * 4
+    boundingSphere.radius * 2
   ); // distance from target
 
-  const direction = new THREE.Vector3(0, 1, 0.7);
   direction.normalize();
 
   const position = new THREE.Vector3();
@@ -80,7 +82,7 @@ function fitCameraToBoundingBox(box, viewer, duration) {
     .copy(direction)
     .multiplyScalar(distance)
     .add(target);
-  animateCamera(position, target, viewer, duration);
+  animateCamera(position, target, viewer, box);
 }
 
 class Model3D extends React.Component {
@@ -152,13 +154,9 @@ class Model3D extends React.Component {
       // We want to view it from above
       const center = new THREE.Vector3();
       boundingBox.getCenter(center);
-      const target = center.clone();
 
-      center.z += 3;
-      center.y += 10;
-      const position = center.clone();
-
-      animateCamera(position, target, viewer);
+      const direction = new THREE.Vector3(0, 1, 0.3);
+      fitCameraToBoundingBox(boundingBox, viewer, direction);
     } else {
       fitCameraToBoundingBox(boundingBox, viewer);
     }
@@ -185,6 +183,7 @@ class Model3D extends React.Component {
 
     if (threed.length > 0) {
       this.state.model.deselectAllNodes();
+      this.state.model.hideAllNodes(true);
 
       this.colorNodes(threed[0].mappings);
       this.fitCameraToNodes(threed[0].mappings);
@@ -208,6 +207,7 @@ class Model3D extends React.Component {
       const { treeIndex, subtreeSize } = mapping;
       this.iterateNodeSubtree(treeIndex, subtreeSize, nodeId => {
         this.state.model.resetNodeColor(nodeId);
+        this.state.model.showNode(nodeId);
         this.currentColoredNodes.push(nodeId);
       });
     });

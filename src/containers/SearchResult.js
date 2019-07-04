@@ -38,8 +38,8 @@ class SearchResult extends React.Component {
 
     return (
       <Model3D
-        modelId={2495544803289093}
-        revisionId={3041181389296996}
+        modelId={modelId}
+        revisionId={revisionId}
         cache={this.cache}
         enableKeyboardNavigation={this.props.keyboard3DEnabled}
       />
