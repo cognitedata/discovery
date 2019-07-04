@@ -50,7 +50,6 @@ export function runQuery(query) {
       data: { query },
     });
     const result = requestResult.data;
-    console.log('Got result: ', result);
 
     dispatch({ type: SET_RESULTS, payload: { items: result } });
   };
