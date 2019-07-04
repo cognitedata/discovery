@@ -64,6 +64,7 @@ function animateCamera(position, target, viewer, boundingBox) {
 function fitCameraToBoundingBox(
   box,
   viewer,
+  radiusFactor,
   direction = new THREE.Vector3(0, 1, 0.7)
 ) {
   const boundingSphere = new THREE.Sphere();
@@ -72,7 +73,7 @@ function fitCameraToBoundingBox(
 
   const distance = Math.max(
     2.0 * viewer._getSmallestMeanObjectSize(), // this is the smallest value controls.minDistance can have
-    boundingSphere.radius * 2
+    boundingSphere.radius * radiusFactor
   ); // distance from target
 
   direction.normalize();
@@ -96,11 +97,11 @@ class Model3D extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.result !== this.props.result && this.state.model) {
-      this.updateSearchResult();
+      this.updateSearchResult(true);
     }
 
     if (prevProps.hideMode !== this.props.hideMode && this.state.model) {
-      this.updateSearchResult();
+      this.updateSearchResult(false);
     }
   }
 
@@ -115,7 +116,7 @@ class Model3D extends React.Component {
       this.state.model.setNodeColor(id, 170, 170, 170);
     });
 
-    this.updateSearchResult();
+    this.updateSearchResult(true);
   };
 
   onClick = () => {};
@@ -155,15 +156,16 @@ class Model3D extends React.Component {
         }
       );
     });
+
     if (mappings.length > 1) {
       // We want to view it from above
       const center = new THREE.Vector3();
       boundingBox.getCenter(center);
 
       const direction = new THREE.Vector3(0, 1, 0.3);
-      fitCameraToBoundingBox(boundingBox, viewer, direction);
+      fitCameraToBoundingBox(boundingBox, viewer, 2, direction);
     } else {
-      fitCameraToBoundingBox(boundingBox, viewer);
+      fitCameraToBoundingBox(boundingBox, viewer, 4);
     }
 
     // // Set slicing to show the result
@@ -196,6 +198,7 @@ class Model3D extends React.Component {
       }
 
       this.colorNodes(threed[0].mappings);
+
       if (animate) {
         this.fitCameraToNodes(threed[0].mappings);
       }
