@@ -20,6 +20,7 @@ class SearchResult extends React.Component {
   componentDidMount() {}
 
   componentDidUpdate(prevProps) {
+    console.log(this.props);
     if (prevProps.result !== this.props.result) {
       this.props.result.forEach(result => {
         if (result.kind === '3d') {
@@ -84,7 +85,7 @@ SearchResult.propTypes = {
 
 const mapStateToProps = state => {
   return {
-    result: selectResult(state).items,
+    result: selectResult(state),
   };
 };
 

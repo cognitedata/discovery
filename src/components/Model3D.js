@@ -264,7 +264,7 @@ Model3D.defaultProps = {
 
 const mapStateToProps = state => {
   return {
-    result: selectResult(state).items,
+    result: selectResult(state),
   };
 };
 

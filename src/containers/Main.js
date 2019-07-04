@@ -8,6 +8,7 @@ import { fetchTypes } from '../modules/types';
 import { fetchModels, selectModels, Models } from '../modules/threed';
 import { Assets, selectAssets } from '../modules/assets';
 import { runQuery } from '../modules/search';
+import DataDrawer from './DataDrawer';
 
 const { Search } = Input;
 
@@ -84,7 +85,7 @@ class Main extends React.Component {
   }
 
   render() {
-    const assetDrawerWidth = 350;
+    const assetDrawerWidth = 500;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
@@ -101,24 +102,14 @@ class Main extends React.Component {
                   this.setState({ keyboard3DEnabled: true });
                 }}
                 style={{
-                  width: '40%',
+                  width: '25%',
                   position: 'fixed',
-                  left: assetDrawerWidth,
+                  right: assetDrawerWidth,
+                  transform: 'translate(-75%, 0)',
                   top: '20px',
                 }}
               />
-              <Checkbox
-                indeterminate={this.state.hideMode === 1}
-                checked={this.state.hideMode === 2}
-                onChange={this.handleChange}
-                style={{
-                  position: 'fixed',
-                  right: assetDrawerWidth,
-                  top: '20px',
-                }}
-              >
-                Hide nodes
-              </Checkbox>
+
               <SearchResult
                 assetDrawerWidth={assetDrawerWidth}
                 keyboard3DEnabled={this.state.keyboard3DEnabled}
@@ -127,9 +118,23 @@ class Main extends React.Component {
                   this.viewer = c; // Will direct access this
                 }}
               />
+              <Checkbox
+                indeterminate={this.state.hideMode === 1}
+                checked={this.state.hideMode === 2}
+                onChange={this.handleChange}
+                style={{
+                  position: 'fixed',
+                  right: '20px',
+                  top: '17px',
+                  zIndex: 1001,
+                }}
+              >
+                Hide nodes
+              </Checkbox>
             </Content>
           </Layout>
         </Layout>
+        <DataDrawer width={assetDrawerWidth} loading />
       </div>
     );
   }
