@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Layout, Input } from 'antd';
+import { Layout, Input, Switch, Checkbox } from 'antd';
 import { Route } from 'react-router-dom';
 import SearchResult from './SearchResult';
 import { fetchTypes } from '../modules/types';
@@ -17,6 +17,7 @@ const { Content, Header, Sider } = Layout;
 class Main extends React.Component {
   state = {
     keyboard3DEnabled: false,
+    hideMode: 0,
   };
 
   componentDidMount() {
@@ -33,6 +34,17 @@ class Main extends React.Component {
 
   onSearch = query => {
     this.props.doRunQuery(query);
+  };
+
+  handleChange = () => {
+    let hideMode = this.state.hideMode + 1;
+    if (hideMode > 2) {
+      hideMode = 0;
+    }
+    console.log('Choosing new state: ', hideMode);
+    this.setState(() => {
+      return { hideMode };
+    });
   };
 
   hasModelForAsset(assetId) {
@@ -95,9 +107,22 @@ class Main extends React.Component {
                   top: '20px',
                 }}
               />
+              <Checkbox
+                indeterminate={this.state.hideMode === 1}
+                checked={this.state.hideMode === 2}
+                onChange={this.handleChange}
+                style={{
+                  position: 'fixed',
+                  right: assetDrawerWidth,
+                  top: '20px',
+                }}
+              >
+                Hide nodes
+              </Checkbox>
               <SearchResult
                 assetDrawerWidth={assetDrawerWidth}
                 keyboard3DEnabled={this.state.keyboard3DEnabled}
+                hideMode={this.state.hideMode}
                 ref={c => {
                   this.viewer = c; // Will direct access this
                 }}

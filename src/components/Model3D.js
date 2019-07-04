@@ -98,6 +98,10 @@ class Model3D extends React.Component {
     if (prevProps.result !== this.props.result && this.state.model) {
       this.updateSearchResult();
     }
+
+    if (prevProps.hideMode !== this.props.hideMode && this.state.model) {
+      this.updateSearchResult();
+    }
   }
 
   onProgress = progress => {
@@ -178,15 +182,22 @@ class Model3D extends React.Component {
     }
   };
 
-  updateSearchResult() {
+  updateSearchResult(animate) {
     const threed = this.props.result.filter(result => result.kind === '3d');
 
     if (threed.length > 0) {
       this.state.model.deselectAllNodes();
-      this.state.model.hideAllNodes(true);
+      if (this.props.hideMode !== 0) {
+        const ghost = this.props.hideMode === 1;
+        this.state.model.hideAllNodes(ghost);
+      } else {
+        this.state.model.showAllNodes();
+      }
 
       this.colorNodes(threed[0].mappings);
-      this.fitCameraToNodes(threed[0].mappings);
+      if (animate) {
+        this.fitCameraToNodes(threed[0].mappings);
+      }
       if (threed[0].mappings.length === 1) {
         this.selectNode(threed[0].mappings[0], true);
       }
@@ -244,6 +255,7 @@ Model3D.propTypes = {
   cache: PropTypes.object,
   // eslint-disable-next-line react/forbid-prop-types
   result: PropTypes.any.isRequired,
+  hideMode: PropTypes.number.isRequired,
 };
 
 Model3D.defaultProps = {

@@ -41,6 +41,7 @@ class SearchResult extends React.Component {
         modelId={modelId}
         revisionId={revisionId}
         cache={this.cache}
+        hideMode={this.props.hideMode}
         enableKeyboardNavigation={this.props.keyboard3DEnabled}
       />
     );
@@ -78,6 +79,7 @@ SearchResult.propTypes = {
   keyboard3DEnabled: PropTypes.bool.isRequired,
   // eslint-disable-next-line react/forbid-prop-types
   result: PropTypes.any.isRequired,
+  hideMode: PropTypes.number.isRequired,
 };
 
 const mapStateToProps = state => {
