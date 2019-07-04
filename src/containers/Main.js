@@ -91,7 +91,7 @@ class Main extends React.Component {
           <Layout>
             <Content>
               <Search
-                placeholder="Search Cognite"
+                placeholder="Search Cognite Knowledge Engine"
                 enterButton
                 onSearch={this.onSearch}
                 // onFocus={() => {
