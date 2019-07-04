@@ -15,14 +15,6 @@ const Auth = ({ tenant, match }) => {
       enableTokenCaching
     >
       <Switch>
-        {tenant === 'akerbp' && (
-          <Redirect
-            exact
-            strict
-            from={`${match.url}`}
-            to={`${match.url}/asset/735563410190978`}
-          />
-        )}
         <Route component={Main} />
       </Switch>
     </ReactAuthProvider>

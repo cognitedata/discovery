@@ -3,116 +3,24 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Model3DViewer } from '@cognite/gearbox';
 import { THREE } from '@cognite/3d-viewer';
-import { message, Slider } from 'antd';
-import * as sdk from '@cognite/sdk';
+import { Slider } from 'antd';
 import LoadingScreen from './LoadingScreen';
-
-import {
-  fetchMappingsFromNodeId,
-  selectAssetMappings,
-  AssetMappings,
-  fetchMappingsFromAssetId,
-} from '../modules/assetmappings';
-import { selectFilteredSearch, Filters } from '../modules/filters';
+import { selectResult } from '../modules/search';
 
 class Model3D extends React.Component {
-  state = { hasWarnedAboutNode: {} };
+  state = {};
 
   currentColoredNodes = [];
 
   cache = {};
 
+  componentDidMount() {}
+
   componentDidUpdate(prevProps, prevState) {
-    if (prevProps.nodeId !== this.props.nodeId) {
-      // eslint-disable-next-line react/no-did-update-set-state
-      this.setState({ nodeId: undefined });
-    }
-
-    if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
-      const assetId = this.getAssetIdForNodeId(this.state.nodeId);
-      if (assetId) {
-        this.props.onAssetIdChange(assetId);
-      }
-    }
-
-    if (prevProps.assetMappings !== this.props.assetMappings) {
-      if (this.state.nodeId && this.state.nodeId !== this.props.nodeId) {
-        const assetId = this.getAssetIdForNodeId(this.state.nodeId);
-        if (assetId) {
-          this.props.onAssetIdChange(assetId);
-        } else if (!this.state.hasWarnedAboutNode[this.state.nodeId]) {
-          message.info('Did not find any asset associated to this 3D object.');
-          setTimeout(() => {
-            const { hasWarnedAboutNode } = this.state;
-            hasWarnedAboutNode[this.state.nodeId] = true;
-            this.setState({
-              hasWarnedAboutNode,
-            });
-          }, 10);
-        }
-      }
-    }
-
-    if (prevProps.nodeId !== this.props.nodeId) {
-      if (this.model) {
-        this.selectNode(this.props.nodeId, true, 1500);
-      }
-    }
-
-    if (prevProps.filteredSearch !== this.props.filteredSearch) {
-      const { assetMappings, filteredSearch, modelId, revisionId } = this.props;
-      let missing3D = filteredSearch.items.filter(
-        asset => assetMappings.byAssetId[asset.id] === undefined
-      );
-      // Max 20 requests
-      missing3D = missing3D.slice(0, Math.min(missing3D.length, 20));
-
-      missing3D.forEach(asset => {
-        this.props.doFetchMappingsFromAssetId(modelId, revisionId, asset.id);
-      });
+    if (prevProps.result !== this.props.result && this.state.model) {
+      this.updateSearchResult();
     }
   }
-
-  // async getBoundingBoxForNodeId(nodeId) {
-  //   this.setState({ boundingBox: undefined });
-  //   const result = await sdk.ThreeD.listNodes(
-  //     this.state.modelId,
-  //     this.state.revisionId,
-  //     { nodeId }
-  //   );
-  //   if (result.items.length === 0) {
-  //     return;
-  //   }
-
-  //   const node = result.items[0];
-  //   const boundingBox = new THREE.Box3(
-  //     new THREE.Vector3(...node.boundingBox.min),
-  //     new THREE.Vector3(...node.boundingBox.max)
-  //   );
-  //   boundingBox.expandByVector(new THREE.Vector3(10, 10, 0));
-  //   boundingBox.min.z -= 2;
-  //   boundingBox.max.z += 2;
-  //   this.setState({ boundingBox });
-  // }
-
-  getAssetIdForNodeId = nodeId => {
-    if (!nodeId) {
-      return null;
-    }
-
-    if (this.props.assetMappings.byNodeId[nodeId]) {
-      const mapping = this.props.assetMappings.byNodeId[nodeId];
-      return mapping.assetId;
-    }
-
-    this.props.doFetchMappingsFromNodeId(
-      this.props.modelId,
-      this.props.revisionId,
-      nodeId
-    );
-
-    return null;
-  };
 
   onProgress = progress => {
     this.setState({ progress });
@@ -120,96 +28,51 @@ class Model3D extends React.Component {
 
   onComplete = () => {
     this.setState({ progress: undefined });
-    let { nodeId } = this.props;
-    if (this.state.nodeId) {
-      ({ nodeId } = this.state);
-    }
 
-    if (nodeId) {
-      this.selectNode(nodeId, true, 0);
-    }
-
-    this.model._treeIndexNodeIdMap.forEach(id => {
-      this.model.setNodeColor(id, 170, 170, 170);
+    this.state.model._treeIndexNodeIdMap.forEach(id => {
+      this.state.model.setNodeColor(id, 170, 170, 170);
     });
+
+    this.updateSearchResult();
   };
 
-  onClick = nodeId => {
-    this.setState({ nodeId });
-  };
+  onClick = () => {};
 
   onReady = (viewer, model) => {
-    this.viewer = viewer;
-    this.model = model;
-    // Temp disable screen space culling
-    model._screenRatioLimit = 0.0;
+    this.setState({
+      model,
+      viewer,
+    });
     window.viewer = viewer;
     window.THREE = THREE;
     window.model = model;
   };
 
-  selectNode = async (nodeId, animate, duration = 500) => {
-    this.model.deselectAllNodes();
-    if (nodeId == null) {
-      return;
-    }
-
-    let mapping = this.props.assetMappings.byNodeId[nodeId];
-
-    if (!mapping) {
-      const nodes = await sdk.ThreeD.listNodes(
-        this.props.modelId,
-        this.props.revisionId,
-        { nodeId, depth: 0 }
-      );
-      [mapping] = nodes.items;
-    }
-
+  selectNode = (mapping, animate, duration = 500) => {
     const boundingBox = new THREE.Box3();
-    // The node may not have geometries in the scene, so we need to
-    // find all children and select them + compute bounding box
-    for (
-      let { treeIndex } = mapping;
-      treeIndex < mapping.treeIndex + mapping.subtreeSize;
-      treeIndex++
-    ) {
-      const thisNodeId = this.model._getNodeId(treeIndex);
-      if (thisNodeId != null) {
-        this.model.selectNode(thisNodeId);
-        boundingBox.union(this.model.getBoundingBox(thisNodeId));
-      }
-    }
+    this.iterateNodeSubtree(mapping.treeIndex, mapping.subtreeSize, nodeId => {
+      this.state.model.selectNode(nodeId);
+      boundingBox.union(this.state.model.getBoundingBox(nodeId));
+    });
 
     if (animate) {
-      this.viewer.fitCameraToBoundingBox(boundingBox, duration);
+      this.state.viewer.fitCameraToBoundingBox(boundingBox, duration);
     }
   };
 
-  iterateNodeSubtree = (nodeId, action) => {
-    const mapping = this.props.assetMappings.byNodeId[nodeId];
-    if (mapping) {
-      for (
-        let { treeIndex } = mapping;
-        treeIndex < mapping.treeIndex + mapping.subtreeSize;
-        treeIndex++
-      ) {
-        const id = this.model._getNodeId(treeIndex);
-        if (id != null) {
-          action(id);
-        }
+  iterateNodeSubtree = (treeIndex, subtreeSize, action) => {
+    for (let i = treeIndex; i < treeIndex + subtreeSize; i++) {
+      const nodeId = this.state.model._getNodeId(i);
+      if (nodeId != null) {
+        action(nodeId);
       }
-
-      // Did execute
-      return true;
     }
-    // Did not execute
-    return false;
   };
 
   setSlicingForCurrentAsset = () => {
     const boundingBox = new THREE.Box3();
     this.iterateNodeSubtree(this.props.nodeId, id => {
-      boundingBox.union(this.model.getBoundingBox(id));
+      boundingBox.union(this.state.model.getBoundingBox(id));
     });
 
     const plane = new THREE.Plane(
@@ -225,34 +88,44 @@ class Model3D extends React.Component {
     this.viewer.setSlicingPlanes([plane1, plane2]);
   };
 
-  colorSearchResult() {
+  updateSearchResult() {
+    const threed = this.props.result.filter(result => result.kind === '3d');
+
+    if (threed.length > 0) {
+      this.state.model.deselectAllNodes();
+
+      this.colorNodes(threed[0].mappings);
+      if (threed[0].mappings.length === 1) {
+        this.selectNode(threed[0].mappings[0], true);
+      }
+    }
+    // if (this.model) {
+    //   this.selectNode(this.props.nodeId, true, 1500);
+    // }
+  }
+
+  colorNodes(mappings) {
+    if (!this.state.model) {
+      return;
+    }
+
     this.currentColoredNodes.forEach(nodeId => {
-      this.iterateNodeSubtree(nodeId, id => {
-        this.model.setNodeColor(id, 100, 100, 100);
-      });
+      this.state.model.setNodeColor(nodeId, 170, 170, 170);
     });
 
     this.currentColoredNodes = [];
-
-    // Reset color on old ones
-    this.props.filteredSearch.items.forEach(asset => {
-      const mapping = this.props.assetMappings.byAssetId[asset.id];
-      if (mapping) {
-        const { nodeId } = mapping;
-        const didColor = this.iterateNodeSubtree(nodeId, id => {
-          this.model.resetNodeColor(id);
-        });
-
-        if (didColor) {
-          this.currentColoredNodes.push(nodeId);
-        }
-      }
+    mappings.forEach(mapping => {
+      const { treeIndex, subtreeSize } = mapping;
+      this.iterateNodeSubtree(treeIndex, subtreeSize, nodeId => {
+        this.state.model.resetNodeColor(nodeId);
+        this.currentColoredNodes.push(nodeId);
+      });
     });
   }
 
   render() {
-    if (this.model) {
-      this.colorSearchResult();
+    if (this.state.model) {
+      // this.colorSearchResult();
       // this.setSlicingForCurrentAsset();
     }
     return (
@@ -294,33 +167,21 @@ Model3D.propTypes = {
   revisionId: PropTypes.number.isRequired,
   // eslint-disable-next-line react/forbid-prop-types
   cache: PropTypes.object,
-  nodeId: PropTypes.number,
-  onAssetIdChange: PropTypes.func.isRequired,
-  doFetchMappingsFromNodeId: PropTypes.func.isRequired,
-  doFetchMappingsFromAssetId: PropTypes.func.isRequired,
-  assetMappings: AssetMappings,
-  filteredSearch: Filters.isRequired,
+  // eslint-disable-next-line react/forbid-prop-types
+  result: PropTypes.any.isRequired,
 };
 
 Model3D.defaultProps = {
-  assetMappings: { byNodeId: {}, byAssetId: {} },
-  nodeId: undefined,
   cache: undefined,
 };
 
 const mapStateToProps = state => {
   return {
-    assetMappings: selectAssetMappings(state),
-    filteredSearch: selectFilteredSearch(state),
+    result: selectResult(state).items,
   };
 };
 
-const mapDispatchToProps = dispatch => ({
-  doFetchMappingsFromNodeId: (...args) =>
-    dispatch(fetchMappingsFromNodeId(...args)),
-  doFetchMappingsFromAssetId: (...args) =>
-    dispatch(fetchMappingsFromAssetId(...args)),
-});
+const mapDispatchToProps = dispatch => ({});
 
 export default connect(
   mapStateToProps,
