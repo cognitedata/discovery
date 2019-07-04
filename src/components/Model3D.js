@@ -19,13 +19,7 @@ function animateCamera(position, target, viewer, duration = 1000) {
     duration = clamp(duration, 600, 2500); // min duration 600ms and 2500ms as max duration
   }
 
-  const raycaster = new THREE.Raycaster();
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const distanceToTarget = target.distanceTo(camera.position);
-  const scaledDirection = raycaster.ray.direction
-    .clone()
-    .multiplyScalar(distanceToTarget);
-  const startTarget = raycaster.ray.origin.clone().add(scaledDirection);
+  const startTarget = viewer.getCameraTarget();
 
   const from = {
     x: camera.position.x,
@@ -57,6 +51,13 @@ function animateCamera(position, target, viewer, duration = 1000) {
 
       viewer.setCameraPosition(tmpPosition);
       viewer.setCameraTarget(tmpTarget);
+
+      // Set slicing to show the result
+      const plane = new THREE.Plane(
+        new THREE.Vector3(0, -1, 0),
+        tmpTarget.y + 0.5
+      );
+      viewer.setSlicingPlanes([plane]);
     })
     .start();
 }
@@ -162,12 +163,12 @@ class Model3D extends React.Component {
       fitCameraToBoundingBox(boundingBox, viewer);
     }
 
-    // Set slicing to show the result
-    const plane = new THREE.Plane(
-      new THREE.Vector3(0, -1, 0),
-      boundingBox.max.y + 0.5
-    );
-    viewer.setSlicingPlanes([plane]);
+    // // Set slicing to show the result
+    // const plane = new THREE.Plane(
+    //   new THREE.Vector3(0, -1, 0),
+    //   boundingBox.max.y + 0.5
+    // );
+    // viewer.setSlicingPlanes([plane]);
   };
 
   iterateNodeSubtree = (treeIndex, subtreeSize, action) => {
