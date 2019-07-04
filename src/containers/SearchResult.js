@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import Model3D from '../components/Model3D';
 import { selectResult } from '../modules/search';
+import DataDrawer from './DataDrawer';
 
 const ViewerContainer = styled.div`
   display: flex;
@@ -55,6 +56,7 @@ class SearchResult extends React.Component {
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
           <ViewerContainer>{this.render3D()}</ViewerContainer>
+          <DataDrawer width={assetDrawerWidth} loading />
         </div>
       </div>
     );

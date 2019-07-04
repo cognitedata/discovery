@@ -8,7 +8,6 @@ import { fetchTypes } from '../modules/types';
 import { fetchModels, selectModels, Models } from '../modules/threed';
 import { Assets, selectAssets } from '../modules/assets';
 import { runQuery } from '../modules/search';
-import DataDrawer from './DataDrawer';
 
 const { Search } = Input;
 
@@ -133,7 +132,6 @@ class Main extends React.Component {
             </Content>
           </Layout>
         </Layout>
-        <DataDrawer width={assetDrawerWidth} loading />
       </div>
     );
   }
