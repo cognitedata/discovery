@@ -103,6 +103,17 @@ class Model3D extends React.Component {
     if (prevProps.hideMode !== this.props.hideMode && this.state.model) {
       this.updateSearchResult(false);
     }
+
+    if (
+      prevProps.keyboard3DEnabled !== this.props.keyboard3DEnabled &&
+      this.state.viewer
+    ) {
+      if (this.props.keyboard3DEnabled) {
+        this.state.viewer.enableKeyboardNavigation();
+      } else {
+        this.state.viewer.disableKeyboardNavigation();
+      }
+    }
   }
 
   onProgress = progress => {
@@ -127,9 +138,8 @@ class Model3D extends React.Component {
       viewer,
     });
 
-    model._screenSpaceRatio = 0.01;
+    model._screenSpaceRatio = 0.001;
     window.viewer = viewer;
-    viewer.disableKeyboardNavigation();
     window.THREE = THREE;
     window.model = model;
   };

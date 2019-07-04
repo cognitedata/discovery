@@ -23,14 +23,15 @@ class Main extends React.Component {
   componentDidMount() {
     this.props.doFetchTypes();
     this.props.doFetchModels();
-  }
-
-  onAssetIdChange = assetId => {
-    const { match, history } = this.props;
-    history.push({
-      pathname: `${match.url}/asset/${assetId}`,
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        this.nameInput.blur();
+      }
+      if (event.key === 'i' && event.metaKey) {
+        this.nameInput.focus();
+      }
     });
-  };
+  }
 
   onSearch = query => {
     this.props.doRunQuery(query);
@@ -46,42 +47,6 @@ class Main extends React.Component {
     });
   };
 
-  hasModelForAsset(assetId) {
-    const asset = this.props.assets.all[assetId];
-    const representedByMap = {};
-    const models = this.props.models.items;
-    Object.keys(models).forEach(modelId => {
-      const model = models[modelId];
-      if (!model.revisions) {
-        return;
-      }
-
-      model.revisions.forEach(revision => {
-        if (revision.metadata.representsAsset) {
-          const { representsAsset } = revision.metadata;
-          if (representedByMap[representsAsset] === undefined) {
-            representedByMap[representsAsset] = [];
-          }
-          representedByMap[representsAsset].push({
-            model,
-            revision,
-          });
-        }
-      });
-    });
-    if (asset) {
-      const { path } = asset;
-      const matchedAssetIds = path.filter(
-        id => representedByMap[id] !== undefined
-      );
-
-      if (matchedAssetIds.length > 0) {
-        return representedByMap[matchedAssetIds[0]][0];
-      }
-    }
-    return null;
-  }
-
   render() {
     const assetDrawerWidth = 500;
     return (
@@ -90,15 +55,18 @@ class Main extends React.Component {
           <Layout>
             <Content>
               <Search
+                ref={input => {
+                  this.nameInput = input;
+                }}
                 placeholder="Search Cognite Knowledge Engine"
                 enterButton
                 onSearch={this.onSearch}
-                // onFocus={() => {
-                //   this.setState({ keyboard3DEnabled: false });
-                // }}
-                // onBlur={() => {
-                //   this.setState({ keyboard3DEnabled: true });
-                // }}
+                onFocus={() => {
+                  this.setState({ keyboard3DEnabled: false });
+                }}
+                onBlur={() => {
+                  this.setState({ keyboard3DEnabled: true });
+                }}
                 style={{
                   width: '25%',
                   position: 'fixed',
@@ -110,7 +78,7 @@ class Main extends React.Component {
 
               <SearchResult
                 assetDrawerWidth={assetDrawerWidth}
-                keyboard3DEnabled={false}
+                keyboard3DEnabled={this.state.keyboard3DEnabled}
                 hideMode={this.state.hideMode}
                 ref={c => {
                   this.viewer = c; // Will direct access this
