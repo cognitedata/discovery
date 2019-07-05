@@ -1,18 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Layout, Input, Switch, Checkbox } from 'antd';
-import { Route } from 'react-router-dom';
+import { Layout, Input, Checkbox } from 'antd';
 import SearchResult from './SearchResult';
-import { fetchTypes } from '../modules/types';
-import { fetchModels, selectModels, Models } from '../modules/threed';
-import { Assets, selectAssets } from '../modules/assets';
 import { runQuery } from '../modules/search';
 
 const { Search } = Input;
 
 // 13FV1234 is useful asset
-const { Content, Header, Sider } = Layout;
+const { Content } = Layout;
 
 class Main extends React.Component {
   state = {
@@ -21,8 +17,6 @@ class Main extends React.Component {
   };
 
   componentDidMount() {
-    this.props.doFetchTypes();
-    this.props.doFetchModels();
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         this.nameInput.blur();
@@ -116,23 +110,14 @@ Main.propTypes = {
     pathname: PropTypes.string.isRequired,
     search: PropTypes.string,
   }).isRequired,
-  models: Models.isRequired,
-  assets: Assets.isRequired,
-  doFetchTypes: PropTypes.func.isRequired,
-  doFetchModels: PropTypes.func.isRequired,
   doRunQuery: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = state => {
-  return {
-    models: selectModels(state),
-    assets: selectAssets(state),
-  };
+  return {};
 };
 
 const mapDispatchToProps = dispatch => ({
-  doFetchTypes: (...args) => dispatch(fetchTypes(...args)),
-  doFetchModels: (...args) => dispatch(fetchModels(...args)),
   doRunQuery: (...args) => dispatch(runQuery(...args)),
 });
 
