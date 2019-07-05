@@ -3,7 +3,11 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Drawer, Card, Collapse } from 'antd';
 import Chart from 'react-apexcharts';
-import { SVGViewer, TimeseriesChartMeta } from '@cognite/gearbox';
+import {
+  SVGViewer,
+  TimeseriesChartMeta,
+  TimeseriesChart,
+} from '@cognite/gearbox';
 import styled from 'styled-components';
 import { selectResult, selectIsLoading } from '../modules/search';
 import Loader from '../components/Loader';
@@ -123,14 +127,16 @@ class DataDrawer extends React.Component {
     if (timeseries.length === 0) {
       return null;
     }
+
     return (
       <Panel header="Timeseries" key="2">
         {timeseries.map(ts => (
-          <TimeseriesChartMeta
-            timeseriesId={ts.id}
+          <TimeseriesChart
+            timeseriesIds={[ts.id]}
             key={ts.id}
-            defaultTimePeriod="lastMonth"
-            showMetadata={false}
+            zoomable={false}
+            startTime={new Date(2019, 3, 1)}
+            endTime={new Date(2019, 6, 1)}
           />
         ))}
       </Panel>
