@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Drawer, Card, Collapse } from 'antd';
 import Chart from 'react-apexcharts';
-import { SVGViewer } from '@cognite/gearbox';
+import { SVGViewer, TimeseriesChartMeta } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { selectResult, selectIsLoading } from '../modules/search';
 import Loader from '../components/Loader';
@@ -49,7 +49,7 @@ class DataDrawer extends React.Component {
       result => result.kind === 'pie-chart'
     );
     if (pieCharts.length === 0) {
-      return 0;
+      return null;
     }
 
     return (
@@ -99,7 +99,7 @@ class DataDrawer extends React.Component {
     const currentPnID = PnIDs[0];
 
     return (
-      <Panel header="P&ID" key="1">
+      <Panel header="P&ID" key="3">
         <StyledSVGViewerContainer style={{ height: this.props.width }}>
           <SVGViewer
             documentId={currentPnID.fileId}
@@ -116,6 +116,27 @@ class DataDrawer extends React.Component {
     );
   }
 
+  renderTimeseries() {
+    const timeseries = this.props.result.filter(
+      result => result.kind === 'timeseries'
+    );
+    if (timeseries.length === 0) {
+      return null;
+    }
+    return (
+      <Panel header="Timeseries" key="2">
+        {timeseries.map(ts => (
+          <TimeseriesChartMeta
+            timeseriesId={ts.id}
+            key={ts.id}
+            defaultTimePeriod="lastMonth"
+            showMetadata={false}
+          />
+        ))}
+      </Panel>
+    );
+  }
+
   render() {
     return (
       <Drawer
@@ -127,8 +148,9 @@ class DataDrawer extends React.Component {
         mask={false}
       >
         {this.props.loading && <Loader />}
-        <Collapse defaultActiveKey={['1']}>
+        <Collapse defaultActiveKey={['1', '2', '3']}>
           {this.renderPieCharts()}
+          {this.renderTimeseries()}
           {this.renderPNID()}
         </Collapse>
         {!this.props.loading && this.props.result.length === 0 && 'No results'}
