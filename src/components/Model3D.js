@@ -138,7 +138,7 @@ class Model3D extends React.Component {
       viewer,
     });
 
-    model._screenSpaceRatio = 0.001;
+    model._screenRatioLimit = 0.001;
     window.viewer = viewer;
     window.THREE = THREE;
     window.model = model;
