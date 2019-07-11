@@ -1,10 +1,21 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { List, Drawer, Spin, Collapse, Button, Icon, Popconfirm } from 'antd';
+import {
+  List,
+  Drawer,
+  Spin,
+  Collapse,
+  Button,
+  Icon,
+  Popconfirm,
+  Descriptions,
+} from 'antd';
+
 import styled from 'styled-components';
 import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
+import { THREE } from '@cognite/3d-viewer';
 import {
   fetchTimeseries,
   selectTimeseries,
@@ -23,6 +34,7 @@ import AddTypes from '../components/AddTypes';
 import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
 import { createAssetTitle } from '../utils/utils';
+import { selectThreeD, ThreeD } from '../modules/threed';
 
 const { Panel } = Collapse;
 
@@ -191,6 +203,56 @@ class AssetDrawer extends React.Component {
     );
   };
 
+  onThreeDPanelChange = change => {
+    this.setState({ threedCollapsed: change });
+  };
+
+  renderThreeD = node => {
+    if (node == null) {
+      return null;
+    }
+
+    const boundingBox = new THREE.Box3(
+      new THREE.Vector3(...node.boundingBox.min),
+      new THREE.Vector3(...node.boundingBox.max)
+    );
+    const center = boundingBox.getCenter(new THREE.Vector3());
+    const size = boundingBox.max.clone().sub(boundingBox.min);
+
+    const defaultActiveKey = this.state.threedCollapsed
+      ? [this.state.threedCollapsed]
+      : [];
+
+    return (
+      <Collapse
+        accordion
+        onChange={this.onThreeDPanelChange}
+        defaultActiveKey={defaultActiveKey}
+      >
+        <Panel header={<span>3D</span>} key="3d">
+          <Descriptions bordered border size="small" column={1}>
+            <Descriptions.Item label="Position">
+              x: {center.x.toFixed(1)} m
+              <br />
+              y: {center.y.toFixed(1)} m
+              <br />
+              z: {center.z.toFixed(1)} m
+              <br />
+            </Descriptions.Item>
+            <Descriptions.Item label="Size">
+              Height: {size.x.toFixed(1)} m
+              <br />
+              Depth: {size.y.toFixed(1)} m
+              <br />
+              Width: {size.z.toFixed(1)} m
+              <br />
+            </Descriptions.Item>
+          </Descriptions>
+        </Panel>
+      </Collapse>
+    );
+  };
+
   render() {
     const { asset } = this.props;
     const {
@@ -251,6 +313,7 @@ class AssetDrawer extends React.Component {
               {this.renderTypes(asset, types)}
               {this.renderTimeseries(asset, timeseries)}
               {this.renderEvents(this.props.events.items)}
+              {this.renderThreeD(this.props.threed.currentNode)}
             </>
           }
         </Drawer>
@@ -266,6 +329,7 @@ AssetDrawer.propTypes = {
   doRemoveTypeFromAsset: PropTypes.func.isRequired,
   timeseries: Timeseries.isRequired,
   events: EventList.isRequired,
+  threed: ThreeD.isRequired,
   types: Types.isRequired,
   width: PropTypes.number.isRequired,
 };
@@ -273,6 +337,7 @@ AssetDrawer.propTypes = {
 const mapStateToProps = (state, ownProps) => {
   return {
     timeseries: selectTimeseries(state),
+    threed: selectThreeD(state),
     events: selectEventsByAssetId(state, ownProps.asset.id),
     types: selectTypes(state),
   };
