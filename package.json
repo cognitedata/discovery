@@ -12,7 +12,7 @@
     "@cognite/sdk": "^1.7.3",
     "@emotion/core": "^10.0.9",
     "@emotion/styled": "^10.0.9",
-    "antd": "^3.18.1",
+    "antd": "^3.20.1",
     "makecancelable": "^1.1.1",
     "mixpanel": "^0.10.2",
     "moment": "^2.24.0",
