@@ -6,6 +6,7 @@ import { THREE } from '@cognite/3d-viewer';
 import { message, Slider } from 'antd';
 import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
+import { fetchNode } from '../modules/threed';
 
 import {
   fetchMappingsFromNodeId,
@@ -29,6 +30,7 @@ class Model3D extends React.Component {
     }
 
     if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
+      // If a user clicks on a 3d node
       const assetId = this.getAssetIdForNodeId(this.state.nodeId);
       if (assetId) {
         this.props.onAssetIdChange(assetId);
@@ -54,6 +56,11 @@ class Model3D extends React.Component {
     }
 
     if (prevProps.nodeId !== this.props.nodeId) {
+      this.props.doFetchNode(
+        this.props.modelId,
+        this.props.revisionId,
+        this.props.nodeId
+      );
       if (this.model) {
         this.selectNode(this.props.nodeId, true, 1500);
       }
@@ -298,6 +305,7 @@ Model3D.propTypes = {
   onAssetIdChange: PropTypes.func.isRequired,
   doFetchMappingsFromNodeId: PropTypes.func.isRequired,
   doFetchMappingsFromAssetId: PropTypes.func.isRequired,
+  doFetchNode: PropTypes.func.isRequired,
   assetMappings: AssetMappings,
   filteredSearch: Filters.isRequired,
 };
@@ -320,6 +328,7 @@ const mapDispatchToProps = dispatch => ({
     dispatch(fetchMappingsFromNodeId(...args)),
   doFetchMappingsFromAssetId: (...args) =>
     dispatch(fetchMappingsFromAssetId(...args)),
+  doFetchNode: (...args) => dispatch(fetchNode(...args)),
 });
 
 export default connect(

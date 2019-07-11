@@ -15,32 +15,50 @@ export const Model = PropTypes.shape({
   revisions: PropTypes.arrayOf(Revision),
 });
 
-export const Models = PropTypes.exact({
-  items: PropTypes.objectOf(Model),
+export const ThreeD = PropTypes.exact({
+  models: PropTypes.objectOf(Model),
+  currentNode: PropTypes.shape({
+    id: PropTypes.number,
+    depth: PropTypes.number,
+    name: PropTypes.string,
+    boundingBox: PropTypes.shape({
+      min: PropTypes.arrayOf(PropTypes.number),
+      max: PropTypes.arrayOf(PropTypes.number),
+    }),
+  }),
 });
 
 // Constants
 export const SET_MODELS = 'threed/SET_MODELS';
 export const ADD_REVISIONS = 'threed/ADD_REVISIONS';
+export const SET_NODE = 'threed/SET_NODE';
 
 // Reducer
-const initialState = { items: {} };
+const initialState = { models: {} };
 
 export default function threed(state = initialState, action) {
   switch (action.type) {
     case SET_MODELS: {
-      const items = { ...action.payload.items };
+      const models = { ...action.payload.models };
       return {
         ...state,
-        items,
+        models,
       };
     }
     case ADD_REVISIONS: {
-      const { modelId, items } = action.payload;
-      state.items[modelId].revisions = items;
+      const { modelId, revisions } = action.payload;
+      state.models[modelId].revisions = revisions;
       return {
         ...state,
       };
+    }
+    case SET_NODE: {
+      const { currentNode } = action.payload;
+      const newState = {
+        ...state,
+        currentNode,
+      };
+      return newState;
     }
     default:
       return state;
@@ -57,7 +75,7 @@ export const actions = {
 };
 
 // Selectors
-export const selectModels = state => state.threed || { items: {} };
+export const selectThreeD = state => state.threed || { models: {} };
 
 export function fetchRevisions(modelId) {
   return async dispatch => {
@@ -69,7 +87,25 @@ export function fetchRevisions(modelId) {
     const result = requestResult.data;
     const { items } = result;
 
-    dispatch({ type: ADD_REVISIONS, payload: { modelId, items } });
+    dispatch({ type: ADD_REVISIONS, payload: { modelId, revisions: items } });
+  };
+}
+
+export function fetchNode(modelId, revisionId, nodeId) {
+  return async dispatch => {
+    dispatch({ type: SET_NODE, payload: { currentNode: undefined } });
+
+    const result = await sdk.ThreeD.listNodes(modelId, revisionId, {
+      nodeId,
+      limit: 1,
+    });
+
+    const { items } = result;
+    if (items.length === 0) {
+      return;
+    }
+
+    dispatch({ type: SET_NODE, payload: { currentNode: items[0] } });
   };
 }
 
@@ -82,6 +118,6 @@ export function fetchModels() {
       dispatch(fetchRevisions(model.id));
     });
 
-    dispatch({ type: SET_MODELS, payload: { items } });
+    dispatch({ type: SET_MODELS, payload: { models: items } });
   };
 }

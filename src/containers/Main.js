@@ -6,7 +6,7 @@ import { Route } from 'react-router-dom';
 import AssetSearch from '../components/AssetSearch';
 import AssetViewer from './AssetViewer';
 import { fetchTypes } from '../modules/types';
-import { fetchModels, selectModels, Models } from '../modules/threed';
+import { fetchModels, selectThreeD, ThreeD } from '../modules/threed';
 import { Assets, selectAssets } from '../modules/assets';
 
 // 13FV1234 is useful asset
@@ -68,7 +68,7 @@ class Main extends React.Component {
   hasModelForAsset(assetId) {
     const asset = this.props.assets.all[assetId];
     const representedByMap = {};
-    const models = this.props.models.items;
+    const { models } = this.props.threed;
     Object.keys(models).forEach(modelId => {
       const model = models[modelId];
       if (!model.revisions) {
@@ -197,7 +197,7 @@ Main.propTypes = {
     pathname: PropTypes.string.isRequired,
     search: PropTypes.string,
   }).isRequired,
-  models: Models.isRequired,
+  threed: ThreeD.isRequired,
   assets: Assets.isRequired,
   doFetchTypes: PropTypes.func.isRequired,
   doFetchModels: PropTypes.func.isRequired,
@@ -205,7 +205,7 @@ Main.propTypes = {
 
 const mapStateToProps = state => {
   return {
-    models: selectModels(state),
+    threed: selectThreeD(state),
     assets: selectAssets(state),
   };
 };
