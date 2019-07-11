@@ -12,7 +12,7 @@ export const ADD_ASSETS = 'assets/ADD_ASSETS';
 export const Asset = PropTypes.shape({
   id: PropTypes.number,
   name: PropTypes.string,
-  path: PropTypes.arrayOf(PropTypes.number),
+  rootId: PropTypes.number,
   description: PropTypes.string,
   types: PropTypes.arrayOf(Type),
   metadata: PropTypes.objectOf(PropTypes.string),
@@ -46,7 +46,7 @@ export function searchForAsset(query) {
     const assets_ = result.items.map(asset => ({
       id: asset.id,
       name: asset.name,
-      path: asset.path,
+      rootId: asset.rootId,
       description: asset.description,
       types: asset.types,
       metadata: asset.metadata,
@@ -78,7 +78,7 @@ export function fetchAsset(assetId) {
         result.items.map(asset => ({
           id: asset.id,
           name: asset.name,
-          path: asset.path,
+          rootId: asset.path[0],
           description: asset.description,
           types: asset.types,
           metadata: asset.metadata,
@@ -118,7 +118,7 @@ export function fetchAssets(assetIds) {
         result.items.map(asset => ({
           id: asset.id,
           name: asset.name,
-          path: asset.path,
+          rootId: asset.rootId,
           description: asset.description,
           types: asset.types,
           metadata: asset.metadata,

@@ -89,14 +89,11 @@ class Main extends React.Component {
       });
     });
     if (asset) {
-      const { path } = asset;
-      const matchedAssetIds = path.filter(
-        id => representedByMap[id] !== undefined
-      );
-
-      if (matchedAssetIds.length > 0) {
-        return representedByMap[matchedAssetIds[0]][0];
+      const modelsForAsset = representedByMap[asset.rootId];
+      if (!modelsForAsset || modelsForAsset.length === 0) {
+        return null;
       }
+      return representedByMap[asset.rootId][0];
     }
     return null;
   }
