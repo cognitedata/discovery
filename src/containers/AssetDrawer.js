@@ -105,106 +105,100 @@ class AssetDrawer extends React.Component {
   };
 
   renderTypes = (asset, types) => (
-    <Collapse accordion>
-      <Panel
-        header={
-          <HeaderWithButton>
-            <span>Types ({types.length})</span>
-            <Button type="primary" onClick={this.addTypeClick}>
-              Add
+    <Panel
+      header={
+        <HeaderWithButton>
+          <span>Types ({types.length})</span>
+          <Button type="primary" onClick={this.addTypeClick}>
+            Add
+          </Button>
+        </HeaderWithButton>
+      }
+      key="types"
+    >
+      {types.map(type => (
+        <HeaderWithButton key={`ts_${type.id}`}>
+          {type.name}
+          <Popconfirm
+            title="Are you sure？"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={() => this.props.doRemoveTypeFromAsset(type, asset)}
+          >
+            <Button type="danger">
+              <Icon type="delete" />
             </Button>
-          </HeaderWithButton>
-        }
-        key="types"
-      >
-        {types.map(type => (
-          <HeaderWithButton key={`ts_${type.id}`}>
-            {type.name}
-            <Popconfirm
-              title="Are you sure？"
-              okText="Yes"
-              cancelText="No"
-              onConfirm={() => this.props.doRemoveTypeFromAsset(type, asset)}
-            >
-              <Button type="danger">
-                <Icon type="delete" />
-              </Button>
-            </Popconfirm>
-          </HeaderWithButton>
-        ))}
-      </Panel>
-    </Collapse>
+          </Popconfirm>
+        </HeaderWithButton>
+      ))}
+    </Panel>
   );
 
   renderTimeseries = (asset, timeseries) => (
-    <Collapse accordion>
-      <Panel
-        header={
-          <HeaderWithButton>
-            <span>Timeseries ({timeseries.length})</span>
-            <Button type="primary" onClick={this.addTimeseriesClick}>
-              Add
+    <Panel
+      header={
+        <HeaderWithButton>
+          <span>Timeseries ({timeseries.length})</span>
+          <Button type="primary" onClick={this.addTimeseriesClick}>
+            Add
+          </Button>
+        </HeaderWithButton>
+      }
+      key="timeseries"
+    >
+      {timeseries.map(ts => (
+        <HeaderWithButton key={`ts_${ts.id}`}>
+          <Button
+            key={ts.id}
+            type="link"
+            onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
+          >
+            {ts.name}
+          </Button>
+          <Popconfirm
+            title="Are you sure？"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={() =>
+              this.props.doRemoveAssetFromTimeseries(ts.id, asset.id)
+            }
+          >
+            <Button type="danger">
+              <Icon type="delete" />
             </Button>
-          </HeaderWithButton>
-        }
-        key="timeseries"
-      >
-        {timeseries.map(ts => (
-          <HeaderWithButton key={`ts_${ts.id}`}>
-            <Button
-              key={ts.id}
-              type="link"
-              onClick={() => this.timeseriesOnClick(ts.id, ts.name)}
-            >
-              {ts.name}
-            </Button>
-            <Popconfirm
-              title="Are you sure？"
-              okText="Yes"
-              cancelText="No"
-              onConfirm={() =>
-                this.props.doRemoveAssetFromTimeseries(ts.id, asset.id)
-              }
-            >
-              <Button type="danger">
-                <Icon type="delete" />
-              </Button>
-            </Popconfirm>
-          </HeaderWithButton>
-        ))}
-      </Panel>
-    </Collapse>
+          </Popconfirm>
+        </HeaderWithButton>
+      ))}
+    </Panel>
   );
 
   renderEvents = events => {
     events = events.sort((a, b) => b.startTime - a.startTime);
     return (
-      <Collapse accordion>
-        <Panel header={<span>Events ({events.length})</span>} key="events">
-          <List
-            size="small"
-            dataSource={events}
-            renderItem={event => (
-              <List.Item.Meta
-                title={
-                  <Button type="link">
-                    {moment
-                      .unix(event.startTime / 1000)
-                      .format('YYYY-MM-DD HH:mm')}
-                  </Button>
-                }
-                description={event.type}
-                onClick={() => this.eventOnClick(event.id)}
-              />
-            )}
-          />
-        </Panel>
-      </Collapse>
+      <Panel header={<span>Events ({events.length})</span>} key="events">
+        <List
+          size="small"
+          dataSource={events}
+          renderItem={event => (
+            <List.Item.Meta
+              title={
+                <Button type="link">
+                  {moment
+                    .unix(event.startTime / 1000)
+                    .format('YYYY-MM-DD HH:mm')}
+                </Button>
+              }
+              description={event.type}
+              onClick={() => this.eventOnClick(event.id)}
+            />
+          )}
+        />
+      </Panel>
     );
   };
 
-  onThreeDPanelChange = change => {
-    this.setState({ threedCollapsed: change });
+  onCollapseChange = change => {
+    this.setState({ activeCollapsed: change });
   };
 
   renderThreeD = node => {
@@ -219,37 +213,27 @@ class AssetDrawer extends React.Component {
     const center = boundingBox.getCenter(new THREE.Vector3());
     const size = boundingBox.max.clone().sub(boundingBox.min);
 
-    const defaultActiveKey = this.state.threedCollapsed
-      ? [this.state.threedCollapsed]
-      : [];
-
     return (
-      <Collapse
-        accordion
-        onChange={this.onThreeDPanelChange}
-        defaultActiveKey={defaultActiveKey}
-      >
-        <Panel header={<span>3D</span>} key="3d">
-          <Descriptions bordered border size="small" column={1}>
-            <Descriptions.Item label="Position">
-              x: {center.x.toFixed(1)} m
-              <br />
-              y: {center.y.toFixed(1)} m
-              <br />
-              z: {center.z.toFixed(1)} m
-              <br />
-            </Descriptions.Item>
-            <Descriptions.Item label="Size">
-              Height: {size.x.toFixed(1)} m
-              <br />
-              Depth: {size.y.toFixed(1)} m
-              <br />
-              Width: {size.z.toFixed(1)} m
-              <br />
-            </Descriptions.Item>
-          </Descriptions>
-        </Panel>
-      </Collapse>
+      <Panel header={<span>3D</span>} key="3d">
+        <Descriptions bordered border size="small" column={1}>
+          <Descriptions.Item label="Position">
+            x: {center.x.toFixed(1)} m
+            <br />
+            y: {center.y.toFixed(1)} m
+            <br />
+            z: {center.z.toFixed(1)} m
+            <br />
+          </Descriptions.Item>
+          <Descriptions.Item label="Size">
+            Height: {size.x.toFixed(1)} m
+            <br />
+            Depth: {size.y.toFixed(1)} m
+            <br />
+            Width: {size.z.toFixed(1)} m
+            <br />
+          </Descriptions.Item>
+        </Descriptions>
+      </Panel>
     );
   };
 
@@ -277,6 +261,10 @@ class AssetDrawer extends React.Component {
         </SpinContainer>
       );
     }
+
+    const defaultActiveKey = this.state.activeCollapsed
+      ? this.state.activeCollapsed
+      : [];
 
     return (
       <>
@@ -309,12 +297,15 @@ class AssetDrawer extends React.Component {
         >
           {asset.description && <p>{asset.description}</p>}
           {
-            <>
+            <Collapse
+              onChange={this.onCollapseChange}
+              defaultActiveKey={defaultActiveKey}
+            >
               {this.renderTypes(asset, types)}
               {this.renderTimeseries(asset, timeseries)}
               {this.renderEvents(this.props.events.items)}
               {this.renderThreeD(this.props.threed.currentNode)}
-            </>
+            </Collapse>
           }
         </Drawer>
       </>
