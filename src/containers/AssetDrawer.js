@@ -225,11 +225,11 @@ class AssetDrawer extends React.Component {
             <br />
           </Descriptions.Item>
           <Descriptions.Item label="Size">
-            Height: {size.x.toFixed(1)} m
+            Height: {size.z.toFixed(1)} m
             <br />
-            Depth: {size.y.toFixed(1)} m
+            Depth: {size.x.toFixed(1)} m
             <br />
-            Width: {size.z.toFixed(1)} m
+            Width: {size.y.toFixed(1)} m
             <br />
           </Descriptions.Item>
         </Descriptions>
