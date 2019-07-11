@@ -11,7 +11,7 @@ import {
   Popconfirm,
   Descriptions,
 } from 'antd';
-
+import * as sdk from '@cognite/sdk';
 import styled from 'styled-components';
 import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
@@ -237,6 +237,19 @@ class AssetDrawer extends React.Component {
     );
   };
 
+  renderExternalLinks = assetId => {
+    const { project } = sdk.configure({});
+
+    const opintUrl = `https://opint.cogniteapp.com/${project}/assets/${assetId}`;
+    return (
+      <Panel header={<span>External links</span>} key="links">
+        <Button type="link" onClick={() => window.open(opintUrl)}>
+          Operational Intelligence
+        </Button>
+      </Panel>
+    );
+  };
+
   render() {
     const { asset } = this.props;
     const {
@@ -301,10 +314,11 @@ class AssetDrawer extends React.Component {
               onChange={this.onCollapseChange}
               defaultActiveKey={defaultActiveKey}
             >
-              {this.renderTypes(asset, types)}
-              {this.renderTimeseries(asset, timeseries)}
-              {this.renderEvents(this.props.events.items)}
+              {asset != null && this.renderExternalLinks(asset.id)}
               {this.renderThreeD(this.props.threed.currentNode)}
+              {this.renderTimeseries(asset, timeseries)}
+              {this.renderTypes(asset, types)}
+              {this.renderEvents(this.props.events.items)}
             </Collapse>
           }
         </Drawer>
