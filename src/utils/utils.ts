@@ -1,0 +1,29 @@
+import { Asset } from '@cognite/sdk';
+
+export function sleep(timeout: number) {
+  return new Promise(resolve => setTimeout(resolve, timeout));
+}
+
+interface Generic {
+  id: number;
+}
+
+export function arrayToObjectById<T extends Generic>(array: T[]): { [key: string]: T } {
+  return array.reduce((obj: { [key: string]: T }, item: T) => {
+    obj[item.id] = item;
+    return obj;
+  }, {});
+}
+
+export function createAssetTitle(asset: Asset) {
+  let assetTitle: string = asset.name ? asset.name : '' + asset.id;
+  if (asset.metadata) {
+    const areaKey = Object.keys(asset.metadata).filter(key => key.toUpperCase() === 'AREA');
+    if (areaKey.length > 0) {
+      // TODO what?
+      assetTitle += ` (${asset.metadata[areaKey[0]]})`;
+    }
+  }
+
+  return assetTitle;
+}
