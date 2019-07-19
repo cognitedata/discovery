@@ -3,9 +3,10 @@ import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
 import { message } from 'antd';
 import { fetchEvents, createEvent } from './events';
-import { Dispatch, Action } from 'redux';
+import { Dispatch, Action, AnyAction } from 'redux';
 import { Timeseries } from '@cognite/sdk';
 import { RootState } from '../reducers';
+import { ThunkDispatch } from 'redux-thunk';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -23,16 +24,16 @@ type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
 export function fetchTimeseries(assetId: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
     const result = await sdk.TimeSeries.list({ assetId, limit: 10000 });
-    const timeseries_ = result.items.map(ts => ({
+    const results = result.items.map(ts => ({
       id: ts.id,
       name: ts.name
     }));
-    dispatch({ type: SET_TIMESERIES, payload: { items: timeseries_ } });
+    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
   };
 }
 
 export function removeAssetFromTimeseries(timeseriesId: number, assetId: number) {
-  return async (dispatch: Dispatch<RemoveAssetAction>) => {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     await sdk.TimeSeries.update(timeseriesId, {
       assetId: { setNull: true }
     });
@@ -49,14 +50,14 @@ export function removeAssetFromTimeseries(timeseriesId: number, assetId: number)
     message.info(`Removed 1 timeseries from asset.`);
 
     setTimeout(() => {
-      fetchTimeseries(assetId);
-      fetchEvents(assetId);
+      dispatch(fetchTimeseries(assetId));
+      dispatch(fetchEvents(assetId));
     }, 1000);
   };
 }
 
 export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
-  return async (dispatch: Dispatch) => {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     // @ts-ignore
     mixpanel.context.track('Timeseries.addToAsset', {
       assetId,
@@ -77,8 +78,8 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
     message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
 
     setTimeout(() => {
-      fetchTimeseries(assetId);
-      fetchEvents(assetId);
+      dispatch(fetchTimeseries(assetId));
+      dispatch(fetchEvents(assetId));
     }, 1000);
   };
 }

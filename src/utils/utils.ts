@@ -20,7 +20,6 @@ export function createAssetTitle(asset: Asset) {
   if (asset.metadata) {
     const areaKey = Object.keys(asset.metadata).filter(key => key.toUpperCase() === 'AREA');
     if (areaKey.length > 0) {
-      // TODO what?
       assetTitle += ` (${asset.metadata[areaKey[0]]})`;
     }
   }

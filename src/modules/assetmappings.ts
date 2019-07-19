@@ -1,8 +1,7 @@
-import { createAction, Action } from 'redux-actions';
-import PropTypes from 'prop-types';
+import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
-import { Dispatch } from 'redux';
-import { Node, AssetMapping } from '@cognite/sdk';
+import { Dispatch, Action } from 'redux';
+import { AssetMapping } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 
 // Constants
@@ -13,7 +12,9 @@ export interface Mapping {
   assetId: number;
 }
 
-interface AddAction extends Action<{ mapping: AssetMapping; nodeId?: number }> {}
+interface AddAction extends Action<typeof ADD_ASSET_MAPPINGS> {
+  payload: { mapping: AssetMapping; nodeId?: number };
+}
 
 type AssetMappingAction = AddAction;
 
@@ -27,8 +28,8 @@ export function findBestMappingForNodeId(nodeId: number, mappings: Mapping[]): n
 
     // Now find all mappings pointing to this assetId as multiple 3D nodes may point to the same assetId.
     // Sort the list in descending order so first element has the largest subtreeSize.
-    const filteredMappings = mappings.filter(mapping => mapping.assetId === assetId);
-    return filteredMappings[0];
+    const mappingsPointingToAsset = mappings.filter(mapping => mapping.assetId === assetId);
+    return mappingsPointingToAsset[0];
   }
 
   const filteredMappings = mappings.filter(mapping => mapping.nodeId !== nodeId);
@@ -39,50 +40,6 @@ export function findBestMappingForNodeId(nodeId: number, mappings: Mapping[]): n
 
   return null;
 }
-
-// const fetchAssetMappingsFromNodeId = async (modelId, revisionId, nodeId) => {
-//   const data = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
-//     nodeId,
-//   });
-
-//   // Sort in descending order on subtreeSize
-//   const mappings = data.items.sort((a, b) => b.subtreeSize - a.subtreeSize);
-
-//   return mappings;
-// };
-
-// Functions
-// export function getAssetIdFromNodeId(modelId, revisionId, nodeId) {
-//   return async (dispatch: Dispatch) => {
-//     const mappings = await fetchAssetMappingsFromNodeId(
-//       modelId,
-//       revisionId,
-//       nodeId
-//     );
-//     const assetId = findAssetFromMappings(nodeId, mappings);
-//     dispatch({ type: SET_ASSET_ID, payload: { assetId } });
-//     return assetId;
-//   }
-// }
-
-// TODO: Verify cuz right now it is NOT USED
-// export function getAllAssetMappings(modelId: number, revisionId: number, assetId: number) {
-//   return async (dispatch: Dispatch) => {
-//     let cursor;
-//     let mappings: Mapping[] = [];
-//     do {
-//       // eslint-disable-next-line no-await-in-loop
-//       const result: sdk.DataWithCursor<sdk.AssetMapping> = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
-//         assetId,
-//         cursor
-//       });
-//       mappings = mappings.concat(result.items);
-//       cursor = result.nextCursor;
-//     } while (cursor !== undefined);
-
-//     dispatch({ type: ADD_ASSET_MAPPINGS, payload: { items: mappings } });
-//   };
-// }
 
 type CurrentFetchingObject = {
   asset: { [key: string]: any };
@@ -143,23 +100,6 @@ export function fetchMappingsFromNodeId(modelId: number, revisionId: number, nod
     currentFetching.node[nodeId] = false;
   };
 }
-// TODO remove
-// export const AssetMappings = PropTypes.exact({
-//   byNodeId: PropTypes.objectOf(
-//     PropTypes.shape({
-//       assetId: PropTypes.number,
-//       treeIndex: PropTypes.number,
-//       subtreeSize: PropTypes.number
-//     })
-//   ),
-//   byAssetId: PropTypes.objectOf(
-//     PropTypes.shape({
-//       nodeId: PropTypes.number,
-//       treeIndex: PropTypes.number,
-//       subtreeSize: PropTypes.number
-//     })
-//   )
-// });
 
 // Reducer
 export interface AssetMappingState {

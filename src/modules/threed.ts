@@ -1,5 +1,4 @@
 import { createAction } from 'redux-actions';
-import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 import { Dispatch, Action } from 'redux';
@@ -26,7 +25,6 @@ export const SET_MODELS = 'threed/SET_MODELS';
 export const ADD_REVISIONS = 'threed/ADD_REVISIONS';
 export const SET_NODE = 'threed/SET_NODE';
 
-// TODO Fix others to be like this
 interface SetModelAction extends Action<typeof SET_MODELS> {
   payload: { models: { [key: string]: Model } };
 }

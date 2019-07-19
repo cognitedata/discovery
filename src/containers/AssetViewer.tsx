@@ -27,10 +27,10 @@ type Props = {
   };
   show3D: boolean;
   showPNID: boolean;
-  onAssetIdChange: Function;
-  doFetchAsset: Function;
-  doFetchFiles: Function;
-  doFetchMappingsFromAssetId: Function;
+  onAssetIdChange: (assetId: number) => void;
+  doFetchAsset: typeof fetchAsset;
+  doFetchFiles: typeof fetchFiles;
+  doFetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
   assetMappings: AssetMappingState;
 };
 

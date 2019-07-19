@@ -8,36 +8,35 @@ declare global {
 }
 import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import { Model3DViewer, CacheObject, Callback } from '@cognite/gearbox';
 import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
 import { message, Slider } from 'antd';
 import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
-import { fetchNode, ThreeDModel } from '../modules/threed';
 import {
   fetchMappingsFromNodeId,
   selectAssetMappings,
   fetchMappingsFromAssetId,
   AssetMappingState
 } from '../modules/assetmappings';
-import { selectFilteredSearch, FilterState } from '../modules/filters';
+import { selectFilteredSearch } from '../modules/filters';
 import { Dispatch, bindActionCreators } from 'redux';
 import { RootState } from '../reducers/index';
-import { AssetMapping, Model, Asset } from '@cognite/sdk';
+import { Asset } from '@cognite/sdk';
 import { ExtendedAsset } from '../modules/assets';
 import { ProgressObject } from './LoadingScreen';
 import { SliderValue } from 'antd/lib/slider';
+import { fetchNode } from '../modules/threed';
 
 type Props = {
   modelId: number;
   revisionId: number;
   cache?: CacheObject;
   nodeId?: number;
-  onAssetIdChange: Function;
-  doFetchMappingsFromNodeId: Function;
-  doFetchMappingsFromAssetId: Function;
-  doFetchNode: Function;
+  onAssetIdChange: (assetId: number) => void;
+  doFetchMappingsFromNodeId: typeof fetchMappingsFromNodeId;
+  doFetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
+  doFetchNode: typeof fetchNode;
   assetMappings: AssetMappingState;
   filteredSearch: { items: ExtendedAsset[] };
 };
@@ -93,7 +92,7 @@ class Model3D extends React.Component<Props, State> {
     }
 
     if (prevProps.nodeId !== this.props.nodeId) {
-      this.props.doFetchNode(this.props.modelId, this.props.revisionId, this.props.nodeId);
+      this.props.doFetchNode(this.props.modelId, this.props.revisionId, this.props.nodeId!);
       if (this.model) {
         this.selectNode(this.props.nodeId!, true, 1500);
       }
@@ -164,9 +163,10 @@ class Model3D extends React.Component<Props, State> {
     }
 
     // TODO, this is not valid...
-    // this.model!._treeIndexNodeIdMap.forEach(id => {
-    //   this.model!.setNodeColor(id, 170, 170, 170);
-    // });
+    // @ts-ignore
+    this.model!._treeIndexNodeIdMap.forEach(id => {
+      this.model!.setNodeColor(id, 170, 170, 170);
+    });
   };
 
   onClick = (nodeId: number) => {
@@ -178,7 +178,8 @@ class Model3D extends React.Component<Props, State> {
     this.model = model;
     // Temp disable screen space culling
     // TODO, this is not allowed
-    // model._screenRatioLimit = 0.0;
+    // @ts-ignore
+    model._screenRatioLimit = 0.0;
     window.viewer = viewer;
     window.THREE = THREE;
     window.model = model;
@@ -201,12 +202,13 @@ class Model3D extends React.Component<Props, State> {
     // The node may not have geometries in the scene, so we need to
     // find all children and select them + compute bounding box
     for (let { treeIndex } = mapping; treeIndex < mapping.treeIndex + mapping.subtreeSize; treeIndex++) {
-      // TODO cannot find any of these functions
-      // const thisNodeId = this.model!._getNodeId(treeIndex);
-      // if (thisNodeId != null) {
-      //   this.model!.selectNode(thisNodeId);
-      //   boundingBox.union(this.model!.getBoundingBox(thisNodeId));
-      // }
+      // TODO, this is not allowed
+      // @ts-ignore
+      const thisNodeId = this.model!._getNodeId(treeIndex);
+      if (thisNodeId) {
+        this.model!.selectNode(thisNodeId);
+        boundingBox.union(this.model!.getBoundingBox(thisNodeId));
+      }
     }
 
     if (animate) {
@@ -240,7 +242,6 @@ class Model3D extends React.Component<Props, State> {
     });
 
     const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), boundingBox.max.y + 0.5);
-    // TODO, generally start using !
     this.viewer!.setSlicingPlanes([plane]);
   };
 
@@ -325,7 +326,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doFetchMappingsFromNodeId: fetchMappingsFromNodeId,
       doFetchMappingsFromAssetId: fetchMappingsFromAssetId,
-      doFetchNode: fetchMappingsFromNodeId
+      doFetchNode: fetchNode
     },
     dispatch
   );

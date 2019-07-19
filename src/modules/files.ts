@@ -1,33 +1,22 @@
-import { createAction, Action } from 'redux-actions';
-import PropTypes from 'prop-types';
+import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
-import { Dispatch } from 'redux';
+import { Dispatch, Action } from 'redux';
 import { File } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
-
-// TODO Delete
-// export const File = PropTypes.shape({
-//   id: PropTypes.number,
-//   fileName: PropTypes.string,
-//   fileType: PropTypes.string
-// });
-
-// export const Files = PropTypes.exact({
-//   byAssetId: PropTypes.objectOf(PropTypes.arrayOf(File))
-// });
 
 // Constants
 export const ADD_FILES = 'files/SET_FILES';
 
-interface AddFilesAction
-  extends Action<{
+interface AddFilesAction extends Action<typeof ADD_FILES> {
+  payload: {
     assetId: number;
     items: {
       id: number;
       fileName: string;
       fileType: string | undefined;
     }[];
-  }> {}
+  };
+}
 
 type FilesAction = AddFilesAction;
 

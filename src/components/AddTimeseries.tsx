@@ -1,7 +1,6 @@
 // TODO this is a container
 import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import { Modal, Button } from 'antd';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
@@ -18,7 +17,7 @@ type OrigProps = {
 type Props = {
   assetId: number;
   timeseries: Timeseries[];
-  doAddTimeseriesToAsset: Function;
+  doAddTimeseriesToAsset: typeof addTimeseriesToAsset;
   onClose: (e: any) => void;
 };
 

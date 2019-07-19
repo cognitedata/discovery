@@ -1,10 +1,10 @@
-import { createAction, Action } from 'redux-actions';
-import PropTypes from 'prop-types';
+import { createAction } from 'redux-actions';
 import { selectEventList, fetchEventsByFilter } from './events';
 import { selectAssets } from './assets';
-import { Dispatch } from 'redux';
+import { AnyAction, Action } from 'redux';
 import { RootState } from '../reducers';
 import { Asset } from '@cognite/sdk';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface EventFilter {
   type: string;
@@ -26,15 +26,17 @@ export interface FilterOptions {
 // Constants
 export const SET_FILTERS = 'filters/SET_FILTERS';
 
-interface SetFilterAction extends Action<{ items: { [key: string]: string } }> {}
+interface SetFilterAction extends Action<typeof SET_FILTERS> {
+  payload: { items: { [key: string]: string } };
+}
 
 type FiltersAction = SetFilterAction;
 
 export function setFilters(filters: FilterOptions) {
-  return async (dispatch: Dispatch) => {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     if (filters.event) {
       if (filters.event.from != null || filters.event.to != null || filters.event.eventType != null) {
-        fetchEventsByFilter(filters.event);
+        dispatch(fetchEventsByFilter(filters.event));
       }
     }
 
@@ -43,7 +45,11 @@ export function setFilters(filters: FilterOptions) {
 }
 
 // Reducer
-export interface FilterState extends FilterOptions {}
+export interface FilterState {
+  event?: EventFilter;
+  location?: LocationFilter;
+}
+
 const initialState: FilterState = {};
 
 export default function events(state = initialState, action: FiltersAction): FilterState {
@@ -67,8 +73,8 @@ export const actions = {
 export const selectFilters = (state: RootState) => state.filters || initialState;
 
 const applyEventFilter = (state: RootState, asset: Asset, filter: EventFilter) => {
-  const events_ = selectEventList(state).items;
-  const eventsForThisAsset = events_.filter(event => event.assetIds.indexOf(asset.id) !== -1);
+  const selectedEvents = selectEventList(state).items;
+  const eventsForThisAsset = selectedEvents.filter(event => event.assetIds.indexOf(asset.id) !== -1);
   if (eventsForThisAsset.length === 0) {
     // Did not find any events for this asset
     return false;
@@ -85,7 +91,7 @@ const applyEventFilter = (state: RootState, asset: Asset, filter: EventFilter) =
   });
 };
 
-const applyLocationFilter = (state: RootState, asset: Asset, filter: LocationFilter) => {
+const applyLocationFilter = (_state: RootState, asset: Asset, filter: LocationFilter) => {
   if (filter.area === undefined) {
     return true;
   }
@@ -103,7 +109,6 @@ const applyLocationFilter = (state: RootState, asset: Asset, filter: LocationFil
 };
 
 const applyFilter = (state: RootState, asset: Asset, filter: LocationFilter | EventFilter) => {
-  // TODO Fix
   if (filter.type === 'event') {
     const result = applyEventFilter(state, asset, filter);
     return result;
@@ -118,13 +123,12 @@ const applyFilter = (state: RootState, asset: Asset, filter: LocationFilter | Ev
 const applyFilters = (state: RootState, asset: Asset) => {
   const filters = selectFilters(state);
   // Loop through all filters and see if anyone rejects this asset
-  // TODO FIX
-  filters.event && applyFilter(state, asset, filters.event);
-  filters.location && applyFilter(state, asset, filters.location);
-  // return Object.keys(filters).every(filterKey => {
-  //   const filter: LocationFilter | EventFilter = filters[filterKey];
-  //   applyFilter(state, asset, filter);
-  // });
+  if (filters.event) {
+    applyFilter(state, asset, filters.event);
+  }
+  if (filters.location) {
+    applyFilter(state, asset, filters.location);
+  }
 };
 
 export const selectFilteredSearch = (state: RootState) => {

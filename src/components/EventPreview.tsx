@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Modal, List } from 'antd';
 
 import { EventPreview as GearboxEventPreview } from '@cognite/gearbox';

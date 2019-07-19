@@ -1,15 +1,12 @@
-import { createAction, Action } from 'redux-actions';
-import PropTypes from 'prop-types';
+import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
 import { message } from 'antd';
-// TODO(anders.hafreager) Fix this cycle import
-// eslint-disable-next-line import/no-cycle
 import { fetchAsset } from './assets';
 import { fetchEvents, createEvent } from './events';
-import { Dispatch } from 'redux';
-import { AxiosResponse } from 'axios';
+import { Dispatch, AnyAction, Action } from 'redux';
 import { Asset } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
+import { ThunkDispatch } from 'redux-thunk';
 
 // Constants
 export const SET_TYPES = 'types/SET_TYPES';
@@ -26,13 +23,15 @@ export interface Type {
   }[];
 }
 
-interface SetAction extends Action<{ items: Type[] }> {}
+interface SetAction extends Action<typeof SET_TYPES> {
+  payload: { items: Type[] };
+}
 
 type TypeAction = SetAction;
 
 // Functions
 export function removeTypeFromAsset(type: Type, asset: Asset) {
-  return async (dispatch: Dispatch) => {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     const body = {
       id: asset.id,
       types: {
@@ -51,13 +50,12 @@ export function removeTypeFromAsset(type: Type, asset: Asset) {
 
     message.info(`Removed ${type.name} from ${asset.name}.`);
 
-    // TODO it used to be wrapped in dispatch()
-    fetchAsset(asset.id);
-    fetchEvents(asset.id);
+    dispatch(fetchAsset(asset.id));
+    dispatch(fetchEvents(asset.id));
   };
 }
 export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
-  return async (dispatch: Dispatch) => {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     // We here assume that we have the two fields confidence and source on all types
     const formattedTypes = selectedTypes.map((type: Type) => ({
       id: type.id,
@@ -84,8 +82,8 @@ export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
     });
 
     message.info(`Added ${selectedTypes.length} types to ${asset.name}.`);
-    fetchAsset(asset.id);
-    fetchEvents(asset.id);
+    dispatch(fetchAsset(asset.id));
+    dispatch(fetchEvents(asset.id));
   };
 }
 

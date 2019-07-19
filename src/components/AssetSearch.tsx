@@ -4,7 +4,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import * as sdk from '@cognite/sdk';
-import PropTypes from 'prop-types';
 import { Icon, Button, Input, List, Collapse, DatePicker, Select } from 'antd';
 import queryString from 'query-string';
 import styled from 'styled-components';
@@ -42,17 +41,17 @@ const moveExactMatchToTop = (list: any[], query: any) => {
 type Props = {
   assetId: number;
   location: Location;
-  doSearchForAsset: Function;
-  doSetFilters: Function;
-  onAssetClick: Function;
-  doFetchAssets: Function;
+  doSearchForAsset: typeof searchForAsset;
+  doSetFilters: typeof setFilters;
+  onAssetClick: (id: ExtendedAsset, query?: string) => void;
+  doFetchAssets: typeof fetchAssets;
   events: { items: Event[] };
   assets: AssetsState;
   filteredSearch: { items: ExtendedAsset[] };
 };
 
 type State = {
-  query: string | null | undefined;
+  query?: string;
   eventFilter?: EventFilter;
   locationFilter?: LocationFilter;
 };
@@ -77,7 +76,7 @@ class AssetSearch extends React.Component<Props, State> {
     const { query } = parsed;
 
     if (query) {
-      this.props.doSearchForAsset(query);
+      this.props.doSearchForAsset(query as string);
       this.setState({ query: Array.isArray(query) ? query[0] : query });
     }
   }

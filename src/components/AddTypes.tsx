@@ -1,23 +1,19 @@
 // TODO this is a container
 import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import { Modal, Button, Select } from 'antd';
 import { addTypesToAsset, Type } from '../modules/types';
 import { bindActionCreators, Dispatch } from 'redux';
-import { RootState } from '../reducers/index';
 import { ExtendedAsset } from '../modules/assets';
 
 const { Option } = Select;
-
-type OrigProps = {};
 
 type Props = {
   asset: ExtendedAsset;
   assetId: number;
   types: Type[];
   onClose: (e: any) => void;
-  doAddTypesToAsset: Function;
+  doAddTypesToAsset: typeof addTypesToAsset;
 };
 
 type State = {};
@@ -69,7 +65,7 @@ class AddTypes extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
+const mapStateToProps = () => {
   return {};
 };
 

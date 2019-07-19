@@ -1,5 +1,4 @@
 import { createAction } from 'redux-actions';
-import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 import { Dispatch, Action } from 'redux';
@@ -16,26 +15,6 @@ export type EventsAndTypes = {
   items: Event[];
   types: string[];
 };
-
-// TODO delete
-// export const Event = PropTypes.shape({
-//   id: PropTypes.number,
-//   description: PropTypes.string,
-//   metadata: PropTypes.any,
-//   type: PropTypes.string,
-//   subtype: PropTypes.string,
-//   startTime: PropTypes.number,
-//   endTime: PropTypes.number
-// });
-
-// export const Events = PropTypes.exact({
-//   items: PropTypes.objectOf(Event),
-//   types: PropTypes.arrayOf(PropTypes.string)
-// });
-
-// export const EventList = PropTypes.exact({
-//   items: PropTypes.arrayOf(Event)
-// });
 
 // Constants
 export const ADD_EVENTS = 'events/ADD_EVENTS';

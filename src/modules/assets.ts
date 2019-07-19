@@ -1,5 +1,4 @@
 import { createAction } from 'redux-actions';
-import PropTypes from 'prop-types';
 import * as sdk from '@cognite/sdk';
 import { message } from 'antd';
 import { arrayToObjectById } from '../utils/utils';
@@ -49,7 +48,7 @@ export function searchForAsset(query: string) {
     if (requestResult) {
       const result = requestResult.data.data;
 
-      const assets_: Asset = result.items.map((asset: ExtendedAsset) => ({
+      const assetResults: Asset = result.items.map((asset: ExtendedAsset) => ({
         id: asset.id,
         name: asset.name,
         rootId: asset.rootId,
@@ -71,7 +70,7 @@ export function searchForAsset(query: string) {
             }))
           )
         });
-        dispatch({ type: SET_ASSETS, payload: { items: assets_ } });
+        dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
       }
     }
   };

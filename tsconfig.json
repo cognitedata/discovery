@@ -11,6 +11,8 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "strictNullChecks": true,
     "sourceMap": true,
     "downlevelIteration": true,
@@ -24,9 +26,9 @@
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "isolatedModules": true
   },
   "include": [
     "src/**/*"

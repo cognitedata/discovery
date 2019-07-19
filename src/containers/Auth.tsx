@@ -1,10 +1,8 @@
 // TODO this can just be a component
-
 import React from 'react';
 import { connect } from 'react-redux';
 import { ReactAuthProvider } from '@cognite/react-auth';
-// TODO clean unused imports
-import { Route, Redirect, Switch, match } from 'react-router-dom';
+import { Route, Redirect, Switch } from 'react-router-dom';
 import Main from './Main';
 import { RootState } from '../reducers';
 

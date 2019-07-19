@@ -1,7 +1,6 @@
 // TODO technically a container
 
-import React, { Ref } from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 import { connect } from 'react-redux';
 import { List, Button, message } from 'antd';
 import styled from 'styled-components';
@@ -50,7 +49,7 @@ type Props = {
   asset: Asset;
   assets: AssetsState;
   files: FilesState;
-  onAssetIdChange: Function;
+  onAssetIdChange: (assetId: number) => void;
 };
 
 type State = {
@@ -75,7 +74,8 @@ class PNIDViewer extends React.Component<Props, State> {
           // Workaround https://github.com/cognitedata/gearbox.js/issues/300
           await sleep(250);
           // TODO will remove, need to verify
-          // this.svgviewer.pinchZoomInstance.updateAspectRatio();
+          // @ts-ignore
+          this.svgviewer.pinchZoomInstance.updateAspectRatio();
           this.svgviewer.pinchZoomInstance.update();
         }
       }, 100);

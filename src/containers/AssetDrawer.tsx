@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import { List, Drawer, Spin, Collapse, Button, Icon, Popconfirm, Descriptions } from 'antd';
 import * as sdk from '@cognite/sdk';
 import styled from 'styled-components';
@@ -16,9 +15,8 @@ import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
 import { createAssetTitle } from '../utils/utils';
 import { selectThreeD, CurrentNode, ThreeDState } from '../modules/threed';
-import { ExtendedAsset } from '../modules/assets';
-import { Callback } from '@cognite/gearbox';
-import { Timeseries, Event, Node } from '@cognite/sdk';
+import { ExtendedAsset, fetchAsset } from '../modules/assets';
+import { Timeseries, Event } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
 
@@ -45,10 +43,10 @@ type OrigProps = {
 
 type Props = {
   asset: ExtendedAsset;
-  doFetchTimeseries: Function;
-  doFetchEvents: Function;
-  doRemoveAssetFromTimeseries: Function;
-  doRemoveTypeFromAsset: Function;
+  doFetchTimeseries: typeof fetchTimeseries;
+  doFetchEvents: typeof fetchEvents;
+  doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
+  doRemoveTypeFromAsset: typeof removeTypeFromAsset;
   timeseries: TimeseriesState;
   events: EventsAndTypes;
   threed: ThreeDState;
@@ -328,7 +326,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doFetchTimeseries: fetchTimeseries,
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
-      doRemoveTypeFromAsset: removeTypeFromAsset
+      doRemoveTypeFromAsset: removeTypeFromAsset,
+      doFetchAsset: fetchAsset
     },
     dispatch
   );

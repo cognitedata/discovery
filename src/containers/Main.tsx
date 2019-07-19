@@ -1,6 +1,5 @@
-import React, { Ref } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import { Layout, Switch } from 'antd';
 import { Route } from 'react-router-dom';
 import AssetSearch from '../components/AssetSearch';
@@ -16,8 +15,8 @@ import { AssetViewer as AssetViewerComponent } from './AssetViewer';
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
 
-function stringToBool(string: string) {
-  return string === 'true';
+function stringToBool(str: string) {
+  return str === 'true';
 }
 
 type Props = {
@@ -26,9 +25,9 @@ type Props = {
   location: any;
   threed: ThreeDState;
   assets: AssetsState;
-  doFetchRevisions: Function;
-  doFetchTypes: Function;
-  doFetchModels: Function;
+  doFetchRevisions: typeof fetchRevisions;
+  doFetchTypes: typeof fetchTypes;
+  doFetchModels: typeof fetchModels;
 };
 
 type State = {
@@ -56,7 +55,7 @@ class Main extends React.Component<Props, State> {
     }
   }
 
-  onAssetClick = (asset: ExtendedAsset, query: string) => {
+  onAssetClick = (asset: ExtendedAsset, query?: string) => {
     const { match, history } = this.props;
     history.push({
       pathname: `${match.url}/asset/${asset.id}`,
@@ -102,7 +101,7 @@ class Main extends React.Component<Props, State> {
               revision
             });
           } else {
-            this.props.doFetchRevisions(modelId);
+            this.props.doFetchRevisions(Number(modelId));
           }
         }
       }
@@ -125,7 +124,7 @@ class Main extends React.Component<Props, State> {
       ({ assetId } = this.viewer.current!.props);
     }
 
-    const { match, history, location } = this.props;
+    const { match, location } = this.props;
     const assetDrawerWidth = 350;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
