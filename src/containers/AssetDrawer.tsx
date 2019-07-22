@@ -9,8 +9,8 @@ import { THREE } from '@cognite/3d-viewer';
 import { fetchTimeseries, selectTimeseries, removeAssetFromTimeseries, TimeseriesState } from '../modules/timeseries';
 import { selectTypes, removeTypeFromAsset, Type, TypesState } from '../modules/types';
 import { fetchEvents, selectEventsByAssetId, EventsAndTypes } from '../modules/events';
-import AddTimeseries from '../components/AddTimeseries';
-import AddTypes from '../components/AddTypes';
+import AddTimeseries from './AddTimeseries';
+import AddTypes from './AddTypes';
 import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
 import { createAssetTitle } from '../utils/utils';
@@ -180,7 +180,6 @@ class AssetDrawer extends React.Component<Props, State> {
   );
 
   renderEvents = (events: Event[]) => {
-    // TODO Fix for the other cases!
     events = events.sort((a, b) => b.startTime! - a.startTime!);
     return (
       <Panel header={<span>Events ({events.length})</span>} key="events">

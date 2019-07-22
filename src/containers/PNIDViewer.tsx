@@ -1,5 +1,3 @@
-// TODO technically a container
-
 import React from 'react';
 import { connect } from 'react-redux';
 import { List, Button, message } from 'antd';

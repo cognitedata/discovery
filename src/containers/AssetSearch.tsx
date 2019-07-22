@@ -1,6 +1,3 @@
-// Disable linting problems with <a>
-/* eslint-disable jsx-a11y/anchor-is-valid */
-// TODO this is a container!
 import React from 'react';
 import { connect } from 'react-redux';
 import * as sdk from '@cognite/sdk';

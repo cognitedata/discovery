@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { createBrowserHistory } from 'history';
-import Auth from '../containers/Auth';
-import Login from '../containers/Login';
+import Auth from '../components/Auth';
+import Login from '../components/Login';
 
 export const history = createBrowserHistory();
 

@@ -65,7 +65,7 @@ export function fetchMappingsFromAssetId(modelId: number, revisionId: number, as
       }
 
       // Choose largest mapping
-      mappings.sort((a, b) => (a.subtreeSize || 0) - (b.subtreeSize || 0));
+      mappings.sort((a, b) => a.subtreeSize! - b.subtreeSize!);
       dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
     } catch (ex) {
       // Could not fetch

@@ -108,31 +108,32 @@ const applyLocationFilter = (_state: RootState, asset: Asset, filter: LocationFi
   return false;
 };
 
-const applyFilter = (state: RootState, asset: Asset, filter: LocationFilter | EventFilter) => {
-  if (filter.type === 'event') {
-    const result = applyEventFilter(state, asset, filter);
-    return result;
-  }
-  if (filter.type === 'location') {
-    const result = applyLocationFilter(state, asset, filter);
-    return result;
-  }
-  return true;
-};
-
+/**
+ * Applies filter onto the asset object. Currently, the type of each Filter is being used to determine
+ * what to apply (event vs location) and its assumed that there is only 1 filter of each type
+ *
+ * @param state reducer state
+ * @param asset asset to check if filter should be added
+ */
 const applyFilters = (state: RootState, asset: Asset) => {
   const filters = selectFilters(state);
   // Loop through all filters and see if anyone rejects this asset
   let isTrue: boolean = true;
   if (filters.event) {
-    isTrue = applyFilter(state, asset, filters.event);
+    isTrue = applyEventFilter(state, asset, filters.event);
   }
   if (isTrue && filters.location) {
-    isTrue = isTrue && applyFilter(state, asset, filters.location);
+    isTrue = isTrue && applyLocationFilter(state, asset, filters.location);
   }
   return isTrue;
 };
 
+/**
+ * Selects the post-filter current assets, if current assets is empty, the filters
+ * all cached objects in the state
+ *
+ * @param state reducer state
+ */
 export const selectFilteredSearch = (state: RootState) => {
   let assets = selectAssets(state).current;
 

@@ -1,4 +1,3 @@
-// TODO this is a container
 import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, Select } from 'antd';

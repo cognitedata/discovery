@@ -1,23 +1,17 @@
-// TODO this can just be a component
 import React from 'react';
-import { connect } from 'react-redux';
 import { ReactAuthProvider } from '@cognite/react-auth';
 import { Route, Redirect, Switch } from 'react-router-dom';
-import Main from './Main';
-import { RootState } from '../reducers';
-
-type OrigProps = {
-  match: { params: { [key: string]: string } };
-};
+import Main from '../containers/Main';
 
 type Props = {
-  tenant: string;
   match: {
     url: string;
+    params: { [key: string]: string };
   };
 };
 
-const Auth = ({ tenant, match }: Props) => {
+const Auth = ({ match }: Props) => {
+  const tenant = match.params.tenant;
   return (
     <ReactAuthProvider
       project={tenant}
@@ -36,9 +30,4 @@ const Auth = ({ tenant, match }: Props) => {
   );
 };
 
-const mapStateToProps = (_: RootState, ownProps: OrigProps) => {
-  const tenant = ownProps.match.params.tenant;
-  return { tenant };
-};
-
-export default connect(mapStateToProps)(Auth);
+export default Auth;

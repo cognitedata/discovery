@@ -1,4 +1,3 @@
-// TODO this can be a component
 import React from 'react';
 import { connect } from 'react-redux';
 import { TenantSelector, PureObject } from '@cognite/gearbox';

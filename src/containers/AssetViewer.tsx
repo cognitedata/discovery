@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import Model3D from '../components/Model3D';
-import PNIDViewer from '../components/PNIDViewer';
+import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import AssetDrawer from './AssetDrawer';

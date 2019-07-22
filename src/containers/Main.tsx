@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Layout, Switch } from 'antd';
 import { Route } from 'react-router-dom';
-import AssetSearch from '../components/AssetSearch';
+import AssetSearch from './AssetSearch';
 import AssetViewer from './AssetViewer';
 import { fetchTypes } from '../modules/types';
 import { fetchModels, selectThreeD, ThreeDState, ThreeDModel, fetchRevisions } from '../modules/threed';
