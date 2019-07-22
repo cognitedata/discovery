@@ -12,6 +12,10 @@ import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
 import { AssetViewer as AssetViewerComponent } from './AssetViewer';
 
+interface TOBEDELETEDRevision extends Revision {
+  metadata?: { [key: string]: string };
+}
+
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
 
@@ -83,28 +87,28 @@ class Main extends React.Component<Props, State> {
   hasModelForAsset = (assetId: number) => {
     const asset = this.props.assets.all[assetId];
     const representedByMap: {
-      [key: string]: { model: ThreeDModel; revision: Revision }[];
+      [key: string]: { model: ThreeDModel; revision: TOBEDELETEDRevision }[];
     } = {};
     const { models } = this.props.threed;
     Object.keys(models).forEach(modelId => {
       const model = models[modelId];
-      if (model.metadata) {
-        const { representsAsset } = model.metadata!;
-        if (representsAsset) {
+      if (!model.revisions) {
+        return;
+      }
+
+      model.revisions.forEach(r => {
+        const revision = r as TOBEDELETEDRevision;
+        if (revision.metadata!.representsAsset) {
+          const { representsAsset } = revision.metadata!;
           if (representedByMap[representsAsset] === undefined) {
             representedByMap[representsAsset] = [];
           }
-          if (model.revisions) {
-            const revision = model.revisions[0];
-            representedByMap[representsAsset].push({
-              model,
-              revision
-            });
-          } else {
-            this.props.doFetchRevisions(Number(modelId));
-          }
+          representedByMap[representsAsset].push({
+            model,
+            revision
+          });
         }
-      }
+      });
     });
     if (asset) {
       const modelsForAsset = representedByMap[asset.rootId!];

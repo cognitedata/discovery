@@ -1,9 +1,10 @@
 import { createAction } from 'redux-actions';
 import * as sdk from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
-import { Dispatch, Action } from 'redux';
+import { Dispatch, Action, AnyAction } from 'redux';
 import { RootState } from '../reducers/index';
 import { Revision, Model } from '@cognite/sdk';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface ThreeDModel extends Model {
   revisions?: Revision[];
@@ -70,12 +71,16 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
 }
 
 export function fetchModels() {
-  return async (dispatch: Dispatch) => {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     const { project } = sdk.configure({});
     const requestResult = await sdk.rawGet(`https://api.cognitedata.com/api/v1/projects/${project}/3d/models/`);
     if (requestResult) {
       const result = requestResult.data;
       const { items }: { items: ThreeDModel[] } = result;
+
+      items.forEach(model => {
+        dispatch(fetchRevisions(model.id));
+      });
 
       dispatch({
         type: SET_MODELS,
