@@ -189,7 +189,6 @@ class AssetSearch extends React.Component<Props, State> {
 
   renderSearchResults() {
     const assets = moveExactMatchToTop(this.props.filteredSearch.items, this.state.query && this.state.query.trim());
-
     return (
       <>
         {assets && (

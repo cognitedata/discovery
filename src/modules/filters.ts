@@ -123,12 +123,14 @@ const applyFilter = (state: RootState, asset: Asset, filter: LocationFilter | Ev
 const applyFilters = (state: RootState, asset: Asset) => {
   const filters = selectFilters(state);
   // Loop through all filters and see if anyone rejects this asset
+  let isTrue: boolean = true;
   if (filters.event) {
-    applyFilter(state, asset, filters.event);
+    isTrue = applyFilter(state, asset, filters.event);
   }
-  if (filters.location) {
-    applyFilter(state, asset, filters.location);
+  if (isTrue && filters.location) {
+    isTrue = isTrue && applyFilter(state, asset, filters.location);
   }
+  return isTrue;
 };
 
 export const selectFilteredSearch = (state: RootState) => {
