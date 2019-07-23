@@ -12,8 +12,8 @@ export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
 
 export interface ExtendedAsset extends Asset {
-  rootId?: number;
-  types?: Type[];
+  rootId: number;
+  types: Type[];
   metadata?: { [key: string]: string };
 }
 

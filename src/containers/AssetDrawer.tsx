@@ -55,17 +55,18 @@ type Props = {
 };
 
 type State = {
-  showAddTimeseries?: boolean;
-  asset?: ExtendedAsset;
-  showAddTypes?: boolean;
+  showAddTypes: boolean;
+  showAddTimeseries: boolean;
   showEvent?: number;
+  asset?: ExtendedAsset;
   activeCollapsed?: any[];
   showTimeseries?: { id: number; name: string };
 };
 
 class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
-    showAddTimeseries: false
+    showAddTimeseries: false,
+    showAddTypes: false
   };
 
   componentDidMount() {
@@ -100,10 +101,10 @@ class AssetDrawer extends React.Component<Props, State> {
 
   onAddClose = () => {
     this.setState({
-      showAddTimeseries: undefined,
+      showAddTimeseries: false,
       showEvent: undefined,
       showTimeseries: undefined,
-      showAddTypes: undefined
+      showAddTypes: false
     });
   };
 

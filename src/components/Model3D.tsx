@@ -2,8 +2,8 @@
 declare global {
   interface Window {
     viewer: Cognite3DViewer;
+    model: Cognite3DModel;
     THREE: any;
-    model: any;
   }
 }
 import React from 'react';
