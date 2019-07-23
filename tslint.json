@@ -1,6 +1,0 @@
-{
-  "extends": ["@cognite/tslint-config-cognite-3d"],
-  "linterOptions": {
-    "exclude": ["node_modules/**/*.ts", "**/*.json"]
-  }
-}
