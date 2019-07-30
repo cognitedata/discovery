@@ -78,10 +78,6 @@ export function fetchModels() {
       const result = requestResult.data;
       const { items }: { items: ThreeDModel[] } = result;
 
-      items.forEach(model => {
-        dispatch(fetchRevisions(model.id));
-      });
-
       dispatch({
         type: SET_MODELS,
         payload: { models: arrayToObjectById(items) }
