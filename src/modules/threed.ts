@@ -73,7 +73,9 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
 export function fetchModels() {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     const { project } = sdk.configure({});
-    const requestResult = await sdk.rawGet(`https://api.cognitedata.com/api/v1/projects/${project}/3d/models/`);
+    const requestResult = await sdk.rawGet(
+      `https://api.cognitedata.com/api/v1/projects/${project}/3d/models?limit=200`
+    );
     if (requestResult) {
       const result = requestResult.data;
       const { items }: { items: ThreeDModel[] } = result;
@@ -104,9 +106,15 @@ export default function threed(state = initialState, action: ThreeDAction): Thre
     }
     case ADD_REVISIONS: {
       const { modelId, revisions } = action.payload;
-      state.models[modelId].revisions = revisions;
       return {
-        ...state
+        ...state,
+        models: {
+          ...state.models,
+          [modelId]: {
+            ...state.models[modelId],
+            revisions
+          }
+        }
       };
     }
     case SET_NODE: {
