@@ -1,12 +1,12 @@
 import { createAction } from 'redux-actions';
-import * as sdk from '@cognite/sdk';
 import { message } from 'antd';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
-import { Asset } from '@cognite/sdk';
 import { Dispatch, Action } from 'redux';
 import { RootState } from '../reducers';
+import { sdk } from '../index';
+import { Asset } from '@cognite/sdk';
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
@@ -37,35 +37,33 @@ export function searchForAsset(query: string) {
       return;
     }
     // const result = await sdk.Assets.search({ query, name, limit: 100 });
-    const { project } = sdk.configure({});
     // const requestResult = await sdk.rawGet(
     //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
     // );
-    const requestResult = await sdk.rawGet(
-      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=1000`
-    );
+    const result = await sdk.assets.search({
+      search: { name: query },
+      limit: 1000
+    });
 
-    if (requestResult) {
-      const result = requestResult.data.data;
-
-      const assetResults: Asset = result.items.map((asset: ExtendedAsset) => ({
+    if (result) {
+      const assetResults = result.map(asset => ({
         id: asset.id,
         name: asset.name,
         rootId: asset.rootId,
         description: asset.description,
-        types: asset.types,
+        types: asset.metadata!.types,
         metadata: asset.metadata
       }));
       if (currentCounter === searchCounter) {
         dispatch({
           type: ADD_ASSETS,
           payload: arrayToObjectById(
-            result.items.map((asset: ExtendedAsset) => ({
+            result.map(asset => ({
               id: asset.id,
               name: asset.name,
-              rootId: asset.path ? asset.path[0] : undefined,
+              rootId: asset.rootId,
               description: asset.description,
-              types: asset.types,
+              types: asset.metadata!.types,
               metadata: asset.metadata
             }))
           )
@@ -88,21 +86,17 @@ export function fetchAsset(assetId: number) {
     }
     requestedAssetIds[assetId] = true;
 
-    const { project } = sdk.configure({});
     try {
-      const requestResult = await sdk.rawGet(
-        `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${assetId}`
-      );
+      const results = await sdk.assets.retrieve([{ id: assetId }]);
 
-      if (requestResult) {
-        const result = requestResult.data.data;
+      if (results) {
         const items = arrayToObjectById(
-          result.items.map((asset: ExtendedAsset) => ({
+          results.map(asset => ({
             id: asset.id,
             name: asset.name,
-            rootId: asset.path ? asset.path[0] : undefined,
+            rootId: asset.rootId,
             description: asset.description,
-            types: asset.types,
+            types: asset.metadata!.types,
             metadata: asset.metadata
           }))
         );
@@ -123,27 +117,21 @@ export function fetchAssets(assetIds: number[]) {
       return;
     }
 
-    const { project } = sdk.configure({});
-    const body = {
-      items: assetIds.map(id => ({
-        id
-      }))
-    };
     try {
-      const requestResult = await sdk.rawPost(`https://api.cognitedata.com/api/v1/projects/${project}/assets/byids`, {
-        data: body
-      });
+      const results = await sdk.assets.retrieve(
+        assetIds.map(id => ({
+          id
+        }))
+      );
 
-      if (requestResult) {
-        const result = requestResult.data;
-
+      if (results) {
         const items = arrayToObjectById(
-          result.items.map((asset: ExtendedAsset) => ({
+          results.map(asset => ({
             id: asset.id,
             name: asset.name,
             rootId: asset.rootId,
             description: asset.description,
-            types: asset.types,
+            types: asset.metadata!.types,
             metadata: asset.metadata
           }))
         );

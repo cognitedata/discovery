@@ -3,12 +3,12 @@ import { connect } from 'react-redux';
 import { List, Button, message } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
-import * as sdk from '@cognite/sdk';
 import { selectAssets, AssetsState } from '../modules/assets';
 import { selectFiles, FilesState } from '../modules/files';
 import { sleep } from '../utils/utils';
 import { RootState } from '../reducers';
-import { Asset, File } from '@cognite/sdk';
+import { Asset } from '@cognite/sdk';
+import { sdk } from '../index';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) => (node.textContent || '').replace(/\s/g, '');
 
@@ -51,7 +51,7 @@ type Props = {
 };
 
 type State = {
-  currentFile?: File;
+  currentFile?: { id: number; fileName: string };
 };
 
 class PNIDViewer extends React.Component<Props, State> {
@@ -92,8 +92,8 @@ class PNIDViewer extends React.Component<Props, State> {
       .filter(a => a.name === name);
 
     if (matches.length === 0) {
-      const result = await sdk.Assets.search({ name });
-      const exactMatches = result.items.filter(a => a.name === name);
+      const result = await sdk.assets.search({ search: { name } });
+      const exactMatches = result.filter(a => a.name === name);
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
       } else {
@@ -154,10 +154,10 @@ class PNIDViewer extends React.Component<Props, State> {
 
     const pNIDFiles = filesForThisAsset.filter(
       file =>
-        file.fileName.includes('-XB-') &&
-        file.fileType &&
-        file.fileType.toLowerCase() === 'svg' &&
-        file.fileName.toLowerCase().endsWith('svg')
+        file.name.includes('-XB-') &&
+        file.mimeType &&
+        file.mimeType.toLowerCase() === 'svg' &&
+        file.name.toLowerCase().endsWith('svg')
     );
 
     return (
@@ -172,11 +172,11 @@ class PNIDViewer extends React.Component<Props, State> {
               type="link"
               onClick={() => {
                 this.setState({
-                  currentFile: { id: item.id, fileName: item.fileName }
+                  currentFile: { id: item.id, fileName: item.name }
                 });
               }}
             >
-              {item.fileName}
+              {item.name}
             </Button>
           </List.Item>
         )}

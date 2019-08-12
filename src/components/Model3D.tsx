@@ -11,7 +11,6 @@ import { connect } from 'react-redux';
 import { Model3DViewer, CacheObject, Callback } from '@cognite/gearbox';
 import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
 import { message, Slider } from 'antd';
-import * as sdk from '@cognite/sdk';
 import LoadingScreen from './LoadingScreen';
 import {
   fetchMappingsFromNodeId,
@@ -27,6 +26,7 @@ import { ExtendedAsset } from '../modules/assets';
 import { ProgressObject } from './LoadingScreen';
 import { SliderValue } from 'antd/lib/slider';
 import { fetchNode } from '../modules/threed';
+import { sdk } from '../index';
 
 type Props = {
   modelId: number;
@@ -194,7 +194,10 @@ class Model3D extends React.Component<Props, State> {
     let mapping = this.props.assetMappings.byNodeId[nodeId];
 
     if (!mapping) {
-      const nodes = await sdk.ThreeD.listNodes(this.props.modelId, this.props.revisionId, { nodeId, depth: 0 });
+      const nodes = await sdk.viewer3D.listRevealNodes3D(this.props.modelId, this.props.revisionId, {
+        nodeId,
+        depth: 0
+      });
       [mapping] = nodes.items;
     }
 

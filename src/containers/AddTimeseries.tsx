@@ -4,18 +4,18 @@ import { Modal, Button } from 'antd';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { addTimeseriesToAsset } from '../modules/timeseries';
-import { Timeseries } from '@cognite/sdk';
+import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { Dispatch, bindActionCreators } from 'redux';
 
 type OrigProps = {
   assetId: string | number;
-  timeseries: Timeseries[];
+  timeseries: GetTimeSeriesMetadataDTO[];
 };
 
 type Props = {
   assetId: number;
-  timeseries: Timeseries[];
+  timeseries: GetTimeSeriesMetadataDTO[];
   doAddTimeseriesToAsset: typeof addTimeseriesToAsset;
   onClose: (e: any) => void;
 };
@@ -35,7 +35,7 @@ class AddTimeseries extends React.Component<Props, State> {
     }
   };
 
-  timeseriesFilter = (timeseries: Timeseries) => {
+  timeseriesFilter = (timeseries: GetTimeSeriesMetadataDTO) => {
     return timeseries.assetId == null;
   };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { List, Drawer, Spin, Collapse, Button, Icon, Popconfirm, Descriptions } from 'antd';
-import * as sdk from '@cognite/sdk';
+
 import styled from 'styled-components';
 import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
@@ -16,9 +16,10 @@ import TimeseriesPreview from '../components/TimeseriesPreview';
 import { createAssetTitle } from '../utils/utils';
 import { selectThreeD, CurrentNode, ThreeDState } from '../modules/threed';
 import { ExtendedAsset, fetchAsset } from '../modules/assets';
-import { Timeseries, Event } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
+import { Timeseries, Event } from '@cognite/sdk';
+import { sdk } from '../index';
 
 const { Panel } = Collapse;
 
@@ -241,7 +242,7 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   renderExternalLinks = (assetId: number) => {
-    const { project } = sdk.configure({});
+    const { project } = sdk;
 
     const opintUrl = `https://opint.cogniteapp.com/${project}/assets/${assetId}`;
     return (

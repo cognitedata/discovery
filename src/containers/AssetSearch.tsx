@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import * as sdk from '@cognite/sdk';
 import { Icon, Button, Input, List, Collapse, DatePicker, Select } from 'antd';
 import queryString from 'query-string';
 import styled from 'styled-components';
@@ -9,10 +8,11 @@ import { selectEventList } from '../modules/events';
 import { setFilters, selectFilteredSearch, LocationFilter, FilterOptions, EventFilter } from '../modules/filters';
 import { createAssetTitle } from '../utils/utils';
 import { Location } from 'history';
-import { Event } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RangePickerValue } from 'antd/lib/date-picker/interface';
+import { sdk } from '../index';
+import { CogniteEvent } from '@cognite/sdk';
 
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
@@ -42,7 +42,7 @@ type Props = {
   doSetFilters: typeof setFilters;
   onAssetClick: (id: ExtendedAsset, query?: string) => void;
   doFetchAssets: typeof fetchAssets;
-  events: { items: Event[] };
+  events: { items: CogniteEvent[] };
   assets: AssetsState;
   filteredSearch: { items: ExtendedAsset[] };
 };
@@ -82,7 +82,10 @@ class AssetSearch extends React.Component<Props, State> {
     if (prevProps.events !== this.props.events) {
       // Find unique list of assetIds
       const assetIds: number[] = [
-        ...this.props.events.items.reduce((set, event) => new Set([...set, ...event.assetIds]), new Set<number>())
+        ...this.props.events.items.reduce(
+          (set, event: CogniteEvent) => new Set([...set, ...event.assetIds]),
+          new Set<number>()
+        )
       ];
       const missingAssetIds = assetIds.filter(assetId => this.props.assets.all[assetId] === undefined);
       this.props.doFetchAssets(missingAssetIds);
@@ -354,7 +357,7 @@ class AssetSearch extends React.Component<Props, State> {
   }
 
   renderFilters() {
-    const { project } = sdk.configure({});
+    const { project } = sdk;
     return (
       <>
         {this.renderEventFilter()}

@@ -1,19 +1,19 @@
 import { createAction } from 'redux-actions';
-import * as sdk from '@cognite/sdk';
 import mixpanel from 'mixpanel-browser';
 import { message } from 'antd';
 import { fetchEvents, createEvent } from './events';
 import { Dispatch, Action, AnyAction } from 'redux';
-import { Timeseries } from '@cognite/sdk';
 import { RootState } from '../reducers';
 import { ThunkDispatch } from 'redux-thunk';
+import { sdk } from '../index';
+import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
 export const REMOVE_ASSET_FROM_TIMESERIES = 'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
 
 interface SetTimeseriesAction extends Action<typeof SET_TIMESERIES> {
-  payload: { items: Timeseries[] };
+  payload: { items: GetTimeSeriesMetadataDTO[] };
 }
 interface RemoveAssetAction extends Action<typeof REMOVE_ASSET_FROM_TIMESERIES> {
   payload: { timeseriesId: number };
@@ -23,20 +23,24 @@ type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
 // Functions
 export function fetchTimeseries(assetId: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    const result = await sdk.TimeSeries.list({ assetId, limit: 10000 });
-    const results = result.items.map(ts => ({
-      id: ts.id,
-      name: ts.name
-    }));
-    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+    const results = await sdk.timeseries.list({
+      assetIds: [assetId],
+      limit: 1000
+    });
+    dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
   };
 }
 
 export function removeAssetFromTimeseries(timeseriesId: number, assetId: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    await sdk.TimeSeries.update(timeseriesId, {
-      assetId: { setNull: true }
-    });
+    await sdk.timeseries.update([
+      {
+        id: timeseriesId,
+        update: {
+          assetId: { setNull: true }
+        }
+      }
+    ]);
 
     createEvent('removed_timeseries', 'Removed timeseries', [assetId], {
       removed: timeseriesId
@@ -66,9 +70,9 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
 
     const changes = timeseriesIds.map(id => ({
       id,
-      assetId: { set: assetId }
+      update: { assetId: { set: assetId } }
     }));
-    await sdk.TimeSeries.updateMultiple(changes);
+    await sdk.timeseries.update(changes);
 
     // Create event for this mapping
     createEvent('attached_timeseries', 'Attached timeseries', [assetId], {
@@ -86,7 +90,7 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
 
 // Reducer
 export interface TimeseriesState {
-  items?: Timeseries[];
+  items?: GetTimeSeriesMetadataDTO[];
 }
 const initialState: TimeseriesState = {};
 

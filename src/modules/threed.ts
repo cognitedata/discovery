@@ -1,13 +1,15 @@
 import { createAction } from 'redux-actions';
-import * as sdk from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { RootState } from '../reducers/index';
-import { Revision, Model } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
+import { Cognite3DModel } from '@cognite/3d-viewer';
+import { Revision3D } from '@cognite/sdk';
+import { sdk } from '../index';
 
-export interface ThreeDModel extends Model {
-  revisions?: Revision[];
+export interface ThreeDModel extends Cognite3DModel {
+  id: number;
+  revisions?: Revision3D[];
   metadata?: { [key: string]: string };
 }
 
@@ -27,10 +29,10 @@ export const ADD_REVISIONS = 'threed/ADD_REVISIONS';
 export const SET_NODE = 'threed/SET_NODE';
 
 interface SetModelAction extends Action<typeof SET_MODELS> {
-  payload: { models: { [key: string]: Model } };
+  payload: { models: { [key: string]: ThreeDModel } };
 }
 interface AddRevisionAction extends Action<typeof ADD_REVISIONS> {
-  payload: { modelId: number; revisions: Revision[] };
+  payload: { modelId: number; revisions: Revision3D[] };
 }
 interface SetNodeAction extends Action<typeof SET_NODE> {
   payload: { currentNode: any };
@@ -39,14 +41,9 @@ type ThreeDAction = SetModelAction | SetNodeAction | AddRevisionAction;
 
 export function fetchRevisions(modelId: number) {
   return async (dispatch: Dispatch<AddRevisionAction>) => {
-    const { project } = sdk.configure({});
-    const requestResult = await sdk.rawGet(
-      `https://api.cognitedata.com/api/v1/projects/${project}/3d/models/${modelId}/revisions?limit=1000`
-    );
+    const requestResult = await sdk.revisions3D.list(modelId, { limit: 1000 });
     if (requestResult) {
-      const result = requestResult.data;
-      const { items }: { items: Revision[] } = result;
-
+      const { items } = requestResult;
       dispatch({ type: ADD_REVISIONS, payload: { modelId, revisions: items } });
     }
   };
@@ -56,7 +53,7 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
   return async (dispatch: Dispatch<SetNodeAction>) => {
     dispatch({ type: SET_NODE, payload: { currentNode: undefined } });
 
-    const result = await sdk.ThreeD.listNodes(modelId, revisionId, {
+    const result = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
       nodeId,
       limit: 1
     });
@@ -72,13 +69,9 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
 
 export function fetchModels() {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    const { project } = sdk.configure({});
-    const requestResult = await sdk.rawGet(
-      `https://api.cognitedata.com/api/v1/projects/${project}/3d/models?limit=200`
-    );
+    const requestResult = await sdk.models3D.list({ limit: 200 });
     if (requestResult) {
-      const result = requestResult.data;
-      const { items }: { items: ThreeDModel[] } = result;
+      const { items } = requestResult;
 
       dispatch({
         type: SET_MODELS,

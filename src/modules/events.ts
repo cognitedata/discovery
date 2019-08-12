@@ -1,9 +1,9 @@
 import { createAction } from 'redux-actions';
-import * as sdk from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 import { Dispatch, Action } from 'redux';
-import { Event } from '@cognite/sdk';
 import { RootState } from '../reducers';
+import { sdk } from '../index';
+import { CogniteEvent } from '@cognite/sdk';
 
 export interface EventFilter {
   eventType?: string;
@@ -12,7 +12,7 @@ export interface EventFilter {
 }
 
 export type EventsAndTypes = {
-  items: Event[];
+  items: CogniteEvent[];
   types: string[];
 };
 
@@ -21,7 +21,7 @@ export const ADD_EVENTS = 'events/ADD_EVENTS';
 export const ADD_UNIQUE_EVENT_TYPES = 'events/ADD_UNIQUE_EVENT_TYPES';
 
 interface AddEventAction extends Action<typeof ADD_EVENTS> {
-  payload: { items: { [key: string]: Event } };
+  payload: { items: { [key: string]: CogniteEvent } };
 }
 interface AddUniqueEventTypesAction extends Action<typeof ADD_UNIQUE_EVENT_TYPES> {
   payload: { items: string[] };
@@ -36,7 +36,7 @@ export async function createEvent(
 ) {
   const now = Date.now(); // ms
   // Create event for this mapping
-  await sdk.Events.create([
+  await sdk.events.create([
     {
       startTime: now,
       endTime: now,
@@ -51,7 +51,10 @@ export async function createEvent(
 
 export function fetchEvents(assetId: number) {
   return async (dispatch: Dispatch) => {
-    const result = await sdk.Events.list({ assetId, limit: 10000 });
+    const result = await sdk.events.list({
+      filter: { assetIds: [assetId] },
+      limit: 1000
+    });
 
     const types = result.items.map(event => event.type);
     const items = arrayToObjectById(result.items);
@@ -63,12 +66,13 @@ export function fetchEvents(assetId: number) {
 
 export function fetchEventsByFilter(eventFilter: EventFilter) {
   return async (dispatch: Dispatch) => {
-    const result = await sdk.Events.list({
-      type: eventFilter.eventType,
-      subtype: 'IAA',
-      minStartTime: eventFilter.from,
-      maxStartTime: eventFilter.to,
-      limit: 10000
+    const result = await sdk.events.list({
+      filter: {
+        type: eventFilter.eventType,
+        subtype: 'IAA',
+        startTime: { min: eventFilter.from, max: eventFilter.to }
+      },
+      limit: 1000
     });
 
     const types = result.items.map(event => event.type);
@@ -81,7 +85,7 @@ export function fetchEventsByFilter(eventFilter: EventFilter) {
 
 // Reducer
 export interface EventState {
-  items: { [key: string]: Event };
+  items: { [key: string]: CogniteEvent };
   types: string[];
 }
 const initialState: EventState = { items: {}, types: [] };
@@ -126,6 +130,6 @@ export const selectEventList = (state: RootState) => {
 export const selectEventsByAssetId = (state: RootState, assetId: number): EventsAndTypes => {
   const items = Object.keys(state.events.items)
     .map(key => state.events.items[key]) // to array
-    .filter(event => event.assetIds.indexOf(assetId) !== -1); // filter by assetId
+    .filter(event => event.assetIds && event.assetIds.indexOf(assetId) !== -1); // filter by assetId
   return { items, types: [] };
 };

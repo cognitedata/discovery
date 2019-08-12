@@ -1,8 +1,8 @@
 import { createAction } from 'redux-actions';
-import * as sdk from '@cognite/sdk';
 import { Dispatch, Action } from 'redux';
-import { AssetMapping } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
+import { AssetMapping3D } from '@cognite/sdk';
+import { sdk } from '../index';
 
 // Constants
 export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
@@ -13,7 +13,7 @@ export interface Mapping {
 }
 
 interface AddAction extends Action<typeof ADD_ASSET_MAPPINGS> {
-  payload: { mapping: AssetMapping; nodeId?: number };
+  payload: { mapping: AssetMapping3D; nodeId?: number };
 }
 
 type AssetMappingAction = AddAction;
@@ -55,11 +55,11 @@ export function fetchMappingsFromAssetId(modelId: number, revisionId: number, as
     }
     currentFetching.asset[assetId] = true;
     try {
-      const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
+      const result = await sdk.assetMappings3D.list(modelId, revisionId, {
         assetId
       });
 
-      const mappings: AssetMapping[] = result.items;
+      const mappings: AssetMapping3D[] = result.items;
       if (mappings.length === 0) {
         return;
       }
@@ -83,11 +83,11 @@ export function fetchMappingsFromNodeId(modelId: number, revisionId: number, nod
     }
     currentFetching.node[nodeId] = true;
     try {
-      const result = await sdk.ThreeD.listAssetMappings(modelId, revisionId, {
+      const result = await sdk.assetMappings3D.list(modelId, revisionId, {
         nodeId
       });
 
-      const mappings = result.items;
+      const mappings: AssetMapping3D[] = result.items;
       if (mappings.length === 0) {
         return;
       }

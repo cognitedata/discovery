@@ -7,7 +7,7 @@ import AssetViewer from './AssetViewer';
 import { fetchTypes } from '../modules/types';
 import { fetchModels, selectThreeD, ThreeDState, ThreeDModel, fetchRevisions } from '../modules/threed';
 import { selectAssets, AssetsState, ExtendedAsset } from '../modules/assets';
-import { Revision } from '@cognite/sdk';
+import { Revision3D } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
 import { AssetViewer as AssetViewerComponent } from './AssetViewer';
@@ -83,10 +83,9 @@ class Main extends React.Component<Props, State> {
   hasModelForAsset = (assetId: number) => {
     const asset = this.props.assets.all[assetId];
     const representedByMap: {
-      [key: string]: { model: ThreeDModel; revision: Revision }[];
+      [key: string]: { model: ThreeDModel; revision: Revision3D }[];
     } = {};
     const { models } = this.props.threed;
-    console.log('asdfdsa', models);
     Object.keys(models).forEach(modelId => {
       const model = models[modelId];
       if (model.metadata) {
@@ -99,13 +98,14 @@ class Main extends React.Component<Props, State> {
           if (model.revisions) {
             // @ts-ignore
             const revision = model.revisions.find(el => el.metadata.representsAsset !== undefined);
-            console.log(revision);
             if (revision) {
               // @ts-ignore
-              representedByMap[revision.metadata.representsAsset] = [{
-                model,
-                revision
-              }];
+              representedByMap[revision.metadata.representsAsset] = [
+                {
+                  model,
+                  revision
+                }
+              ];
             }
           } else {
             this.props.doFetchRevisions(Number(modelId));
@@ -183,9 +183,9 @@ class Main extends React.Component<Props, State> {
                       model3D={
                         model3D
                           ? {
-                            modelId: model3D.model.id,
-                            revisionId: model3D.revision.id
-                          }
+                              modelId: model3D.model.id,
+                              revisionId: model3D.revision.id
+                            }
                           : undefined
                       }
                       showPNID={this.state.showPNID}

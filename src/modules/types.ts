@@ -1,5 +1,4 @@
 import { createAction } from 'redux-actions';
-import * as sdk from '@cognite/sdk';
 import { message } from 'antd';
 import { fetchAsset } from './assets';
 import { fetchEvents, createEvent } from './events';
@@ -7,6 +6,7 @@ import { Dispatch, AnyAction, Action } from 'redux';
 import { Asset } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { ThunkDispatch } from 'redux-thunk';
+import { sdk } from '../index';
 
 // Constants
 export const SET_TYPES = 'types/SET_TYPES';
@@ -39,8 +39,8 @@ export function removeTypeFromAsset(type: Type, asset: Asset) {
       }
     };
 
-    const { project } = sdk.configure({});
-    await sdk.rawPost(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`, {
+    const { project } = sdk;
+    await sdk.post(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`, {
       data: body
     });
 
@@ -72,8 +72,8 @@ export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
       }
     };
 
-    const { project } = sdk.configure({});
-    await sdk.rawPost(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`, {
+    const { project } = sdk;
+    await sdk.post(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`, {
       data: body
     });
 
@@ -91,8 +91,8 @@ export function fetchTypes() {
   return async (dispatch: Dispatch) => {
     // Skip if we did it before
 
-    const { project } = sdk.configure({});
-    const result = await sdk.rawGet(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`);
+    const { project } = sdk;
+    const result = await sdk.get(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`);
 
     if (result) {
       const { items }: { items: Type[] } = result.data.data;
