@@ -1,10 +1,10 @@
 import { createAction } from 'redux-actions';
-import { arrayToObjectById } from '../utils/utils';
 import { Dispatch, Action, AnyAction } from 'redux';
-import { RootState } from '../reducers/index';
 import { ThunkDispatch } from 'redux-thunk';
 import { Cognite3DModel } from '@cognite/3d-viewer';
 import { Revision3D } from '@cognite/sdk';
+import { RootState } from '../reducers/index';
+import { arrayToObjectById } from '../utils/utils';
 import { sdk } from '../index';
 
 export interface ThreeDModel extends Cognite3DModel {
@@ -55,7 +55,7 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
 
     const result = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
       nodeId,
-      limit: 1
+      limit: 1,
     });
 
     const { items } = result;
@@ -75,7 +75,7 @@ export function fetchModels() {
 
       dispatch({
         type: SET_MODELS,
-        payload: { models: arrayToObjectById(items) }
+        payload: { models: arrayToObjectById(items) },
       });
     }
   };
@@ -88,13 +88,16 @@ export interface ThreeDState {
 }
 const initialState: ThreeDState = { models: {}, currentNode: undefined };
 
-export default function threed(state = initialState, action: ThreeDAction): ThreeDState {
+export default function threed(
+  state = initialState,
+  action: ThreeDAction
+): ThreeDState {
   switch (action.type) {
     case SET_MODELS: {
       const models = { ...action.payload.models };
       return {
         ...state,
-        models
+        models,
       };
     }
     case ADD_REVISIONS: {
@@ -105,16 +108,16 @@ export default function threed(state = initialState, action: ThreeDAction): Thre
           ...state.models,
           [modelId]: {
             ...state.models[modelId],
-            revisions
-          }
-        }
+            revisions,
+          },
+        },
       };
     }
     case SET_NODE: {
       const { currentNode } = action.payload;
       const newState = {
         ...state,
-        currentNode
+        currentNode,
       };
       return newState;
     }
@@ -124,7 +127,8 @@ export default function threed(state = initialState, action: ThreeDAction): Thre
 }
 
 // Selectors
-export const selectThreeD = (state: RootState) => state.threed || { models: {} };
+export const selectThreeD = (state: RootState) =>
+  state.threed || { models: {} };
 
 // Action creators
 const setModels = createAction(SET_MODELS);
@@ -132,5 +136,5 @@ const addRevisions = createAction(ADD_REVISIONS);
 
 export const actions = {
   setModels,
-  addRevisions
+  addRevisions,
 };

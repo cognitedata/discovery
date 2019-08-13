@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, List } from 'antd';
 
 import { EventPreview as GearboxEventPreview } from '@cognite/gearbox';
-import { Event } from '@cognite/sdk';
+import { CogniteEvent } from '@cognite/sdk';
 
 type Props = {
   eventId: number;
@@ -10,12 +10,12 @@ type Props = {
 };
 
 type State = {
-  showDetails?: Event;
+  showDetails?: CogniteEvent;
 };
 
 class EventPreview extends React.PureComponent<Props, State> {
   readonly state: Readonly<State> = {
-    showDetails: undefined
+    showDetails: undefined,
   };
 
   renderDetailsWorkorder() {
@@ -25,14 +25,17 @@ class EventPreview extends React.PureComponent<Props, State> {
       LOCATION: 'Area',
       OBJECTNUMBER: 'Object number',
       SOURCE: 'Source',
-      WORKORDER_ID: 'Work order id'
+      WORKORDER_ID: 'Work order id',
     };
 
     return (
       <List
         dataSource={Object.keys(fields)}
         renderItem={item => (
-          <List.Item.Meta title={fields[item]} description={event && event.metadata && event.metadata[item]} />
+          <List.Item.Meta
+            title={fields[item]}
+            description={event && event.metadata && event.metadata[item]}
+          />
         )}
       />
     );
@@ -48,7 +51,12 @@ class EventPreview extends React.PureComponent<Props, State> {
 
   render() {
     return (
-      <Modal visible title="Event" onCancel={this.props.onClose} footer={[null, null]}>
+      <Modal
+        visible
+        title="Event"
+        onCancel={this.props.onClose}
+        footer={[null, null]}
+      >
         <GearboxEventPreview
           eventId={this.props.eventId}
           onShowDetails={event => {

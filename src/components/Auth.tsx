@@ -17,15 +17,15 @@ type State = {
 
 class Auth extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
-    auth: false
+    auth: false,
   };
 
   async componentWillMount() {
     const status = await sdk.login.status();
     const {
       match: {
-        params: { tenant }
-      }
+        params: { tenant },
+      },
     } = this.props;
 
     if (!status) {
@@ -34,23 +34,26 @@ class Auth extends React.Component<Props, State> {
     }
 
     this.setState({
-      auth: status !== null
+      auth: status !== null,
     });
   }
+
   async componentDidUpdate() {
     if (!this.state.auth) {
       const status = await sdk.login.status();
       if (status !== null) {
+        // eslint-disable-next-line react/no-did-update-set-state
         this.setState({
-          auth: true
+          auth: true,
         });
       }
     }
   }
+
   render() {
     const { match } = this.props;
     const {
-      params: { tenant }
+      params: { tenant },
     } = match;
     if (!this.state.auth) {
       return <Loader />;
@@ -59,7 +62,12 @@ class Auth extends React.Component<Props, State> {
       <>
         <Switch>
           {tenant === 'akerbp' && (
-            <Redirect exact strict from={`${match.url}`} to={`${match.url}/asset/735563410190978`} />
+            <Redirect
+              exact
+              strict
+              from={`${match.url}`}
+              to={`${match.url}/asset/735563410190978`}
+            />
           )}
           <Route component={Main} />
         </Switch>

@@ -22,13 +22,20 @@ type OrigProps = {
 };
 
 type Props = {
-  onTenantSelected: (tenant: string, advancedOptions: PureObject | null) => void;
+  onTenantSelected: (
+    tenant: string,
+    advancedOptions: PureObject | null
+  ) => void;
 };
 
 const Login = ({ onTenantSelected }: Props) => (
   <Wrapper>
     <TenantSelectorContainer>
-      <TenantSelector title="Cognite Digital Twin Explorer" onTenantSelected={onTenantSelected} placeholder="" />
+      <TenantSelector
+        title="Cognite Digital Twin Explorer"
+        onTenantSelected={onTenantSelected}
+        placeholder=""
+      />
     </TenantSelectorContainer>
   </Wrapper>
 );

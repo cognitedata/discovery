@@ -1,12 +1,12 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
+import { Dispatch, Action } from 'redux';
+import { Asset } from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
-import { Dispatch, Action } from 'redux';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
-import { Asset } from '@cognite/sdk';
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
@@ -30,7 +30,8 @@ let searchCounter = 0;
 // Functions
 export function searchForAsset(query: string) {
   return async (dispatch: Dispatch) => {
-    const currentCounter = ++searchCounter;
+    const currentCounter = searchCounter + 1;
+    searchCounter += 1;
 
     if (query === '') {
       dispatch({ type: SET_ASSETS, payload: { items: [] } });
@@ -42,7 +43,7 @@ export function searchForAsset(query: string) {
     // );
     const result = await sdk.assets.search({
       search: { name: query },
-      limit: 1000
+      limit: 1000,
     });
 
     if (result) {
@@ -52,7 +53,7 @@ export function searchForAsset(query: string) {
         rootId: asset.rootId,
         description: asset.description,
         types: asset.metadata!.types,
-        metadata: asset.metadata
+        metadata: asset.metadata,
       }));
       if (currentCounter === searchCounter) {
         dispatch({
@@ -64,9 +65,9 @@ export function searchForAsset(query: string) {
               rootId: asset.rootId,
               description: asset.description,
               types: asset.metadata!.types,
-              metadata: asset.metadata
+              metadata: asset.metadata,
             }))
-          )
+          ),
         });
         dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
       }
@@ -97,7 +98,7 @@ export function fetchAsset(assetId: number) {
             rootId: asset.rootId,
             description: asset.description,
             types: asset.metadata!.types,
-            metadata: asset.metadata
+            metadata: asset.metadata,
           }))
         );
 
@@ -120,7 +121,7 @@ export function fetchAssets(assetIds: number[]) {
     try {
       const results = await sdk.assets.retrieve(
         assetIds.map(id => ({
-          id
+          id,
         }))
       );
 
@@ -132,7 +133,7 @@ export function fetchAssets(assetIds: number[]) {
             rootId: asset.rootId,
             description: asset.description,
             types: asset.metadata!.types,
-            metadata: asset.metadata
+            metadata: asset.metadata,
           }))
         );
 
@@ -152,20 +153,23 @@ export interface AssetsState {
 
 const initialState: AssetsState = { current: [], all: {} };
 
-export default function assets(state = initialState, action: AssetAction): AssetsState {
+export default function assets(
+  state = initialState,
+  action: AssetAction
+): AssetsState {
   switch (action.type) {
     case SET_ASSETS: {
       const { items } = action.payload;
       return {
         ...state,
-        current: items
+        current: items,
       };
     }
     case ADD_ASSETS: {
       const all = { ...state.all, ...action.payload.items };
       return {
         ...state,
-        all
+        all,
       };
     }
     default:
@@ -177,7 +181,7 @@ export default function assets(state = initialState, action: AssetAction): Asset
 const setAssets = createAction(SET_ASSETS);
 
 export const actions = {
-  setAssets
+  setAssets,
 };
 
 // Selectors

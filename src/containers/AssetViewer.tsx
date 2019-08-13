@@ -1,13 +1,17 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
+import { Dispatch, bindActionCreators } from 'redux';
 import Model3D from '../components/Model3D';
 import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import AssetDrawer from './AssetDrawer';
-import { fetchMappingsFromAssetId, selectAssetMappings, AssetMappingState } from '../modules/assetmappings';
-import { Dispatch, bindActionCreators } from 'redux';
+import {
+  fetchMappingsFromAssetId,
+  selectAssetMappings,
+  AssetMappingState,
+} from '../modules/assetmappings';
 import { RootState } from '../reducers/index';
 
 const ViewerContainer = styled.div`
@@ -16,33 +20,39 @@ const ViewerContainer = styled.div`
   width: 100%;
   height: 100%;
 `;
-
-type Props = {
+type OwnProps = {
   assetDrawerWidth: number;
   assetId: number;
-  assets: AssetsState;
-  model3D: {
+  model3D?: {
     modelId: number;
     revisionId: number;
   };
   show3D: boolean;
   showPNID: boolean;
   onAssetIdChange: (assetId: number) => void;
+};
+type StateProps = {
+  assets: AssetsState;
+  assetMappings: AssetMappingState;
+};
+type DispatchProps = {
   doFetchAsset: typeof fetchAsset;
   doFetchFiles: typeof fetchFiles;
   doFetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
-  assetMappings: AssetMappingState;
 };
+
+type Props = StateProps & DispatchProps & OwnProps;
 
 type State = { documentId?: number };
 
 export class AssetViewer extends React.Component<Props, State> {
   static defaultProps = {
     assetMappings: { byNodeId: {}, byAssetId: {} },
-    model3D: undefined
+    model3D: undefined,
   };
 
   cache = {};
+
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
@@ -84,8 +94,8 @@ export class AssetViewer extends React.Component<Props, State> {
     const nodeId = this.getNodeId(false);
     return (
       <Model3D
-        modelId={this.props.model3D.modelId}
-        revisionId={this.props.model3D.revisionId}
+        modelId={this.props.model3D!.modelId}
+        revisionId={this.props.model3D!.revisionId}
         nodeId={nodeId}
         onAssetIdChange={this.props.onAssetIdChange}
         cache={this.cache}
@@ -95,7 +105,9 @@ export class AssetViewer extends React.Component<Props, State> {
 
   renderPNID = () => {
     const asset = this.getAsset();
-    return <PNIDViewer asset={asset} onAssetIdChange={this.props.onAssetIdChange} />;
+    return (
+      <PNIDViewer asset={asset} onAssetIdChange={this.props.onAssetIdChange} />
+    );
   };
 
   render() {
@@ -109,31 +121,33 @@ export class AssetViewer extends React.Component<Props, State> {
             {this.props.show3D && this.render3D()}
             {this.props.showPNID && this.renderPNID()}
           </ViewerContainer>
-          {asset != null && <AssetDrawer width={assetDrawerWidth} asset={asset} />}
+          {asset != null && (
+            <AssetDrawer width={assetDrawerWidth} asset={asset} />
+          )}
         </div>
       </div>
     );
   }
 }
 
-const mapStateToProps = (state: RootState) => {
+const mapStateToProps = (state: RootState): StateProps => {
   return {
     assets: selectAssets(state),
-    assetMappings: selectAssetMappings(state)
+    assetMappings: selectAssetMappings(state),
   };
 };
 
-const mapDispatchToProps = (dispatch: Dispatch) =>
+const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
       doFetchAsset: fetchAsset,
       doFetchFiles: fetchFiles,
-      doFetchMappingsFromAssetId: fetchMappingsFromAssetId
+      doFetchMappingsFromAssetId: fetchMappingsFromAssetId,
     },
     dispatch
   );
 
-export default connect(
+export default connect<StateProps, DispatchProps, OwnProps, RootState>(
   mapStateToProps,
   mapDispatchToProps
 )(AssetViewer);

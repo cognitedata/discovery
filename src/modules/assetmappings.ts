@@ -1,7 +1,7 @@
 import { createAction } from 'redux-actions';
 import { Dispatch, Action } from 'redux';
-import { RootState } from '../reducers/index';
 import { AssetMapping3D } from '@cognite/sdk';
+import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
 // Constants
@@ -18,9 +18,14 @@ interface AddAction extends Action<typeof ADD_ASSET_MAPPINGS> {
 
 type AssetMappingAction = AddAction;
 
-export function findBestMappingForNodeId(nodeId: number, mappings: Mapping[]): null | Mapping {
+export function findBestMappingForNodeId(
+  nodeId: number,
+  mappings: Mapping[]
+): null | Mapping {
   // See if there are any exact matches for this nodeId
-  const assetIds = mappings.filter(mapping => mapping.nodeId === nodeId).map(mapping => mapping.assetId);
+  const assetIds = mappings
+    .filter(mapping => mapping.nodeId === nodeId)
+    .map(mapping => mapping.assetId);
 
   if (assetIds.length > 0) {
     // We found at least one exact match. There should not be more than one, but we'll choose the first one.
@@ -28,14 +33,21 @@ export function findBestMappingForNodeId(nodeId: number, mappings: Mapping[]): n
 
     // Now find all mappings pointing to this assetId as multiple 3D nodes may point to the same assetId.
     // Sort the list in descending order so first element has the largest subtreeSize.
-    const mappingsPointingToAsset = mappings.filter(mapping => mapping.assetId === assetId);
+    const mappingsPointingToAsset = mappings.filter(
+      mapping => mapping.assetId === assetId
+    );
     return mappingsPointingToAsset[0];
   }
 
-  const filteredMappings = mappings.filter(mapping => mapping.nodeId !== nodeId);
+  const filteredMappings = mappings.filter(
+    mapping => mapping.nodeId !== nodeId
+  );
   if (filteredMappings.length > 0) {
     // The node has no direct mapping, choose the next parent
-    return findBestMappingForNodeId(filteredMappings[filteredMappings.length - 1].nodeId, filteredMappings);
+    return findBestMappingForNodeId(
+      filteredMappings[filteredMappings.length - 1].nodeId,
+      filteredMappings
+    );
   }
 
   return null;
@@ -47,7 +59,11 @@ type CurrentFetchingObject = {
 };
 const currentFetching: CurrentFetchingObject = { asset: {}, node: {} };
 
-export function fetchMappingsFromAssetId(modelId: number, revisionId: number, assetId: number) {
+export function fetchMappingsFromAssetId(
+  modelId: number,
+  revisionId: number,
+  assetId: number
+) {
   return async (dispatch: Dispatch) => {
     if (currentFetching.asset[assetId]) {
       // Currently fetching this
@@ -56,7 +72,7 @@ export function fetchMappingsFromAssetId(modelId: number, revisionId: number, as
     currentFetching.asset[assetId] = true;
     try {
       const result = await sdk.assetMappings3D.list(modelId, revisionId, {
-        assetId
+        assetId,
       });
 
       const mappings: AssetMapping3D[] = result.items;
@@ -75,7 +91,11 @@ export function fetchMappingsFromAssetId(modelId: number, revisionId: number, as
   };
 }
 
-export function fetchMappingsFromNodeId(modelId: number, revisionId: number, nodeId: number) {
+export function fetchMappingsFromNodeId(
+  modelId: number,
+  revisionId: number,
+  nodeId: number
+) {
   return async (dispatch: Dispatch) => {
     if (currentFetching.node[nodeId]) {
       // Currently fetching this
@@ -84,7 +104,7 @@ export function fetchMappingsFromNodeId(modelId: number, revisionId: number, nod
     currentFetching.node[nodeId] = true;
     try {
       const result = await sdk.assetMappings3D.list(modelId, revisionId, {
-        nodeId
+        nodeId,
       });
 
       const mappings: AssetMapping3D[] = result.items;
@@ -115,18 +135,21 @@ export default function assetmappings(
   switch (action.type) {
     case ADD_ASSET_MAPPINGS: {
       const { mapping, nodeId } = action.payload;
+      // eslint-disable-next-line no-param-reassign
       state.byNodeId[mapping.nodeId] = mapping;
+      // eslint-disable-next-line no-param-reassign
       state.byAssetId[mapping.assetId] = mapping;
       if (nodeId) {
         // We may have an asset mapping that is for a parent node.
         // So make sure this node also gets mapped.
+        // eslint-disable-next-line no-param-reassign
         state.byNodeId[nodeId] = mapping;
       }
 
       return {
         ...state,
         byNodeId: state.byNodeId,
-        byAssetId: state.byAssetId
+        byAssetId: state.byAssetId,
       };
     }
     default:
@@ -138,8 +161,9 @@ export default function assetmappings(
 const addAssetMappings = createAction(ADD_ASSET_MAPPINGS);
 
 export const actions = {
-  addAssetMappings
+  addAssetMappings,
 };
 
 // Selectors
-export const selectAssetMappings = (state: RootState) => state.assetMappings || { byNodeId: {}, byAssetId: {} };
+export const selectAssetMappings = (state: RootState) =>
+  state.assetMappings || { byNodeId: {}, byAssetId: {} };

@@ -3,10 +3,10 @@ import { connect } from 'react-redux';
 import { Modal, Button } from 'antd';
 
 import { TimeseriesSearch } from '@cognite/gearbox';
-import { addTimeseriesToAsset } from '../modules/timeseries';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
-import { RootState } from '../reducers/index';
 import { Dispatch, bindActionCreators } from 'redux';
+import { addTimeseriesToAsset } from '../modules/timeseries';
+import { RootState } from '../reducers/index';
 
 type OrigProps = {
   assetId: string | number;
@@ -30,8 +30,14 @@ class AddTimeseries extends React.Component<Props, State> {
   };
 
   addToAsset = () => {
-    if (this.state.selectedTimeseriesIds && this.state.selectedTimeseriesIds.length > 0) {
-      this.props.doAddTimeseriesToAsset(this.state.selectedTimeseriesIds, this.props.assetId);
+    if (
+      this.state.selectedTimeseriesIds &&
+      this.state.selectedTimeseriesIds.length > 0
+    ) {
+      this.props.doAddTimeseriesToAsset(
+        this.state.selectedTimeseriesIds,
+        this.props.assetId
+      );
     }
   };
 
@@ -48,7 +54,7 @@ class AddTimeseries extends React.Component<Props, State> {
         footer={[
           <Button key="submit" type="primary" onClick={this.addToAsset}>
             Add to asset
-          </Button>
+          </Button>,
         ]}
       >
         <TimeseriesSearch
@@ -65,14 +71,14 @@ const mapStateToProps = (_: RootState, ownProps: OrigProps) => {
   const { assetId, timeseries } = ownProps;
   return {
     assetId: Number(assetId),
-    timeseries
+    timeseries,
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      doAddTimeseriesToAsset: addTimeseriesToAsset
+      doAddTimeseriesToAsset: addTimeseriesToAsset,
     },
     dispatch
   );

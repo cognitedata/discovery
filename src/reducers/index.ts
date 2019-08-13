@@ -16,7 +16,7 @@ const rootReducer: Reducer<RootState> = combineReducers({
   types,
   files,
   filters,
-  threed
+  threed,
 });
 
 export interface RootState {

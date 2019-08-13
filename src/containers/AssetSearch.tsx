@@ -3,16 +3,28 @@ import { connect } from 'react-redux';
 import { Icon, Button, Input, List, Collapse, DatePicker, Select } from 'antd';
 import queryString from 'query-string';
 import styled from 'styled-components';
-import { fetchAssets, searchForAsset, selectAssets, AssetsState, ExtendedAsset } from '../modules/assets';
-import { selectEventList } from '../modules/events';
-import { setFilters, selectFilteredSearch, LocationFilter, FilterOptions, EventFilter } from '../modules/filters';
-import { createAssetTitle } from '../utils/utils';
 import { Location } from 'history';
-import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RangePickerValue } from 'antd/lib/date-picker/interface';
-import { sdk } from '../index';
 import { CogniteEvent } from '@cognite/sdk';
+import {
+  fetchAssets,
+  searchForAsset,
+  selectAssets,
+  AssetsState,
+  ExtendedAsset,
+} from '../modules/assets';
+import { selectEventList } from '../modules/events';
+import {
+  setFilters,
+  selectFilteredSearch,
+  LocationFilter,
+  FilterOptions,
+  EventFilter,
+} from '../modules/filters';
+import { createAssetTitle } from '../utils/utils';
+import { RootState } from '../reducers/index';
+import { sdk } from '../index';
 
 const { RangePicker } = DatePicker;
 const { Panel } = Collapse;
@@ -58,14 +70,14 @@ class AssetSearch extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     query: '',
     eventFilter: undefined,
-    locationFilter: undefined
+    locationFilter: undefined,
   };
 
   areas: { [key: string]: string[] } = {
     'Cellar deck': ['M110', 'M210', 'M310', 'Z00'],
     'Upper deck': ['M50', 'M520', 'M40', 'M420'],
     'Middle deck': ['M120', 'M220', 'M320'],
-    'Weather deck': ['M130', 'M230', 'M400', 'M330']
+    'Weather deck': ['M130', 'M230', 'M400', 'M330'],
   };
 
   componentDidMount() {
@@ -81,17 +93,23 @@ class AssetSearch extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props, prevState: State) {
     if (prevProps.events !== this.props.events) {
       // Find unique list of assetIds
-      const assetIds: number[] = [
-        ...this.props.events.items.reduce(
-          (set, event: CogniteEvent) => new Set([...set, ...event.assetIds]),
+      const assetIds: number[] = Array.from(
+        this.props.events.items.reduce(
+          (set, event: CogniteEvent) =>
+            new Set([...Array.from(set), ...event.assetIds!]),
           new Set<number>()
         )
-      ];
-      const missingAssetIds = assetIds.filter(assetId => this.props.assets.all[assetId] === undefined);
+      );
+      const missingAssetIds = assetIds.filter(
+        assetId => this.props.assets.all[assetId] === undefined
+      );
       this.props.doFetchAssets(missingAssetIds);
     }
 
-    if (prevState.eventFilter !== this.state.eventFilter || prevState.locationFilter !== this.state.locationFilter) {
+    if (
+      prevState.eventFilter !== this.state.eventFilter ||
+      prevState.locationFilter !== this.state.locationFilter
+    ) {
       const filters: FilterOptions = {};
 
       if (this.state.eventFilter) {
@@ -109,7 +127,7 @@ class AssetSearch extends React.Component<Props, State> {
   onAreaChange = (change: string) => {
     if (change === 'none') {
       this.setState({
-        locationFilter: undefined
+        locationFilter: undefined,
       });
       return;
     }
@@ -117,8 +135,8 @@ class AssetSearch extends React.Component<Props, State> {
     this.setState({
       locationFilter: {
         type: 'location',
-        area: change
-      }
+        area: change,
+      },
     });
   };
 
@@ -130,7 +148,10 @@ class AssetSearch extends React.Component<Props, State> {
 
   onEventTypeChange = (change: string) => {
     const { eventFilter } = this.state;
-    const newFilter: EventFilter = Object.assign({ type: 'event' }, eventFilter);
+    const newFilter: EventFilter = Object.assign(
+      { type: 'event' },
+      eventFilter
+    );
 
     if (change === 'none') {
       newFilter.eventType = undefined;
@@ -139,22 +160,29 @@ class AssetSearch extends React.Component<Props, State> {
     }
 
     this.setState({
-      eventFilter: newFilter
+      eventFilter: newFilter,
     });
   };
 
   onRangeChange = (change: RangePickerValue) => {
     const { eventFilter } = this.state;
-    const newFilter: EventFilter = Object.assign({ type: 'event' }, eventFilter);
+    const newFilter: EventFilter = Object.assign(
+      { type: 'event' },
+      eventFilter
+    );
 
-    if (change.length < 2 || change[0] === undefined || change[1] === undefined) {
+    if (
+      change.length < 2 ||
+      change[0] === undefined ||
+      change[1] === undefined
+    ) {
       this.removeEventFilter();
     } else {
       newFilter.from = change[0].unix() * 1000; // ms
       newFilter.to = (change[1].unix() + 86400) * 1000; // the day after, ms
 
       this.setState({
-        eventFilter: newFilter
+        eventFilter: newFilter,
       });
     }
   };
@@ -178,17 +206,24 @@ class AssetSearch extends React.Component<Props, State> {
             paddingRight: 10,
             paddingTop: 10,
             paddingBottom: 10,
-            width: '100%'
+            width: '100%',
           }}
         >
-          <Input placeholder="Search for tag" defaultValue={defaultSearchQuery} onChange={this.onChange} />
+          <Input
+            placeholder="Search for tag"
+            defaultValue={defaultSearchQuery}
+            onChange={this.onChange}
+          />
         </div>
       </>
     );
   }
 
   renderSearchResults() {
-    const assets = moveExactMatchToTop(this.props.filteredSearch.items, this.state.query && this.state.query.trim());
+    const assets = moveExactMatchToTop(
+      this.props.filteredSearch.items,
+      this.state.query && this.state.query.trim()
+    );
     return (
       <>
         {assets && (
@@ -203,7 +238,7 @@ class AssetSearch extends React.Component<Props, State> {
                   padding: 10,
                   width: '100%',
                   paddingLeft: 10,
-                  paddingRight: 10
+                  paddingRight: 10,
                 }}
               >
                 <List.Item.Meta
@@ -212,24 +247,27 @@ class AssetSearch extends React.Component<Props, State> {
                       style={{
                         paddingLeft: 10,
                         fontWeight: 'bold',
-                        fontSize: 12
+                        fontSize: 12,
                       }}
                     >
-                      <a>{createAssetTitle(item).toUpperCase()}</a>
+                      <p>{createAssetTitle(item).toUpperCase()}</p>
                     </div>
                   }
                   description={
                     <div
                       style={{
                         paddingLeft: 10,
-                        fontSize: 12
+                        fontSize: 12,
                       }}
                     >
                       {item.description ? item.description.toUpperCase() : ''}
                     </div>
                   }
                   style={{
-                    background: item.id === this.props.assetId ? 'rgb(230,230,230)' : 'rgb(245,245,245)'
+                    background:
+                      item.id === this.props.assetId
+                        ? 'rgb(230,230,230)'
+                        : 'rgb(245,245,245)',
                   }}
                 />
               </List.Item>
@@ -246,7 +284,9 @@ class AssetSearch extends React.Component<Props, State> {
         defaultValue="none"
         style={{ width: '100%' }}
         onChange={this.onEventTypeChange}
-        value={(this.state.eventFilter && this.state.eventFilter.eventType) || 'none'}
+        value={
+          (this.state.eventFilter && this.state.eventFilter.eventType) || 'none'
+        }
       >
         <Option value="none">Type</Option>
         <OptGroup label="Work orders">
@@ -267,7 +307,7 @@ class AssetSearch extends React.Component<Props, State> {
         accordion
         style={{
           width: '100%',
-          borderRadius: 0
+          borderRadius: 0,
         }}
       >
         <Panel
@@ -289,11 +329,13 @@ class AssetSearch extends React.Component<Props, State> {
           key="context"
           style={{
             border: 0,
-            width: '100%'
+            width: '100%',
           }}
         >
           <RangePicker onChange={this.onRangeChange} />
-          {this.state.eventFilter && this.state.eventFilter.from && this.renderEventType()}
+          {this.state.eventFilter &&
+            this.state.eventFilter.from &&
+            this.renderEventType()}
         </Panel>
       </Collapse>
     );
@@ -317,7 +359,7 @@ class AssetSearch extends React.Component<Props, State> {
         accordion
         style={{
           width: '100%',
-          borderRadius: 0
+          borderRadius: 0,
         }}
       >
         <Panel
@@ -339,14 +381,17 @@ class AssetSearch extends React.Component<Props, State> {
           key="context"
           style={{
             border: 0,
-            width: '100%'
+            width: '100%',
           }}
         >
           <Select
             defaultValue="none"
             style={{ width: '100%' }}
             onChange={this.onAreaChange}
-            value={(this.state.locationFilter && this.state.locationFilter.area) || 'none'}
+            value={
+              (this.state.locationFilter && this.state.locationFilter.area) ||
+              'none'
+            }
           >
             <Option value="none">Area</Option>
             {this.renderAreas()}
@@ -381,7 +426,7 @@ const mapStateToProps = (state: RootState) => {
   return {
     assets: selectAssets(state),
     events: selectEventList(state),
-    filteredSearch: selectFilteredSearch(state)
+    filteredSearch: selectFilteredSearch(state),
   };
 };
 
@@ -390,7 +435,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doSearchForAsset: searchForAsset,
       doFetchAssets: fetchAssets,
-      doSetFilters: setFilters
+      doSetFilters: setFilters,
     },
     dispatch
   );

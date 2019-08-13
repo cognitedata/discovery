@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, Select } from 'antd';
-import { addTypesToAsset, Type } from '../modules/types';
 import { bindActionCreators, Dispatch } from 'redux';
+import { addTypesToAsset, Type } from '../modules/types';
 import { ExtendedAsset } from '../modules/assets';
 
 const { Option } = Select;
@@ -28,17 +28,23 @@ class AddTypes extends React.Component<Props, State> {
 
   typesChanged = (change: string[]) => {
     // Convert allTypes array to object with id as key
-    const typesByName: { [key: string]: Type } = this.props.types.reduce((obj: { [key: string]: Type }, type) => {
-      obj[type.name] = type;
-      return obj;
-    }, {});
+    const typesByName: { [key: string]: Type } = this.props.types.reduce(
+      (obj: { [key: string]: Type }, type) => {
+        // eslint-disable-next-line no-param-reassign
+        obj[type.name] = type;
+        return obj;
+      },
+      {}
+    );
 
     this.selectedTypes = change.map(name => typesByName[name]);
   };
 
   render() {
     const existingTypeIds = this.props.asset.types.map(type => type.id);
-    const nonUsedTypes = this.props.types.filter(type => existingTypeIds.indexOf(type.id) === -1);
+    const nonUsedTypes = this.props.types.filter(
+      type => existingTypeIds.indexOf(type.id) === -1
+    );
 
     return (
       <Modal
@@ -48,10 +54,15 @@ class AddTypes extends React.Component<Props, State> {
         footer={[
           <Button key="submit" type="primary" onClick={this.addToAsset}>
             Add to asset
-          </Button>
+          </Button>,
         ]}
       >
-        <Select mode="multiple" style={{ width: '100%' }} placeholder="Please select" onChange={this.typesChanged}>
+        <Select
+          mode="multiple"
+          style={{ width: '100%' }}
+          placeholder="Please select"
+          onChange={this.typesChanged}
+        >
           {nonUsedTypes.map(type => (
             <Option key={type.id} value={type.name}>
               {type.description}
@@ -71,7 +82,7 @@ const mapStateToProps = () => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      doAddTypesToAsset: addTypesToAsset
+      doAddTypesToAsset: addTypesToAsset,
     },
     dispatch
   );

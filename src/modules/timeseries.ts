@@ -1,21 +1,23 @@
 import { createAction } from 'redux-actions';
 import mixpanel from 'mixpanel-browser';
 import { message } from 'antd';
-import { fetchEvents, createEvent } from './events';
 import { Dispatch, Action, AnyAction } from 'redux';
-import { RootState } from '../reducers';
 import { ThunkDispatch } from 'redux-thunk';
-import { sdk } from '../index';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
+import { fetchEvents, createEvent } from './events';
+import { RootState } from '../reducers';
+import { sdk } from '../index';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
-export const REMOVE_ASSET_FROM_TIMESERIES = 'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
+export const REMOVE_ASSET_FROM_TIMESERIES =
+  'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
 
 interface SetTimeseriesAction extends Action<typeof SET_TIMESERIES> {
   payload: { items: GetTimeSeriesMetadataDTO[] };
 }
-interface RemoveAssetAction extends Action<typeof REMOVE_ASSET_FROM_TIMESERIES> {
+interface RemoveAssetAction
+  extends Action<typeof REMOVE_ASSET_FROM_TIMESERIES> {
   payload: { timeseriesId: number };
 }
 type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
@@ -25,30 +27,33 @@ export function fetchTimeseries(assetId: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
     const results = await sdk.timeseries.list({
       assetIds: [assetId],
-      limit: 1000
+      limit: 1000,
     });
     dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
   };
 }
 
-export function removeAssetFromTimeseries(timeseriesId: number, assetId: number) {
+export function removeAssetFromTimeseries(
+  timeseriesId: number,
+  assetId: number
+) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     await sdk.timeseries.update([
       {
         id: timeseriesId,
         update: {
-          assetId: { setNull: true }
-        }
-      }
+          assetId: { setNull: true },
+        },
+      },
     ]);
 
     createEvent('removed_timeseries', 'Removed timeseries', [assetId], {
-      removed: timeseriesId
+      removed: timeseriesId,
     });
 
     dispatch({
       type: REMOVE_ASSET_FROM_TIMESERIES,
-      payload: { timeseriesId }
+      payload: { timeseriesId },
     });
 
     message.info(`Removed 1 timeseries from asset.`);
@@ -65,18 +70,18 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
     // @ts-ignore
     mixpanel.context.track('Timeseries.addToAsset', {
       assetId,
-      timeseriesIds
+      timeseriesIds,
     });
 
     const changes = timeseriesIds.map(id => ({
       id,
-      update: { assetId: { set: assetId } }
+      update: { assetId: { set: assetId } },
     }));
     await sdk.timeseries.update(changes);
 
     // Create event for this mapping
     createEvent('attached_timeseries', 'Attached timeseries', [assetId], {
-      added: JSON.stringify(timeseriesIds)
+      added: JSON.stringify(timeseriesIds),
     });
 
     message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
@@ -94,13 +99,16 @@ export interface TimeseriesState {
 }
 const initialState: TimeseriesState = {};
 
-export default function timeseries(state = initialState, action: TimeseriesAction): TimeseriesState {
+export default function timeseries(
+  state = initialState,
+  action: TimeseriesAction
+): TimeseriesState {
   switch (action.type) {
     case SET_TIMESERIES: {
       const { items } = action.payload;
       return {
         ...state,
-        items
+        items,
       };
     }
 
@@ -110,9 +118,10 @@ export default function timeseries(state = initialState, action: TimeseriesActio
         const items = state.items.filter(ts => ts.id !== timeseriesId);
         return {
           ...state,
-          items
+          items,
         };
       }
+      return state;
     }
     default:
       return state;
@@ -123,8 +132,9 @@ export default function timeseries(state = initialState, action: TimeseriesActio
 const setTimeseries = createAction(SET_TIMESERIES);
 
 export const actions = {
-  setTimeseries
+  setTimeseries,
 };
 
 // Selectors
-export const selectTimeseries = (state: RootState) => state.timeseries || { items: [] };
+export const selectTimeseries = (state: RootState) =>
+  state.timeseries || { items: [] };

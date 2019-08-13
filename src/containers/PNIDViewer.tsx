@@ -3,14 +3,15 @@ import { connect } from 'react-redux';
 import { List, Button, message } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
+import { Asset } from '@cognite/sdk';
 import { selectAssets, AssetsState } from '../modules/assets';
 import { selectFiles, FilesState } from '../modules/files';
 import { sleep } from '../utils/utils';
 import { RootState } from '../reducers';
-import { Asset } from '@cognite/sdk';
 import { sdk } from '../index';
 
-const getTextFromMetadataNode = (node: { textContent?: string }) => (node.textContent || '').replace(/\s/g, '');
+const getTextFromMetadataNode = (node: { textContent?: string }) =>
+  (node.textContent || '').replace(/\s/g, '');
 
 const ViewerContainer = styled.div`
   height: 100%;
@@ -56,7 +57,7 @@ type State = {
 
 class PNIDViewer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
-    currentFile: undefined
+    currentFile: undefined,
   };
 
   svgviewer?: SVGViewer | null = undefined;
@@ -64,10 +65,10 @@ class PNIDViewer extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     if (prevProps.asset !== this.props.asset) {
       setTimeout(async () => {
-        if (this.svgviewer === null || this.svgviewer === undefined) {
-          return;
-        } else {
-          this.svgviewer.zoomOnCurrentAsset(document.querySelector(`.${'current-asset'}`));
+        if (this.svgviewer) {
+          this.svgviewer.zoomOnCurrentAsset(
+            document.querySelector(`.${'current-asset'}`)
+          );
 
           // Workaround https://github.com/cognitedata/gearbox.js/issues/300
           await sleep(250);
@@ -150,7 +151,8 @@ class PNIDViewer extends React.Component<Props, State> {
       return null;
     }
 
-    const filesForThisAsset = this.props.files.byAssetId[this.props.asset.id] || [];
+    const filesForThisAsset =
+      this.props.files.byAssetId[this.props.asset.id] || [];
 
     const pNIDFiles = filesForThisAsset.filter(
       file =>
@@ -172,7 +174,7 @@ class PNIDViewer extends React.Component<Props, State> {
               type="link"
               onClick={() => {
                 this.setState({
-                  currentFile: { id: item.id, fileName: item.name }
+                  currentFile: { id: item.id, fileName: item.name },
                 });
               }}
             >

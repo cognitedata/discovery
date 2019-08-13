@@ -1,8 +1,8 @@
 import { createAction } from 'redux-actions';
 import { Dispatch, Action } from 'redux';
+import { FilesMetadata } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
-import { FilesMetadata } from '@cognite/sdk';
 
 // Constants
 export const ADD_FILES = 'files/SET_FILES';
@@ -20,14 +20,14 @@ export function fetchFiles(assetId: number) {
   return async (dispatch: Dispatch) => {
     const result = await sdk.files.list({
       filter: { assetIds: [assetId] },
-      limit: 1000
+      limit: 1000,
     });
     const items = result.items
       .filter(file => file.uploaded === true)
       .map(file => ({
         id: file.id,
         fileName: file.name,
-        fileType: file.mimeType
+        fileType: file.mimeType,
       }));
     dispatch({ type: ADD_FILES, payload: { assetId, items } });
   };
@@ -39,12 +39,20 @@ export interface FilesState {
 }
 const initialState: FilesState = { byAssetId: {} };
 
-export default function files(state = initialState, action: FilesAction): FilesState {
+export default function files(
+  state = initialState,
+  action: FilesAction
+): FilesState {
   switch (action.type) {
     case ADD_FILES: {
       const { assetId, items } = action.payload;
-      state.byAssetId[assetId] = items;
-      return state;
+      return {
+        ...state,
+        byAssetId: {
+          ...state.byAssetId,
+          [assetId]: items,
+        },
+      };
     }
     default:
       return state;
@@ -55,8 +63,9 @@ export default function files(state = initialState, action: FilesAction): FilesS
 const addFiles = createAction(ADD_FILES);
 
 export const actions = {
-  addFiles
+  addFiles,
 };
 
 // Selectors
-export const selectFiles = (state: RootState) => state.files || { byAssetId: {} };
+export const selectFiles = (state: RootState) =>
+  state.files || { byAssetId: {} };

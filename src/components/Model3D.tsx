@@ -1,4 +1,26 @@
 // TODO is this ideal?
+import React from 'react';
+import { connect } from 'react-redux';
+import { Model3DViewer, CacheObject, Callback } from '@cognite/gearbox';
+import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
+import { message, Slider } from 'antd';
+import { Dispatch, bindActionCreators } from 'redux';
+import { Asset } from '@cognite/sdk';
+import { SliderValue } from 'antd/lib/slider';
+import LoadingScreen, { ProgressObject } from './LoadingScreen';
+import {
+  fetchMappingsFromNodeId,
+  selectAssetMappings,
+  fetchMappingsFromAssetId,
+  AssetMappingState,
+} from '../modules/assetmappings';
+import { selectFilteredSearch } from '../modules/filters';
+import { RootState } from '../reducers/index';
+import { ExtendedAsset } from '../modules/assets';
+
+import { fetchNode } from '../modules/threed';
+import { sdk } from '../index';
+
 declare global {
   interface Window {
     viewer: Cognite3DViewer;
@@ -6,27 +28,6 @@ declare global {
     THREE: any;
   }
 }
-import React from 'react';
-import { connect } from 'react-redux';
-import { Model3DViewer, CacheObject, Callback } from '@cognite/gearbox';
-import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
-import { message, Slider } from 'antd';
-import LoadingScreen from './LoadingScreen';
-import {
-  fetchMappingsFromNodeId,
-  selectAssetMappings,
-  fetchMappingsFromAssetId,
-  AssetMappingState
-} from '../modules/assetmappings';
-import { selectFilteredSearch } from '../modules/filters';
-import { Dispatch, bindActionCreators } from 'redux';
-import { RootState } from '../reducers/index';
-import { Asset } from '@cognite/sdk';
-import { ExtendedAsset } from '../modules/assets';
-import { ProgressObject } from './LoadingScreen';
-import { SliderValue } from 'antd/lib/slider';
-import { fetchNode } from '../modules/threed';
-import { sdk } from '../index';
 
 type Props = {
   modelId: number;
@@ -51,12 +52,15 @@ class Model3D extends React.Component<Props, State> {
   static defaultProps = {
     assetMappings: { byNodeId: {}, byAssetId: {} },
     nodeId: undefined,
-    cache: undefined
+    cache: undefined,
   };
+
   readonly state: Readonly<State> = { hasWarnedAboutNode: {} };
 
   currentColoredNodes: number[] = [];
+
   model?: Cognite3DModel = undefined;
+
   viewer?: Cognite3DViewer = undefined;
 
   componentDidUpdate(prevProps: Props, prevState: State) {
@@ -84,7 +88,7 @@ class Model3D extends React.Component<Props, State> {
             const { hasWarnedAboutNode } = this.state;
             hasWarnedAboutNode[this.state.nodeId!] = true;
             this.setState({
-              hasWarnedAboutNode
+              hasWarnedAboutNode,
             });
           }, 10);
         }
@@ -92,7 +96,11 @@ class Model3D extends React.Component<Props, State> {
     }
 
     if (prevProps.nodeId !== this.props.nodeId) {
-      this.props.doFetchNode(this.props.modelId, this.props.revisionId, this.props.nodeId!);
+      this.props.doFetchNode(
+        this.props.modelId,
+        this.props.revisionId,
+        this.props.nodeId!
+      );
       if (this.model) {
         this.selectNode(this.props.nodeId!, true, 1500);
       }
@@ -100,7 +108,9 @@ class Model3D extends React.Component<Props, State> {
 
     if (prevProps.filteredSearch !== this.props.filteredSearch) {
       const { assetMappings, filteredSearch, modelId, revisionId } = this.props;
-      let missing3D = filteredSearch.items.filter((asset: Asset) => assetMappings.byAssetId[asset.id] === undefined);
+      let missing3D = filteredSearch.items.filter(
+        (asset: Asset) => assetMappings.byAssetId[asset.id] === undefined
+      );
       // Max 20 requests
       missing3D = missing3D.slice(0, Math.min(missing3D.length, 20));
 
@@ -142,7 +152,11 @@ class Model3D extends React.Component<Props, State> {
       return mapping.assetId;
     }
 
-    this.props.doFetchMappingsFromNodeId(this.props.modelId, this.props.revisionId, nodeId);
+    this.props.doFetchMappingsFromNodeId(
+      this.props.modelId,
+      this.props.revisionId,
+      nodeId
+    );
 
     return null;
   };
@@ -164,6 +178,7 @@ class Model3D extends React.Component<Props, State> {
 
     // TODO, this is not valid...
     // @ts-ignore
+    // eslint-disable-next-line no-underscore-dangle
     this.model!._treeIndexNodeIdMap.forEach(id => {
       this.model!.setNodeColor(id, 170, 170, 170);
     });
@@ -179,13 +194,18 @@ class Model3D extends React.Component<Props, State> {
     // Temp disable screen space culling
     // TODO, this is not allowed
     // @ts-ignore
+    // eslint-disable-next-line no-underscore-dangle,no-param-reassign
     model._screenRatioLimit = 0.0;
     window.viewer = viewer;
     window.THREE = THREE;
     window.model = model;
   };
 
-  selectNode = async (nodeId: number, animate: boolean, duration: number = 500) => {
+  selectNode = async (
+    nodeId: number,
+    animate: boolean,
+    duration: number = 500
+  ) => {
     this.model!.deselectAllNodes();
     if (nodeId == null) {
       return;
@@ -194,19 +214,28 @@ class Model3D extends React.Component<Props, State> {
     let mapping = this.props.assetMappings.byNodeId[nodeId];
 
     if (!mapping) {
-      const nodes = await sdk.viewer3D.listRevealNodes3D(this.props.modelId, this.props.revisionId, {
-        nodeId,
-        depth: 0
-      });
+      const nodes = await sdk.viewer3D.listRevealNodes3D(
+        this.props.modelId,
+        this.props.revisionId,
+        {
+          nodeId,
+          depth: 0,
+        }
+      );
       [mapping] = nodes.items;
     }
 
     const boundingBox = new THREE.Box3();
     // The node may not have geometries in the scene, so we need to
     // find all children and select them + compute bounding box
-    for (let { treeIndex } = mapping; treeIndex < mapping.treeIndex + mapping.subtreeSize; treeIndex++) {
+    for (
+      let { treeIndex } = mapping;
+      treeIndex < mapping.treeIndex + mapping.subtreeSize;
+      treeIndex++
+    ) {
       // TODO, this is not allowed
       // @ts-ignore
+      // eslint-disable-next-line no-underscore-dangle
       const thisNodeId = this.model!._getNodeId(treeIndex);
       if (thisNodeId) {
         this.model!.selectNode(thisNodeId);
@@ -222,9 +251,14 @@ class Model3D extends React.Component<Props, State> {
   iterateNodeSubtree = (nodeId: number, action: Callback) => {
     const mapping = this.props.assetMappings.byNodeId[nodeId];
     if (mapping) {
-      for (let { treeIndex } = mapping; treeIndex < mapping.treeIndex + mapping.subtreeSize; treeIndex++) {
+      for (
+        let { treeIndex } = mapping;
+        treeIndex < mapping.treeIndex + mapping.subtreeSize;
+        treeIndex++
+      ) {
         // TODO invalid function -> move into 3d-viewer
         // @ts-ignore
+        // eslint-disable-next-line no-underscore-dangle
         const id = this.model!._getNodeId(treeIndex);
         if (id != null) {
           action(id);
@@ -244,7 +278,10 @@ class Model3D extends React.Component<Props, State> {
       boundingBox.union(this.model!.getBoundingBox(id));
     });
 
-    const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), boundingBox.max.y + 0.5);
+    const plane = new THREE.Plane(
+      new THREE.Vector3(0, -1, 0),
+      boundingBox.max.y + 0.5
+    );
     this.viewer!.setSlicingPlanes([plane]);
   };
 
@@ -287,7 +324,9 @@ class Model3D extends React.Component<Props, State> {
     }
     return (
       <>
-        {this.state.progress && <LoadingScreen progress={this.state.progress} />}
+        {this.state.progress && (
+          <LoadingScreen progress={this.state.progress} />
+        )}
         <Model3DViewer
           modelId={this.props.modelId}
           revisionId={this.props.revisionId}
@@ -308,7 +347,7 @@ class Model3D extends React.Component<Props, State> {
             position: 'absolute',
             paddingLeft: 10,
             paddingTop: 10,
-            height: '50%'
+            height: '50%',
           }}
           onChange={this.onSliderChange}
         />
@@ -320,7 +359,7 @@ class Model3D extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     assetMappings: selectAssetMappings(state),
-    filteredSearch: selectFilteredSearch(state)
+    filteredSearch: selectFilteredSearch(state),
   };
 };
 
@@ -329,7 +368,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doFetchMappingsFromNodeId: fetchMappingsFromNodeId,
       doFetchMappingsFromAssetId: fetchMappingsFromAssetId,
-      doFetchNode: fetchNode
+      doFetchNode: fetchNode,
     },
     dispatch
   );

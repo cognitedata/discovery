@@ -2,15 +2,24 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Layout, Switch } from 'antd';
 import { Route } from 'react-router-dom';
-import AssetSearch from './AssetSearch';
-import AssetViewer from './AssetViewer';
-import { fetchTypes } from '../modules/types';
-import { fetchModels, selectThreeD, ThreeDState, ThreeDModel, fetchRevisions } from '../modules/threed';
-import { selectAssets, AssetsState, ExtendedAsset } from '../modules/assets';
 import { Revision3D } from '@cognite/sdk';
-import { RootState } from '../reducers/index';
 import { bindActionCreators, Dispatch } from 'redux';
-import { AssetViewer as AssetViewerComponent } from './AssetViewer';
+import AssetSearch from './AssetSearch';
+import {
+  AssetViewer as AssetViewerComponent,
+  // eslint-disable-next-line import/no-named-default
+  default as AssetViewer,
+} from './AssetViewer';
+import { fetchTypes } from '../modules/types';
+import {
+  fetchModels,
+  selectThreeD,
+  ThreeDState,
+  ThreeDModel,
+  fetchRevisions,
+} from '../modules/threed';
+import { selectAssets, AssetsState, ExtendedAsset } from '../modules/assets';
+import { RootState } from '../reducers/index';
 
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
@@ -37,8 +46,12 @@ type State = {
 
 class Main extends React.Component<Props, State> {
   state = {
-    show3D: localStorage.getItem('show3D') ? stringToBool(localStorage.getItem('show3D')!) : true,
-    showPNID: localStorage.getItem('showPNID') ? stringToBool(localStorage.getItem('showPNID')!) : true
+    show3D: localStorage.getItem('show3D')
+      ? stringToBool(localStorage.getItem('show3D')!)
+      : true,
+    showPNID: localStorage.getItem('showPNID')
+      ? stringToBool(localStorage.getItem('showPNID')!)
+      : true,
   };
 
   viewer = React.createRef<AssetViewerComponent>();
@@ -59,25 +72,25 @@ class Main extends React.Component<Props, State> {
     const { match, history } = this.props;
     history.push({
       pathname: `${match.url}/asset/${asset.id}`,
-      search: `?query=${query}`
+      search: `?query=${query}`,
     });
   };
 
   onAssetIdChange = (assetId: number) => {
     const { match, history } = this.props;
     history.push({
-      pathname: `${match.url}/asset/${assetId}`
+      pathname: `${match.url}/asset/${assetId}`,
     });
   };
 
   on3DVisibleChange = (visible: boolean) => {
     this.setState({ show3D: visible });
-    localStorage.setItem('show3D', '' + visible);
+    localStorage.setItem('show3D', `${visible}`);
   };
 
   onPNIDVisibleChange = (visible: boolean) => {
     this.setState({ showPNID: visible });
-    localStorage.setItem('showPNID', '' + visible);
+    localStorage.setItem('showPNID', `${visible}`);
   };
 
   hasModelForAsset = (assetId: number) => {
@@ -96,15 +109,17 @@ class Main extends React.Component<Props, State> {
           }
           // TODO we need a proper fix here!
           if (model.revisions) {
-            // @ts-ignore
-            const revision = model.revisions.find(el => el.metadata.representsAsset !== undefined);
+            const revision = model.revisions.find(
+              // @ts-ignore
+              el => el.metadata.representsAsset !== undefined
+            );
             if (revision) {
               // @ts-ignore
               representedByMap[revision.metadata.representsAsset] = [
                 {
                   model,
-                  revision
-                }
+                  revision,
+                },
               ];
             }
           } else {
@@ -141,11 +156,15 @@ class Main extends React.Component<Props, State> {
               style={{
                 overflow: 'auto',
                 height: '100vh',
-                background: 'rgb(255,255,255)'
+                background: 'rgb(255,255,255)',
               }}
               width={250}
             >
-              <AssetSearch location={location} onAssetClick={this.onAssetClick} assetId={Number(assetId)} />
+              <AssetSearch
+                location={location}
+                onAssetClick={this.onAssetClick}
+                assetId={Number(assetId)}
+              />
             </Sider>
             <Content>
               <Header
@@ -154,7 +173,7 @@ class Main extends React.Component<Props, State> {
                   float: 'right',
                   position: 'fixed',
                   right: '0',
-                  top: '0'
+                  top: '0',
                 }}
               >
                 <div style={{ paddingRight: assetDrawerWidth - 30 }}>
@@ -184,7 +203,7 @@ class Main extends React.Component<Props, State> {
                         model3D
                           ? {
                               modelId: model3D.model.id,
-                              revisionId: model3D.revision.id
+                              revisionId: model3D.revision.id,
                             }
                           : undefined
                       }
@@ -207,7 +226,7 @@ class Main extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     threed: selectThreeD(state),
-    assets: selectAssets(state)
+    assets: selectAssets(state),
   };
 };
 
@@ -216,7 +235,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doFetchTypes: fetchTypes,
       doFetchRevisions: fetchRevisions,
-      doFetchModels: fetchModels
+      doFetchModels: fetchModels,
     },
     dispatch
   );

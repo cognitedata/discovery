@@ -6,14 +6,18 @@ import rootReducer from '../reducers';
 export default function configureStore(initialState = {}) {
   const middlewares = [ReduxThunk];
   const enhancers = [
-    applyMiddleware(...middlewares)
+    applyMiddleware(...middlewares),
     // other store enhancers if any
   ];
   const composeEnhancers = composeWithDevTools({
     // other compose enhancers if any
     // Specify here other options if needed
   });
-  const store = createStore(rootReducer, initialState, composeEnhancers(...enhancers));
+  const store = createStore(
+    rootReducer,
+    initialState,
+    composeEnhancers(...enhancers)
+  );
   if ((module as any).hot) {
     // Enable Webpack hot module replacement for reducers
     (module as any).hot.accept('../reducers', () => {

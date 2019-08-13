@@ -1,11 +1,11 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
-import { fetchAsset } from './assets';
-import { fetchEvents, createEvent } from './events';
 import { Dispatch, AnyAction, Action } from 'redux';
 import { Asset } from '@cognite/sdk';
-import { RootState } from '../reducers/index';
 import { ThunkDispatch } from 'redux-thunk';
+import { fetchAsset } from './assets';
+import { fetchEvents, createEvent } from './events';
+import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
 // Constants
@@ -35,17 +35,20 @@ export function removeTypeFromAsset(type: Type, asset: Asset) {
     const body = {
       id: asset.id,
       types: {
-        remove: [type.id]
-      }
+        remove: [type.id],
+      },
     };
 
     const { project } = sdk;
-    await sdk.post(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`, {
-      data: body
-    });
+    await sdk.post(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`,
+      {
+        data: body,
+      }
+    );
 
     createEvent('removed_type', 'Removed type', [asset.id], {
-      removed: JSON.stringify({ id: type.id, name: type.name })
+      removed: JSON.stringify({ id: type.id, name: type.name }),
     });
 
     message.info(`Removed ${type.name} from ${asset.name}.`);
@@ -61,24 +64,27 @@ export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
       id: type.id,
       fields: type.fields.map(field => ({
         id: field.id,
-        value: field.name === 'confidence' ? 1.0 : 'expert'
-      }))
+        value: field.name === 'confidence' ? 1.0 : 'expert',
+      })),
     }));
 
     const body = {
       id: asset.id,
       types: {
-        add: formattedTypes
-      }
+        add: formattedTypes,
+      },
     };
 
     const { project } = sdk;
-    await sdk.post(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`, {
-      data: body
-    });
+    await sdk.post(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`,
+      {
+        data: body,
+      }
+    );
 
     createEvent('added_type', 'Added type', [asset.id], {
-      added: JSON.stringify({ types: selectedTypes })
+      added: JSON.stringify({ types: selectedTypes }),
     });
 
     message.info(`Added ${selectedTypes.length} types to ${asset.name}.`);
@@ -92,7 +98,9 @@ export function fetchTypes() {
     // Skip if we did it before
 
     const { project } = sdk;
-    const result = await sdk.get(`https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`);
+    const result = await sdk.get(
+      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`
+    );
 
     if (result) {
       const { items }: { items: Type[] } = result.data.data;
@@ -107,13 +115,16 @@ export interface TypesState {
 }
 const initialState: TypesState = {};
 
-export default function types(state = initialState, action: TypeAction): TypesState {
+export default function types(
+  state = initialState,
+  action: TypeAction
+): TypesState {
   switch (action.type) {
     case SET_TYPES: {
       const { items } = action.payload;
       return {
         ...state,
-        items
+        items,
       };
     }
 
@@ -126,7 +137,7 @@ export default function types(state = initialState, action: TypeAction): TypesSt
 const setTypes = createAction(SET_TYPES);
 
 export const actions = {
-  setTypes
+  setTypes,
 };
 
 // Selectors

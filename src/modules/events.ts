@@ -1,9 +1,9 @@
 import { createAction } from 'redux-actions';
-import { arrayToObjectById } from '../utils/utils';
 import { Dispatch, Action } from 'redux';
+import { CogniteEvent } from '@cognite/sdk';
+import { arrayToObjectById } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
-import { CogniteEvent } from '@cognite/sdk';
 
 export interface EventFilter {
   eventType?: string;
@@ -23,7 +23,8 @@ export const ADD_UNIQUE_EVENT_TYPES = 'events/ADD_UNIQUE_EVENT_TYPES';
 interface AddEventAction extends Action<typeof ADD_EVENTS> {
   payload: { items: { [key: string]: CogniteEvent } };
 }
-interface AddUniqueEventTypesAction extends Action<typeof ADD_UNIQUE_EVENT_TYPES> {
+interface AddUniqueEventTypesAction
+  extends Action<typeof ADD_UNIQUE_EVENT_TYPES> {
   payload: { items: string[] };
 }
 type EventsAction = AddEventAction | AddUniqueEventTypesAction;
@@ -44,8 +45,8 @@ export async function createEvent(
       type: 'cognite_contextualization',
       subtype,
       assetIds,
-      metadata
-    }
+      metadata,
+    },
   ]);
 }
 
@@ -53,7 +54,7 @@ export function fetchEvents(assetId: number) {
   return async (dispatch: Dispatch) => {
     const result = await sdk.events.list({
       filter: { assetIds: [assetId] },
-      limit: 1000
+      limit: 1000,
     });
 
     const types = result.items.map(event => event.type);
@@ -70,9 +71,9 @@ export function fetchEventsByFilter(eventFilter: EventFilter) {
       filter: {
         type: eventFilter.eventType,
         subtype: 'IAA',
-        startTime: { min: eventFilter.from, max: eventFilter.to }
+        startTime: { min: eventFilter.from, max: eventFilter.to },
       },
-      limit: 1000
+      limit: 1000,
     });
 
     const types = result.items.map(event => event.type);
@@ -90,20 +91,25 @@ export interface EventState {
 }
 const initialState: EventState = { items: {}, types: [] };
 
-export default function events(state = initialState, action: EventsAction): EventState {
+export default function events(
+  state = initialState,
+  action: EventsAction
+): EventState {
   switch (action.type) {
     case ADD_EVENTS: {
       const items = { ...state.items, ...action.payload.items };
       return {
         ...state,
-        items
+        items,
       };
     }
     case ADD_UNIQUE_EVENT_TYPES: {
-      const items = [...new Set([...state.types, ...action.payload.items])];
+      const items = Array.from(
+        new Set([...state.types, ...action.payload.items])
+      );
       return {
         ...state,
-        types: items
+        types: items,
       };
     }
     default:
@@ -117,17 +123,24 @@ const addUniqueEventTypes = createAction(ADD_UNIQUE_EVENT_TYPES);
 
 export const actions = {
   addEvents,
-  addUniqueEventTypes
+  addUniqueEventTypes,
 };
 
 // Selectors
-export const selectEvents = (state: RootState) => state.events || { items: {}, types: [] };
-export const selectEventTypes = (state: RootState) => (state.events ? state.events.types : []);
+export const selectEvents = (state: RootState) =>
+  state.events || { items: {}, types: [] };
+export const selectEventTypes = (state: RootState) =>
+  state.events ? state.events.types : [];
 export const selectEventList = (state: RootState) => {
-  const items = Object.keys(state.events.items).map(key => state.events.items[key]); // to array
+  const items = Object.keys(state.events.items).map(
+    key => state.events.items[key]
+  ); // to array
   return { items };
 };
-export const selectEventsByAssetId = (state: RootState, assetId: number): EventsAndTypes => {
+export const selectEventsByAssetId = (
+  state: RootState,
+  assetId: number
+): EventsAndTypes => {
   const items = Object.keys(state.events.items)
     .map(key => state.events.items[key]) // to array
     .filter(event => event.assetIds && event.assetIds.indexOf(assetId) !== -1); // filter by assetId

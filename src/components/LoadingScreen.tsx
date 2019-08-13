@@ -21,21 +21,22 @@ type Props = {
   progress: ProgressObject;
 };
 
-class LoadingScreen extends React.Component<Props, {}> {
-  render() {
-    const { step, numSteps, progress, max, title } = this.props.progress;
-    const percentTotal = Math.round((100 * step) / numSteps);
-    const percentCurrent = Math.round((100 * progress) / max);
-
-    return (
-      <Modal visible title="Loading 3D model ..." footer={null} closable={false}>
-        <FlexDiv>
-          <Progress percent={percentCurrent} successPercent={percentTotal} type="circle" />
-          {title}
-        </FlexDiv>
-      </Modal>
-    );
-  }
-}
+const LoadingScreen = ({ progress: progressObject }: Props) => {
+  const { step, numSteps, progress, max, title } = progressObject;
+  const percentTotal = Math.round((100 * step) / numSteps);
+  const percentCurrent = Math.round((100 * progress) / max);
+  return (
+    <Modal visible title="Loading 3D model ..." footer={null} closable={false}>
+      <FlexDiv>
+        <Progress
+          percent={percentCurrent}
+          successPercent={percentTotal}
+          type="circle"
+        />
+        {title}
+      </FlexDiv>
+    </Modal>
+  );
+};
 
 export default LoadingScreen;

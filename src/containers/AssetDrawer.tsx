@@ -1,14 +1,39 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { List, Drawer, Spin, Collapse, Button, Icon, Popconfirm, Descriptions } from 'antd';
+import {
+  List,
+  Drawer,
+  Spin,
+  Collapse,
+  Button,
+  Icon,
+  Popconfirm,
+  Descriptions,
+} from 'antd';
 
 import styled from 'styled-components';
 import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
 import { THREE } from '@cognite/3d-viewer';
-import { fetchTimeseries, selectTimeseries, removeAssetFromTimeseries, TimeseriesState } from '../modules/timeseries';
-import { selectTypes, removeTypeFromAsset, Type, TypesState } from '../modules/types';
-import { fetchEvents, selectEventsByAssetId, EventsAndTypes } from '../modules/events';
+import { bindActionCreators, Dispatch } from 'redux';
+import { CogniteEvent, GetTimeSeriesMetadataDTO } from '@cognite/sdk';
+import {
+  fetchTimeseries,
+  selectTimeseries,
+  removeAssetFromTimeseries,
+  TimeseriesState,
+} from '../modules/timeseries';
+import {
+  selectTypes,
+  removeTypeFromAsset,
+  Type,
+  TypesState,
+} from '../modules/types';
+import {
+  fetchEvents,
+  selectEventsByAssetId,
+  EventsAndTypes,
+} from '../modules/events';
 import AddTimeseries from './AddTimeseries';
 import AddTypes from './AddTypes';
 import EventPreview from '../components/EventPreview';
@@ -17,8 +42,6 @@ import { createAssetTitle } from '../utils/utils';
 import { selectThreeD, CurrentNode, ThreeDState } from '../modules/threed';
 import { ExtendedAsset, fetchAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
-import { bindActionCreators, Dispatch } from 'redux';
-import { Timeseries, Event } from '@cognite/sdk';
 import { sdk } from '../index';
 
 const { Panel } = Collapse;
@@ -67,7 +90,7 @@ type State = {
 class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     showAddTimeseries: false,
-    showAddTypes: false
+    showAddTypes: false,
   };
 
   componentDidMount() {
@@ -105,7 +128,7 @@ class AssetDrawer extends React.Component<Props, State> {
       showAddTimeseries: false,
       showEvent: undefined,
       showTimeseries: undefined,
-      showAddTypes: false
+      showAddTypes: false,
     });
   };
 
@@ -115,7 +138,7 @@ class AssetDrawer extends React.Component<Props, State> {
 
   timeseriesOnClick = (timeseriesId: number, timeseriesName: string) => {
     this.setState({
-      showTimeseries: { id: timeseriesId, name: timeseriesName }
+      showTimeseries: { id: timeseriesId, name: timeseriesName },
     });
   };
 
@@ -149,7 +172,10 @@ class AssetDrawer extends React.Component<Props, State> {
     </Panel>
   );
 
-  renderTimeseries = (asset: ExtendedAsset, timeseries: Timeseries[]) => (
+  renderTimeseries = (
+    asset: ExtendedAsset,
+    timeseries: GetTimeSeriesMetadataDTO[]
+  ) => (
     <Panel
       header={
         <HeaderWithButton>
@@ -163,14 +189,20 @@ class AssetDrawer extends React.Component<Props, State> {
     >
       {timeseries.map(ts => (
         <HeaderWithButton key={`ts_${ts.id}`}>
-          <Button key={ts.id} type="link" onClick={() => this.timeseriesOnClick(ts.id, ts.name)}>
+          <Button
+            key={ts.id}
+            type="link"
+            onClick={() => this.timeseriesOnClick(ts.id, ts.name!)}
+          >
             {ts.name}
           </Button>
           <Popconfirm
             title="Are you sure？"
             okText="Yes"
             cancelText="No"
-            onConfirm={() => this.props.doRemoveAssetFromTimeseries(ts.id, asset.id)}
+            onConfirm={() =>
+              this.props.doRemoveAssetFromTimeseries(ts.id, asset.id)
+            }
           >
             <Button type="danger">
               <Icon type="delete" />
@@ -181,17 +213,25 @@ class AssetDrawer extends React.Component<Props, State> {
     </Panel>
   );
 
-  renderEvents = (events: Event[]) => {
-    events = events.sort((a, b) => b.startTime! - a.startTime!);
+  renderEvents = (events: CogniteEvent[]) => {
+    const sortedEvents = events.sort(
+      (a, b) => (b.startTime! as number) - (a.startTime! as number)
+    );
     return (
-      <Panel header={<span>Events ({events.length})</span>} key="events">
+      <Panel header={<span>Events ({sortedEvents.length})</span>} key="events">
         <List
           size="small"
-          dataSource={events}
+          dataSource={sortedEvents}
           renderItem={event => (
             <List.Item onClick={() => this.eventOnClick(event.id)}>
               <List.Item.Meta
-                title={<Button type="link">{moment.unix(event.startTime! / 1000).format('YYYY-MM-DD HH:mm')}</Button>}
+                title={
+                  <Button type="link">
+                    {moment
+                      .unix((event.startTime! as number) / 1000)
+                      .format('YYYY-MM-DD HH:mm')}
+                  </Button>
+                }
                 description={event.type}
               />
             </List.Item>
@@ -256,9 +296,16 @@ class AssetDrawer extends React.Component<Props, State> {
 
   render() {
     const { asset } = this.props;
-    const { showTimeseries, showEvent, showAddTimeseries = false, showAddTypes = false } = this.state;
+    const {
+      showTimeseries,
+      showEvent,
+      showAddTimeseries = false,
+      showAddTypes = false,
+    } = this.state;
 
-    const timeseries = this.props.timeseries.items ? this.props.timeseries.items : [];
+    const timeseries = this.props.timeseries.items
+      ? this.props.timeseries.items
+      : [];
 
     const allTypes = this.props.types.items ? this.props.types.items : [];
 
@@ -272,17 +319,30 @@ class AssetDrawer extends React.Component<Props, State> {
       );
     }
 
-    const defaultActiveKey = this.state.activeCollapsed ? this.state.activeCollapsed : [];
+    const defaultActiveKey = this.state.activeCollapsed
+      ? this.state.activeCollapsed
+      : [];
 
     return (
       <>
         {asset != null && showAddTypes && (
-          <AddTypes assetId={asset.id} asset={asset} onClose={this.onAddClose} types={allTypes} />
+          <AddTypes
+            assetId={asset.id}
+            asset={asset}
+            onClose={this.onAddClose}
+            types={allTypes}
+          />
         )}
         {asset != null && showAddTimeseries && (
-          <AddTimeseries assetId={asset.id} onClose={this.onAddClose} timeseries={timeseries} />
+          <AddTimeseries
+            assetId={asset.id}
+            onClose={this.onAddClose}
+            timeseries={timeseries}
+          />
         )}
-        {showEvent != null && <EventPreview eventId={showEvent} onClose={this.onAddClose} />}
+        {showEvent != null && (
+          <EventPreview eventId={showEvent} onClose={this.onAddClose} />
+        )}
         {showTimeseries != null && (
           <TimeseriesPreview
             timeseries={{ id: showTimeseries.id, name: showTimeseries.name }}
@@ -299,9 +359,13 @@ class AssetDrawer extends React.Component<Props, State> {
         >
           {asset.description && <p>{asset.description}</p>}
           {
-            <Collapse onChange={this.onCollapseChange} defaultActiveKey={defaultActiveKey}>
+            <Collapse
+              onChange={this.onCollapseChange}
+              defaultActiveKey={defaultActiveKey}
+            >
               {asset != null && this.renderExternalLinks(asset.id)}
-              {this.props.threed.currentNode && this.renderThreeD(this.props.threed.currentNode)}
+              {this.props.threed.currentNode &&
+                this.renderThreeD(this.props.threed.currentNode)}
               {this.renderTimeseries(asset, timeseries)}
               {this.renderTypes(asset, types)}
               {this.renderEvents(this.props.events.items)}
@@ -318,7 +382,7 @@ const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
     events: selectEventsByAssetId(state, ownProps.asset.id),
-    types: selectTypes(state)
+    types: selectTypes(state),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
@@ -328,7 +392,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       doRemoveTypeFromAsset: removeTypeFromAsset,
-      doFetchAsset: fetchAsset
+      doFetchAsset: fetchAsset,
     },
     dispatch
   );
