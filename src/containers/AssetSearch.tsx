@@ -96,7 +96,10 @@ class AssetSearch extends React.Component<Props, State> {
       const assetIds: number[] = Array.from(
         this.props.events.items.reduce(
           (set, event: CogniteEvent) =>
-            new Set([...Array.from(set), ...event.assetIds!]),
+            new Set([
+              ...Array.from(set),
+              ...(event.assetIds ? event.assetIds : []),
+            ]),
           new Set<number>()
         )
       );

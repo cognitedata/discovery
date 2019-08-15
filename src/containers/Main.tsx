@@ -4,6 +4,7 @@ import { Layout, Switch } from 'antd';
 import { Route } from 'react-router-dom';
 import { Revision3D } from '@cognite/sdk';
 import { bindActionCreators, Dispatch } from 'redux';
+import styled from 'styled-components';
 import AssetSearch from './AssetSearch';
 import {
   AssetViewer as AssetViewerComponent,
@@ -24,8 +25,23 @@ import { RootState } from '../reducers/index';
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
 
+const StyledHeader = styled(Header)`
+  && {
+    background-color: rgba(0, 0, 0, 0);
+    float: right;
+    position: fixed;
+    right: '0';
+    top: '0';
+    z-index: 100;
+  }
+`;
+
 function stringToBool(str: string) {
   return str === 'true';
+}
+
+interface TBDRevision extends Revision3D {
+  metadata?: { [key: string]: any };
 }
 
 type Props = {
@@ -40,6 +56,7 @@ type Props = {
 };
 
 type State = {
+  showAssetViewer: boolean;
   show3D: boolean;
   showPNID: boolean;
 };
@@ -52,9 +69,14 @@ class Main extends React.Component<Props, State> {
     showPNID: localStorage.getItem('showPNID')
       ? stringToBool(localStorage.getItem('showPNID')!)
       : true,
+    showAssetViewer: localStorage.getItem('showAssetViewer')
+      ? stringToBool(localStorage.getItem('showAssetViewer')!)
+      : true,
   };
 
   viewer = React.createRef<AssetViewerComponent>();
+
+  isLoading = false;
 
   componentDidMount() {
     this.props.doFetchTypes();
@@ -93,6 +115,11 @@ class Main extends React.Component<Props, State> {
     localStorage.setItem('showPNID', `${visible}`);
   };
 
+  onAssetViewerChange = (visible: boolean) => {
+    this.setState({ showAssetViewer: visible });
+    localStorage.setItem('showAssetViewer', `${visible}`);
+  };
+
   hasModelForAsset = (assetId: number) => {
     const asset = this.props.assets.all[assetId];
     const representedByMap: {
@@ -101,32 +128,22 @@ class Main extends React.Component<Props, State> {
     const { models } = this.props.threed;
     Object.keys(models).forEach(modelId => {
       const model = models[modelId];
-      if (model.metadata) {
-        const { representsAsset } = model.metadata!;
-        if (representsAsset) {
+      if (!model.revisions) {
+        return;
+      }
+
+      model.revisions.forEach((revision: TBDRevision) => {
+        if (revision.metadata!.representsAsset) {
+          const { representsAsset } = revision.metadata!;
           if (representedByMap[representsAsset] === undefined) {
             representedByMap[representsAsset] = [];
           }
-          // TODO we need a proper fix here!
-          if (model.revisions) {
-            const revision = model.revisions.find(
-              // @ts-ignore
-              el => el.metadata.representsAsset !== undefined
-            );
-            if (revision) {
-              // @ts-ignore
-              representedByMap[revision.metadata.representsAsset] = [
-                {
-                  model,
-                  revision,
-                },
-              ];
-            }
-          } else {
-            this.props.doFetchRevisions(Number(modelId));
-          }
+          representedByMap[representsAsset].push({
+            model,
+            revision,
+          });
         }
-      }
+      });
     });
     if (asset) {
       const modelsForAsset = representedByMap[asset.rootId!];
@@ -167,15 +184,7 @@ class Main extends React.Component<Props, State> {
               />
             </Sider>
             <Content>
-              <Header
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.0)',
-                  float: 'right',
-                  position: 'fixed',
-                  right: '0',
-                  top: '0',
-                }}
-              >
+              <StyledHeader>
                 <div style={{ paddingRight: assetDrawerWidth - 30 }}>
                   <Switch
                     checked={model3D != null && this.state.show3D}
@@ -190,15 +199,20 @@ class Main extends React.Component<Props, State> {
                     unCheckedChildren="P&ID"
                     onChange={this.onPNIDVisibleChange}
                   />
+                  <Switch
+                    checked={this.state.showAssetViewer}
+                    checkedChildren="Asset Network Viewer"
+                    unCheckedChildren="Asset Network Viewer"
+                    onChange={this.onAssetViewerChange}
+                  />
                 </div>
-              </Header>
+              </StyledHeader>
               <Route
                 path={`${match.url}/asset/:assetId`}
                 render={props => {
                   return (
                     <AssetViewer
                       assetId={Number(props.match.params.assetId)}
-                      show3D={model3D != null && this.state.show3D}
                       model3D={
                         model3D
                           ? {
@@ -207,6 +221,8 @@ class Main extends React.Component<Props, State> {
                             }
                           : undefined
                       }
+                      show3D={model3D != null && this.state.show3D}
+                      showAssetViewer={this.state.showAssetViewer}
                       showPNID={this.state.showPNID}
                       onAssetIdChange={this.onAssetIdChange}
                       assetDrawerWidth={assetDrawerWidth}

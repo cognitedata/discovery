@@ -7,6 +7,7 @@ import { arrayToObjectById } from '../utils/utils';
 import { Type } from './types';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
+
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
@@ -111,6 +112,43 @@ export function fetchAsset(assetId: number) {
     requestedAssetIds[assetId] = false;
   };
 }
+export function loadAssetChildren(assetId: number) {
+  return async (dispatch: Dispatch) => {
+    // // Skip if we did it before
+    // if (requestedAssetIds[assetId]) {
+    //   return;
+    // }
+    // requestedAssetIds[assetId] = true;
+
+    try {
+      const results = await sdk.assets.search({
+        filter: { parentIds: [assetId] },
+      });
+
+      if (results) {
+        const items = arrayToObjectById(
+          results.map(asset => ({
+            id: asset.id,
+            name: asset.name,
+            rootId: asset.rootId,
+            parentId: asset.parentId,
+            description: asset.description,
+            types: asset.metadata!.types,
+            metadata: asset.metadata,
+          }))
+        );
+        dispatch({
+          type: ADD_ASSETS,
+          payload: { items }, // what is going on with sdk man...
+        });
+      }
+    } catch (ex) {
+      message.error(`Could not fetch asset.`);
+      return;
+    }
+    requestedAssetIds[assetId] = false;
+  };
+}
 
 export function fetchAssets(assetIds: number[]) {
   return async (dispatch: Dispatch) => {
@@ -131,6 +169,7 @@ export function fetchAssets(assetIds: number[]) {
             id: asset.id,
             name: asset.name,
             rootId: asset.rootId,
+            parentId: asset.parentId,
             description: asset.description,
             types: asset.metadata!.types,
             metadata: asset.metadata,

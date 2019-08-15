@@ -7,6 +7,7 @@ import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import AssetDrawer from './AssetDrawer';
+import AssetNetworkViewer from './AssetNetworkViewer';
 import {
   fetchMappingsFromAssetId,
   selectAssetMappings,
@@ -16,10 +17,22 @@ import { RootState } from '../reducers/index';
 
 const ViewerContainer = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   width: 100%;
   height: 100%;
+
+  && .split {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    flex: 2;
+  }
+  && .bottom {
+    flex: 1;
+    width: 100%;
+  }
 `;
+
 type OwnProps = {
   assetDrawerWidth: number;
   assetId: number;
@@ -29,6 +42,7 @@ type OwnProps = {
   };
   show3D: boolean;
   showPNID: boolean;
+  showAssetViewer: boolean;
   onAssetIdChange: (assetId: number) => void;
 };
 type StateProps = {
@@ -110,6 +124,17 @@ export class AssetViewer extends React.Component<Props, State> {
     );
   };
 
+  renderAssetNetwork = () => {
+    return (
+      <div className="bottom">
+        <AssetNetworkViewer
+          asset={this.getAsset()}
+          onAssetIdChange={this.props.onAssetIdChange}
+        />
+      </div>
+    );
+  };
+
   render() {
     const asset = this.getAsset();
     const { assetDrawerWidth } = this.props;
@@ -118,8 +143,13 @@ export class AssetViewer extends React.Component<Props, State> {
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
           <ViewerContainer>
-            {this.props.show3D && this.render3D()}
-            {this.props.showPNID && this.renderPNID()}
+            {(this.props.show3D || this.props.showPNID) && (
+              <div className="split">
+                {this.props.show3D && this.render3D()}
+                {this.props.showPNID && this.renderPNID()}
+              </div>
+            )}
+            {this.props.showAssetViewer && this.renderAssetNetwork()}
           </ViewerContainer>
           {asset != null && (
             <AssetDrawer width={assetDrawerWidth} asset={asset} />

@@ -22,13 +22,7 @@ export function fetchFiles(assetId: number) {
       filter: { assetIds: [assetId] },
       limit: 1000,
     });
-    const items = result.items
-      .filter(file => file.uploaded === true)
-      .map(file => ({
-        id: file.id,
-        fileName: file.name,
-        fileType: file.mimeType,
-      }));
+    const items = result.items.filter(file => file.uploaded === true);
     dispatch({ type: ADD_FILES, payload: { assetId, items } });
   };
 }
