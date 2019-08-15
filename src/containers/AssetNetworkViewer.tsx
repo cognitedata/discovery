@@ -257,13 +257,13 @@ export class AssetViewer extends React.Component<Props, State> {
   }
 }
 
-const AssetNode = ({ asset }: { asset: Tmp }) => {
-  return (
-    <div>
-      <p>{asset.name}</p>
-    </div>
-  );
-};
+// const AssetNode = ({ asset }: { asset: Tmp }) => {
+//   return (
+//     <div>
+//       <p>{asset.name}</p>
+//     </div>
+//   );
+// };
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
