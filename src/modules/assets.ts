@@ -1,7 +1,8 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
-import { Dispatch, Action } from 'redux';
+import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset } from '@cognite/sdk';
+import { ThunkDispatch } from 'redux-thunk';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
@@ -67,6 +68,7 @@ export function searchForAsset(query: string) {
               description: asset.description,
               types: asset.metadata!.types,
               metadata: asset.metadata,
+              parentId: asset.parentId,
             }))
           ),
         });
@@ -98,7 +100,8 @@ export function fetchAsset(assetId: number) {
             name: asset.name,
             rootId: asset.rootId,
             description: asset.description,
-            types: asset.metadata!.types,
+            parentId: asset.parentId,
+            types: asset.metadata ? asset.metadata!.types : [],
             metadata: asset.metadata,
           }))
         );
@@ -114,12 +117,6 @@ export function fetchAsset(assetId: number) {
 }
 export function loadAssetChildren(assetId: number) {
   return async (dispatch: Dispatch) => {
-    // // Skip if we did it before
-    // if (requestedAssetIds[assetId]) {
-    //   return;
-    // }
-    // requestedAssetIds[assetId] = true;
-
     try {
       const results = await sdk.assets.search({
         filter: { parentIds: [assetId] },
@@ -143,7 +140,47 @@ export function loadAssetChildren(assetId: number) {
         });
       }
     } catch (ex) {
-      message.error(`Could not fetch asset.`);
+      message.error(`Could not fetch children.`);
+    }
+  };
+}
+export function loadParentRecurse(assetId: number, rootAssetId: number) {
+  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+    // Skip if we did it before
+    if (requestedAssetIds[assetId]) {
+      return;
+    }
+    requestedAssetIds[assetId] = true;
+
+    try {
+      const results = await sdk.assets.retrieve([{ id: assetId }]);
+      requestedAssetIds[assetId] = false;
+
+      const items = arrayToObjectById(
+        results.map(asset => ({
+          id: asset.id,
+          name: asset.name,
+          rootId: asset.rootId,
+          parentId: asset.parentId,
+          description: asset.description,
+          types: asset.metadata!.types,
+          metadata: asset.metadata,
+        }))
+      );
+      dispatch({
+        type: ADD_ASSETS,
+        payload: { items },
+      });
+      if (
+        results.length > 0 &&
+        results[0].parentId &&
+        results[0].parentId !== rootAssetId
+      ) {
+        dispatch(loadParentRecurse(results[0].parentId, rootAssetId));
+      }
+    } catch (ex) {
+      console.log(ex);
+      message.error(`Could not fetch parents.`);
       return;
     }
     requestedAssetIds[assetId] = false;
@@ -179,7 +216,7 @@ export function fetchAssets(assetIds: number[]) {
         dispatch({ type: ADD_ASSETS, payload: { items } });
       }
     } catch (ex) {
-      message.error(`Could not fetch asset.`);
+      message.error(`Could not fetch assets.`);
     }
   };
 }

@@ -98,10 +98,10 @@ class Main extends React.Component<Props, State> {
     });
   };
 
-  onAssetIdChange = (assetId: number) => {
+  onAssetIdChange = (rootAssetId: number, assetId: number) => {
     const { match, history } = this.props;
     history.push({
-      pathname: `${match.url}/asset/${assetId}`,
+      pathname: `${match.url}/asset/${rootAssetId}/${assetId}`,
     });
   };
 
@@ -159,7 +159,10 @@ class Main extends React.Component<Props, State> {
     let model3D: any;
     let assetId;
     if (this.viewer && this.viewer.current) {
-      model3D = this.hasModelForAsset(this.viewer.current!.props.assetId);
+      model3D = this.hasModelForAsset(
+        this.viewer.current!.props.assetId ||
+          this.viewer.current!.props.rootAssetId
+      );
       ({ assetId } = this.viewer.current!.props);
     }
 
@@ -208,11 +211,38 @@ class Main extends React.Component<Props, State> {
                 </div>
               </StyledHeader>
               <Route
-                path={`${match.url}/asset/:assetId`}
+                path={`${match.url}/asset/:rootAssetId`}
+                exact
+                render={props => {
+                  return (
+                    <AssetViewer
+                      rootAssetId={Number(props.match.params.rootAssetId)}
+                      model3D={
+                        model3D
+                          ? {
+                              modelId: model3D.model.id,
+                              revisionId: model3D.revision.id,
+                            }
+                          : undefined
+                      }
+                      show3D={model3D != null && this.state.show3D}
+                      showAssetViewer={this.state.showAssetViewer}
+                      showPNID={this.state.showPNID}
+                      onAssetIdChange={this.onAssetIdChange}
+                      assetDrawerWidth={assetDrawerWidth}
+                      ref={this.viewer}
+                    />
+                  );
+                }}
+              />
+              <Route
+                path={`${match.url}/asset/:rootAssetId/:assetId`}
+                exact
                 render={props => {
                   return (
                     <AssetViewer
                       assetId={Number(props.match.params.assetId)}
+                      rootAssetId={Number(props.match.params.rootAssetId)}
                       model3D={
                         model3D
                           ? {

@@ -1,21 +1,56 @@
 /* eslint-disable no-param-reassign */
 import React from 'react';
 import { connect } from 'react-redux';
-// import styled from 'styled-components';
+import styled from 'styled-components';
 import * as d3 from 'd3';
 import { Dispatch, bindActionCreators } from 'redux';
 import { Asset } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
+import ReactDOMServer from 'react-dom/server';
 import {
   loadAssetChildren,
+  loadParentRecurse,
   selectAssets,
   AssetsState,
   ExtendedAsset,
 } from '../modules/assets';
 import { RootState } from '../reducers/index';
 
+const Wrapper = styled.div`
+  height: 100%;
+  width: 100%;
+  position: relative;
+`;
+
+const LinkSection = styled.svg``;
+
+const AssetSection = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  && > div {
+    position: absolute;
+  }
+`;
+
+const Node = styled.div<{ color: string }>`
+  z-index: -2;
+  padding: 12px 12px;
+  background: rgba(100, 100, 40, 0.5);
+  color: white;
+  user-select: none;
+
+  p {
+    user-select: none;
+    margin: 0;
+  }
+`;
+
 type OwnProps = {
   asset: Asset;
+  rootAssetId: number;
   onAssetIdChange: (number: number) => void;
 };
 type StateProps = {
@@ -23,6 +58,7 @@ type StateProps = {
 };
 type DispatchProps = {
   loadAssetChildren: typeof loadAssetChildren;
+  loadParentRecurse: typeof loadParentRecurse;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -42,13 +78,15 @@ export class AssetViewer extends React.Component<Props, State> {
 
   svg?: d3.Selection<SVGSVGElement, any, any, any>;
 
+  div?: d3.Selection<HTMLDivElement, any, any, any>;
+
   displayedNodes: { [key: number]: Tmp } = {};
 
   displayedLinkIds: string[] = [];
 
   displayedLinks: Link[] = [];
 
-  simulation?: d3.Simulation<d3.SimulationNodeDatum, undefined>;
+  simulation?: d3.Simulation<d3.SimulationNodeDatum, any>;
 
   node?: d3.Selection<any, any, any, any>;
 
@@ -58,14 +96,25 @@ export class AssetViewer extends React.Component<Props, State> {
     super(props);
 
     this.createGraph = debounce(this.createGraph, 200);
+
+    window.addEventListener('resize', this.componentDidMount);
   }
 
   componentDidMount() {
-    this.svg = d3
-      .select('.grapharea')
-      .append('svg')
+    if (this.svg) {
+      this.div!.remove();
+      this.svg!.remove();
+    }
+    this.svg = (d3.select('#linkSection') as d3.Selection<
+      SVGSVGElement,
+      any,
+      any,
+      any
+    >)
       .attr('width', '100%')
       .attr('height', '100%');
+
+    this.div = d3.select('#assetSection');
 
     const {
       clientHeight: height,
@@ -75,8 +124,9 @@ export class AssetViewer extends React.Component<Props, State> {
     this.simulation = d3
       .forceSimulation()
       .force('link', d3.forceLink().id((d: any) => d.id))
-      .force('charge', d3.forceManyBody().strength(-60))
+      .force('charge', d3.forceManyBody().strength(-200))
       .force('change', d3.forceManyBody())
+      .force('collide', d3.forceCollide(40))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('x', d3.forceX())
       .force('y', d3.forceY())
@@ -87,16 +137,59 @@ export class AssetViewer extends React.Component<Props, State> {
       .attr('stroke-opacity', 0.6)
       .selectAll('line');
 
-    this.node = this.svg!.append('g')
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 1.5)
-      .selectAll('circle');
+    this.node = this.div!.selectAll('div');
+
+    this.createGraph();
+
+    const { asset, rootAssetId } = this.props;
+
+    if (asset && asset.id !== rootAssetId && asset.parentId) {
+      this.props.loadParentRecurse(asset.parentId, rootAssetId);
+    }
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    const {
+      asset,
+      rootAssetId,
+      assets: { all },
+    } = this.props;
+
+    if (
+      asset &&
+      asset.parentId &&
+      !all[asset.parentId] &&
+      asset.id !== rootAssetId
+    ) {
+      this.props.loadParentRecurse(asset.parentId, rootAssetId);
+    }
+
+    if (prevProps.asset && asset && prevProps.asset.id !== asset.id) {
+      this.colorizeNodes();
+    }
 
     this.createGraph();
   }
 
-  componentDidUpdate() {
-    this.createGraph();
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.componentDidMount);
+  }
+
+  get parentIds() {
+    const {
+      assets: { all },
+      asset,
+    } = this.props;
+    const parentIds: number[] = [asset.id];
+    while (all[parentIds[parentIds.length - 1]]) {
+      const { parentId } = all[parentIds[parentIds.length - 1]];
+      if (parentId) {
+        parentIds.push(parentId);
+      } else {
+        break;
+      }
+    }
+    return parentIds;
   }
 
   createGraph = async () => {
@@ -107,7 +200,6 @@ export class AssetViewer extends React.Component<Props, State> {
     const allNewNodes = Object.keys(all).filter(
       (id: string) => !this.displayedNodes[Number(id)]
     );
-    // const currentIds = current.map(el => el.id);
 
     const nodes: Tmp[] = allNewNodes.map((key: string) => {
       const parent = this.displayedNodes[all[key].parentId || all[key].rootId];
@@ -134,7 +226,8 @@ export class AssetViewer extends React.Component<Props, State> {
         el =>
           el.source !== el.target &&
           el.source !== undefined &&
-          el.target !== undefined
+          el.target !== undefined &&
+          !this.displayedLinkIds.includes(el.id)
       );
 
     this.displayedNodes = {
@@ -152,23 +245,55 @@ export class AssetViewer extends React.Component<Props, State> {
     );
     this.displayedLinks = this.displayedLinks.concat(links);
 
+    this.selectiveDisplay();
+  };
+
+  selectiveDisplay = () => {
+    const { asset } = this.props;
+    if (!asset) {
+      return;
+    }
+    const { parentIds } = this;
+
+    const visibleNodes = Object.values(this.displayedNodes).filter(
+      el => el.parentId === asset.id || parentIds.includes(el.id)
+    );
+    visibleNodes.forEach((node: Tmp) => {
+      const el = document.getElementById(`${node.id}`);
+      if (el) {
+        el.setAttribute('style', '');
+      }
+    });
     // Apply the general update pattern to the nodes.
-    this.node = this.node!.data(Object.values(this.displayedNodes), d => d.id);
+    this.node = this.node!.data(visibleNodes, d => d.id);
     this.node.exit().remove();
     this.node = this.node
+      // .on('click', (d: any) => this.onAssetClicked(d.id))
       .enter()
-      .append('circle')
-      .attr('fill', d => d3.scaleOrdinal(d3.schemeCategory10)(d.id))
-      .attr('r', 8)
+      .append('div')
+      .html((d: any) => {
+        return AssetNode(d, d.id === asset.id, d.parentId === asset.id);
+      })
       .merge(this.node);
 
+    const visibleLinks = this.displayedLinks.filter(
+      el =>
+        (el.source.parentId === asset.id || parentIds.includes(el.source.id)) &&
+        (el.target.parentId === asset.id || parentIds.includes(el.target.id))
+    );
+
     // Apply the general update pattern to the links.
-    this.link = this.link!.data(links, d => d.id);
+    this.link = this.link!.data(visibleLinks, d => d.id);
     this.link.exit().remove();
     this.link = this.link
       .enter()
       .append('line')
       .merge(this.link);
+
+    this.link.select('title').remove();
+    this.link.append('title').text((d: any) => d.id);
+
+    this.colorizeNodes();
 
     // const countExtent = d3.extent(nodes, function(d) {
     //   return d.connections;
@@ -188,8 +313,8 @@ export class AssetViewer extends React.Component<Props, State> {
     // }
 
     // Update and restart the simulation.
-    this.simulation!.nodes(Object.values(this.displayedNodes));
-    this.simulation!.force('link', d3.forceLink(this.displayedLinks));
+    this.simulation!.nodes(visibleNodes);
+    this.simulation!.force('link', d3.forceLink(visibleLinks));
     this.simulation!.alpha(0.3).restart();
   };
 
@@ -206,6 +331,7 @@ export class AssetViewer extends React.Component<Props, State> {
     }
 
     function dragended(d: any) {
+      d3.event.sourceEvent.stopPropagation();
       if (!d3.event.active) simulation.alphaTarget(0);
       d.fx = null;
       d.fy = null;
@@ -218,16 +344,21 @@ export class AssetViewer extends React.Component<Props, State> {
       .on('end', dragended);
   };
 
+  onAssetClicked = (id: number) => {
+    this.props.loadAssetChildren(id);
+    this.props.onAssetIdChange(id);
+  };
+
   ticked = () => {
-    this.node!.attr('cx', (d: any) => {
-      return d.x;
+    // const { asset } = this.props;
+    this.node!.attr('style', (d: any) => {
+      return `top:${d.y}px; left:${d.x}px; transform: translate(-50%, -50%);`;
+    });
+    this.node!.on('click', (d: any) => {
+      this.onAssetClicked(d.id);
     })
-      .attr('cy', (d: any) => {
-        return d.y;
-      })
-      .on('click', (d: any) => this.props.loadAssetChildren(d.id))
-      .call(this.drag(this.simulation!))
-      .enter();
+      // @ts-ignore
+      .call(this.drag(this.simulation!));
 
     this.link!.attr('x1', (d: any) => {
       return d.source.x;
@@ -241,29 +372,51 @@ export class AssetViewer extends React.Component<Props, State> {
       .attr('y2', (d: any) => {
         return d.target.y;
       });
+  };
 
-    this.node!.append('title').text((d: any) => d.id);
-    this.link!.append('title').text((d: any) => d.id);
+  colorizeNodes = () => {
+    const { asset } = this.props;
+    this.parentIds.forEach((id: number) => {
+      const el = document.getElementById(`${id}`);
+      if (el) {
+        el.setAttribute('style', 'background: rgba(34, 56, 89, 0.5)');
+      }
+    });
+    if (asset) {
+      const el = document.getElementById(`${asset.id}`);
+      if (el) {
+        el.setAttribute('style', 'background:rgba(125, 40, 0, 0.8)');
+      }
+    }
   };
 
   render() {
     return (
-      <div
+      <Wrapper
         className="grapharea"
         style={{ height: '100%', width: '100%' }}
         ref={this.grapharea}
-      />
+      >
+        <LinkSection id="linkSection" />
+        <AssetSection id="assetSection" />
+      </Wrapper>
     );
   }
 }
 
-// const AssetNode = ({ asset }: { asset: Tmp }) => {
-//   return (
-//     <div>
-//       <p>{asset.name}</p>
-//     </div>
-//   );
-// };
+const AssetNode = (asset: Tmp, isSelf: boolean, isChildren: boolean) => {
+  let color = 'rgba(34, 56, 89, 0.5)';
+  if (isSelf) {
+    color = 'rgba(125, 40, 0, 0.8)';
+  } else if (isChildren) {
+    color = 'rgba(100, 100, 40, 0.5)';
+  }
+  return ReactDOMServer.renderToStaticMarkup(
+    <Node id={`${asset.id}`} color={color}>
+      <p>{asset.name}</p>
+    </Node>
+  );
+};
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
@@ -275,6 +428,7 @@ const mapStateToProps = (state: RootState): StateProps => {
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
+      loadParentRecurse,
       loadAssetChildren,
     },
     dispatch
