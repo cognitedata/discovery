@@ -19,6 +19,7 @@ import { RootState } from '../reducers/index';
 const Wrapper = styled.div`
   height: 100%;
   width: 100%;
+  overflow: hidden;
   position: relative;
 `;
 
@@ -50,6 +51,7 @@ const Node = styled.div<{ color: string }>`
 
 type OwnProps = {
   asset: Asset;
+  topShowing: boolean;
   rootAssetId: number;
   onAssetIdChange: (number: number) => void;
 };
@@ -65,11 +67,11 @@ type Props = StateProps & DispatchProps & OwnProps;
 
 type State = { documentId?: number };
 
-interface Tmp extends ExtendedAsset, d3.SimulationNodeDatum {}
+interface D3Node extends ExtendedAsset, d3.SimulationNodeDatum {}
 
-interface Link extends d3.SimulationLinkDatum<Tmp> {
-  source: Tmp;
-  target: Tmp;
+interface Link extends d3.SimulationLinkDatum<D3Node> {
+  source: D3Node;
+  target: D3Node;
   id: string;
 }
 
@@ -80,7 +82,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
   div?: d3.Selection<HTMLDivElement, any, any, any>;
 
-  displayedNodes: { [key: number]: Tmp } = {};
+  displayedNodes: { [key: number]: D3Node } = {};
 
   displayedLinkIds: string[] = [];
 
@@ -96,8 +98,6 @@ export class AssetViewer extends React.Component<Props, State> {
     super(props);
 
     this.createGraph = debounce(this.createGraph, 200);
-
-    window.addEventListener('resize', this.componentDidMount);
   }
 
   componentDidMount() {
@@ -116,44 +116,89 @@ export class AssetViewer extends React.Component<Props, State> {
 
     this.div = d3.select('#assetSection');
 
-    const {
-      clientHeight: height,
-      clientWidth: width,
-    } = this.grapharea.current!;
+    if (this.grapharea) {
+      const {
+        clientHeight: height,
+        clientWidth: width,
+      } = this.grapharea.current!;
 
-    this.simulation = d3
-      .forceSimulation()
-      .force('link', d3.forceLink().id((d: any) => d.id))
-      .force('charge', d3.forceManyBody().strength(-200))
-      .force('change', d3.forceManyBody())
-      .force('collide', d3.forceCollide(40))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('x', d3.forceX())
-      .force('y', d3.forceY())
-      .on('tick', this.ticked);
+      // @ts-ignore
+      this.div.call(
+        // @ts-ignore
+        d3
+          .zoom()
+          .extent([[0, 0], [width, height]])
+          .scaleExtent([1, 8])
+          .on('zoom', () => {
+            const { transform } = d3.event;
+            this.div!.style(
+              'transform',
+              `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
+            );
+            this.div!.style('transform-origin', '0 0');
+            this.svg!.style(
+              'transform',
+              `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
+            );
+            this.svg!.style('transform-origin', '0 0');
+            // this.link!.attr('transform', d3.event.transform);
+          })
+      );
 
-    this.link = this.svg!.append('g')
-      .attr('stroke', '#999')
-      .attr('stroke-opacity', 0.6)
-      .selectAll('line');
+      this.simulation = d3
+        .forceSimulation()
+        .force('link', d3.forceLink().id((d: any) => d.id))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('change', d3.forceManyBody())
+        .force('collide', d3.forceCollide(40))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('x', d3.forceX())
+        .force('y', d3.forceY())
+        .on('tick', this.ticked);
 
-    this.node = this.div!.selectAll('div');
+      this.link = this.svg!.append('g')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .selectAll('line');
 
-    this.createGraph();
+      this.node = this.div!.selectAll('div');
 
-    const { asset, rootAssetId } = this.props;
+      this.createGraph();
 
-    if (asset && asset.id !== rootAssetId && asset.parentId) {
-      this.props.loadParentRecurse(asset.parentId, rootAssetId);
+      const { asset, rootAssetId } = this.props;
+
+      if (asset && asset.id !== rootAssetId && asset.parentId) {
+        this.props.loadParentRecurse(asset.parentId, rootAssetId);
+      }
     }
   }
 
   componentDidUpdate(prevProps: Props) {
     const {
       asset,
+      topShowing,
       rootAssetId,
       assets: { all },
     } = this.props;
+
+    if (prevProps.topShowing !== topShowing) {
+      console.log('sss');
+      const {
+        clientHeight: height,
+        clientWidth: width,
+      } = this.grapharea.current!;
+
+      this.simulation = d3
+        .forceSimulation()
+        .force('link', d3.forceLink().id((d: any) => d.id))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('change', d3.forceManyBody())
+        .force('collide', d3.forceCollide(40))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('x', d3.forceX())
+        .force('y', d3.forceY())
+        .on('tick', this.ticked);
+    }
 
     if (
       asset &&
@@ -169,10 +214,6 @@ export class AssetViewer extends React.Component<Props, State> {
     }
 
     this.createGraph();
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this.componentDidMount);
   }
 
   get parentIds() {
@@ -201,7 +242,7 @@ export class AssetViewer extends React.Component<Props, State> {
       (id: string) => !this.displayedNodes[Number(id)]
     );
 
-    const nodes: Tmp[] = allNewNodes.map((key: string) => {
+    const nodes: D3Node[] = allNewNodes.map((key: string) => {
       const parent = this.displayedNodes[all[key].parentId || all[key].rootId];
       return Object.create({
         ...all[key],
@@ -233,11 +274,11 @@ export class AssetViewer extends React.Component<Props, State> {
     this.displayedNodes = {
       ...this.displayedNodes,
       ...nodes.reduce(
-        (prev, el: Tmp) => {
+        (prev, el: D3Node) => {
           prev[el.id] = el;
           return prev;
         },
-        {} as { [key: number]: Tmp }
+        {} as { [key: number]: D3Node }
       ),
     };
     this.displayedLinkIds = this.displayedLinkIds.concat(
@@ -258,7 +299,7 @@ export class AssetViewer extends React.Component<Props, State> {
     const visibleNodes = Object.values(this.displayedNodes).filter(
       el => el.parentId === asset.id || parentIds.includes(el.id)
     );
-    visibleNodes.forEach((node: Tmp) => {
+    visibleNodes.forEach((node: D3Node) => {
       const el = document.getElementById(`${node.id}`);
       if (el) {
         el.setAttribute('style', '');
@@ -404,7 +445,7 @@ export class AssetViewer extends React.Component<Props, State> {
   }
 }
 
-const AssetNode = (asset: Tmp, isSelf: boolean, isChildren: boolean) => {
+const AssetNode = (asset: D3Node, isSelf: boolean, isChildren: boolean) => {
   let color = 'rgba(34, 56, 89, 0.5)';
   if (isSelf) {
     color = 'rgba(125, 40, 0, 0.8)';

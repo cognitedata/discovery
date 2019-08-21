@@ -54,7 +54,7 @@ export function searchForAsset(query: string) {
         name: asset.name,
         rootId: asset.rootId,
         description: asset.description,
-        types: asset.metadata!.types,
+        types: [],
         metadata: asset.metadata,
       }));
       if (currentCounter === searchCounter) {
@@ -66,7 +66,7 @@ export function searchForAsset(query: string) {
               name: asset.name,
               rootId: asset.rootId,
               description: asset.description,
-              types: asset.metadata!.types,
+              types: [],
               metadata: asset.metadata,
               parentId: asset.parentId,
             }))
@@ -101,7 +101,7 @@ export function fetchAsset(assetId: number) {
             rootId: asset.rootId,
             description: asset.description,
             parentId: asset.parentId,
-            types: asset.metadata ? asset.metadata!.types : [],
+            types: [],
             metadata: asset.metadata,
           }))
         );
@@ -130,7 +130,7 @@ export function loadAssetChildren(assetId: number) {
             rootId: asset.rootId,
             parentId: asset.parentId,
             description: asset.description,
-            types: asset.metadata!.types,
+            types: [],
             metadata: asset.metadata,
           }))
         );
@@ -163,7 +163,7 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
           rootId: asset.rootId,
           parentId: asset.parentId,
           description: asset.description,
-          types: asset.metadata!.types,
+          types: [],
           metadata: asset.metadata,
         }))
       );
@@ -179,7 +179,6 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
         dispatch(loadParentRecurse(results[0].parentId, rootAssetId));
       }
     } catch (ex) {
-      console.log(ex);
       message.error(`Could not fetch parents.`);
       return;
     }
@@ -208,7 +207,7 @@ export function fetchAssets(assetIds: number[]) {
             rootId: asset.rootId,
             parentId: asset.parentId,
             description: asset.description,
-            types: asset.metadata!.types,
+            types: [],
             metadata: asset.metadata,
           }))
         );

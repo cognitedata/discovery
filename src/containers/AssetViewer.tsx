@@ -145,6 +145,7 @@ export class AssetViewer extends React.Component<Props, State> {
         <AssetNetworkViewer
           rootAssetId={rootAssetId}
           asset={this.getAsset()}
+          topShowing={this.props.show3D || this.props.showPNID}
           onAssetIdChange={(id: number) =>
             this.props.onAssetIdChange(rootAssetId, id)
           }

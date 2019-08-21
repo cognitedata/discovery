@@ -7,6 +7,7 @@ import Loader from './Loader';
 type Props = {
   match: {
     url: string;
+    path: string;
     params: { [key: string]: string };
   };
 };
@@ -20,7 +21,7 @@ class Auth extends React.Component<Props, State> {
     auth: false,
   };
 
-  async componentWillMount() {
+  async componentDidMount() {
     const status = await sdk.login.status();
     const {
       match: {
@@ -66,9 +67,21 @@ class Auth extends React.Component<Props, State> {
               exact
               strict
               from={`${match.url}`}
-              to={`${match.url}/asset/735563410190978`}
+              to={`${match.url}${
+                match.url.endsWith('/') ? '' : '/'
+              }asset/7793176078609329/735563410190978`}
             />
           )}
+          <Route
+            path={`${match.path}/asset/:rootAssetId`}
+            exact
+            component={Main}
+          />
+          <Route
+            path={`${match.path}/asset/:rootAssetId/:assetId`}
+            exact
+            component={Main}
+          />
           <Route component={Main} />
         </Switch>
       </>

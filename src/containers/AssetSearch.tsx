@@ -48,11 +48,16 @@ const moveExactMatchToTop = (list: any[], query: any) => {
 };
 
 type Props = {
-  assetId: number;
+  rootAssetId?: number;
+  assetId?: number;
   location: Location;
   doSearchForAsset: typeof searchForAsset;
   doSetFilters: typeof setFilters;
-  onAssetClick: (id: ExtendedAsset, query?: string) => void;
+  onAssetIdChange: (
+    rootAssetId: number,
+    assetId: number,
+    query?: string
+  ) => void;
   doFetchAssets: typeof fetchAssets;
   events: { items: CogniteEvent[] };
   assets: AssetsState;
@@ -236,7 +241,13 @@ class AssetSearch extends React.Component<Props, State> {
             dataSource={assets}
             renderItem={item => (
               <List.Item
-                onClick={() => this.props.onAssetClick(item, this.state.query)}
+                onClick={() =>
+                  this.props.onAssetIdChange(
+                    this.props.rootAssetId || item.id,
+                    item.id,
+                    this.state.query
+                  )
+                }
                 style={{
                   padding: 10,
                   width: '100%',

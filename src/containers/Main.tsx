@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Layout, Switch } from 'antd';
-import { Route } from 'react-router-dom';
 import { Revision3D } from '@cognite/sdk';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
@@ -19,7 +18,7 @@ import {
   ThreeDModel,
   fetchRevisions,
 } from '../modules/threed';
-import { selectAssets, AssetsState, ExtendedAsset } from '../modules/assets';
+import { selectAssets, AssetsState } from '../modules/assets';
 import { RootState } from '../reducers/index';
 
 // 13FV1234 is useful asset
@@ -90,18 +89,16 @@ class Main extends React.Component<Props, State> {
     }
   }
 
-  onAssetClick = (asset: ExtendedAsset, query?: string) => {
-    const { match, history } = this.props;
+  onAssetIdChange = (rootAssetId: number, assetId: number, query?: string) => {
+    const {
+      match: {
+        params: { tenant },
+      },
+      history,
+    } = this.props;
     history.push({
-      pathname: `${match.url}/asset/${asset.id}`,
-      search: `?query=${query}`,
-    });
-  };
-
-  onAssetIdChange = (rootAssetId: number, assetId: number) => {
-    const { match, history } = this.props;
-    history.push({
-      pathname: `${match.url}/asset/${rootAssetId}/${assetId}`,
+      pathname: `/${tenant}/asset/${rootAssetId}/${assetId}`,
+      search: query ? `?query=${query}` : '',
     });
   };
 
@@ -157,16 +154,16 @@ class Main extends React.Component<Props, State> {
 
   render() {
     let model3D: any;
-    let assetId;
-    if (this.viewer && this.viewer.current) {
-      model3D = this.hasModelForAsset(
-        this.viewer.current!.props.assetId ||
-          this.viewer.current!.props.rootAssetId
-      );
-      ({ assetId } = this.viewer.current!.props);
-    }
+    const {
+      match: {
+        params: { assetId, rootAssetId },
+      },
+      location,
+    } = this.props;
 
-    const { match, location } = this.props;
+    if (this.viewer && this.viewer.current) {
+      model3D = this.hasModelForAsset(assetId || rootAssetId);
+    }
     const assetDrawerWidth = 350;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
@@ -181,9 +178,10 @@ class Main extends React.Component<Props, State> {
               width={250}
             >
               <AssetSearch
+                rootAssetId={rootAssetId && Number(rootAssetId)}
+                assetId={assetId && Number(assetId)}
                 location={location}
-                onAssetClick={this.onAssetClick}
-                assetId={Number(assetId)}
+                onAssetIdChange={this.onAssetIdChange}
               />
             </Sider>
             <Content>
@@ -210,56 +208,23 @@ class Main extends React.Component<Props, State> {
                   />
                 </div>
               </StyledHeader>
-              <Route
-                path={`${match.url}/asset/:rootAssetId`}
-                exact
-                render={props => {
-                  return (
-                    <AssetViewer
-                      rootAssetId={Number(props.match.params.rootAssetId)}
-                      model3D={
-                        model3D
-                          ? {
-                              modelId: model3D.model.id,
-                              revisionId: model3D.revision.id,
-                            }
-                          : undefined
+              <AssetViewer
+                rootAssetId={rootAssetId && Number(rootAssetId)}
+                assetId={assetId && Number(assetId)}
+                model3D={
+                  model3D
+                    ? {
+                        modelId: model3D.model.id,
+                        revisionId: model3D.revision.id,
                       }
-                      show3D={model3D != null && this.state.show3D}
-                      showAssetViewer={this.state.showAssetViewer}
-                      showPNID={this.state.showPNID}
-                      onAssetIdChange={this.onAssetIdChange}
-                      assetDrawerWidth={assetDrawerWidth}
-                      ref={this.viewer}
-                    />
-                  );
-                }}
-              />
-              <Route
-                path={`${match.url}/asset/:rootAssetId/:assetId`}
-                exact
-                render={props => {
-                  return (
-                    <AssetViewer
-                      assetId={Number(props.match.params.assetId)}
-                      rootAssetId={Number(props.match.params.rootAssetId)}
-                      model3D={
-                        model3D
-                          ? {
-                              modelId: model3D.model.id,
-                              revisionId: model3D.revision.id,
-                            }
-                          : undefined
-                      }
-                      show3D={model3D != null && this.state.show3D}
-                      showAssetViewer={this.state.showAssetViewer}
-                      showPNID={this.state.showPNID}
-                      onAssetIdChange={this.onAssetIdChange}
-                      assetDrawerWidth={assetDrawerWidth}
-                      ref={this.viewer}
-                    />
-                  );
-                }}
+                    : undefined
+                }
+                show3D={model3D != null && this.state.show3D}
+                showAssetViewer={this.state.showAssetViewer}
+                showPNID={this.state.showPNID}
+                onAssetIdChange={this.onAssetIdChange}
+                assetDrawerWidth={assetDrawerWidth}
+                ref={this.viewer}
               />
             </Content>
           </Layout>
