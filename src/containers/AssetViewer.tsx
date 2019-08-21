@@ -7,6 +7,7 @@ import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import AssetDrawer from './AssetDrawer';
+import AssetNetworkViewer from './AssetNetworkViewer';
 import {
   fetchMappingsFromAssetId,
   selectAssetMappings,
@@ -16,20 +17,34 @@ import { RootState } from '../reducers/index';
 
 const ViewerContainer = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   width: 100%;
   height: 100%;
+
+  && .split {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    flex: 2;
+  }
+  && .bottom {
+    flex: 1;
+    width: 100%;
+  }
 `;
+
 type OwnProps = {
   assetDrawerWidth: number;
-  assetId: number;
+  assetId?: number;
+  rootAssetId: number;
   model3D?: {
     modelId: number;
     revisionId: number;
   };
   show3D: boolean;
   showPNID: boolean;
-  onAssetIdChange: (assetId: number) => void;
+  showAssetViewer: boolean;
+  onAssetIdChange: (rootAssetId: number, assetId: number) => void;
 };
 type StateProps = {
   assets: AssetsState;
@@ -56,57 +71,86 @@ export class AssetViewer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
-    this.props.doFetchFiles(this.props.assetId);
-    this.props.doFetchAsset(this.props.assetId);
+    this.props.doFetchFiles(this.assetId);
+    this.props.doFetchAsset(this.assetId);
     this.getNodeId(true);
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.assetId !== this.props.assetId) {
-      this.props.doFetchFiles(this.props.assetId);
-      this.props.doFetchAsset(this.props.assetId);
+    if (prevProps.assetId !== this.assetId) {
+      this.props.doFetchFiles(this.assetId);
+      this.props.doFetchAsset(this.assetId);
     }
     this.getNodeId(true);
   }
 
+  get assetId() {
+    return this.props.assetId || this.props.rootAssetId;
+  }
+
   getNodeId = (fetchIfMissing: boolean) => {
-    const { assetId, assetMappings } = this.props;
-    if (assetMappings.byAssetId[assetId]) {
-      const mapping = assetMappings.byAssetId[assetId];
+    const { assetMappings } = this.props;
+    if (assetMappings.byAssetId[this.assetId]) {
+      const mapping = assetMappings.byAssetId[this.assetId];
       return mapping.nodeId;
     }
 
     if (fetchIfMissing && this.props.model3D) {
       const { modelId, revisionId } = this.props.model3D;
-      this.props.doFetchMappingsFromAssetId(modelId, revisionId, assetId);
+      this.props.doFetchMappingsFromAssetId(modelId, revisionId, this.assetId);
     }
 
     return null;
   };
 
   getAsset = () => {
-    const { assets, assetId } = this.props;
+    const { assets } = this.props;
 
-    return assets.all[assetId];
+    return assets.all[this.assetId];
   };
 
   render3D = () => {
+    const { rootAssetId } = this.props;
     const nodeId = this.getNodeId(false);
     return (
       <Model3D
         modelId={this.props.model3D!.modelId}
         revisionId={this.props.model3D!.revisionId}
         nodeId={nodeId}
-        onAssetIdChange={this.props.onAssetIdChange}
+        onAssetIdChange={(id: number) =>
+          this.props.onAssetIdChange(rootAssetId, id)
+        }
         cache={this.cache}
       />
     );
   };
 
   renderPNID = () => {
+    const { rootAssetId } = this.props;
     const asset = this.getAsset();
     return (
-      <PNIDViewer asset={asset} onAssetIdChange={this.props.onAssetIdChange} />
+      <PNIDViewer
+        asset={asset}
+        onAssetIdChange={(id: number) =>
+          this.props.onAssetIdChange(rootAssetId, id)
+        }
+      />
+    );
+  };
+
+  renderAssetNetwork = () => {
+    const { rootAssetId } = this.props;
+    return (
+      <div className="bottom">
+        <AssetNetworkViewer
+          rootAssetId={rootAssetId}
+          asset={this.getAsset()}
+          topShowing={this.props.show3D || this.props.showPNID}
+          onAssetIdChange={(id: number) =>
+            this.props.onAssetIdChange(rootAssetId, id)
+          }
+        />
+      </div>
     );
   };
 
@@ -118,8 +162,13 @@ export class AssetViewer extends React.Component<Props, State> {
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
           <ViewerContainer>
-            {this.props.show3D && this.render3D()}
-            {this.props.showPNID && this.renderPNID()}
+            {(this.props.show3D || this.props.showPNID) && (
+              <div className="split">
+                {this.props.show3D && this.render3D()}
+                {this.props.showPNID && this.renderPNID()}
+              </div>
+            )}
+            {this.props.showAssetViewer && this.renderAssetNetwork()}
           </ViewerContainer>
           {asset != null && (
             <AssetDrawer width={assetDrawerWidth} asset={asset} />

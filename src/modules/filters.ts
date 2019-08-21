@@ -87,7 +87,7 @@ const applyEventFilter = (
 ) => {
   const selectedEvents = selectEventList(state).items;
   const eventsForThisAsset = selectedEvents.filter(
-    event => event.assetIds!.indexOf(asset.id) !== -1
+    event => event.assetIds && event.assetIds.indexOf(asset.id) !== -1
   );
   if (eventsForThisAsset.length === 0) {
     // Did not find any events for this asset
