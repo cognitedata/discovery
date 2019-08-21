@@ -182,7 +182,6 @@ export class AssetViewer extends React.Component<Props, State> {
     } = this.props;
 
     if (prevProps.topShowing !== topShowing) {
-      console.log('sss');
       const {
         clientHeight: height,
         clientWidth: width,
