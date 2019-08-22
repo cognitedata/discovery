@@ -95,12 +95,14 @@ type State = {
   activeCollapsed?: any[];
   showTimeseries?: { id: number; name: string };
   showEditHierarchy: boolean;
+  disableEditHierarchy: boolean;
 };
 
 class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     showAddTimeseries: false,
     showEditHierarchy: false,
+    disableEditHierarchy: true,
     showAddTypes: false,
   };
 
@@ -108,6 +110,7 @@ class AssetDrawer extends React.Component<Props, State> {
     const { asset, doFetchTimeseries, doFetchEvents } = this.props;
     doFetchTimeseries(asset.id);
     doFetchEvents(asset.id);
+    this.determineAssetEditing();
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -115,6 +118,7 @@ class AssetDrawer extends React.Component<Props, State> {
     if (prevProps.asset !== asset) {
       doFetchTimeseries(asset.id);
       doFetchEvents(asset.id);
+      this.determineAssetEditing();
     }
   }
 
@@ -255,6 +259,14 @@ class AssetDrawer extends React.Component<Props, State> {
   onCollapseChange = (change: string | string[]) => {
     this.setState({ activeCollapsed: change as string[] });
   };
+
+  determineAssetEditing() {
+    this.setState({
+      disableEditHierarchy: !!(
+        this.props.asset.metadata && this.props.asset.metadata!.SOURCE
+      ),
+    });
+  }
 
   renderThreeD = (node: CurrentNode) => {
     if (node === null || node === undefined) {
@@ -414,6 +426,7 @@ class AssetDrawer extends React.Component<Props, State> {
           }
           <EditHieraryToggle>
             <Switch
+              disabled={this.state.disableEditHierarchy}
               onChange={checked =>
                 this.setState({ showEditHierarchy: checked })
               }
