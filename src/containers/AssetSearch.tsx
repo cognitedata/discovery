@@ -247,7 +247,9 @@ class AssetSearch extends React.Component<Props, State> {
     let assets: ExtendedAsset[] = [];
     if (this.props.rootAssetId) {
       assets = moveExactMatchToTop(
-        this.props.filteredSearch.items,
+        this.props.filteredSearch.items.filter(
+          el => el.rootId === this.props.rootAssetId
+        ),
         this.state.query && this.state.query.trim()
       );
     } else {
