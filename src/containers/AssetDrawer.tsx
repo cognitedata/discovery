@@ -10,6 +10,7 @@ import {
   Popconfirm,
   Descriptions,
   Switch,
+  message,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -308,7 +309,14 @@ class AssetDrawer extends React.Component<Props, State> {
     const { project } = sdk;
     return (
       <Panel header={<span>Edit Asset Hierarchy</span>} key="edit">
-        <Button type="primary">Change Asset Parent</Button>
+        <Button type="primary" onClick={() => message.info('Coming soon!')}>
+          Add Child Asset
+        </Button>
+        <br />
+        <br />
+        <Button type="primary" onClick={() => message.info('Coming soon!')}>
+          Change Asset Parent
+        </Button>
         <br />
         <br />
         <Popconfirm
