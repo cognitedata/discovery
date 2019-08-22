@@ -9,6 +9,7 @@ import {
   Icon,
   Popconfirm,
   Descriptions,
+  Switch,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -40,11 +41,18 @@ import EventPreview from '../components/EventPreview';
 import TimeseriesPreview from '../components/TimeseriesPreview';
 import { createAssetTitle } from '../utils/utils';
 import { selectThreeD, CurrentNode, ThreeDState } from '../modules/threed';
-import { ExtendedAsset, fetchAsset } from '../modules/assets';
+import { ExtendedAsset, fetchAsset, deleteAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
 const { Panel } = Collapse;
+
+const EditHieraryToggle = styled.div`
+  margin-top: 16px;
+  span {
+    margin-left: 8px;
+  }
+`;
 
 const SpinContainer = styled.div`
   display: flex;
@@ -63,20 +71,20 @@ const HeaderWithButton = styled.div`
 type OrigProps = {
   asset: ExtendedAsset;
   width: number;
+  onAssetIdChange: (id?: number) => void;
 };
 
 type Props = {
-  asset: ExtendedAsset;
   doFetchTimeseries: typeof fetchTimeseries;
   doFetchEvents: typeof fetchEvents;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   doRemoveTypeFromAsset: typeof removeTypeFromAsset;
+  deleteAsset: typeof deleteAsset;
   timeseries: TimeseriesState;
   events: EventsAndTypes;
   threed: ThreeDState;
   types: TypesState;
-  width: number;
-};
+} & OrigProps;
 
 type State = {
   showAddTypes: boolean;
@@ -85,11 +93,13 @@ type State = {
   asset?: ExtendedAsset;
   activeCollapsed?: any[];
   showTimeseries?: { id: number; name: string };
+  showEditHierarchy: boolean;
 };
 
 class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     showAddTimeseries: false,
+    showEditHierarchy: false,
     showAddTypes: false,
   };
 
@@ -294,6 +304,28 @@ class AssetDrawer extends React.Component<Props, State> {
     );
   };
 
+  renderEdit = (asset: ExtendedAsset) => {
+    const { project } = sdk;
+    return (
+      <Panel header={<span>Edit Asset Hierarchy</span>} key="edit">
+        <Button type="primary">Change Asset Parent</Button>
+        <br />
+        <br />
+        <Popconfirm
+          title="Are you sure you want to remove this asset and all its children?"
+          onConfirm={() => {
+            this.props.deleteAsset(asset.id);
+            this.props.onAssetIdChange(asset.parentId);
+          }}
+          okText={`Yes (deleteing for tenant ${project})`}
+          cancelText="No"
+        >
+          <Button type="danger">Delete (with Children)</Button>
+        </Popconfirm>
+      </Panel>
+    );
+  };
+
   render() {
     const { asset } = this.props;
     const {
@@ -369,8 +401,17 @@ class AssetDrawer extends React.Component<Props, State> {
               {this.renderTimeseries(asset, timeseries)}
               {this.renderTypes(asset, types)}
               {this.renderEvents(this.props.events.items)}
+              {this.state.showEditHierarchy && this.renderEdit(asset)}
             </Collapse>
           }
+          <EditHieraryToggle>
+            <Switch
+              onChange={checked =>
+                this.setState({ showEditHierarchy: checked })
+              }
+            />
+            <span>Hierarchy Editing</span>
+          </EditHieraryToggle>
         </Drawer>
       </>
     );
@@ -391,6 +432,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doFetchTimeseries: fetchTimeseries,
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
+      deleteAsset,
       doRemoveTypeFromAsset: removeTypeFromAsset,
       doFetchAsset: fetchAsset,
     },

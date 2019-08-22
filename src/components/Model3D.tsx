@@ -14,7 +14,7 @@ import {
   fetchMappingsFromAssetId,
   AssetMappingState,
 } from '../modules/assetmappings';
-import { selectFilteredSearch } from '../modules/filters';
+import { selectFilteredAssets } from '../modules/filters';
 import { RootState } from '../reducers/index';
 import { ExtendedAsset } from '../modules/assets';
 
@@ -176,6 +176,9 @@ class Model3D extends React.Component<Props, State> {
       this.selectNode(nodeId, true, 0);
     }
 
+    if (!this.model) {
+      return;
+    }
     // TODO, this is not valid...
     // @ts-ignore
     // eslint-disable-next-line no-underscore-dangle
@@ -359,7 +362,7 @@ class Model3D extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     assetMappings: selectAssetMappings(state),
-    filteredSearch: selectFilteredSearch(state),
+    filteredSearch: selectFilteredAssets(state),
   };
 };
 

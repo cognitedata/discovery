@@ -44,7 +44,7 @@ type OwnProps = {
   show3D: boolean;
   showPNID: boolean;
   showAssetViewer: boolean;
-  onAssetIdChange: (rootAssetId: number, assetId: number) => void;
+  onAssetIdChange: (rootAssetId?: number, assetId?: number) => void;
 };
 type StateProps = {
   assets: AssetsState;
@@ -71,13 +71,15 @@ export class AssetViewer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
-    this.props.doFetchFiles(this.assetId);
-    this.props.doFetchAsset(this.assetId);
-    this.getNodeId(true);
+    if (this.assetId) {
+      this.props.doFetchFiles(this.assetId);
+      this.props.doFetchAsset(this.assetId);
+      this.getNodeId(true);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.assetId !== this.assetId) {
+    if (prevProps.assetId !== this.assetId && this.assetId) {
       this.props.doFetchFiles(this.assetId);
       this.props.doFetchAsset(this.assetId);
     }
@@ -157,6 +159,7 @@ export class AssetViewer extends React.Component<Props, State> {
   render() {
     const asset = this.getAsset();
     const { assetDrawerWidth } = this.props;
+    const { rootAssetId } = this.props;
 
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
@@ -171,7 +174,13 @@ export class AssetViewer extends React.Component<Props, State> {
             {this.props.showAssetViewer && this.renderAssetNetwork()}
           </ViewerContainer>
           {asset != null && (
-            <AssetDrawer width={assetDrawerWidth} asset={asset} />
+            <AssetDrawer
+              width={assetDrawerWidth}
+              asset={asset}
+              onAssetIdChange={(id?: number) =>
+                this.props.onAssetIdChange(rootAssetId, id)
+              }
+            />
           )}
         </div>
       </div>

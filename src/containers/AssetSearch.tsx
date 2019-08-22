@@ -9,6 +9,7 @@ import { RangePickerValue } from 'antd/lib/date-picker/interface';
 import { CogniteEvent } from '@cognite/sdk';
 import {
   fetchAssets,
+  fetchRootAssets,
   searchForAsset,
   selectAssets,
   AssetsState,
@@ -17,10 +18,11 @@ import {
 import { selectEventList } from '../modules/events';
 import {
   setFilters,
-  selectFilteredSearch,
+  selectFilteredAssets,
   LocationFilter,
   FilterOptions,
   EventFilter,
+  selectRootAssets,
 } from '../modules/filters';
 import { createAssetTitle } from '../utils/utils';
 import { RootState } from '../reducers/index';
@@ -52,6 +54,7 @@ type Props = {
   assetId?: number;
   location: Location;
   doSearchForAsset: typeof searchForAsset;
+  fetchRootAssets: typeof fetchRootAssets;
   doSetFilters: typeof setFilters;
   onAssetIdChange: (
     rootAssetId: number,
@@ -62,6 +65,7 @@ type Props = {
   events: { items: CogniteEvent[] };
   assets: AssetsState;
   filteredSearch: { items: ExtendedAsset[] };
+  rootAssets: { items: ExtendedAsset[] };
 };
 
 type State = {
@@ -93,10 +97,14 @@ class AssetSearch extends React.Component<Props, State> {
       this.props.doSearchForAsset(query as string);
       this.setState({ query: Array.isArray(query) ? query[0] : query });
     }
+
+    if (!this.props.rootAssetId) {
+      this.checkAndFetchRootAssets();
+    }
   }
 
   componentDidUpdate(prevProps: Props, prevState: State) {
-    if (prevProps.events !== this.props.events) {
+    if (prevProps.events.items.length !== this.props.events.items.length) {
       // Find unique list of assetIds
       const assetIds: number[] = Array.from(
         this.props.events.items.reduce(
@@ -130,7 +138,15 @@ class AssetSearch extends React.Component<Props, State> {
 
       this.props.doSetFilters(filters);
     }
+
+    if (!this.props.rootAssetId) {
+      this.checkAndFetchRootAssets();
+    }
   }
+
+  checkAndFetchRootAssets = () => {
+    this.props.fetchRootAssets();
+  };
 
   onAreaChange = (change: string) => {
     if (change === 'none') {
@@ -228,10 +244,15 @@ class AssetSearch extends React.Component<Props, State> {
   }
 
   renderSearchResults() {
-    const assets = moveExactMatchToTop(
-      this.props.filteredSearch.items,
-      this.state.query && this.state.query.trim()
-    );
+    let assets: ExtendedAsset[] = [];
+    if (this.props.rootAssetId) {
+      assets = moveExactMatchToTop(
+        this.props.filteredSearch.items,
+        this.state.query && this.state.query.trim()
+      );
+    } else {
+      assets = this.props.rootAssets.items;
+    }
     return (
       <>
         {assets && (
@@ -440,7 +461,8 @@ const mapStateToProps = (state: RootState) => {
   return {
     assets: selectAssets(state),
     events: selectEventList(state),
-    filteredSearch: selectFilteredSearch(state),
+    filteredSearch: selectFilteredAssets(state),
+    rootAssets: selectRootAssets(state),
   };
 };
 
@@ -450,6 +472,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doSearchForAsset: searchForAsset,
       doFetchAssets: fetchAssets,
       doSetFilters: setFilters,
+      fetchRootAssets,
     },
     dispatch
   );

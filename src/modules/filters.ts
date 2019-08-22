@@ -154,7 +154,7 @@ const applyFilters = (state: RootState, asset: Asset) => {
  *
  * @param state reducer state
  */
-export const selectFilteredSearch = (state: RootState) => {
+export const selectFilteredAssets = (state: RootState) => {
   let assets = selectAssets(state).current;
 
   if (assets.length === 0) {
@@ -165,6 +165,26 @@ export const selectFilteredSearch = (state: RootState) => {
   }
 
   const items = assets.filter((asset: Asset) => applyFilters(state, asset));
+
+  return { items };
+};
+
+/**
+ * Selects the root assets only
+ *
+ * @param state reducer state
+ */
+export const selectRootAssets = (state: RootState) => {
+  let assets = selectAssets(state).current;
+
+  if (assets.length === 0) {
+    // If we don't have a search result, use all cached assets and filter on events instead
+    assets = Object.keys(selectAssets(state).all).map(
+      assetId => selectAssets(state).all[assetId]
+    );
+  }
+
+  const items = assets.filter((asset: Asset) => asset.id === asset.rootId);
 
   return { items };
 };

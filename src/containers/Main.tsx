@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch } from 'antd';
+import { Layout, Switch, Button } from 'antd';
 import { Revision3D } from '@cognite/sdk';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
@@ -89,17 +89,35 @@ class Main extends React.Component<Props, State> {
     }
   }
 
-  onAssetIdChange = (rootAssetId: number, assetId: number, query?: string) => {
+  onAssetIdChange = (
+    rootAssetId?: number,
+    assetId?: number,
+    query?: string
+  ) => {
     const {
       match: {
         params: { tenant },
       },
       history,
     } = this.props;
-    history.push({
-      pathname: `/${tenant}/asset/${rootAssetId}/${assetId}`,
-      search: query ? `?query=${query}` : '',
-    });
+    if (rootAssetId) {
+      if (assetId) {
+        history.push({
+          pathname: `/${tenant}/asset/${rootAssetId}/${assetId}`,
+          search: query ? `?query=${query}` : '',
+        });
+      } else {
+        history.push({
+          pathname: `/${tenant}/asset/${rootAssetId}/${rootAssetId}`,
+          search: query ? `?query=${query}` : '',
+        });
+      }
+    } else {
+      history.push({
+        pathname: `/${tenant}`,
+        search: query ? `?query=${query}` : '',
+      });
+    }
   };
 
   on3DVisibleChange = (visible: boolean) => {
@@ -177,6 +195,9 @@ class Main extends React.Component<Props, State> {
               }}
               width={250}
             >
+              <Button type="primary" onClick={() => this.onAssetIdChange()}>
+                Back to Root Assets
+              </Button>
               <AssetSearch
                 rootAssetId={rootAssetId && Number(rootAssetId)}
                 assetId={assetId && Number(assetId)}

@@ -12,6 +12,7 @@ import { sdk } from '../index';
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
+export const DELETE_ASSETS = 'assets/DELETE_ASSETS';
 
 export interface ExtendedAsset extends Asset {
   rootId: number;
@@ -22,10 +23,14 @@ export interface ExtendedAsset extends Asset {
 interface AddAction extends Action<typeof ADD_ASSETS> {
   payload: { items: { [key: string]: ExtendedAsset } };
 }
+interface DeleteAction extends Action<typeof DELETE_ASSETS> {
+  payload: { assetId: number };
+}
+
 interface SetAction extends Action<typeof SET_ASSETS> {
   payload: { items: ExtendedAsset[] };
 }
-type AssetAction = AddAction | SetAction;
+type AssetAction = AddAction | SetAction | DeleteAction;
 
 let searchCounter = 0;
 
@@ -115,6 +120,45 @@ export function fetchAsset(assetId: number) {
     requestedAssetIds[assetId] = false;
   };
 }
+
+export function fetchRootAssets() {
+  return async (dispatch: Dispatch) => {
+    // Skip if we did it before
+    if (requestedAssetIds.root) {
+      return;
+    }
+    requestedAssetIds.root = true;
+
+    try {
+      const { items: results } = await sdk.assets.list({
+        filter: {
+          root: true,
+        },
+      });
+
+      if (results) {
+        const items = arrayToObjectById(
+          results.map(asset => ({
+            id: asset.id,
+            name: asset.name,
+            rootId: asset.rootId,
+            description: asset.description,
+            parentId: asset.parentId,
+            types: [],
+            metadata: asset.metadata,
+          }))
+        );
+
+        dispatch({ type: ADD_ASSETS, payload: { items } });
+      }
+    } catch (ex) {
+      message.error(`Could not fetch root assets.`);
+      return;
+    }
+    requestedAssetIds.root = false;
+  };
+}
+
 export function loadAssetChildren(assetId: number) {
   return async (dispatch: Dispatch) => {
     try {
@@ -174,7 +218,7 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
       if (
         results.length > 0 &&
         results[0].parentId &&
-        results[0].parentId !== rootAssetId
+        results[0].id !== rootAssetId
       ) {
         dispatch(loadParentRecurse(results[0].parentId, rootAssetId));
       }
@@ -219,6 +263,21 @@ export function fetchAssets(assetIds: number[]) {
     }
   };
 }
+export function deleteAsset(assetId: number) {
+  return async (dispatch: Dispatch<DeleteAction>) => {
+    try {
+      const results = await sdk.assets.delete([{ id: assetId }], {
+        recursive: true,
+      });
+
+      if (results) {
+        dispatch({ type: DELETE_ASSETS, payload: { assetId } });
+      }
+    } catch (ex) {
+      message.error(`Could not delete asset with children.`);
+    }
+  };
+}
 
 // Reducer
 export interface AssetsState {
@@ -242,6 +301,14 @@ export default function assets(
     }
     case ADD_ASSETS: {
       const all = { ...state.all, ...action.payload.items };
+      return {
+        ...state,
+        all,
+      };
+    }
+    case DELETE_ASSETS: {
+      const all = { ...state.all };
+      delete all[action.payload.assetId];
       return {
         ...state,
         all,

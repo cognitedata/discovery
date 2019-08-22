@@ -147,7 +147,13 @@ export class AssetViewer extends React.Component<Props, State> {
 
       this.simulation = d3
         .forceSimulation()
-        .force('link', d3.forceLink().id((d: any) => d.id))
+        .force(
+          'link',
+          d3
+            .forceLink()
+            .distance(1000)
+            .id((d: any) => d.id)
+        )
         .force('charge', d3.forceManyBody().strength(-200))
         .force('change', d3.forceManyBody())
         .force('collide', d3.forceCollide(40))
@@ -189,7 +195,13 @@ export class AssetViewer extends React.Component<Props, State> {
 
       this.simulation = d3
         .forceSimulation()
-        .force('link', d3.forceLink().id((d: any) => d.id))
+        .force(
+          'link',
+          d3
+            .forceLink()
+            .distance(1000)
+            .id((d: any) => d.id)
+        )
         .force('charge', d3.forceManyBody().strength(-200))
         .force('change', d3.forceManyBody())
         .force('collide', d3.forceCollide(40))
@@ -208,8 +220,12 @@ export class AssetViewer extends React.Component<Props, State> {
       this.props.loadParentRecurse(asset.parentId, rootAssetId);
     }
 
-    if (prevProps.asset && asset && prevProps.asset.id !== asset.id) {
+    if (
+      (!prevProps.asset && asset) ||
+      (prevProps.asset && asset && prevProps.asset.id !== asset.id)
+    ) {
       this.colorizeNodes();
+      this.props.loadAssetChildren(asset.id);
     }
 
     this.createGraph();
@@ -240,6 +256,13 @@ export class AssetViewer extends React.Component<Props, State> {
     const allNewNodes = Object.keys(all).filter(
       (id: string) => !this.displayedNodes[Number(id)]
     );
+
+    // Remove the unneccesary ones
+    Object.keys(this.displayedNodes).forEach((id: string) => {
+      if (!all[Number(id)]) {
+        delete this.displayedNodes[Number(id)];
+      }
+    });
 
     const nodes: D3Node[] = allNewNodes.map((key: string) => {
       const parent = this.displayedNodes[all[key].parentId || all[key].rootId];
@@ -289,14 +312,18 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   selectiveDisplay = () => {
-    const { asset } = this.props;
+    const {
+      asset,
+      assets: { all },
+    } = this.props;
     if (!asset) {
       return;
     }
     const { parentIds } = this;
 
     const visibleNodes = Object.values(this.displayedNodes).filter(
-      el => el.parentId === asset.id || parentIds.includes(el.id)
+      el =>
+        all[el.id] && (el.parentId === asset.id || parentIds.includes(el.id))
     );
     visibleNodes.forEach((node: D3Node) => {
       const el = document.getElementById(`${node.id}`);
@@ -308,7 +335,6 @@ export class AssetViewer extends React.Component<Props, State> {
     this.node = this.node!.data(visibleNodes, d => d.id);
     this.node.exit().remove();
     this.node = this.node
-      // .on('click', (d: any) => this.onAssetClicked(d.id))
       .enter()
       .append('div')
       .html((d: any) => {
@@ -385,7 +411,7 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   onAssetClicked = (id: number) => {
-    this.props.loadAssetChildren(id);
+    // this.props.loadAssetChildren(id);
     this.props.onAssetIdChange(id);
   };
 
