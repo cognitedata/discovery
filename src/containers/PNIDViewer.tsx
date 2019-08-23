@@ -85,8 +85,18 @@ class PNIDViewer extends React.Component<Props, State> {
     this.searchAndSelectAssetName(name);
   };
 
-  searchAndSelectAssetName = async (name: string) => {
+  searchAndSelectAssetName = async (nameString: string) => {
     let asset;
+
+    let name = nameString;
+
+    if (name.indexOf('<tag>') > -1) {
+      const startingLocation = name.indexOf('<tag>') + 5;
+      name = name.slice(
+        startingLocation,
+        name.indexOf('</tag>', startingLocation)
+      );
+    }
 
     const matches = Object.keys(this.props.assets.all)
       .map(id => this.props.assets.all[id])

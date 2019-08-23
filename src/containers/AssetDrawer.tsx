@@ -392,6 +392,13 @@ class AssetDrawer extends React.Component<Props, State> {
             timeseries={timeseries}
           />
         )}
+        {/* {asset != null && showAddChild && (
+          <AddTimeseries
+            assetId={asset.id}
+            onClose={this.onAddClose}
+            timeseries={timeseries}
+          />
+        )} */}
         {showEvent != null && (
           <EventPreview eventId={showEvent} onClose={this.onAddClose} />
         )}
