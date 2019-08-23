@@ -1,7 +1,7 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
-import { Asset } from '@cognite/sdk';
+import { Asset, ExternalAssetItem } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
@@ -188,6 +188,7 @@ export function loadAssetChildren(assetId: number) {
     }
   };
 }
+
 export function loadParentRecurse(assetId: number, rootAssetId: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     // Skip if we did it before
@@ -263,6 +264,33 @@ export function fetchAssets(assetIds: number[]) {
     }
   };
 }
+
+export function createNewAsset(newAssets: ExternalAssetItem) {
+  return async (dispatch: Dispatch) => {
+    try {
+      const results = await sdk.assets.create([newAssets]);
+
+      if (results) {
+        const items = arrayToObjectById(
+          results.map(asset => ({
+            id: asset.id,
+            name: asset.name,
+            rootId: asset.rootId,
+            parentId: asset.parentId,
+            description: asset.description,
+            types: [],
+            metadata: asset.metadata,
+          }))
+        );
+
+        dispatch({ type: ADD_ASSETS, payload: { items } });
+      }
+    } catch (ex) {
+      message.error(`Could not add assets.`);
+    }
+  };
+}
+
 export function deleteAsset(assetId: number) {
   return async (dispatch: Dispatch<DeleteAction>) => {
     try {

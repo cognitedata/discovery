@@ -45,6 +45,7 @@ import { selectThreeD, CurrentNode, ThreeDState } from '../modules/threed';
 import { ExtendedAsset, fetchAsset, deleteAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
+import AddChildAsset from './AddChildAsset';
 
 const { Panel } = Collapse;
 
@@ -88,6 +89,7 @@ type Props = {
 } & OrigProps;
 
 type State = {
+  showAddChild: boolean;
   showAddTypes: boolean;
   showAddTimeseries: boolean;
   showEvent?: number;
@@ -100,6 +102,7 @@ type State = {
 
 class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
+    showAddChild: false,
     showAddTimeseries: false,
     showEditHierarchy: false,
     disableEditHierarchy: true,
@@ -138,11 +141,12 @@ class AssetDrawer extends React.Component<Props, State> {
     event.stopPropagation();
   };
 
-  onAddClose = () => {
+  onModalClose = () => {
     this.setState({
       showAddTimeseries: false,
       showEvent: undefined,
       showTimeseries: undefined,
+      showAddChild: false,
       showAddTypes: false,
     });
   };
@@ -321,7 +325,10 @@ class AssetDrawer extends React.Component<Props, State> {
     const { project } = sdk;
     return (
       <Panel header={<span>Edit Asset Hierarchy</span>} key="edit">
-        <Button type="primary" onClick={() => message.info('Coming soon!')}>
+        <Button
+          type="primary"
+          onClick={() => this.setState({ showAddChild: true })}
+        >
           Add Child Asset
         </Button>
         <br />
@@ -351,8 +358,9 @@ class AssetDrawer extends React.Component<Props, State> {
     const {
       showTimeseries,
       showEvent,
-      showAddTimeseries = false,
-      showAddTypes = false,
+      showAddChild,
+      showAddTimeseries,
+      showAddTypes,
     } = this.state;
 
     const timeseries = this.props.timeseries.items
@@ -381,31 +389,31 @@ class AssetDrawer extends React.Component<Props, State> {
           <AddTypes
             assetId={asset.id}
             asset={asset}
-            onClose={this.onAddClose}
+            onClose={this.onModalClose}
             types={allTypes}
           />
         )}
         {asset != null && showAddTimeseries && (
           <AddTimeseries
             assetId={asset.id}
-            onClose={this.onAddClose}
+            onClose={this.onModalClose}
             timeseries={timeseries}
           />
         )}
-        {/* {asset != null && showAddChild && (
-          <AddTimeseries
+        {asset != null && showAddChild && (
+          <AddChildAsset
             assetId={asset.id}
-            onClose={this.onAddClose}
-            timeseries={timeseries}
+            asset={asset}
+            onClose={this.onModalClose}
           />
-        )} */}
+        )}
         {showEvent != null && (
-          <EventPreview eventId={showEvent} onClose={this.onAddClose} />
+          <EventPreview eventId={showEvent} onClose={this.onModalClose} />
         )}
         {showTimeseries != null && (
           <TimeseriesPreview
             timeseries={{ id: showTimeseries.id, name: showTimeseries.name }}
-            onClose={this.onAddClose}
+            onClose={this.onModalClose}
           />
         )}
         <Drawer
