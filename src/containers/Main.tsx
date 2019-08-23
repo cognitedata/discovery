@@ -27,11 +27,12 @@ const { Content, Header, Sider } = Layout;
 const StyledHeader = styled(Header)`
   && {
     background-color: rgba(0, 0, 0, 0);
-    float: right;
-    position: fixed;
-    right: '0';
-    top: '0';
     z-index: 100;
+    padding-left: 24px;
+    background: #343434;
+  }
+  && button {
+    margin-right: 12px;
   }
 `;
 
@@ -235,29 +236,33 @@ class Main extends React.Component<Props, State> {
                 onAssetIdChange={this.onAssetIdChange}
               />
             </Sider>
-            <Content>
+            <Content
+              style={{
+                display: 'flex',
+                height: '100vh',
+                flexDirection: 'column',
+              }}
+            >
               <StyledHeader>
-                <div style={{ paddingRight: assetDrawerWidth - 30 }}>
-                  <Switch
-                    checked={model3D != null && this.state.show3D}
-                    checkedChildren="3D"
-                    unCheckedChildren="3D"
-                    onChange={this.on3DVisibleChange}
-                    disabled={model3D == null}
-                  />
-                  <Switch
-                    checked={this.state.showPNID}
-                    checkedChildren="P&ID"
-                    unCheckedChildren="P&ID"
-                    onChange={this.onPNIDVisibleChange}
-                  />
-                  <Switch
-                    checked={this.state.showAssetViewer}
-                    checkedChildren="Asset Network Viewer"
-                    unCheckedChildren="Asset Network Viewer"
-                    onChange={this.onAssetViewerChange}
-                  />
-                </div>
+                <Switch
+                  checked={model3D != null && this.state.show3D}
+                  checkedChildren="3D"
+                  unCheckedChildren="3D"
+                  onChange={this.on3DVisibleChange}
+                  disabled={model3D == null}
+                />
+                <Switch
+                  checked={this.state.showPNID}
+                  checkedChildren="P&ID"
+                  unCheckedChildren="P&ID"
+                  onChange={this.onPNIDVisibleChange}
+                />
+                <Switch
+                  checked={this.state.showAssetViewer}
+                  checkedChildren="Asset Network Viewer"
+                  unCheckedChildren="Asset Network Viewer"
+                  onChange={this.onAssetViewerChange}
+                />
               </StyledHeader>
               <AssetViewer
                 rootAssetId={rootAssetId && Number(rootAssetId)}

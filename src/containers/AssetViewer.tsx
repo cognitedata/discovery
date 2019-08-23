@@ -162,7 +162,10 @@ export class AssetViewer extends React.Component<Props, State> {
     const { rootAssetId } = this.props;
 
     return (
-      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+      <div
+        className="main-layout"
+        style={{ width: '100%', height: 0, flex: 1 }}
+      >
         <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
           <ViewerContainer>
             {(this.props.show3D || this.props.showPNID) && (

@@ -7,6 +7,7 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { Asset } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
 import ReactDOMServer from 'react-dom/server';
+import { Breadcrumb, Button } from 'antd';
 import {
   loadAssetChildren,
   loadParentRecurse,
@@ -21,6 +22,13 @@ const Wrapper = styled.div`
   width: 100%;
   overflow: hidden;
   position: relative;
+`;
+
+const StyledBreadcrumbs = styled(Breadcrumb)`
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
 `;
 
 const LinkSection = styled.svg``;
@@ -454,6 +462,28 @@ export class AssetViewer extends React.Component<Props, State> {
     }
   };
 
+  renderBreadcrumbs = () => {
+    const {
+      asset,
+      assets: { all },
+    } = this.props;
+    if (!asset) {
+      return null;
+    }
+    const breadcrumbs = [];
+    const { parentIds } = this;
+    for (let i = parentIds.length - 1; i >= 0; i--) {
+      breadcrumbs.push(
+        <Breadcrumb.Item key={parentIds[i]}>
+          <Button onClick={() => this.onAssetClicked(parentIds[i])}>
+            {all[parentIds[i]] ? all[parentIds[i]].name : 'Loading...'}
+          </Button>
+        </Breadcrumb.Item>
+      );
+    }
+    return <StyledBreadcrumbs>{breadcrumbs}</StyledBreadcrumbs>;
+  };
+
   render() {
     return (
       <Wrapper
@@ -461,6 +491,7 @@ export class AssetViewer extends React.Component<Props, State> {
         style={{ height: '100%', width: '100%' }}
         ref={this.grapharea}
       >
+        {this.renderBreadcrumbs()}
         <LinkSection id="linkSection" />
         <AssetSection id="assetSection" />
       </Wrapper>
