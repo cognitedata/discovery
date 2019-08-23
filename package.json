@@ -6,7 +6,6 @@
 	"license": "Apache-2.0",
 	"dependencies": {
 		"@cognite/3d-viewer": "^6.0.2",
-		"@cognite/cogs.js": "^0.2.12",
 		"@cognite/gearbox": "^1.0.0",
 		"@cognite/griff-react": "^0.5.0-rc.54",
 		"@cognite/react-auth": "^2.2.3",
