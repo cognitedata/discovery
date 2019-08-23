@@ -16,7 +16,9 @@ const getTextFromMetadataNode = (node: { textContent?: string }) =>
 const ViewerContainer = styled.div`
   height: 100%;
   width: 100%;
+  padding: 24px;
   padding-top: 75px;
+  background: #f5f5f5;
 `;
 
 const StyledSVGViewerContainer = styled.div`
@@ -174,7 +176,7 @@ class PNIDViewer extends React.Component<Props, State> {
     return (
       <List
         size="small"
-        header={<div>P&ID documents</div>}
+        header={<h3 style={{ marginBottom: 0 }}>P&ID documents</h3>}
         bordered
         dataSource={pNIDFiles}
         renderItem={item => (
