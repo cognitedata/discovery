@@ -35,6 +35,11 @@ const StyledHeader = styled(Header)`
   }
 `;
 
+const BackButton = styled(Button)`
+  margin-top: 12px;
+  margin-left: 12px;
+`;
+
 function stringToBool(str: string) {
   return str === 'true';
 }
@@ -195,9 +200,14 @@ class Main extends React.Component<Props, State> {
               }}
               width={250}
             >
-              <Button type="primary" onClick={() => this.onAssetIdChange()}>
-                Back to Root Assets
-              </Button>
+              {rootAssetId && (
+                <BackButton
+                  type="primary"
+                  onClick={() => this.onAssetIdChange()}
+                >
+                  Select Another Root Asset
+                </BackButton>
+              )}
               <AssetSearch
                 rootAssetId={rootAssetId && Number(rootAssetId)}
                 assetId={assetId && Number(assetId)}
