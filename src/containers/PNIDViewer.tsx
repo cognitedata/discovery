@@ -158,8 +158,7 @@ class PNIDViewer extends React.Component<Props, State> {
       file =>
         file.name.includes('-XB-') &&
         file.mimeType &&
-        file.mimeType.toLowerCase() === 'svg' &&
-        file.name.toLowerCase().endsWith('svg')
+        file.mimeType.toLowerCase().includes('svg')
     );
 
     return (

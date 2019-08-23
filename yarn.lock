@@ -886,10 +886,10 @@
     "@typescript-eslint/parser" "^1.13.0"
     eslint-plugin-react-hooks "^1.7.0"
 
-"@cognite/gearbox@0.0.56-beta.1":
-  version "0.0.56-beta.1"
-  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-0.0.56-beta.1.tgz#0255f7eea42c26999e89256b0ac5c5cf6cc98d31"
-  integrity sha512-LW1XzC3KcbtpoziYS6q32T3PK8PsLGgWQHoA5gW7WowBN3ib2ED+i4JxrKKyAnqNRrMJ4yWYX+2uD83gdkcvXA==
+"@cognite/gearbox@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-1.0.0.tgz#ffdfb97b516da5e9554f95c6fe58e32400a551ae"
+  integrity sha512-6mYvTL25MOXy+8FDwz/IFcf0UsXdwr5xQeURtBAVlxlh6LR78FeWTGvpJvHhNATlvBNLUFXXUdcuWbpy2lz5zw==
   dependencies:
     d3 "^5.9.2"
     lodash "^4.17.11"
