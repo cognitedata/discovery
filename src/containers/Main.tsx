@@ -92,7 +92,27 @@ class Main extends React.Component<Props, State> {
         this.setState({ showPNID: true });
       }, 500);
     }
+
+    this.checkAndFixRootId();
   }
+
+  componentDidUpdate() {
+    this.checkAndFixRootId();
+  }
+
+  checkAndFixRootId = () => {
+    const {
+      match: {
+        params: { assetId, rootAssetId },
+      },
+    } = this.props;
+    if (assetId || rootAssetId) {
+      const asset = this.props.assets.all[Number(assetId || rootAssetId)];
+      if (asset && Number(asset.rootId) !== Number(rootAssetId)) {
+        this.onAssetIdChange(asset.rootId, asset.id);
+      }
+    }
+  };
 
   onAssetIdChange = (
     rootAssetId?: number,

@@ -82,7 +82,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
   div?: d3.Selection<HTMLDivElement, any, any, any>;
 
-  displayedNodes: { [key: number]: D3Node } = {};
+  displayedNodes: Map<number, D3Node> = new Map();
 
   displayedLinkIds: string[] = [];
 
@@ -150,15 +150,12 @@ export class AssetViewer extends React.Component<Props, State> {
           'link',
           d3
             .forceLink()
-            .distance(1000)
+            .distance(77)
             .id((d: any) => d.id)
         )
         .force('charge', d3.forceManyBody().strength(-200))
-        .force('change', d3.forceManyBody())
         .force('collide', d3.forceCollide(40))
         .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('x', d3.forceX())
-        .force('y', d3.forceY())
         .on('tick', this.ticked);
 
       this.link = this.svg!.append('g')
@@ -253,18 +250,26 @@ export class AssetViewer extends React.Component<Props, State> {
     } = this.props;
 
     const allNewNodes = Object.keys(all).filter(
-      (id: string) => !this.displayedNodes[Number(id)]
+      (id: string) => !this.displayedNodes.has(Number(id))
     );
 
     // Remove the unneccesary ones
-    Object.keys(this.displayedNodes).forEach((id: string) => {
+    Array.from(this.displayedNodes.keys()).forEach((id: number) => {
       if (!all[Number(id)]) {
-        delete this.displayedNodes[Number(id)];
+        this.displayedNodes.delete(Number(id));
       }
     });
 
+    const missingParent = allNewNodes.some(key => !all[all[key].rootId]);
+
+    if (missingParent) {
+      return;
+    }
+
     const nodes: D3Node[] = allNewNodes.map((key: string) => {
-      const parent = this.displayedNodes[all[key].parentId || all[key].rootId];
+      const parent = this.displayedNodes.get(
+        all[key].parentId || all[key].rootId
+      );
       return Object.create({
         ...all[key],
         ...(parent && { x: parent.x, y: parent.y }),
@@ -277,10 +282,10 @@ export class AssetViewer extends React.Component<Props, State> {
         Object.create({
           id: `${key}-${all[key].parentId}`,
           source:
-            this.displayedNodes[Number(key)] ||
+            this.displayedNodes.get(Number(key)) ||
             nodes.find(el => el.id === Number(key)),
           target:
-            this.displayedNodes[all[key].parentId!] ||
+            this.displayedNodes.get(all[key].parentId!) ||
             nodes.find(el => el.id === all[key].parentId!),
         })
       )
@@ -292,16 +297,10 @@ export class AssetViewer extends React.Component<Props, State> {
           !this.displayedLinkIds.includes(el.id)
       );
 
-    this.displayedNodes = {
-      ...this.displayedNodes,
-      ...nodes.reduce(
-        (prev, el: D3Node) => {
-          prev[el.id] = el;
-          return prev;
-        },
-        {} as { [key: number]: D3Node }
-      ),
-    };
+    nodes.forEach(el => {
+      this.displayedNodes.set(el.id, el);
+    });
+
     this.displayedLinkIds = this.displayedLinkIds.concat(
       links.map(el => el.id)
     );
@@ -320,7 +319,7 @@ export class AssetViewer extends React.Component<Props, State> {
     }
     const { parentIds } = this;
 
-    const visibleNodes = Object.values(this.displayedNodes).filter(
+    const visibleNodes = Array.from(this.displayedNodes.values()).filter(
       el =>
         all[el.id] && (el.parentId === asset.id || parentIds.includes(el.id))
     );
