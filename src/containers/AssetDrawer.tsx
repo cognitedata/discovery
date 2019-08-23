@@ -11,6 +11,7 @@ import {
   Descriptions,
   Switch,
   message,
+  Pagination,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -18,7 +19,11 @@ import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
 import { THREE } from '@cognite/3d-viewer';
 import { bindActionCreators, Dispatch } from 'redux';
-import { CogniteEvent, GetTimeSeriesMetadataDTO } from '@cognite/sdk';
+import {
+  CogniteEvent,
+  GetTimeSeriesMetadataDTO,
+  FilesMetadata,
+} from '@cognite/sdk';
 import {
   fetchTimeseries,
   selectTimeseries,
@@ -46,6 +51,7 @@ import { ExtendedAsset, fetchAsset, deleteAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import AddChildAsset from './AddChildAsset';
+import { selectFiles } from '../modules/files';
 
 const { Panel } = Collapse;
 
@@ -86,6 +92,7 @@ type Props = {
   events: EventsAndTypes;
   threed: ThreeDState;
   types: TypesState;
+  files?: FilesMetadata[];
 } & OrigProps;
 
 type State = {
@@ -98,6 +105,7 @@ type State = {
   showTimeseries?: { id: number; name: string };
   showEditHierarchy: boolean;
   disableEditHierarchy: boolean;
+  documentsTablePage: number;
 };
 
 class AssetDrawer extends React.Component<Props, State> {
@@ -106,6 +114,7 @@ class AssetDrawer extends React.Component<Props, State> {
     showAddTimeseries: false,
     showEditHierarchy: false,
     disableEditHierarchy: true,
+    documentsTablePage: 0,
     showAddTypes: false,
   };
 
@@ -113,7 +122,7 @@ class AssetDrawer extends React.Component<Props, State> {
     const { asset, doFetchTimeseries, doFetchEvents } = this.props;
     doFetchTimeseries(asset.id);
     doFetchEvents(asset.id);
-    this.determineAssetEditing();
+    this.resetState();
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -121,7 +130,7 @@ class AssetDrawer extends React.Component<Props, State> {
     if (prevProps.asset !== asset) {
       doFetchTimeseries(asset.id);
       doFetchEvents(asset.id);
-      this.determineAssetEditing();
+      this.resetState();
     }
   }
 
@@ -264,13 +273,14 @@ class AssetDrawer extends React.Component<Props, State> {
     this.setState({ activeCollapsed: change as string[] });
   };
 
-  determineAssetEditing() {
+  resetState = () => {
     this.setState({
       disableEditHierarchy: !!(
         this.props.asset.metadata && this.props.asset.metadata!.SOURCE
       ),
+      documentsTablePage: 0,
     });
-  }
+  };
 
   renderThreeD = (node: CurrentNode) => {
     if (node === null || node === undefined) {
@@ -349,6 +359,55 @@ class AssetDrawer extends React.Component<Props, State> {
         >
           <Button type="danger">Delete (with Children)</Button>
         </Popconfirm>
+      </Panel>
+    );
+  };
+
+  renderDocuments = (assetId: number) => {
+    const { project } = sdk;
+    const { files } = this.props;
+    const { documentsTablePage } = this.state;
+
+    return (
+      <Panel
+        header={<span>Documents ({files ? files.length : 0})</span>}
+        key="documents"
+      >
+        <List
+          itemLayout="horizontal"
+          dataSource={
+            files
+              ? files.slice(
+                  documentsTablePage * 10,
+                  documentsTablePage * 10 + 10
+                )
+              : []
+          }
+          renderItem={item => (
+            <List.Item>
+              <List.Item.Meta
+                title={
+                  <a
+                    href={`https://opint.cogniteapp.com/${project}/assets/${assetId}/docs?doc=${item.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {item.name}
+                  </a>
+                }
+                description={`${item.mimeType}, ${item.source}, ${moment(
+                  item.uploadedTime
+                ).format('DD-MM-YYYY')}`}
+              />
+            </List.Item>
+          )}
+        />
+        <Pagination
+          simple
+          current={documentsTablePage + 1}
+          total={files ? files.length : 0}
+          onChange={page => this.setState({ documentsTablePage: page - 1 })}
+        />
       </Panel>
     );
   };
@@ -435,6 +494,7 @@ class AssetDrawer extends React.Component<Props, State> {
                 this.renderThreeD(this.props.threed.currentNode)}
               {this.renderTimeseries(asset, timeseries)}
               {this.renderTypes(asset, types)}
+              {this.renderDocuments(asset.id)}
               {this.renderEvents(this.props.events.items)}
               {this.state.showEditHierarchy && this.renderEdit(asset)}
             </Collapse>
@@ -460,6 +520,7 @@ const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
     threed: selectThreeD(state),
     events: selectEventsByAssetId(state, ownProps.asset.id),
     types: selectTypes(state),
+    files: selectFiles(state).byAssetId[ownProps.asset.id],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
