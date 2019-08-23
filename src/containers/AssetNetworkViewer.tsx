@@ -123,7 +123,7 @@ export class AssetViewer extends React.Component<Props, State> {
       } = this.grapharea.current!;
 
       // @ts-ignore
-      this.div.call(
+      d3.select('#graphSection').call(
         // @ts-ignore
         d3
           .zoom()
@@ -141,7 +141,6 @@ export class AssetViewer extends React.Component<Props, State> {
               `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
             );
             this.svg!.style('transform-origin', '0 0');
-            // this.link!.attr('transform', d3.event.transform);
           })
       );
 
@@ -459,7 +458,7 @@ export class AssetViewer extends React.Component<Props, State> {
   render() {
     return (
       <Wrapper
-        className="grapharea"
+        id="graphSection"
         style={{ height: '100%', width: '100%' }}
         ref={this.grapharea}
       >
