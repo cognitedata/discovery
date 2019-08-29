@@ -3,7 +3,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Model3DViewer, CacheObject, Callback } from '@cognite/gearbox';
 import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
-import { message, Slider } from 'antd';
+import { Slider, message } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
 import { Asset } from '@cognite/sdk';
 import { SliderValue } from 'antd/lib/slider';
@@ -35,6 +35,7 @@ type Props = {
   cache?: CacheObject;
   nodeId?: number;
   onAssetIdChange: (assetId: number) => void;
+  onNodeIdChange: (assetId: number) => void;
   doFetchMappingsFromNodeId: typeof fetchMappingsFromNodeId;
   doFetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
   doFetchNode: typeof fetchNode;
@@ -43,9 +44,9 @@ type Props = {
 };
 
 type State = {
-  hasWarnedAboutNode: { [key: string]: boolean };
   nodeId?: number;
   progress?: ProgressObject;
+  forceReload: boolean;
 };
 
 class Model3D extends React.Component<Props, State> {
@@ -55,7 +56,9 @@ class Model3D extends React.Component<Props, State> {
     cache: undefined,
   };
 
-  readonly state: Readonly<State> = { hasWarnedAboutNode: {} };
+  hasWarnedAboutNode: { [key: string]: boolean } = {};
+
+  readonly state: Readonly<State> = { forceReload: false };
 
   currentColoredNodes: number[] = [];
 
@@ -74,6 +77,8 @@ class Model3D extends React.Component<Props, State> {
       const assetId = this.getAssetIdForNodeId(this.state.nodeId);
       if (assetId) {
         this.props.onAssetIdChange(assetId);
+      } else {
+        this.props.onNodeIdChange(this.state.nodeId);
       }
     }
 
@@ -82,14 +87,10 @@ class Model3D extends React.Component<Props, State> {
         const assetId = this.getAssetIdForNodeId(this.state.nodeId);
         if (assetId) {
           this.props.onAssetIdChange(assetId);
-        } else if (!this.state.hasWarnedAboutNode[this.state.nodeId]) {
+        } else if (!this.hasWarnedAboutNode[this.state.nodeId]) {
           message.info('Did not find any asset associated to this 3D object.');
           setTimeout(() => {
-            const { hasWarnedAboutNode } = this.state;
-            hasWarnedAboutNode[this.state.nodeId!] = true;
-            this.setState({
-              hasWarnedAboutNode,
-            });
+            this.hasWarnedAboutNode[this.state.nodeId!] = true;
           }, 10);
         }
       }
@@ -117,6 +118,11 @@ class Model3D extends React.Component<Props, State> {
       missing3D.forEach(asset => {
         this.props.doFetchMappingsFromAssetId(modelId, revisionId, asset.id);
       });
+    }
+
+    if (prevProps.revisionId !== this.props.revisionId) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ forceReload: true });
     }
   }
 
@@ -209,6 +215,9 @@ class Model3D extends React.Component<Props, State> {
     animate: boolean,
     duration: number = 500
   ) => {
+    if (!this.model) {
+      return;
+    }
     this.model!.deselectAllNodes();
     if (nodeId == null) {
       return;
@@ -226,6 +235,9 @@ class Model3D extends React.Component<Props, State> {
         }
       );
       [mapping] = nodes.items;
+    }
+    if (!mapping) {
+      return;
     }
 
     const boundingBox = new THREE.Box3();
@@ -321,6 +333,10 @@ class Model3D extends React.Component<Props, State> {
   }
 
   render() {
+    if (this.state.forceReload) {
+      this.setState({ forceReload: false });
+      return null;
+    }
     if (this.model) {
       this.colorSearchResult();
       // this.setSlicingForCurrentAsset();

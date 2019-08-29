@@ -14,6 +14,8 @@ import {
   AssetMappingState,
 } from '../modules/assetmappings';
 import { RootState } from '../reducers/index';
+import NodeDrawer from './NodeDrawer';
+import { selectThreeD, ThreeDState } from '../modules/threed';
 
 const ViewerContainer = styled.div`
   display: flex;
@@ -36,17 +38,18 @@ const ViewerContainer = styled.div`
 type OwnProps = {
   assetDrawerWidth: number;
   assetId?: number;
+  modelId?: number;
+  revisionId?: number;
+  nodeId?: number;
   rootAssetId: number;
-  model3D?: {
-    modelId: number;
-    revisionId: number;
-  };
   show3D: boolean;
   showPNID: boolean;
   showAssetViewer: boolean;
   onAssetIdChange: (rootAssetId?: number, assetId?: number) => void;
+  onNodeIdChange: (nodeId?: number) => void;
 };
 type StateProps = {
+  threed: ThreeDState;
   assets: AssetsState;
   assetMappings: AssetMappingState;
 };
@@ -90,6 +93,21 @@ export class AssetViewer extends React.Component<Props, State> {
     return this.props.assetId || this.props.rootAssetId;
   }
 
+  get rootAssetId() {
+    if (this.props.rootAssetId) {
+      return this.props.rootAssetId;
+    }
+    const { modelId, revisionId } = this.props;
+    const { representsAsset } = this.props.threed;
+    return Number(
+      Object.keys(representsAsset).find(
+        assetId =>
+          representsAsset[Number(assetId)].modelId === modelId &&
+          representsAsset[Number(assetId)].revisionId === revisionId
+      )
+    );
+  }
+
   getNodeId = (fetchIfMissing: boolean) => {
     const { assetMappings } = this.props;
     if (assetMappings.byAssetId[this.assetId]) {
@@ -97,8 +115,8 @@ export class AssetViewer extends React.Component<Props, State> {
       return mapping.nodeId;
     }
 
-    if (fetchIfMissing && this.props.model3D) {
-      const { modelId, revisionId } = this.props.model3D;
+    if (fetchIfMissing && this.props.modelId && this.props.revisionId) {
+      const { modelId, revisionId } = this.props;
       this.props.doFetchMappingsFromAssetId(modelId, revisionId, this.assetId);
     }
 
@@ -112,23 +130,25 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   render3D = () => {
-    const { rootAssetId } = this.props;
-    const nodeId = this.getNodeId(false);
+    const { rootAssetId } = this;
+    const { nodeId: propNodeId } = this.props;
+    const nodeId = propNodeId || this.getNodeId(false);
     return (
       <Model3D
-        modelId={this.props.model3D!.modelId}
-        revisionId={this.props.model3D!.revisionId}
+        modelId={this.props.modelId!}
+        revisionId={this.props.revisionId!}
         nodeId={nodeId}
         onAssetIdChange={(id: number) =>
           this.props.onAssetIdChange(rootAssetId, id)
         }
+        onNodeIdChange={(id: number) => this.props.onNodeIdChange(id)}
         cache={this.cache}
       />
     );
   };
 
   renderPNID = () => {
-    const { rootAssetId } = this.props;
+    const { rootAssetId } = this;
     const asset = this.getAsset();
     return (
       <PNIDViewer
@@ -141,7 +161,7 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderAssetNetwork = () => {
-    const { rootAssetId } = this.props;
+    const { rootAssetId } = this;
     return (
       <div className="bottom">
         <AssetNetworkViewer
@@ -158,8 +178,8 @@ export class AssetViewer extends React.Component<Props, State> {
 
   render() {
     const asset = this.getAsset();
-    const { assetDrawerWidth } = this.props;
-    const { rootAssetId } = this.props;
+    const { rootAssetId } = this;
+    const { assetDrawerWidth, nodeId, revisionId, modelId } = this.props;
 
     return (
       <div
@@ -176,13 +196,28 @@ export class AssetViewer extends React.Component<Props, State> {
             )}
             {this.props.showAssetViewer && this.renderAssetNetwork()}
           </ViewerContainer>
-          {asset != null && (
+          {asset && (
             <AssetDrawer
               width={assetDrawerWidth}
+              revisionId={revisionId!}
+              modelId={modelId!}
               asset={asset}
               onAssetIdChange={(id?: number) =>
                 this.props.onAssetIdChange(rootAssetId, id)
               }
+            />
+          )}
+          {!asset && (
+            <NodeDrawer
+              width={assetDrawerWidth}
+              nodeId={nodeId!}
+              revisionId={revisionId!}
+              modelId={modelId!}
+              asset={asset}
+              onAssetIdChange={(id?: number) =>
+                this.props.onAssetIdChange(rootAssetId, id)
+              }
+              onNodeIdChange={this.props.onNodeIdChange}
             />
           )}
         </div>
@@ -193,6 +228,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
+    threed: selectThreeD(state),
     assets: selectAssets(state),
     assetMappings: selectAssetMappings(state),
   };

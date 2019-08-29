@@ -52,6 +52,7 @@ const moveExactMatchToTop = (list: any[], query: any) => {
 type Props = {
   rootAssetId?: number;
   assetId?: number;
+  modelId?: number;
   location: Location;
   doSearchForAsset: typeof searchForAsset;
   fetchRootAssets: typeof fetchRootAssets;
@@ -139,7 +140,7 @@ class AssetSearch extends React.Component<Props, State> {
       this.props.doSetFilters(filters);
     }
 
-    if (!this.props.rootAssetId) {
+    if (!this.props.rootAssetId && !this.props.modelId) {
       this.checkAndFetchRootAssets();
     }
   }

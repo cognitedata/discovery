@@ -3,9 +3,11 @@ import { Dispatch, Action } from 'redux';
 import { AssetMapping3D } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
+import { DELETE_ASSETS, DeleteAssetAction } from './assets';
 
 // Constants
 export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
+export const DELETE_ASSET_MAPPING = 'assetmappings/DELETE_ASSET_MAPPING';
 
 export interface Mapping {
   nodeId: number;
@@ -15,8 +17,14 @@ export interface Mapping {
 interface AddAction extends Action<typeof ADD_ASSET_MAPPINGS> {
   payload: { mapping: AssetMapping3D; nodeId?: number };
 }
+interface DeleteAssetMappingAction extends Action<typeof DELETE_ASSET_MAPPING> {
+  payload: { assetId: number };
+}
 
-type AssetMappingAction = AddAction;
+type AssetMappingAction =
+  | AddAction
+  | DeleteAssetMappingAction
+  | DeleteAssetAction;
 
 export function findBestMappingForNodeId(
   nodeId: number,
@@ -121,6 +129,57 @@ export function fetchMappingsFromNodeId(
   };
 }
 
+export function createAssetNodeMapping(
+  modelId: number,
+  revisionId: number,
+  nodeId: number,
+  assetId: number
+) {
+  return async (dispatch: Dispatch) => {
+    try {
+      const mappings = await sdk.assetMappings3D.create(modelId, revisionId, [
+        {
+          nodeId,
+          assetId,
+        },
+      ]);
+
+      if (mappings.length === 0) {
+        return;
+      }
+
+      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
+    } catch (ex) {
+      // Could not fetch
+    }
+  };
+}
+export function deleteAssetNodeMapping(
+  modelId: number,
+  revisionId: number,
+  assetId: number
+) {
+  return async (dispatch: Dispatch, getState: () => RootState) => {
+    const { byAssetId } = getState().assetMappings;
+    if (byAssetId[assetId]) {
+      try {
+        await sdk.assetMappings3D.delete(modelId, revisionId, [
+          {
+            nodeId: byAssetId[assetId].nodeId,
+            assetId: byAssetId[assetId].assetId,
+          },
+        ]);
+      } catch (ex) {
+        // Could not fetch
+      }
+    }
+    dispatch({
+      type: DELETE_ASSET_MAPPING,
+      payload: { assetId },
+    });
+  };
+}
+
 // Reducer
 export interface AssetMappingState {
   byNodeId: { [key: string]: any };
@@ -135,23 +194,42 @@ export default function assetmappings(
   switch (action.type) {
     case ADD_ASSET_MAPPINGS: {
       const { mapping, nodeId } = action.payload;
-      // eslint-disable-next-line no-param-reassign
-      state.byNodeId[mapping.nodeId] = mapping;
-      // eslint-disable-next-line no-param-reassign
-      state.byAssetId[mapping.assetId] = mapping;
-      if (nodeId) {
-        // We may have an asset mapping that is for a parent node.
-        // So make sure this node also gets mapped.
-        // eslint-disable-next-line no-param-reassign
-        state.byNodeId[nodeId] = mapping;
-      }
 
       return {
         ...state,
-        byNodeId: state.byNodeId,
-        byAssetId: state.byAssetId,
+        byNodeId: {
+          ...state.byNodeId,
+          [mapping.nodeId]: mapping,
+          ...(nodeId && { [nodeId]: mapping }),
+        },
+        byAssetId: {
+          ...state.byAssetId,
+          [mapping.assetId]: mapping,
+        },
       };
     }
+
+    case DELETE_ASSETS:
+    case DELETE_ASSET_MAPPING: {
+      const {
+        [action.payload.assetId]: assetMapping,
+        ...remainingAssetMapping
+      } = state.byAssetId;
+
+      if (assetMapping) {
+        const {
+          [assetMapping.nodeId]: nodeMapping,
+          ...remainingNodeMapping
+        } = state.byNodeId;
+        return {
+          ...state,
+          byAssetId: remainingAssetMapping,
+          byNodeId: remainingNodeMapping,
+        };
+      }
+      return state;
+    }
+
     default:
       return state;
   }

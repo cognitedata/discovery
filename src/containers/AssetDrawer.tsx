@@ -52,6 +52,7 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import AddChildAsset from './AddChildAsset';
 import { selectFiles } from '../modules/files';
+import { deleteAssetNodeMapping } from '../modules/assetmappings';
 
 const { Panel } = Collapse;
 
@@ -79,6 +80,8 @@ const HeaderWithButton = styled.div`
 type OrigProps = {
   asset: ExtendedAsset;
   width: number;
+  modelId: number;
+  revisionId: number;
   onAssetIdChange: (id?: number) => void;
 };
 
@@ -86,6 +89,7 @@ type Props = {
   doFetchTimeseries: typeof fetchTimeseries;
   doFetchEvents: typeof fetchEvents;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
+  deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
   doRemoveTypeFromAsset: typeof removeTypeFromAsset;
   deleteAsset: typeof deleteAsset;
   timeseries: TimeseriesState;
@@ -352,6 +356,10 @@ class AssetDrawer extends React.Component<Props, State> {
           title="Are you sure you want to remove this asset and all its children?"
           onConfirm={() => {
             this.props.deleteAsset(asset.id);
+            const { revisionId, modelId } = this.props;
+            if (revisionId && modelId) {
+              this.props.deleteAssetNodeMapping(modelId, revisionId, asset.id);
+            }
             this.props.onAssetIdChange(asset.parentId);
           }}
           okText={`Yes (deleteing for tenant ${project})`}
@@ -531,6 +539,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,
       doRemoveTypeFromAsset: removeTypeFromAsset,
+      deleteAssetNodeMapping,
       doFetchAsset: fetchAsset,
     },
     dispatch

@@ -1,16 +1,19 @@
 import { createAction } from 'redux-actions';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { Cognite3DModel } from '@cognite/3d-viewer';
-import { Revision3D } from '@cognite/sdk';
+import { Revision3D, Model3D } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById } from '../utils/utils';
 import { sdk } from '../index';
 
-export interface ThreeDModel extends Cognite3DModel {
+export interface ThreeDModel extends Model3D {
   id: number;
   revisions?: Revision3D[];
   metadata?: { [key: string]: string };
+}
+
+interface TBDRevision extends Revision3D {
+  metadata?: { [key: string]: any };
 }
 
 export interface CurrentNode {
@@ -24,12 +27,23 @@ export interface CurrentNode {
 }
 
 // Constants
+export const LOAD_MODELS = 'threed/LOAD_MODELS';
 export const SET_MODELS = 'threed/SET_MODELS';
+export const UPDATE_REVISON = 'threed/UPDATE_REVISON';
 export const ADD_REVISIONS = 'threed/ADD_REVISIONS';
 export const SET_NODE = 'threed/SET_NODE';
 
+interface LoadModelAction extends Action<typeof LOAD_MODELS> {}
 interface SetModelAction extends Action<typeof SET_MODELS> {
   payload: { models: { [key: string]: ThreeDModel } };
+}
+interface UpdateRevisionAction extends Action<typeof UPDATE_REVISON> {
+  payload: {
+    modelId: number;
+    revisionId: number;
+    assetId: number;
+    item: TBDRevision;
+  };
 }
 interface AddRevisionAction extends Action<typeof ADD_REVISIONS> {
   payload: { modelId: number; revisions: Revision3D[] };
@@ -37,7 +51,12 @@ interface AddRevisionAction extends Action<typeof ADD_REVISIONS> {
 interface SetNodeAction extends Action<typeof SET_NODE> {
   payload: { currentNode: any };
 }
-type ThreeDAction = SetModelAction | SetNodeAction | AddRevisionAction;
+type ThreeDAction =
+  | SetModelAction
+  | SetNodeAction
+  | AddRevisionAction
+  | LoadModelAction
+  | UpdateRevisionAction;
 
 export function fetchRevisions(modelId: number) {
   return async (dispatch: Dispatch<AddRevisionAction>) => {
@@ -45,6 +64,41 @@ export function fetchRevisions(modelId: number) {
     if (requestResult) {
       const { items } = requestResult;
       dispatch({ type: ADD_REVISIONS, payload: { modelId, revisions: items } });
+    }
+  };
+}
+
+export function setRevisionRepresentAsset(
+  modelId: number,
+  revisionId: number,
+  assetId: number
+) {
+  return async (
+    dispatch: Dispatch<UpdateRevisionAction>,
+    getState: () => RootState
+  ) => {
+    const revision = getState().threed.models[modelId].revisions!.find(
+      el => el.id === revisionId
+    ) as TBDRevision;
+    const [requestResult] = await sdk.revisions3D.update(modelId, [
+      {
+        id: revisionId,
+        update: {
+          // @ts-ignore
+          metadata: {
+            set: {
+              ...revision.metadata,
+              representsAsset: assetId,
+            },
+          },
+        },
+      },
+    ]);
+    if (requestResult) {
+      dispatch({
+        type: UPDATE_REVISON,
+        payload: { modelId, revisionId, assetId, item: requestResult },
+      });
     }
   };
 }
@@ -69,6 +123,9 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
 
 export function fetchModels() {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+    dispatch({
+      type: LOAD_MODELS,
+    });
     const requestResult = await sdk.models3D.list({ limit: 200 });
     if (requestResult) {
       const { items } = requestResult;
@@ -84,10 +141,17 @@ export function fetchModels() {
 
 // Reducer
 export interface ThreeDState {
+  representsAsset: { [key: number]: { modelId: number; revisionId: number } };
   models: { [key: string]: ThreeDModel };
   currentNode?: CurrentNode;
+  loading: boolean;
 }
-const initialState: ThreeDState = { models: {}, currentNode: undefined };
+const initialState: ThreeDState = {
+  models: {},
+  currentNode: undefined,
+  loading: false,
+  representsAsset: {},
+};
 
 export default function threed(
   state = initialState,
@@ -101,8 +165,22 @@ export default function threed(
         models,
       };
     }
-    case ADD_REVISIONS: {
-      const { modelId, revisions } = action.payload;
+    case LOAD_MODELS: {
+      return {
+        ...state,
+        loading: true,
+      };
+    }
+    case UPDATE_REVISON: {
+      const { modelId, revisionId, assetId, item } = action.payload;
+      const revisions = state.models[modelId].revisions || [];
+      const index = revisions.findIndex(el => el.id === revisionId);
+      if (index === -1) {
+        // this should not happen....
+        revisions.push(item);
+      } else {
+        revisions.splice(index, 1, item);
+      }
       return {
         ...state,
         models: {
@@ -112,6 +190,50 @@ export default function threed(
             revisions,
           },
         },
+        representsAsset: {
+          ...state.representsAsset,
+          [assetId]: {
+            modelId,
+            revisionId,
+          },
+        },
+      };
+    }
+    case ADD_REVISIONS: {
+      const { modelId, revisions } = action.payload;
+      // TODO, this is a hack!
+      const newRepresentMap: {
+        [key: number]: { modelId: number; revisionId: number };
+      } = {
+        ...state.representsAsset,
+        ...revisions.reduce(
+          (prev, revision: TBDRevision) => {
+            if (revision.metadata!.representsAsset) {
+              const { representsAsset } = revision.metadata!;
+              if (prev[Number(representsAsset)] === undefined) {
+                // eslint-disable-next-line no-param-reassign
+                prev[Number(representsAsset)] = {
+                  modelId,
+                  revisionId: revision.id,
+                };
+              }
+            }
+            return prev;
+          },
+          {} as { [key: number]: { modelId: number; revisionId: number } }
+        ),
+      };
+      return {
+        ...state,
+        models: {
+          ...state.models,
+          [modelId]: {
+            ...state.models[modelId],
+            revisions,
+          },
+        },
+        loading: false,
+        representsAsset: newRepresentMap,
       };
     }
     case SET_NODE: {

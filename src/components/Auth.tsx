@@ -82,6 +82,16 @@ class Auth extends React.Component<Props, State> {
             exact
             component={Main}
           />
+          <Route
+            path={`${match.path}/models/:modelId/:revisionId`}
+            exact
+            component={Main}
+          />
+          <Route
+            path={`${match.path}/models/:modelId/:revisionId/:nodeId`}
+            exact
+            component={Main}
+          />
           <Route component={Main} />
         </Switch>
       </>

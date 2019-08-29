@@ -1,17 +1,20 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
-import { Asset, ExternalAssetItem } from '@cognite/sdk';
+import { Asset, ExternalAssetItem, AssetChange } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
+import { createAssetNodeMapping } from './assetmappings';
+import { setRevisionRepresentAsset } from './threed';
 
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
+export const UPDATE_ASSET = 'assets/UPDATE_ASSET';
 export const DELETE_ASSETS = 'assets/DELETE_ASSETS';
 
 export interface ExtendedAsset extends Asset {
@@ -20,17 +23,24 @@ export interface ExtendedAsset extends Asset {
   metadata?: { [key: string]: string };
 }
 
-interface AddAction extends Action<typeof ADD_ASSETS> {
+interface AddAssetAction extends Action<typeof ADD_ASSETS> {
   payload: { items: { [key: string]: ExtendedAsset } };
 }
-interface DeleteAction extends Action<typeof DELETE_ASSETS> {
+interface UpdateAction extends Action<typeof UPDATE_ASSET> {
+  payload: { item: ExtendedAsset; assetId: number };
+}
+export interface DeleteAssetAction extends Action<typeof DELETE_ASSETS> {
   payload: { assetId: number };
 }
 
 interface SetAction extends Action<typeof SET_ASSETS> {
   payload: { items: ExtendedAsset[] };
 }
-type AssetAction = AddAction | SetAction | DeleteAction;
+type AssetAction =
+  | AddAssetAction
+  | SetAction
+  | DeleteAssetAction
+  | UpdateAction;
 
 let searchCounter = 0;
 
@@ -265,11 +275,27 @@ export function fetchAssets(assetIds: number[]) {
   };
 }
 
-export function createNewAsset(newAssets: ExternalAssetItem) {
-  return async (dispatch: Dispatch) => {
+export function createNewAsset(
+  newAsset: ExternalAssetItem,
+  mappingInfo?: {
+    modelId?: number;
+    revisionId?: number;
+    nodeId?: number;
+  },
+  callback?: (asset: Asset) => void
+) {
+  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
     try {
-      const results = await sdk.assets.create([newAssets]);
-
+      const results = await sdk.assets.create([
+        {
+          ...newAsset,
+          metadata: {
+            ...newAsset.metadata,
+            COGNITE__GENERATED: 'true',
+            COGNITE__SOURCE: 'discovery',
+          },
+        },
+      ]);
       if (results) {
         const items = arrayToObjectById(
           results.map(asset => ({
@@ -283,6 +309,22 @@ export function createNewAsset(newAssets: ExternalAssetItem) {
           }))
         );
 
+        const assetId = results[0].id;
+
+        if (mappingInfo) {
+          const { modelId, revisionId, nodeId } = mappingInfo;
+          if (modelId && revisionId && nodeId) {
+            dispatch(
+              createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
+            );
+          } else if (modelId && revisionId) {
+            dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
+          }
+        }
+        if (callback) {
+          callback(results[0]);
+        }
+
         dispatch({ type: ADD_ASSETS, payload: { items } });
       }
     } catch (ex) {
@@ -291,8 +333,28 @@ export function createNewAsset(newAssets: ExternalAssetItem) {
   };
 }
 
+export function editAsset(asset: AssetChange) {
+  return async (dispatch: Dispatch<UpdateAction>) => {
+    try {
+      const results = await sdk.assets.update([asset]);
+
+      if (results) {
+        dispatch({
+          type: UPDATE_ASSET,
+          payload: {
+            item: { ...results[0], types: [] },
+            assetId: results[0].id,
+          },
+        });
+      }
+    } catch (ex) {
+      message.error(`Could not update asset.`);
+    }
+  };
+}
+
 export function deleteAsset(assetId: number) {
-  return async (dispatch: Dispatch<DeleteAction>) => {
+  return async (dispatch: Dispatch<DeleteAssetAction>) => {
     try {
       const results = await sdk.assets.delete([{ id: assetId }], {
         recursive: true,
@@ -332,6 +394,15 @@ export default function assets(
       return {
         ...state,
         all,
+      };
+    }
+    case UPDATE_ASSET: {
+      return {
+        ...state,
+        all: {
+          ...state.all,
+          [action.payload.assetId]: action.payload.item,
+        },
       };
     }
     case DELETE_ASSETS: {
