@@ -130,11 +130,12 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   render3D = () => {
-    const { rootAssetId } = this;
+    const { rootAssetId, assetId } = this;
     const { nodeId: propNodeId } = this.props;
     const nodeId = propNodeId || this.getNodeId(false);
     return (
       <Model3D
+        assetId={assetId}
         modelId={this.props.modelId!}
         revisionId={this.props.revisionId!}
         nodeId={nodeId}

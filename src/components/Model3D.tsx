@@ -32,6 +32,7 @@ declare global {
 type Props = {
   modelId: number;
   revisionId: number;
+  assetId: number;
   cache?: CacheObject;
   nodeId?: number;
   onAssetIdChange: (assetId: number) => void;
@@ -80,6 +81,16 @@ class Model3D extends React.Component<Props, State> {
       } else {
         this.props.onNodeIdChange(this.state.nodeId);
       }
+    }
+
+    if (
+      this.props.nodeId &&
+      this.props.assetMappings.byNodeId[this.props.nodeId] !==
+        prevProps.assetMappings.byNodeId[this.props.nodeId]
+    ) {
+      this.props.onAssetIdChange(
+        this.props.assetMappings.byNodeId[this.props.nodeId].assetId
+      );
     }
 
     if (prevProps.assetMappings !== this.props.assetMappings) {
