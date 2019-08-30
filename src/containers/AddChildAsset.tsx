@@ -45,7 +45,6 @@ class AddChildAsset extends React.Component<Props, State> {
           placeholder="Please add a name for the child"
           onChange={e => this.setState({ name: e.target.value })}
         />
-        ,
       </Modal>
     );
   }

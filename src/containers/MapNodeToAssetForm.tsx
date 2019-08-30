@@ -86,14 +86,10 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
           modelId,
           revisionId,
           nodeId,
-        },
-        asset => {
-          this.props.onAssetIdChange(asset.id);
         }
       );
     } else if (assetId) {
       this.props.createAssetNodeMapping(modelId, revisionId, nodeId, assetId);
-      this.props.onAssetIdChange(assetId);
     } else {
       message.error('You need to select or provide name for a new asset.');
     }
