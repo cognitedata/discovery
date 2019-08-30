@@ -23,7 +23,7 @@ export function fetchRelationships() {
     const { project } = sdk;
     try {
       const items = await sdk.get(
-        `https://greenfield.cognitedata.com/api/playground/projects/${project}/relationships`
+        `https://api.cognitedata.com/api/playground/projects/${project}/relationships`
       );
 
       dispatch({

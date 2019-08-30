@@ -1,6 +1,7 @@
 import { createAction } from 'redux-actions';
 import { Dispatch, Action } from 'redux';
 import { AssetMapping3D } from '@cognite/sdk';
+import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { DELETE_ASSETS, DeleteAssetAction } from './assets';
@@ -151,6 +152,9 @@ export function createAssetNodeMapping(
       dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
     } catch (ex) {
       // Could not fetch
+      message.error(
+        'Unable to map asset to 3D node, make sure you have the correct permissions.'
+      );
     }
   };
 }

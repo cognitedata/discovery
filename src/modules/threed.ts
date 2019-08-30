@@ -2,6 +2,7 @@ import { createAction } from 'redux-actions';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Revision3D, Model3D } from '@cognite/sdk';
+import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById } from '../utils/utils';
 import { sdk } from '../index';
@@ -77,28 +78,34 @@ export function setRevisionRepresentAsset(
     dispatch: Dispatch<UpdateRevisionAction>,
     getState: () => RootState
   ) => {
-    const revision = getState().threed.models[modelId].revisions!.find(
-      el => el.id === revisionId
-    ) as TBDRevision;
-    const [requestResult] = await sdk.revisions3D.update(modelId, [
-      {
-        id: revisionId,
-        update: {
-          // @ts-ignore
-          metadata: {
-            set: {
-              ...revision.metadata,
-              representsAsset: assetId,
+    try {
+      const revision = getState().threed.models[modelId].revisions!.find(
+        el => el.id === revisionId
+      ) as TBDRevision;
+      const [requestResult] = await sdk.revisions3D.update(modelId, [
+        {
+          id: revisionId,
+          update: {
+            // @ts-ignore
+            metadata: {
+              set: {
+                ...revision.metadata,
+                representsAsset: assetId,
+              },
             },
           },
         },
-      },
-    ]);
-    if (requestResult) {
-      dispatch({
-        type: UPDATE_REVISON,
-        payload: { modelId, revisionId, assetId, item: requestResult },
-      });
+      ]);
+      if (requestResult) {
+        dispatch({
+          type: UPDATE_REVISON,
+          payload: { modelId, revisionId, assetId, item: requestResult },
+        });
+      }
+    } catch (ex) {
+      message.error(
+        `Unable to create mapping, make sure you have the right permission?`
+      );
     }
   };
 }
