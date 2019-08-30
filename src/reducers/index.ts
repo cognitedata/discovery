@@ -8,6 +8,7 @@ import filters, { FilterState } from '../modules/filters';
 import threed, { ThreeDState } from '../modules/threed';
 import assetMappings, { AssetMappingState } from '../modules/assetmappings';
 import app, { AppState } from '../modules/app';
+import relationships, { RelationshipState } from '../modules/relationships';
 
 const rootReducer: Reducer<RootState> = combineReducers({
   timeseries,
@@ -19,6 +20,7 @@ const rootReducer: Reducer<RootState> = combineReducers({
   filters,
   threed,
   app,
+  relationships,
 });
 
 export interface RootState {
@@ -29,6 +31,7 @@ export interface RootState {
   files: FilesState;
   filters: FilterState;
   threed: ThreeDState;
+  relationships: RelationshipState;
   assetMappings: AssetMappingState;
   app: AppState;
 }

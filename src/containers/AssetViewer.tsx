@@ -16,6 +16,7 @@ import {
 import { RootState } from '../reducers/index';
 import NodeDrawer from './NodeDrawer';
 import { selectThreeD, ThreeDState } from '../modules/threed';
+import RelationshipNetworkViewer from './RelationshipNetworkViewer';
 
 const ViewerContainer = styled.div`
   display: flex;
@@ -45,6 +46,7 @@ type OwnProps = {
   show3D: boolean;
   showPNID: boolean;
   showAssetViewer: boolean;
+  showRelationships: boolean;
   onAssetIdChange: (rootAssetId?: number, assetId?: number) => void;
   onNodeIdChange: (nodeId?: number) => void;
 };
@@ -177,6 +179,22 @@ export class AssetViewer extends React.Component<Props, State> {
     );
   };
 
+  renderRelationshipsViewer = () => {
+    const { rootAssetId } = this;
+    return (
+      <div className="bottom">
+        <RelationshipNetworkViewer
+          rootAssetId={rootAssetId}
+          asset={this.getAsset()}
+          topShowing={this.props.show3D || this.props.showPNID}
+          onAssetIdChange={(id: number) =>
+            this.props.onAssetIdChange(rootAssetId, id)
+          }
+        />
+      </div>
+    );
+  };
+
   render() {
     const asset = this.getAsset();
     const { rootAssetId } = this;
@@ -195,7 +213,10 @@ export class AssetViewer extends React.Component<Props, State> {
                 {this.props.showPNID && this.renderPNID()}
               </div>
             )}
-            {this.props.showAssetViewer && this.renderAssetNetwork()}
+            {this.props.showRelationships && this.renderRelationshipsViewer()}
+            {!this.props.showRelationships &&
+              this.props.showAssetViewer &&
+              this.renderAssetNetwork()}
           </ViewerContainer>
           {asset && (
             <AssetDrawer

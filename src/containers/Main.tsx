@@ -67,6 +67,7 @@ type Props = {
 };
 
 type State = {
+  showRelationships: boolean;
   showAssetViewer: boolean;
   show3D: boolean;
   showPNID: boolean;
@@ -84,6 +85,9 @@ class Main extends React.Component<Props, State> {
     showAssetViewer: localStorage.getItem('showAssetViewer')
       ? stringToBool(localStorage.getItem('showAssetViewer')!)
       : true,
+    showRelationships: localStorage.getItem('showRelationshipViewer')
+      ? stringToBool(localStorage.getItem('showRelationshipViewer')!)
+      : false,
     selectedPane: 'asset',
   };
 
@@ -218,6 +222,15 @@ class Main extends React.Component<Props, State> {
     localStorage.setItem('showAssetViewer', `${visible}`);
   };
 
+  onRelationshipsViewerChange = (visible: boolean) => {
+    const { showAssetViewer } = this.state;
+    this.setState({
+      showRelationships: visible,
+      showAssetViewer: visible ? false : showAssetViewer,
+    });
+    localStorage.setItem('showRelationships', `${visible}`);
+  };
+
   hasModelForAsset = (assetId: number) => {
     return this.props.threed.representsAsset[assetId];
   };
@@ -325,10 +338,18 @@ class Main extends React.Component<Props, State> {
                   onChange={this.onPNIDVisibleChange}
                 />
                 <Switch
-                  checked={this.state.showAssetViewer}
+                  checked={
+                    !this.state.showRelationships && this.state.showAssetViewer
+                  }
                   checkedChildren="Asset Network Viewer"
                   unCheckedChildren="Asset Network Viewer"
                   onChange={this.onAssetViewerChange}
+                />
+                <Switch
+                  checked={this.state.showRelationships}
+                  checkedChildren="Relationships Viewer"
+                  unCheckedChildren="Relationships Viewer"
+                  onChange={this.onRelationshipsViewerChange}
                 />
               </StyledHeader>
               <AssetViewer
@@ -339,6 +360,7 @@ class Main extends React.Component<Props, State> {
                 assetId={assetId && Number(assetId)}
                 show3D={model3D !== undefined && this.state.show3D}
                 showAssetViewer={this.state.showAssetViewer}
+                showRelationships={this.state.showRelationships}
                 showPNID={this.state.showPNID}
                 onAssetIdChange={this.onAssetIdChange}
                 onNodeIdChange={this.onNodeIdChange}
