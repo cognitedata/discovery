@@ -1,6 +1,5 @@
 import { AnyAction, Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import axios from 'axios';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
@@ -23,13 +22,8 @@ export function fetchRelationships() {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     const { project } = sdk;
     try {
-      const items = await axios.get(
-        `https://api.cognitedata.com/api/playground/projects/${project}/relationships`,
-        {
-          headers: {
-            'api-key': localStorage.getItem('api-key') || '',
-          },
-        }
+      const items = await sdk.get(
+        `https://greenfield.cognitedata.com/api/playground/projects/${project}/relationships`
       );
 
       dispatch({

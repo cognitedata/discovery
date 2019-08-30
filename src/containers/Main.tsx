@@ -346,6 +346,7 @@ class Main extends React.Component<Props, State> {
                   onChange={this.onAssetViewerChange}
                 />
                 <Switch
+                  disabled
                   checked={this.state.showRelationships}
                   checkedChildren="Relationships Viewer"
                   unCheckedChildren="Relationships Viewer"
