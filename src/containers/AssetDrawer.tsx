@@ -10,7 +10,6 @@ import {
   Popconfirm,
   Descriptions,
   Switch,
-  message,
   Pagination,
 } from 'antd';
 
@@ -53,6 +52,7 @@ import { sdk } from '../index';
 import AddChildAsset from './AddChildAsset';
 import { selectFiles } from '../modules/files';
 import { deleteAssetNodeMapping } from '../modules/assetmappings';
+import ChangeAssetParent from './ChangeAssetParent';
 
 const { Panel } = Collapse;
 
@@ -102,6 +102,7 @@ type Props = {
 type State = {
   showAddChild: boolean;
   showAddTypes: boolean;
+  showEditParent: boolean;
   showAddTimeseries: boolean;
   showEvent?: number;
   asset?: ExtendedAsset;
@@ -116,6 +117,7 @@ class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     showAddChild: false,
     showAddTimeseries: false,
+    showEditParent: false,
     showEditHierarchy: false,
     disableEditHierarchy: true,
     documentsTablePage: 0,
@@ -160,6 +162,7 @@ class AssetDrawer extends React.Component<Props, State> {
       showEvent: undefined,
       showTimeseries: undefined,
       showAddChild: false,
+      showEditParent: false,
       showAddTypes: false,
     });
   };
@@ -347,7 +350,10 @@ class AssetDrawer extends React.Component<Props, State> {
         </Button>
         <br />
         <br />
-        <Button type="primary" onClick={() => message.info('Coming soon!')}>
+        <Button
+          type="primary"
+          onClick={() => this.setState({ showEditParent: true })}
+        >
           Change Asset Parent
         </Button>
         <br />
@@ -423,6 +429,7 @@ class AssetDrawer extends React.Component<Props, State> {
   render() {
     const { asset } = this.props;
     const {
+      showEditParent,
       showTimeseries,
       showEvent,
       showAddChild,
@@ -472,6 +479,13 @@ class AssetDrawer extends React.Component<Props, State> {
             assetId={asset.id}
             asset={asset}
             onClose={this.onModalClose}
+          />
+        )}
+        {asset != null && showEditParent && (
+          <ChangeAssetParent
+            assetId={asset.id}
+            onClose={this.onModalClose}
+            rootAssetId={asset.rootId}
           />
         )}
         {showEvent != null && (

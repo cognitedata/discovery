@@ -53,12 +53,6 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
     };
   }
 
-  get rootAssets() {
-    return Object.values(this.props.assets.all).filter(
-      el => el.rootId === el.id
-    );
-  }
-
   doSearch = async (query: string) => {
     if (query.length > 0) {
       this.setState({ fetching: true });
@@ -120,7 +114,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
           {searchResults.map(asset => {
             return (
               <Option key={asset.id} value={asset.id}>
-                {asset.name}
+                {asset.name} ({asset.id})
               </Option>
             );
           })}
@@ -142,7 +136,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
         >
           {searchResults.map(asset => (
             <Select.Option key={asset.id} value={asset.id}>
-              {asset.name}
+              {asset.name} ({asset.id})
             </Select.Option>
           ))}
         </Select>

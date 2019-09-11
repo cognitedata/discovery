@@ -76,15 +76,7 @@ export function searchForAsset(query: string) {
         dispatch({
           type: ADD_ASSETS,
           payload: arrayToObjectById(
-            result.map(asset => ({
-              id: asset.id,
-              name: asset.name,
-              rootId: asset.rootId,
-              description: asset.description,
-              types: [],
-              metadata: asset.metadata,
-              parentId: asset.parentId,
-            }))
+            result.map(asset => slimAssetObject(asset))
           ),
         });
         dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
@@ -110,15 +102,7 @@ export function fetchAsset(assetId: number) {
 
       if (results) {
         const items = arrayToObjectById(
-          results.map(asset => ({
-            id: asset.id,
-            name: asset.name,
-            rootId: asset.rootId,
-            description: asset.description,
-            parentId: asset.parentId,
-            types: [],
-            metadata: asset.metadata,
-          }))
+          results.map(asset => slimAssetObject(asset))
         );
 
         dispatch({ type: ADD_ASSETS, payload: { items } });
@@ -148,15 +132,7 @@ export function fetchRootAssets() {
 
       if (results) {
         const items = arrayToObjectById(
-          results.map(asset => ({
-            id: asset.id,
-            name: asset.name,
-            rootId: asset.rootId,
-            description: asset.description,
-            parentId: asset.parentId,
-            types: [],
-            metadata: asset.metadata,
-          }))
+          results.map(asset => slimAssetObject(asset))
         );
 
         dispatch({ type: ADD_ASSETS, payload: { items } });
@@ -178,15 +154,7 @@ export function loadAssetChildren(assetId: number) {
 
       if (results) {
         const items = arrayToObjectById(
-          results.map(asset => ({
-            id: asset.id,
-            name: asset.name,
-            rootId: asset.rootId,
-            parentId: asset.parentId,
-            description: asset.description,
-            types: [],
-            metadata: asset.metadata,
-          }))
+          results.map(asset => slimAssetObject(asset))
         );
         dispatch({
           type: ADD_ASSETS,
@@ -212,15 +180,7 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
       requestedAssetIds[assetId] = false;
 
       const items = arrayToObjectById(
-        results.map(asset => ({
-          id: asset.id,
-          name: asset.name,
-          rootId: asset.rootId,
-          parentId: asset.parentId,
-          description: asset.description,
-          types: [],
-          metadata: asset.metadata,
-        }))
+        results.map(asset => slimAssetObject(asset))
       );
       dispatch({
         type: ADD_ASSETS,
@@ -256,15 +216,7 @@ export function fetchAssets(assetIds: number[]) {
 
       if (results) {
         const items = arrayToObjectById(
-          results.map(asset => ({
-            id: asset.id,
-            name: asset.name,
-            rootId: asset.rootId,
-            parentId: asset.parentId,
-            description: asset.description,
-            types: [],
-            metadata: asset.metadata,
-          }))
+          results.map(asset => slimAssetObject(asset))
         );
 
         dispatch({ type: ADD_ASSETS, payload: { items } });
@@ -298,15 +250,7 @@ export function createNewAsset(
       ]);
       if (results) {
         const items = arrayToObjectById(
-          results.map(asset => ({
-            id: asset.id,
-            name: asset.name,
-            rootId: asset.rootId,
-            parentId: asset.parentId,
-            description: asset.description,
-            types: [],
-            metadata: asset.metadata,
-          }))
+          results.map(asset => slimAssetObject(asset))
         );
 
         const assetId = results[0].id;
@@ -342,7 +286,7 @@ export function editAsset(asset: AssetChange) {
         dispatch({
           type: UPDATE_ASSET,
           payload: {
-            item: { ...results[0], types: [] },
+            item: slimAssetObject(results[0]),
             assetId: results[0].id,
           },
         });
@@ -417,6 +361,18 @@ export default function assets(
       return state;
   }
 }
+
+const slimAssetObject = (asset: Asset): ExtendedAsset => ({
+  id: asset.id,
+  name: asset.name,
+  rootId: asset.rootId,
+  description: asset.description,
+  parentId: asset.parentId,
+  lastUpdatedTime: asset.lastUpdatedTime,
+  createdTime: asset.createdTime,
+  types: [],
+  metadata: asset.metadata,
+});
 
 // Action creators
 const setAssets = createAction(SET_ASSETS);

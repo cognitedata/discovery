@@ -980,10 +980,10 @@
   optionalDependencies:
     fsevents "2.0.7"
 
-"@cognite/sdk@^2.0.3":
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/@cognite/sdk/-/sdk-2.2.2.tgz#3ac9c305c52df31ef768b44c2bade852b581362c"
-  integrity sha512-+HiCFhcXRP07xKB+1HNfsnUiWh9mjZFeucqUBAUG2IfyEMrvFDef7WngxLQ9s/goohgPJ0cCjzdQ2RsCzE218g==
+"@cognite/sdk@2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@cognite/sdk/-/sdk-2.0.3.tgz#3b2af851f0268636810d91bb042a45a861da5b3e"
+  integrity sha512-YSuLpUuN6aJMhQa0z7pzchlfagDlKI4eCmr/dA/QpftnS9iisd568y2raD7A2NMGKf8PMohIBsq1IFgYdzghrw==
   dependencies:
     axios "0.18.1"
     lodash "^4.17.11"
