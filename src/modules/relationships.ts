@@ -22,14 +22,18 @@ export function fetchRelationships() {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     const { project } = sdk;
     try {
-      const items = await sdk.get(
+      const response = await sdk.get(
         `https://api.cognitedata.com/api/playground/projects/${project}/relationships`
       );
 
-      dispatch({
-        type: GET_RELATIONSHIPS,
-        payload: { items },
-      });
+      if (response.status === 200) {
+        dispatch({
+          type: GET_RELATIONSHIPS,
+          payload: { items: response.data.items },
+        });
+      } else {
+        throw new Error('Unable to fetch relationships');
+      }
     } catch (ex) {
       message.error('unable to retrieve relationship data');
     }
@@ -39,7 +43,7 @@ export function fetchRelationshipsForId(id: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
       const { project } = sdk;
-      const items = await sdk.post(
+      const response = await sdk.post(
         `https://api.cognitedata.com/api/playground/projects/${project}/relationships`,
         {
           data: {
@@ -48,10 +52,14 @@ export function fetchRelationshipsForId(id: number) {
         }
       );
 
-      dispatch({
-        type: GET_RELATIONSHIPS,
-        payload: { items },
-      });
+      if (response.status === 200) {
+        dispatch({
+          type: GET_RELATIONSHIPS,
+          payload: { items: response.data.items },
+        });
+      } else {
+        throw new Error('Unable to fetch relationships for given asset');
+      }
     } catch (ex) {
       message.error('unable to retrieve relationship data');
     }

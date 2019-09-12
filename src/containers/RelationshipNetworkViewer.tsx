@@ -7,11 +7,6 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { Asset } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
 import ReactDOMServer from 'react-dom/server';
-import {
-  loadAssetChildren,
-  loadParentRecurse,
-  ExtendedAsset,
-} from '../modules/assets';
 import { RootState } from '../reducers/index';
 import {
   fetchRelationships,
@@ -62,16 +57,16 @@ type StateProps = {
   relationships: RelationshipState;
 };
 type DispatchProps = {
-  loadAssetChildren: typeof loadAssetChildren;
   fetchRelationships: typeof fetchRelationships;
-  loadParentRecurse: typeof loadParentRecurse;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
 
 type State = { selectedRelationship?: number };
 
-interface D3Node extends ExtendedAsset, d3.SimulationNodeDatum {}
+interface D3Node extends d3.SimulationNodeDatum {
+  resourceId: string;
+}
 
 interface Link extends d3.SimulationLinkDatum<D3Node> {
   source: D3Node;
@@ -86,7 +81,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
   div?: d3.Selection<HTMLDivElement, any, any, any>;
 
-  displayedNodes: Map<number, D3Node> = new Map();
+  displayedNodes: Map<string, D3Node> = new Map();
 
   displayedLinkIds: string[] = [];
 
@@ -176,12 +171,6 @@ export class AssetViewer extends React.Component<Props, State> {
       this.node = this.div!.selectAll('div');
 
       this.createGraph();
-
-      const { asset, rootAssetId } = this.props;
-
-      if (asset && asset.id !== rootAssetId && asset.parentId) {
-        this.props.loadParentRecurse(asset.parentId, rootAssetId);
-      }
     }
   }
 
@@ -219,6 +208,7 @@ export class AssetViewer extends React.Component<Props, State> {
     const {
       relationships: { items: relationships },
     } = this.props;
+
     return relationships.reduce((prev, el) => {
       prev.push(el.source);
       prev.push(el.target);
@@ -247,10 +237,10 @@ export class AssetViewer extends React.Component<Props, State> {
           id: `${relationship.externalId}`,
           source:
             this.displayedNodes.get(relationship.source.resourceId) ||
-            nodes.find(el => el.id === relationship.source.resourceId),
+            nodes.find(el => el.resourceId === relationship.source.resourceId),
           target:
             this.displayedNodes.get(relationship.target.resourceId) ||
-            nodes.find(el => el.id === relationship.target.resourceId),
+            nodes.find(el => el.resourceId === relationship.target.resourceId),
         })
       )
       .filter(
@@ -262,7 +252,7 @@ export class AssetViewer extends React.Component<Props, State> {
       );
 
     nodes.forEach(el => {
-      this.displayedNodes.set(el.id, el);
+      this.displayedNodes.set(el.resourceId, el);
     });
 
     this.displayedLinkIds = this.displayedLinkIds.concat(
@@ -277,7 +267,7 @@ export class AssetViewer extends React.Component<Props, State> {
     const visibleNodes = Array.from(this.displayedNodes.values());
 
     visibleNodes.forEach((node: D3Node) => {
-      const el = document.getElementById(`${node.id}`);
+      const el = document.getElementById(`${node.resourceId}`);
       if (el) {
         el.setAttribute('style', '');
       }
@@ -409,8 +399,8 @@ const AssetNode = (asset: D3Node, isSelf: boolean, isChildren: boolean) => {
     color = 'rgba(100, 100, 40, 0.5)';
   }
   return ReactDOMServer.renderToStaticMarkup(
-    <Node id={`${asset.id}`} color={color}>
-      <p>{asset.name}</p>
+    <Node id={`${asset.resourceId}`} color={color}>
+      <p>{asset.resourceId}</p>
     </Node>
   );
 };
@@ -426,8 +416,6 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
       fetchRelationships,
-      loadParentRecurse,
-      loadAssetChildren,
     },
     dispatch
   );
