@@ -6,7 +6,6 @@ import Model3D from '../components/Model3D';
 import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
-import AssetDrawer from './AssetDrawer';
 import AssetNetworkViewer from './AssetNetworkViewer';
 import {
   fetchMappingsFromAssetId,
@@ -14,7 +13,6 @@ import {
   AssetMappingState,
 } from '../modules/assetmappings';
 import { RootState } from '../reducers/index';
-import NodeDrawer from './NodeDrawer';
 import { selectThreeD, ThreeDState } from '../modules/threed';
 import RelationshipNetworkViewer from './RelationshipNetworkViewer';
 
@@ -196,16 +194,12 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   render() {
-    const asset = this.getAsset();
-    const { rootAssetId } = this;
-    const { assetDrawerWidth, nodeId, revisionId, modelId } = this.props;
-
     return (
       <div
         className="main-layout"
         style={{ width: '100%', height: 0, flex: 1 }}
       >
-        <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
+        <div style={{ height: '100%' }}>
           <ViewerContainer>
             {(this.props.show3D || this.props.showPNID) && (
               <div className="split">
@@ -218,30 +212,6 @@ export class AssetViewer extends React.Component<Props, State> {
               this.props.showAssetViewer &&
               this.renderAssetNetwork()}
           </ViewerContainer>
-          {asset && (
-            <AssetDrawer
-              width={assetDrawerWidth}
-              revisionId={revisionId!}
-              modelId={modelId!}
-              asset={asset}
-              onAssetIdChange={(id?: number) =>
-                this.props.onAssetIdChange(rootAssetId, id)
-              }
-            />
-          )}
-          {!asset && (
-            <NodeDrawer
-              width={assetDrawerWidth}
-              nodeId={nodeId!}
-              revisionId={revisionId!}
-              modelId={modelId!}
-              asset={asset}
-              onAssetIdChange={(id?: number) =>
-                this.props.onAssetIdChange(rootAssetId, id)
-              }
-              onNodeIdChange={this.props.onNodeIdChange}
-            />
-          )}
         </div>
       </div>
     );

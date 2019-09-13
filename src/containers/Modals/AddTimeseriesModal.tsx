@@ -5,8 +5,8 @@ import { Modal, Button } from 'antd';
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
-import { addTimeseriesToAsset } from '../modules/timeseries';
-import { RootState } from '../reducers/index';
+import { addTimeseriesToAsset } from '../../modules/timeseries';
+import { RootState } from '../../reducers/index';
 
 type OrigProps = {
   assetId: string | number;

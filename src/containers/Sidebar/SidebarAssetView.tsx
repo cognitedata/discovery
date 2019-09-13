@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import {
   List,
-  Drawer,
   Spin,
   Collapse,
   Button,
@@ -28,31 +27,31 @@ import {
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
-} from '../modules/timeseries';
+} from '../../modules/timeseries';
 import {
   selectTypes,
   removeTypeFromAsset,
   Type,
   TypesState,
-} from '../modules/types';
+} from '../../modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
   EventsAndTypes,
-} from '../modules/events';
-import AddTimeseries from './AddTimeseries';
-import AddTypes from './AddTypes';
-import EventPreview from '../components/EventPreview';
-import TimeseriesPreview from '../components/TimeseriesPreview';
-import { createAssetTitle } from '../utils/utils';
-import { selectThreeD, CurrentNode, ThreeDState } from '../modules/threed';
-import { ExtendedAsset, fetchAsset, deleteAsset } from '../modules/assets';
-import { RootState } from '../reducers/index';
-import { sdk } from '../index';
-import AddChildAsset from './AddChildAsset';
-import { selectFiles } from '../modules/files';
-import { deleteAssetNodeMapping } from '../modules/assetmappings';
-import ChangeAssetParent from './ChangeAssetParent';
+} from '../../modules/events';
+import AddTimeseries from '../Modals/AddTimeseriesModal';
+import AddTypes from '../Modals/AddTypesModal';
+import EventPreview from '../../components/EventPreview';
+import TimeseriesPreview from '../../components/TimeseriesPreview';
+import { createAssetTitle } from '../../utils/utils';
+import { selectThreeD, CurrentNode, ThreeDState } from '../../modules/threed';
+import { ExtendedAsset, fetchAsset, deleteAsset } from '../../modules/assets';
+import { RootState } from '../../reducers/index';
+import { sdk } from '../../index';
+import AddChildAsset from '../Modals/AddChildAssetModal';
+import { selectFiles } from '../../modules/files';
+import { deleteAssetNodeMapping } from '../../modules/assetmappings';
+import ChangeAssetParent from '../Modals/ChangeAssetParentModal';
 
 const { Panel } = Collapse;
 
@@ -79,7 +78,6 @@ const HeaderWithButton = styled.div`
 
 type OrigProps = {
   asset: ExtendedAsset;
-  width: number;
   modelId: number;
   revisionId: number;
   onAssetIdChange: (id?: number) => void;
@@ -497,14 +495,8 @@ class AssetDrawer extends React.Component<Props, State> {
             onClose={this.onModalClose}
           />
         )}
-        <Drawer
-          title={createAssetTitle(asset)}
-          placement="right"
-          width={this.props.width}
-          closable={false}
-          visible
-          mask={false}
-        >
+        <div>
+          <h3>{createAssetTitle(asset)}</h3>
           {asset.description && <p>{asset.description}</p>}
           {
             <Collapse
@@ -530,7 +522,7 @@ class AssetDrawer extends React.Component<Props, State> {
             />
             <span>Hierarchy Editing</span>
           </EditHieraryToggle>
-        </Drawer>
+        </div>
       </>
     );
   }
