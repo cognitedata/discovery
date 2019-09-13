@@ -2,8 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, Select } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
-import { addTypesToAsset, Type } from '../modules/types';
-import { ExtendedAsset } from '../modules/assets';
+import { addTypesToAsset, Type } from '../../modules/types';
+import { ExtendedAsset } from '../../modules/assets';
 
 const { Option } = Select;
 

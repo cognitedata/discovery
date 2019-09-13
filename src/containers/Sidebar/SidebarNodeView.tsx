@@ -1,22 +1,21 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Drawer, Button } from 'antd';
+import { Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
-import { selectThreeD, ThreeDState } from '../modules/threed';
+import { selectThreeD, ThreeDState } from '../../modules/threed';
 import {
   ExtendedAsset,
   fetchAsset,
   selectAssets,
   AssetsState,
-} from '../modules/assets';
-import { RootState } from '../reducers/index';
-import { sdk } from '../index';
-import MapModelToAssetForm from './MapModelToAssetForm';
-import MapNodeToAssetForm from './MapNodeToAssetForm';
+} from '../../modules/assets';
+import { RootState } from '../../reducers/index';
+import { sdk } from '../../index';
+import MapModelToAssetForm from '../MapModelToAssetForm';
+import MapNodeToAssetForm from '../MapNodeToAssetForm';
 
 type OrigProps = {
   asset: ExtendedAsset;
-  width: number;
   modelId: number;
   revisionId: number;
   nodeId: number;
@@ -82,23 +81,17 @@ class NodeDrawer extends React.Component<Props, State> {
       return null;
     }
     return (
-      <Drawer
-        title={
-          rootAsset ? (
+      <>
+        <h3>
+          {rootAsset ? (
             <>
               <span>Unmapped Node</span>
               <Button onClick={this.unselectNodeClicked}>Unselect Node</Button>
             </>
           ) : (
             <span>Unmapped Model</span>
-          )
-        }
-        placement="right"
-        width={this.props.width}
-        closable={false}
-        visible
-        mask={false}
-      >
+          )}
+        </h3>
         {rootAsset ? (
           <>
             <Button onClick={this.selectParentClicked}>Select Parent</Button>
@@ -114,7 +107,7 @@ class NodeDrawer extends React.Component<Props, State> {
         ) : (
           <MapModelToAssetForm revisionId={revisionId} modelId={modelId} />
         )}
-      </Drawer>
+      </>
     );
   }
 }

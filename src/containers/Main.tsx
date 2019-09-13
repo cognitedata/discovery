@@ -1,9 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Button, Radio } from 'antd';
+import { Layout, Switch, Radio } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
-import AssetSearch from './AssetSearch';
+import { Asset } from '@cognite/sdk';
 import {
   AssetViewer as AssetViewerComponent,
   // eslint-disable-next-line import/no-named-default
@@ -19,6 +19,9 @@ import {
 import { selectAssets, AssetsState } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import ModelList from './ModelList';
+import AssetSearchComponent from './AssetSearchComponent';
+import AssetDrawer from './Sidebar/SidebarAssetView';
+import NodeDrawer from './Sidebar/SidebarNodeView';
 
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
@@ -35,11 +38,6 @@ const StyledHeader = styled(Header)`
   }
 `;
 
-const BackButton = styled(Button)`
-  margin-top: 12px;
-  margin-left: 12px;
-`;
-
 const RootSelector = styled(Radio.Group)`
   && {
     margin: 12px;
@@ -48,6 +46,16 @@ const RootSelector = styled(Radio.Group)`
   }
   && > * {
     flex: 1;
+  }
+`;
+
+const AssetSectionWrapper = styled.div`
+  margin-top: 16px;
+  margin-left: 12px;
+  margin-right: 12px;
+
+  .content-section {
+    margin-top: 12px;
   }
 `;
 
@@ -238,13 +246,20 @@ class Main extends React.Component<Props, State> {
   renderSidebar = () => {
     const {
       match: {
-        params: { assetId, rootAssetId, tenant },
+        params: { rootAssetId, tenant, assetId, modelId, revisionId, nodeId },
       },
-      location,
     } = this.props;
 
-    let content = (
-      <>
+    const asset = this.props.assets.all[Number(assetId)];
+    return (
+      <Sider
+        style={{
+          overflow: 'auto',
+          height: '100vh',
+          background: 'rgb(255,255,255)',
+        }}
+        width={350}
+      >
         <RootSelector
           onChange={el => this.setState({ selectedPane: el.target.value })}
           value={this.state.selectedPane}
@@ -253,43 +268,45 @@ class Main extends React.Component<Props, State> {
           <Radio.Button value="3d">3D Models</Radio.Button>
         </RootSelector>
         {this.state.selectedPane === 'asset' ? (
-          <AssetSearch
-            rootAssetId={rootAssetId && Number(rootAssetId)}
-            assetId={assetId && Number(assetId)}
-            location={location}
-            modelId={this.modelId}
-            onAssetIdChange={this.onAssetIdChange}
-          />
+          <>
+            <AssetSectionWrapper>
+              <AssetSearchComponent
+                rootAsset={
+                  rootAssetId ? this.props.assets.all[rootAssetId] : undefined
+                }
+                onAssetClicked={(selectedAsset: Asset) =>
+                  this.onAssetIdChange(selectedAsset.rootId, selectedAsset.id)
+                }
+              />
+              <div className="content-section">
+                {asset && (
+                  <AssetDrawer
+                    revisionId={revisionId!}
+                    modelId={Number(modelId)!}
+                    asset={asset}
+                    onAssetIdChange={(id?: number) =>
+                      this.onAssetIdChange(rootAssetId, id)
+                    }
+                  />
+                )}
+                {!asset && (
+                  <NodeDrawer
+                    nodeId={nodeId!}
+                    revisionId={revisionId!}
+                    modelId={modelId!}
+                    asset={asset}
+                    onAssetIdChange={(id?: number) =>
+                      this.onAssetIdChange(rootAssetId, id)
+                    }
+                    onNodeIdChange={this.onNodeIdChange}
+                  />
+                )}
+              </div>
+            </AssetSectionWrapper>
+          </>
         ) : (
           <ModelList tenant={tenant} />
         )}
-      </>
-    );
-    if (rootAssetId) {
-      content = (
-        <>
-          <BackButton type="primary" onClick={() => this.onAssetIdChange()}>
-            Select Another Root Asset
-          </BackButton>
-          <AssetSearch
-            rootAssetId={rootAssetId && Number(rootAssetId)}
-            assetId={assetId && Number(assetId)}
-            location={location}
-            onAssetIdChange={this.onAssetIdChange}
-          />
-        </>
-      );
-    }
-    return (
-      <Sider
-        style={{
-          overflow: 'auto',
-          height: '100vh',
-          background: 'rgb(255,255,255)',
-        }}
-        width={250}
-      >
-        {content}
       </Sider>
     );
   };

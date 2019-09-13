@@ -4,9 +4,9 @@ import { Modal, Button, message, Select, Spin } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Asset } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
-import { ExtendedAsset, editAsset } from '../modules/assets';
-import { sdk } from '../index';
-import { RootState } from '../reducers/index';
+import { ExtendedAsset, editAsset } from '../../modules/assets';
+import { sdk } from '../../index';
+import { RootState } from '../../reducers/index';
 
 type Props = {
   assetId: number;

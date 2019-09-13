@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, Input, message } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
-import { ExtendedAsset, createNewAsset } from '../modules/assets';
+import { ExtendedAsset, createNewAsset } from '../../modules/assets';
 
 type Props = {
   asset: ExtendedAsset;
