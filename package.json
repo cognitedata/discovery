@@ -25,7 +25,6 @@
 		"@types/react-router-dom": "^4.3.4",
 		"@types/redux-actions": "^2.6.1",
 		"@types/styled-components": "^4.1.18",
-		"add": "^2.0.6",
 		"antd": "^3.22.2",
 		"babel-eslint": "^10.0.2",
 		"connected-react-router": "^6.5.2",
