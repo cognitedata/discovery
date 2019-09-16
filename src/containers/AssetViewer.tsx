@@ -6,7 +6,6 @@ import Model3D from '../components/Model3D';
 import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
-import AssetNetworkViewer from './AssetNetworkViewer';
 import {
   fetchMappingsFromAssetId,
   selectAssetMappings,
@@ -21,6 +20,7 @@ import {
   AppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
+import TreeViewer from './TreeViewer';
 
 const ViewerContainer = styled.div`
   display: flex;
@@ -35,6 +35,7 @@ const ViewerContainer = styled.div`
     flex: 2;
   }
   && .bottom {
+    height: 0;
     flex: 1;
     width: 100%;
   }
@@ -157,9 +158,7 @@ export class AssetViewer extends React.Component<Props, State> {
     }
     return (
       <div className="bottom">
-        <AssetNetworkViewer
-          topShowing={this.props.show3D || this.props.showPNID}
-        />
+        <TreeViewer topShowing={this.props.show3D || this.props.showPNID} />
       </div>
     );
   };
