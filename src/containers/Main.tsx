@@ -226,7 +226,11 @@ class Main extends React.Component<Props, State> {
   };
 
   onAssetViewerChange = (visible: boolean) => {
-    this.setState({ showAssetViewer: visible });
+    const { showRelationships } = this.state;
+    this.setState({
+      showAssetViewer: visible,
+      showRelationships: visible ? false : showRelationships,
+    });
     localStorage.setItem('showAssetViewer', `${visible}`);
   };
 
