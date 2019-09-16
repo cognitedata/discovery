@@ -45,13 +45,20 @@ import EventPreview from '../../components/EventPreview';
 import TimeseriesPreview from '../../components/TimeseriesPreview';
 import { createAssetTitle } from '../../utils/utils';
 import { selectThreeD, CurrentNode, ThreeDState } from '../../modules/threed';
-import { ExtendedAsset, fetchAsset, deleteAsset } from '../../modules/assets';
+import {
+  ExtendedAsset,
+  fetchAsset,
+  deleteAsset,
+  selectAssets,
+  AssetsState,
+} from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { sdk } from '../../index';
 import AddChildAsset from '../Modals/AddChildAssetModal';
 import { selectFiles } from '../../modules/files';
 import { deleteAssetNodeMapping } from '../../modules/assetmappings';
 import ChangeAssetParent from '../Modals/ChangeAssetParentModal';
+import { selectApp, AppState, setAssetId } from '../../modules/app';
 
 const { Panel } = Collapse;
 
@@ -76,12 +83,7 @@ const HeaderWithButton = styled.div`
   justify-content: space-between;
 `;
 
-type OrigProps = {
-  asset: ExtendedAsset;
-  modelId: number;
-  revisionId: number;
-  onAssetIdChange: (id?: number) => void;
-};
+type OrigProps = {};
 
 type Props = {
   doFetchTimeseries: typeof fetchTimeseries;
@@ -90,9 +92,12 @@ type Props = {
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
   doRemoveTypeFromAsset: typeof removeTypeFromAsset;
   deleteAsset: typeof deleteAsset;
+  setAssetId: typeof setAssetId;
   timeseries: TimeseriesState;
   events: EventsAndTypes;
   threed: ThreeDState;
+  app: AppState;
+  assets: AssetsState;
   types: TypesState;
   files?: FilesMetadata[];
 } & OrigProps;
@@ -123,19 +128,26 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   componentDidMount() {
-    const { asset, doFetchTimeseries, doFetchEvents } = this.props;
-    doFetchTimeseries(asset.id);
-    doFetchEvents(asset.id);
+    const { doFetchTimeseries, doFetchEvents, app } = this.props;
+    doFetchTimeseries(app.assetId!);
+    doFetchEvents(app.assetId!);
     this.resetState();
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { doFetchTimeseries, doFetchEvents, asset } = this.props;
-    if (prevProps.asset !== asset) {
-      doFetchTimeseries(asset.id);
-      doFetchEvents(asset.id);
+    const { doFetchTimeseries, doFetchEvents, app } = this.props;
+    if (prevProps.app.assetId !== app.assetId && app.assetId) {
+      doFetchTimeseries(app.assetId);
+      doFetchEvents(app.assetId);
       this.resetState();
     }
+  }
+
+  get asset() {
+    if (this.props.app.assetId) {
+      return this.props.assets.all[this.props.app.assetId];
+    }
+    return undefined;
   }
 
   addTimeseriesClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -281,7 +293,7 @@ class AssetDrawer extends React.Component<Props, State> {
   resetState = () => {
     this.setState({
       disableEditHierarchy: !!(
-        this.props.asset.metadata && this.props.asset.metadata!.SOURCE
+        this.asset!.metadata && this.asset!.metadata!.SOURCE
       ),
       documentsTablePage: 0,
     });
@@ -360,11 +372,13 @@ class AssetDrawer extends React.Component<Props, State> {
           title="Are you sure you want to remove this asset and all its children?"
           onConfirm={() => {
             this.props.deleteAsset(asset.id);
-            const { revisionId, modelId } = this.props;
+            const {
+              app: { revisionId, modelId, rootAssetId },
+            } = this.props;
             if (revisionId && modelId) {
               this.props.deleteAssetNodeMapping(modelId, revisionId, asset.id);
             }
-            this.props.onAssetIdChange(asset.parentId);
+            this.props.setAssetId(rootAssetId!, asset.parentId || asset.rootId);
           }}
           okText={`Yes (deleteing for tenant ${project})`}
           cancelText="No"
@@ -425,7 +439,15 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   render() {
-    const { asset } = this.props;
+    const { asset } = this;
+
+    if (!asset) {
+      return (
+        <SpinContainer>
+          <Spin />
+        </SpinContainer>
+      );
+    }
     const {
       showEditParent,
       showTimeseries,
@@ -442,14 +464,6 @@ class AssetDrawer extends React.Component<Props, State> {
     const allTypes = this.props.types.items ? this.props.types.items : [];
 
     const types = asset.types ? asset.types : [];
-
-    if (asset == null) {
-      return (
-        <SpinContainer>
-          <Spin />
-        </SpinContainer>
-      );
-    }
 
     const defaultActiveKey = this.state.activeCollapsed
       ? this.state.activeCollapsed
@@ -528,13 +542,22 @@ class AssetDrawer extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
+const mapStateToProps = (state: RootState) => {
   return {
+    app: selectApp(state),
+    assets: selectAssets(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
-    events: selectEventsByAssetId(state, ownProps.asset.id),
+    events: state.app.assetId
+      ? selectEventsByAssetId(state, state.app.assetId)
+      : {
+          items: [],
+          types: [],
+        },
     types: selectTypes(state),
-    files: selectFiles(state).byAssetId[ownProps.asset.id],
+    files: state.app.assetId
+      ? selectFiles(state).byAssetId[state.app.assetId]
+      : [],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
@@ -547,6 +570,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doRemoveTypeFromAsset: removeTypeFromAsset,
       deleteAssetNodeMapping,
       doFetchAsset: fetchAsset,
+      setAssetId,
     },
     dispatch
   );

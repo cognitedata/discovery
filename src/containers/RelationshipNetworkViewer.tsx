@@ -4,7 +4,6 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import * as d3 from 'd3';
 import { Dispatch, bindActionCreators } from 'redux';
-import { Asset } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
 import ReactDOMServer from 'react-dom/server';
 import { RootState } from '../reducers/index';
@@ -48,10 +47,7 @@ const Node = styled.div<{ color: string }>`
 `;
 
 type OwnProps = {
-  asset: Asset;
   topShowing: boolean;
-  rootAssetId: number;
-  onAssetIdChange: (number: number) => void;
 };
 type StateProps = {
   relationships: RelationshipState;

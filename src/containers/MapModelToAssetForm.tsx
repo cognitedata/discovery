@@ -10,13 +10,12 @@ import {
 } from '../modules/threed';
 import { selectAssets, AssetsState, createNewAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
+import { selectApp, AppState } from '../modules/app';
 
-type OrigProps = {
-  modelId: number;
-  revisionId: number;
-};
+type OrigProps = {};
 
 type Props = {
+  app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
   createNewAsset: typeof createNewAsset;
@@ -40,7 +39,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   addMapping = () => {
     const { assetId, assetName } = this.state;
-    const { modelId, revisionId } = this.props;
+    const { modelId, revisionId } = this.props.app;
     if (assetName && assetName.length > 0) {
       this.props.createNewAsset(
         { name: assetName },
@@ -50,7 +49,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         }
       );
     } else if (assetId) {
-      this.props.setRevisionRepresentAsset(modelId, revisionId, assetId);
+      this.props.setRevisionRepresentAsset(modelId!, revisionId!, assetId);
     } else {
       message.error('You need to select or provide name for a new asset.');
     }
@@ -99,6 +98,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
+    app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

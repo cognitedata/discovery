@@ -38,7 +38,7 @@ interface LoadModelAction extends Action<typeof LOAD_MODELS> {}
 interface SetModelAction extends Action<typeof SET_MODELS> {
   payload: { models: { [key: string]: ThreeDModel } };
 }
-interface UpdateRevisionAction extends Action<typeof UPDATE_REVISON> {
+export interface UpdateRevisionAction extends Action<typeof UPDATE_REVISON> {
   payload: {
     modelId: number;
     revisionId: number;
@@ -46,8 +46,17 @@ interface UpdateRevisionAction extends Action<typeof UPDATE_REVISON> {
     item: TBDRevision;
   };
 }
-interface AddRevisionAction extends Action<typeof ADD_REVISIONS> {
-  payload: { modelId: number; revisions: Revision3D[] };
+export interface AddRevisionAction extends Action<typeof ADD_REVISIONS> {
+  payload: {
+    modelId: number;
+    revisions: Revision3D[];
+    representsAsset: {
+      [key: number]: {
+        modelId: number;
+        revisionId: number;
+      };
+    };
+  };
 }
 interface SetNodeAction extends Action<typeof SET_NODE> {
   payload: { currentNode: any };
@@ -64,7 +73,30 @@ export function fetchRevisions(modelId: number) {
     const requestResult = await sdk.revisions3D.list(modelId, { limit: 1000 });
     if (requestResult) {
       const { items } = requestResult;
-      dispatch({ type: ADD_REVISIONS, payload: { modelId, revisions: items } });
+      const representsAssetMap = items.reduce(
+        (prev, revision: TBDRevision) => {
+          if (revision.metadata!.representsAsset) {
+            const { representsAsset } = revision.metadata!;
+            if (prev[Number(representsAsset)] === undefined) {
+              // eslint-disable-next-line no-param-reassign
+              prev[Number(representsAsset)] = {
+                modelId,
+                revisionId: revision.id,
+              };
+            }
+          }
+          return prev;
+        },
+        {} as { [key: number]: { modelId: number; revisionId: number } }
+      );
+      dispatch({
+        type: ADD_REVISIONS,
+        payload: {
+          modelId,
+          revisions: items,
+          representsAsset: representsAssetMap,
+        },
+      });
     }
   };
 }
@@ -207,28 +239,13 @@ export default function threed(
       };
     }
     case ADD_REVISIONS: {
-      const { modelId, revisions } = action.payload;
+      const { modelId, revisions, representsAsset } = action.payload;
       // TODO, this is a hack!
       const newRepresentMap: {
         [key: number]: { modelId: number; revisionId: number };
       } = {
         ...state.representsAsset,
-        ...revisions.reduce(
-          (prev, revision: TBDRevision) => {
-            if (revision.metadata!.representsAsset) {
-              const { representsAsset } = revision.metadata!;
-              if (prev[Number(representsAsset)] === undefined) {
-                // eslint-disable-next-line no-param-reassign
-                prev[Number(representsAsset)] = {
-                  modelId,
-                  revisionId: revision.id,
-                };
-              }
-            }
-            return prev;
-          },
-          {} as { [key: number]: { modelId: number; revisionId: number } }
-        ),
+        ...representsAsset,
       };
       return {
         ...state,

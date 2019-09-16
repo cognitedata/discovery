@@ -15,15 +15,21 @@ export interface Mapping {
   assetId: number;
 }
 
-interface AddAction extends Action<typeof ADD_ASSET_MAPPINGS> {
-  payload: { mapping: AssetMapping3D; nodeId?: number };
+export interface AddNodeAssetMappingAction
+  extends Action<typeof ADD_ASSET_MAPPINGS> {
+  payload: {
+    mapping: AssetMapping3D;
+    nodeId?: number;
+    modelId: number;
+    revisionId: number;
+  };
 }
 interface DeleteAssetMappingAction extends Action<typeof DELETE_ASSET_MAPPING> {
   payload: { assetId: number };
 }
 
 type AssetMappingAction =
-  | AddAction
+  | AddNodeAssetMappingAction
   | DeleteAssetMappingAction
   | DeleteAssetAction;
 
@@ -91,7 +97,10 @@ export function fetchMappingsFromAssetId(
 
       // Choose largest mapping
       mappings.sort((a, b) => a.subtreeSize! - b.subtreeSize!);
-      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
+      dispatch({
+        type: ADD_ASSET_MAPPINGS,
+        payload: { mapping: mappings[0], modelId, revisionId },
+      });
     } catch (ex) {
       // Could not fetch
     }
@@ -122,7 +131,10 @@ export function fetchMappingsFromNodeId(
       }
 
       const mapping = findBestMappingForNodeId(nodeId, mappings);
-      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping, nodeId } });
+      dispatch({
+        type: ADD_ASSET_MAPPINGS,
+        payload: { mapping, nodeId, modelId, revisionId },
+      });
     } catch (ex) {
       // Could not fetch
     }
@@ -149,7 +161,10 @@ export function createAssetNodeMapping(
         return;
       }
 
-      dispatch({ type: ADD_ASSET_MAPPINGS, payload: { mapping: mappings[0] } });
+      dispatch({
+        type: ADD_ASSET_MAPPINGS,
+        payload: { mapping: mappings[0], modelId, revisionId },
+      });
     } catch (ex) {
       // Could not fetch
       message.error(

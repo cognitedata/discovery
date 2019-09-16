@@ -1,4 +1,6 @@
-import { combineReducers, Reducer } from 'redux';
+import { combineReducers } from 'redux';
+import { History } from 'history';
+import { connectRouter, RouterState } from 'connected-react-router';
 import timeseries, { TimeseriesState } from '../modules/timeseries';
 import events, { EventState } from '../modules/events';
 import assets, { AssetsState } from '../modules/assets';
@@ -10,18 +12,20 @@ import assetMappings, { AssetMappingState } from '../modules/assetmappings';
 import app, { AppState } from '../modules/app';
 import relationships, { RelationshipState } from '../modules/relationships';
 
-const rootReducer: Reducer<RootState> = combineReducers({
-  timeseries,
-  events,
-  assets,
-  assetMappings,
-  types,
-  files,
-  filters,
-  threed,
-  app,
-  relationships,
-});
+const createRootReducer = (history: History) =>
+  combineReducers({
+    timeseries,
+    events,
+    assets,
+    assetMappings,
+    types,
+    files,
+    filters,
+    threed,
+    app,
+    relationships,
+    router: connectRouter(history),
+  });
 
 export interface RootState {
   timeseries: TimeseriesState;
@@ -34,6 +38,7 @@ export interface RootState {
   relationships: RelationshipState;
   assetMappings: AssetMappingState;
   app: AppState;
+  router: RouterState;
 }
 
-export default rootReducer;
+export default createRootReducer;

@@ -22,6 +22,13 @@ import ModelList from './ModelList';
 import AssetSearchComponent from './AssetSearchComponent';
 import AssetDrawer from './Sidebar/SidebarAssetView';
 import NodeDrawer from './Sidebar/SidebarNodeView';
+import {
+  AppState,
+  selectApp,
+  setAssetId,
+  resetAppState,
+  setModelAndRevisionAndNode,
+} from '../modules/app';
 
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
@@ -68,10 +75,14 @@ type Props = {
   history: any;
   location: any;
   threed: ThreeDState;
+  app: AppState;
   assets: AssetsState;
   doFetchRevisions: typeof fetchRevisions;
   doFetchTypes: typeof fetchTypes;
   doFetchModels: typeof fetchModels;
+  setAssetId: typeof setAssetId;
+  setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
+  resetAppState: typeof resetAppState;
 };
 
 type State = {
@@ -116,47 +127,17 @@ class Main extends React.Component<Props, State> {
       }, 500);
     }
 
-    this.checkAndFixRootId();
+    this.checkAndFixURL();
   }
 
   componentDidUpdate() {
-    this.checkAndFixRootId();
+    this.checkAndFixURL();
   }
 
-  get modelId() {
+  checkAndFixURL = () => {
     const {
       match: {
-        params: { modelId, rootAssetId },
-      },
-      threed,
-    } = this.props;
-
-    return (
-      modelId ||
-      (threed.representsAsset[rootAssetId] &&
-        threed.representsAsset[rootAssetId].modelId)
-    );
-  }
-
-  get revisionId() {
-    const {
-      match: {
-        params: { revisionId, rootAssetId },
-      },
-      threed,
-    } = this.props;
-
-    return (
-      revisionId ||
-      (threed.representsAsset[rootAssetId] &&
-        threed.representsAsset[rootAssetId].revisionId)
-    );
-  }
-
-  checkAndFixRootId = () => {
-    const {
-      match: {
-        params: { assetId, rootAssetId },
+        params: { rootAssetId, assetId },
       },
     } = this.props;
     if (assetId || rootAssetId) {
@@ -167,51 +148,11 @@ class Main extends React.Component<Props, State> {
     }
   };
 
-  onNodeIdChange = (nodeId?: number) => {
-    const {
-      match: {
-        params: { tenant },
-      },
-      history,
-    } = this.props;
-    const { modelId, revisionId } = this;
-    if (modelId && revisionId) {
-      history.push({
-        pathname: `/${tenant}/models/${modelId}/${revisionId}${
-          nodeId ? `/${nodeId}` : ''
-        }`,
-      });
-    }
-  };
-
-  onAssetIdChange = (
-    rootAssetId?: number,
-    assetId?: number,
-    query?: string
-  ) => {
-    const {
-      match: {
-        params: { tenant },
-      },
-      history,
-    } = this.props;
+  onAssetIdChange = (rootAssetId?: number, assetId?: number) => {
     if (rootAssetId) {
-      if (assetId) {
-        history.push({
-          pathname: `/${tenant}/asset/${rootAssetId}/${assetId}`,
-          search: query ? `?query=${query}` : '',
-        });
-      } else {
-        history.push({
-          pathname: `/${tenant}/asset/${rootAssetId}/${rootAssetId}`,
-          search: query ? `?query=${query}` : '',
-        });
-      }
+      this.props.setAssetId(rootAssetId, assetId || rootAssetId);
     } else {
-      history.push({
-        pathname: `/${tenant}`,
-        search: query ? `?query=${query}` : '',
-      });
+      this.props.resetAppState();
     }
   };
 
@@ -249,12 +190,10 @@ class Main extends React.Component<Props, State> {
 
   renderSidebar = () => {
     const {
-      match: {
-        params: { rootAssetId, tenant, assetId, modelId, revisionId, nodeId },
-      },
+      app: { assetId, rootAssetId },
+      assets,
     } = this.props;
-
-    const asset = this.props.assets.all[Number(assetId)];
+    const asset = assets.all[Number(assetId)];
     return (
       <Sider
         style={{
@@ -283,33 +222,13 @@ class Main extends React.Component<Props, State> {
                 }
               />
               <div className="content-section">
-                {asset && (
-                  <AssetDrawer
-                    revisionId={revisionId!}
-                    modelId={Number(modelId)!}
-                    asset={asset}
-                    onAssetIdChange={(id?: number) =>
-                      this.onAssetIdChange(rootAssetId, id)
-                    }
-                  />
-                )}
-                {!asset && (
-                  <NodeDrawer
-                    nodeId={nodeId!}
-                    revisionId={revisionId!}
-                    modelId={modelId!}
-                    asset={asset}
-                    onAssetIdChange={(id?: number) =>
-                      this.onAssetIdChange(rootAssetId, id)
-                    }
-                    onNodeIdChange={this.onNodeIdChange}
-                  />
-                )}
+                {asset && <AssetDrawer />}
+                {!asset && <NodeDrawer />}
               </div>
             </AssetSectionWrapper>
           </>
         ) : (
-          <ModelList tenant={tenant} />
+          <ModelList />
         )}
       </Sider>
     );
@@ -318,20 +237,17 @@ class Main extends React.Component<Props, State> {
   render() {
     let model3D: { modelId: number; revisionId: number } | undefined;
     const {
-      match: {
-        params: { assetId, rootAssetId, nodeId },
-      },
+      app: { modelId, revisionId },
     } = this.props;
 
     if (this.viewer && this.viewer.current) {
-      if (this.modelId && this.revisionId) {
+      if (modelId && revisionId) {
         model3D = {
-          modelId: this.modelId,
-          revisionId: this.revisionId,
+          modelId,
+          revisionId,
         };
       }
     }
-    const assetDrawerWidth = 350;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
@@ -350,7 +266,7 @@ class Main extends React.Component<Props, State> {
                   checkedChildren="3D"
                   unCheckedChildren="3D"
                   onChange={this.on3DVisibleChange}
-                  disabled={model3D == null}
+                  disabled={!model3D}
                 />
                 <Switch
                   checked={this.state.showPNID}
@@ -374,18 +290,10 @@ class Main extends React.Component<Props, State> {
                 />
               </StyledHeader>
               <AssetViewer
-                modelId={model3D && Number(model3D.modelId)}
-                revisionId={model3D && Number(model3D.revisionId)}
-                nodeId={nodeId && Number(nodeId)}
-                rootAssetId={rootAssetId && Number(rootAssetId)}
-                assetId={assetId && Number(assetId)}
                 show3D={model3D !== undefined && this.state.show3D}
                 showAssetViewer={this.state.showAssetViewer}
                 showRelationships={this.state.showRelationships}
                 showPNID={this.state.showPNID}
-                onAssetIdChange={this.onAssetIdChange}
-                onNodeIdChange={this.onNodeIdChange}
-                assetDrawerWidth={assetDrawerWidth}
                 ref={this.viewer}
               />
             </Content>
@@ -398,6 +306,7 @@ class Main extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
+    app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };
@@ -409,6 +318,9 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doFetchTypes: fetchTypes,
       doFetchRevisions: fetchRevisions,
       doFetchModels: fetchModels,
+      setAssetId,
+      setModelAndRevisionAndNode,
+      resetAppState,
     },
     dispatch
   );
