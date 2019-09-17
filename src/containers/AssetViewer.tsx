@@ -15,6 +15,12 @@ import {
 import { RootState } from '../reducers/index';
 import { selectThreeD, ThreeDState } from '../modules/threed';
 import RelationshipNetworkViewer from './RelationshipNetworkViewer';
+import {
+  setAssetId,
+  selectApp,
+  AppState,
+  setModelAndRevisionAndNode,
+} from '../modules/app';
 
 const ViewerContainer = styled.div`
   display: flex;
@@ -35,20 +41,13 @@ const ViewerContainer = styled.div`
 `;
 
 type OwnProps = {
-  assetDrawerWidth: number;
-  assetId?: number;
-  modelId?: number;
-  revisionId?: number;
-  nodeId?: number;
-  rootAssetId: number;
   show3D: boolean;
   showPNID: boolean;
   showAssetViewer: boolean;
   showRelationships: boolean;
-  onAssetIdChange: (rootAssetId?: number, assetId?: number) => void;
-  onNodeIdChange: (nodeId?: number) => void;
 };
 type StateProps = {
+  app: AppState;
   threed: ThreeDState;
   assets: AssetsState;
   assetMappings: AssetMappingState;
@@ -57,6 +56,8 @@ type DispatchProps = {
   doFetchAsset: typeof fetchAsset;
   doFetchFiles: typeof fetchFiles;
   doFetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
+  setAssetId: typeof setAssetId;
+  setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -82,96 +83,82 @@ export class AssetViewer extends React.Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.assetId !== this.assetId && this.assetId) {
+    if (prevProps.app.assetId !== this.assetId && this.assetId) {
       this.props.doFetchFiles(this.assetId);
       this.props.doFetchAsset(this.assetId);
+      this.getNodeId(true);
     }
-    this.getNodeId(true);
   }
 
   get assetId() {
-    return this.props.assetId || this.props.rootAssetId;
+    return this.props.app.assetId || this.props.app.rootAssetId;
   }
 
   get rootAssetId() {
-    if (this.props.rootAssetId) {
-      return this.props.rootAssetId;
+    return this.props.app.rootAssetId;
+  }
+
+  get asset() {
+    const { assets } = this.props;
+    if (this.assetId) {
+      return assets.all[this.assetId];
     }
-    const { modelId, revisionId } = this.props;
-    const { representsAsset } = this.props.threed;
-    return Number(
-      Object.keys(representsAsset).find(
-        assetId =>
-          representsAsset[Number(assetId)].modelId === modelId &&
-          representsAsset[Number(assetId)].revisionId === revisionId
-      )
-    );
+    return undefined;
   }
 
   getNodeId = (fetchIfMissing: boolean) => {
-    const { assetMappings } = this.props;
-    if (assetMappings.byAssetId[this.assetId]) {
-      const mapping = assetMappings.byAssetId[this.assetId];
-      return mapping.nodeId;
+    const {
+      app: { modelId, revisionId, nodeId },
+    } = this.props;
+    if (nodeId) {
+      return nodeId;
     }
 
-    if (fetchIfMissing && this.props.modelId && this.props.revisionId) {
-      const { modelId, revisionId } = this.props;
+    if (this.assetId && fetchIfMissing && modelId && revisionId) {
       this.props.doFetchMappingsFromAssetId(modelId, revisionId, this.assetId);
     }
 
-    return null;
-  };
-
-  getAsset = () => {
-    const { assets } = this.props;
-
-    return assets.all[this.assetId];
+    return undefined;
   };
 
   render3D = () => {
     const { rootAssetId, assetId } = this;
-    const { nodeId: propNodeId } = this.props;
+    const { nodeId: propNodeId, modelId, revisionId } = this.props.app;
     const nodeId = propNodeId || this.getNodeId(false);
     return (
       <Model3D
-        assetId={assetId}
-        modelId={this.props.modelId!}
-        revisionId={this.props.revisionId!}
+        assetId={assetId!}
+        modelId={modelId!}
+        revisionId={revisionId!}
         nodeId={nodeId}
         onAssetIdChange={(id: number) =>
-          this.props.onAssetIdChange(rootAssetId, id)
+          this.props.setAssetId(rootAssetId!, id)
         }
-        onNodeIdChange={(id: number) => this.props.onNodeIdChange(id)}
+        onNodeIdChange={(id: number) =>
+          this.props.setModelAndRevisionAndNode(modelId!, revisionId!, id)
+        }
         cache={this.cache}
       />
     );
   };
 
   renderPNID = () => {
-    const { rootAssetId } = this;
-    const asset = this.getAsset();
-    return (
-      <PNIDViewer
-        asset={asset}
-        onAssetIdChange={(id: number) =>
-          this.props.onAssetIdChange(rootAssetId, id)
-        }
-      />
-    );
+    const { asset } = this;
+    if (!asset) {
+      return null;
+    }
+    return <PNIDViewer />;
   };
 
   renderAssetNetwork = () => {
     const { rootAssetId } = this;
+    if (!rootAssetId) {
+      return null;
+    }
     return (
       <div className="bottom">
         <AssetNetworkViewer
-          rootAssetId={rootAssetId}
-          asset={this.getAsset()}
           topShowing={this.props.show3D || this.props.showPNID}
-          onAssetIdChange={(id: number) =>
-            this.props.onAssetIdChange(rootAssetId, id)
-          }
         />
       </div>
     );
@@ -179,15 +166,13 @@ export class AssetViewer extends React.Component<Props, State> {
 
   renderRelationshipsViewer = () => {
     const { rootAssetId } = this;
+    if (!rootAssetId) {
+      return null;
+    }
     return (
       <div className="bottom">
         <RelationshipNetworkViewer
-          rootAssetId={rootAssetId}
-          asset={this.getAsset()}
           topShowing={this.props.show3D || this.props.showPNID}
-          onAssetIdChange={(id: number) =>
-            this.props.onAssetIdChange(rootAssetId, id)
-          }
         />
       </div>
     );
@@ -220,6 +205,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
+    app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
     assetMappings: selectAssetMappings(state),
@@ -229,6 +215,8 @@ const mapStateToProps = (state: RootState): StateProps => {
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
+      setAssetId,
+      setModelAndRevisionAndNode,
       doFetchAsset: fetchAsset,
       doFetchFiles: fetchFiles,
       doFetchMappingsFromAssetId: fetchMappingsFromAssetId,
@@ -238,5 +226,7 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
 
 export default connect<StateProps, DispatchProps, OwnProps, RootState>(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
+  null,
+  { forwardRef: true }
 )(AssetViewer);

@@ -13,18 +13,14 @@ import { selectAssets, AssetsState, createNewAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from '../modules/assetmappings';
+import { selectApp, AppState } from '../modules/app';
 
 const { Option } = Select;
 
-type OrigProps = {
-  modelId: number;
-  revisionId: number;
-  nodeId: number;
-  rootAssetId: number;
-  onAssetIdChange: (assetId?: number) => void;
-};
+type OrigProps = {};
 
 type Props = {
+  app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
   createNewAsset: typeof createNewAsset;
@@ -47,7 +43,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
 
     this.state = {
       searchResults: Object.values(props.assets.all).filter(
-        el => el.rootId === props.rootAssetId
+        el => el.rootId === props.app.rootAssetId
       ),
       fetching: false,
     };
@@ -59,7 +55,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
       const results = await sdk.assets.search({
         search: { name: query },
         filter: {
-          rootIds: [{ id: this.props.rootAssetId }],
+          rootIds: [{ id: this.props.app.rootAssetId! }],
         },
         limit: 1000,
       });
@@ -72,7 +68,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
 
   addMapping = () => {
     const { assetId, assetName, parentAssetId } = this.state;
-    const { modelId, revisionId, nodeId } = this.props;
+    const { modelId, revisionId, nodeId } = this.props.app;
     if (assetName && assetName.length > 0 && parentAssetId) {
       this.props.createNewAsset(
         { name: assetName, parentId: parentAssetId },
@@ -83,7 +79,12 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
         }
       );
     } else if (assetId) {
-      this.props.createAssetNodeMapping(modelId, revisionId, nodeId, assetId);
+      this.props.createAssetNodeMapping(
+        modelId!,
+        revisionId!,
+        nodeId!,
+        assetId
+      );
     } else {
       message.error('You need to select or provide name for a new asset.');
     }
@@ -156,6 +157,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
+    app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

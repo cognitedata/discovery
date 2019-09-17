@@ -1,31 +1,28 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
-import {
-  ExtendedAsset,
-  fetchAsset,
-  selectAssets,
-  AssetsState,
-} from '../../modules/assets';
+import { fetchAsset, selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { sdk } from '../../index';
 import MapModelToAssetForm from '../MapModelToAssetForm';
 import MapNodeToAssetForm from '../MapNodeToAssetForm';
+import {
+  resetAppState,
+  AppState,
+  selectApp,
+  setModelAndRevisionAndNode,
+} from '../../modules/app';
 
-type OrigProps = {
-  asset: ExtendedAsset;
-  modelId: number;
-  revisionId: number;
-  nodeId: number;
-  onNodeIdChange: (nodeId?: number) => void;
-  onAssetIdChange: (id?: number) => void;
-};
+type OrigProps = {};
 
 type Props = {
+  app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
+  setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
+  resetAppState: typeof resetAppState;
 } & OrigProps;
 
 type State = {};
@@ -33,35 +30,33 @@ type State = {};
 class NodeDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
-  get rootAssetLinkedToRevision() {
-    const { modelId, revisionId } = this.props;
-    const { representsAsset } = this.props.threed;
-    return Number(
-      Object.keys(representsAsset).find(
-        assetId =>
-          representsAsset[Number(assetId)].modelId === modelId &&
-          representsAsset[Number(assetId)].revisionId === revisionId
-      )
-    );
-  }
-
   selectParentClicked = async () => {
-    const { modelId, revisionId, nodeId } = this.props;
-    const parent = await sdk.revisions3D.list3DNodes(modelId, revisionId, {
+    const { modelId, revisionId, nodeId, rootAssetId } = this.props.app;
+    const parent = await sdk.revisions3D.list3DNodes(modelId!, revisionId!, {
       nodeId,
     });
-    this.props.onNodeIdChange(parent.items[0].parentId);
+    if (parent.items.length > 0) {
+      this.props.setModelAndRevisionAndNode(
+        rootAssetId!,
+        parent.items[0].parentId
+      );
+    } else {
+      message.error('Unable to select parent');
+    }
   };
 
   unselectNodeClicked = () => {
-    this.props.onNodeIdChange();
+    const { modelId, revisionId } = this.props.app;
+    if (modelId && revisionId) {
+      this.props.setModelAndRevisionAndNode(modelId!, revisionId!);
+    } else {
+      this.props.resetAppState();
+    }
   };
 
   render() {
     const {
-      modelId,
-      revisionId,
-      nodeId,
+      app: { modelId, revisionId, nodeId, rootAssetId },
       threed: { models },
     } = this.props;
     if (
@@ -73,8 +68,8 @@ class NodeDrawer extends React.Component<Props, State> {
       return null;
     }
     let rootAsset;
-    if (this.rootAssetLinkedToRevision) {
-      rootAsset = this.props.assets.all[this.rootAssetLinkedToRevision];
+    if (rootAssetId) {
+      rootAsset = this.props.assets.all[rootAssetId];
     }
     // if already connected to root asset and nodeID is null, dont show.
     if (rootAsset && !nodeId) {
@@ -96,16 +91,10 @@ class NodeDrawer extends React.Component<Props, State> {
           <>
             <Button onClick={this.selectParentClicked}>Select Parent</Button>
             <p>Model is Mapped to: {rootAsset ? rootAsset.name : 'N/A'}</p>
-            <MapNodeToAssetForm
-              nodeId={nodeId}
-              onAssetIdChange={this.props.onAssetIdChange}
-              rootAssetId={rootAsset.id}
-              revisionId={revisionId}
-              modelId={modelId}
-            />
+            <MapNodeToAssetForm />
           </>
         ) : (
-          <MapModelToAssetForm revisionId={revisionId} modelId={modelId} />
+          <MapModelToAssetForm />
         )}
       </>
     );
@@ -114,6 +103,7 @@ class NodeDrawer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
+    app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };
@@ -122,6 +112,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       doFetchAsset: fetchAsset,
+      setModelAndRevisionAndNode,
+      resetAppState,
     },
     dispatch
   );

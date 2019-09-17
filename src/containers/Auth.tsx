@@ -1,15 +1,17 @@
 import React from 'react';
-import { Route, Redirect, Switch } from 'react-router-dom';
-import Main from '../containers/Main';
+import { Route, Switch } from 'react-router-dom';
+import { Dispatch, bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import Main from './Main';
 import { sdk } from '../index';
-import Loader from './Loader';
+import Loader from '../components/Loader';
+import { selectApp, setTenant, AppState } from '../modules/app';
+import { RootState } from '../reducers/index';
 
 type Props = {
-  match: {
-    url: string;
-    path: string;
-    params: { [key: string]: string };
-  };
+  app: AppState;
+  match: { params: { tenant: string }; path: string };
+  setTenant: typeof setTenant;
 };
 
 type State = {
@@ -25,12 +27,19 @@ class Auth extends React.Component<Props, State> {
     const status = await sdk.login.status();
     const {
       match: {
-        params: { tenant },
+        params: { tenant: pathTenant },
       },
     } = this.props;
+    const {
+      app: { tenant },
+    } = this.props;
+
+    if (!tenant && pathTenant) {
+      this.props.setTenant(pathTenant);
+    }
 
     if (!status) {
-      sdk.loginWithOAuth({ project: tenant });
+      sdk.loginWithOAuth({ project: tenant || pathTenant });
       await sdk.authenticate();
     }
 
@@ -53,25 +62,12 @@ class Auth extends React.Component<Props, State> {
 
   render() {
     const { match } = this.props;
-    const {
-      params: { tenant },
-    } = match;
     if (!this.state.auth) {
       return <Loader />;
     }
     return (
       <>
         <Switch>
-          {tenant === 'akerbp' && (
-            <Redirect
-              exact
-              strict
-              from={`${match.url}`}
-              to={`${match.url}${
-                match.url.endsWith('/') ? '' : '/'
-              }asset/7793176078609329/735563410190978`}
-            />
-          )}
           <Route
             path={`${match.path}/asset/:rootAssetId`}
             exact
@@ -99,4 +95,21 @@ class Auth extends React.Component<Props, State> {
   }
 }
 
-export default Auth;
+const mapStateToProps = (state: RootState) => {
+  return {
+    app: selectApp(state),
+  };
+};
+
+const mapDispatchToProps = (dispatch: Dispatch) =>
+  bindActionCreators(
+    {
+      setTenant,
+    },
+    dispatch
+  );
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Auth);

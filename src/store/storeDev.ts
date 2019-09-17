@@ -1,10 +1,17 @@
 import { createStore, applyMiddleware } from 'redux';
 import ReduxThunk from 'redux-thunk';
 import { composeWithDevTools } from 'redux-devtools-extension';
-import rootReducer from '../reducers';
+import { routerMiddleware } from 'connected-react-router';
+import createRootReducer from '../reducers';
+import { history } from '../routes/index';
+import { locationStateMiddleware } from './middleware';
 
 export default function configureStore(initialState = {}) {
-  const middlewares = [ReduxThunk];
+  const middlewares = [
+    ReduxThunk,
+    routerMiddleware(history),
+    locationStateMiddleware,
+  ];
   const enhancers = [
     applyMiddleware(...middlewares),
     // other store enhancers if any
@@ -14,7 +21,7 @@ export default function configureStore(initialState = {}) {
     // Specify here other options if needed
   });
   const store = createStore(
-    rootReducer,
+    createRootReducer(history),
     initialState,
     composeEnhancers(...enhancers)
   );

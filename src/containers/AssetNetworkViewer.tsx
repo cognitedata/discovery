@@ -16,6 +16,7 @@ import {
   ExtendedAsset,
 } from '../modules/assets';
 import { RootState } from '../reducers/index';
+import { AppState, selectApp, setAssetId } from '../modules/app';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -58,17 +59,17 @@ const Node = styled.div<{ color: string }>`
 `;
 
 type OwnProps = {
-  asset: Asset;
   topShowing: boolean;
-  rootAssetId: number;
-  onAssetIdChange: (number: number) => void;
 };
 type StateProps = {
+  app: AppState;
+  asset?: Asset;
   assets: AssetsState;
 };
 type DispatchProps = {
   loadAssetChildren: typeof loadAssetChildren;
   loadParentRecurse: typeof loadParentRecurse;
+  setAssetId: typeof setAssetId;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -175,10 +176,13 @@ export class AssetViewer extends React.Component<Props, State> {
 
       this.createGraph();
 
-      const { asset, rootAssetId } = this.props;
+      const {
+        asset,
+        app: { rootAssetId },
+      } = this.props;
 
       if (asset && asset.id !== rootAssetId && asset.parentId) {
-        this.props.loadParentRecurse(asset.parentId, rootAssetId);
+        this.props.loadParentRecurse(asset.parentId, rootAssetId!);
       }
     }
   }
@@ -187,7 +191,7 @@ export class AssetViewer extends React.Component<Props, State> {
     const {
       asset,
       topShowing,
-      rootAssetId,
+      app: { rootAssetId },
       assets: { all },
     } = this.props;
 
@@ -221,7 +225,7 @@ export class AssetViewer extends React.Component<Props, State> {
       !all[asset.parentId] &&
       asset.id !== rootAssetId
     ) {
-      this.props.loadParentRecurse(asset.parentId, rootAssetId);
+      this.props.loadParentRecurse(asset.parentId, rootAssetId!);
     }
 
     if (
@@ -238,9 +242,9 @@ export class AssetViewer extends React.Component<Props, State> {
   get parentIds() {
     const {
       assets: { all },
-      asset,
+      app: { assetId },
     } = this.props;
-    const parentIds: number[] = [asset.id];
+    const parentIds: number[] = [assetId!];
     while (all[parentIds[parentIds.length - 1]]) {
       const { parentId } = all[parentIds[parentIds.length - 1]];
       if (parentId) {
@@ -418,7 +422,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
   onAssetClicked = (id: number) => {
     // this.props.loadAssetChildren(id);
-    this.props.onAssetIdChange(id);
+    this.props.setAssetId(this.props.app.rootAssetId!, id);
   };
 
   ticked = () => {
@@ -516,7 +520,10 @@ const AssetNode = (asset: D3Node, isSelf: boolean, isChildren: boolean) => {
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     assets: selectAssets(state),
-    // assetMappings: selectAssetMappings(state),
+    asset: state.app.assetId
+      ? selectAssets(state).all[state.app.assetId]
+      : undefined,
+    app: selectApp(state),
   };
 };
 
@@ -525,6 +532,7 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     {
       loadParentRecurse,
       loadAssetChildren,
+      setAssetId,
     },
     dispatch
   );

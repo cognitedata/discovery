@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { selectThreeD, fetchModels, ThreeDState } from '../modules/threed';
 import { RootState } from '../reducers/index';
+import { selectApp } from '../modules/app';
 
 function ModelList({
   threed,
@@ -47,6 +48,7 @@ function ModelList({
 const mapStateToProps = (state: RootState) => {
   return {
     threed: selectThreeD(state),
+    tenant: selectApp(state).tenant!,
   };
 };
 

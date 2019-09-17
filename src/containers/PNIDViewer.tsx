@@ -3,12 +3,13 @@ import { connect } from 'react-redux';
 import { List, Button, message } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
-import { Asset } from '@cognite/sdk';
+import { bindActionCreators, Dispatch } from 'redux';
 import { selectAssets, AssetsState } from '../modules/assets';
 import { selectFiles, FilesState } from '../modules/files';
 import { sleep } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
+import { selectApp, AppState, setAssetId } from '../modules/app';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
   (node.textContent || '').replace(/\s/g, '');
@@ -47,10 +48,10 @@ const StyledSVGViewerContainer = styled.div`
 `;
 
 type Props = {
-  asset: Asset;
+  app: AppState;
   assets: AssetsState;
   files: FilesState;
-  onAssetIdChange: (assetId: number) => void;
+  setAssetId: typeof setAssetId;
 };
 
 type State = {
@@ -65,7 +66,7 @@ class PNIDViewer extends React.Component<Props, State> {
   svgviewer?: SVGViewer | null = undefined;
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.asset !== this.props.asset) {
+    if (prevProps.app.assetId !== this.props.app.assetId) {
       setTimeout(async () => {
         if (this.svgviewer) {
           this.svgviewer.zoomOnCurrentAsset(
@@ -116,15 +117,17 @@ class PNIDViewer extends React.Component<Props, State> {
     } else {
       [asset] = matches;
     }
-    this.props.onAssetIdChange(asset.id);
+    this.props.setAssetId(asset.rootId, asset.id);
   };
 
   isCurrentAsset = (metadata: any) => {
-    if (!this.props.asset) {
+    if (!this.props.app.assetId) {
       return false;
     }
 
-    return getTextFromMetadataNode(metadata) === this.props.asset.name;
+    const asset = this.props.assets.all[this.props.app.assetId];
+
+    return getTextFromMetadataNode(metadata) === asset.name;
   };
 
   renderSVGViewer() {
@@ -159,12 +162,12 @@ class PNIDViewer extends React.Component<Props, State> {
   }
 
   renderFileList() {
-    if (!this.props.asset) {
+    if (!this.props.app.assetId) {
       return null;
     }
 
     const filesForThisAsset =
-      this.props.files.byAssetId[this.props.asset.id] || [];
+      this.props.files.byAssetId[this.props.app.assetId!] || [];
 
     const pNIDFiles = filesForThisAsset.filter(
       file =>
@@ -210,7 +213,22 @@ class PNIDViewer extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState) => {
-  return { files: selectFiles(state), assets: selectAssets(state) };
+  return {
+    app: selectApp(state),
+    files: selectFiles(state),
+    assets: selectAssets(state),
+  };
 };
 
-export default connect(mapStateToProps)(PNIDViewer);
+const mapDispatchToProps = (dispatch: Dispatch) =>
+  bindActionCreators(
+    {
+      setAssetId,
+    },
+    dispatch
+  );
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(PNIDViewer);
