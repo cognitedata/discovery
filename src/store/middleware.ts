@@ -14,7 +14,7 @@ export const locationStateMiddleware: Middleware<
   ThunkDispatch<any, any, SetAppStateAction>
 > = store => next => action => {
   const response = next(action);
-  // Do stuff
+  // See if extra action should be done when a back is pressed.
   if (
     action.type === '@@router/LOCATION_CHANGE' &&
     action.payload.type !== 'PUSH'

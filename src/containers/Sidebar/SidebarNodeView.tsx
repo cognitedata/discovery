@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { fetchAsset, selectAssets, AssetsState } from '../../modules/assets';
@@ -35,10 +35,14 @@ class NodeDrawer extends React.Component<Props, State> {
     const parent = await sdk.revisions3D.list3DNodes(modelId!, revisionId!, {
       nodeId,
     });
-    this.props.setModelAndRevisionAndNode(
-      rootAssetId!,
-      parent.items[0].parentId
-    );
+    if (parent.items.length > 0) {
+      this.props.setModelAndRevisionAndNode(
+        rootAssetId!,
+        parent.items[0].parentId
+      );
+    } else {
+      message.error('Unable to select parent');
+    }
   };
 
   unselectNodeClicked = () => {
