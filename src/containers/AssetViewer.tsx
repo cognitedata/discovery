@@ -20,7 +20,7 @@ import {
   AppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
-import TreeViewer from './TreeViewer';
+import TreeViewer from './AssetTreeViewer';
 
 const ViewerContainer = styled.div`
   display: flex;
