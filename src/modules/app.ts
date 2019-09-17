@@ -1,4 +1,4 @@
-import { Action, Dispatch } from 'redux';
+import { Action } from 'redux';
 import { push, CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import { RootState } from '../reducers/index';
@@ -112,8 +112,8 @@ export const setAssetId = (
   }
 };
 
-export const setTenant = (tenant: string) => async (
-  dispatch: Dispatch<SetAppStateAction>
+export const setTenant = (tenant: string, redirect = false) => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
   dispatch({
     type: SET_APP_STATE,
@@ -121,6 +121,9 @@ export const setTenant = (tenant: string) => async (
       tenant,
     },
   });
+  if (redirect) {
+    dispatch(push(`/${tenant}`));
+  }
 };
 
 export const resetAppState = () => async (
