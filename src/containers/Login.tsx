@@ -26,9 +26,8 @@ const Login = ({ doSetTenant }: Props) => (
   <Wrapper>
     <TenantSelectorContainer>
       <TenantSelector
-        title="Cognite Digital Twin Explorer"
-        onTenantSelected={doSetTenant}
-        placeholder=""
+        title="Discovery"
+        onTenantSelected={tenant => doSetTenant(tenant, true)}
       />
     </TenantSelectorContainer>
   </Wrapper>
@@ -41,7 +40,7 @@ const mapStateToProps = () => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      setTenant,
+      doSetTenant: setTenant,
     },
     dispatch
   );
