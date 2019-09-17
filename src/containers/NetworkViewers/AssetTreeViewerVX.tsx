@@ -8,9 +8,12 @@ import { Group } from '@vx/group';
 import { Tree } from '@vx/hierarchy';
 import { LinearGradient } from '@vx/gradient';
 import { Text } from '@vx/text';
+<<<<<<< HEAD
 import { Zoom } from '@vx/zoom';
 import { localPoint } from '@vx/event';
 import { RectClipPath } from '@vx/clip-path';
+=======
+>>>>>>> Added VX Viewer
 import { hierarchy } from 'd3-hierarchy';
 import { pointRadial } from 'd3-shape';
 import {
@@ -27,7 +30,11 @@ import {
   LinkVerticalLine,
   LinkRadialLine,
 } from '@vx/shape';
+<<<<<<< HEAD
 import { Spin, Select, Button } from 'antd';
+=======
+import { Spin, Select } from 'antd';
+>>>>>>> Added VX Viewer
 import {
   loadParentRecurse,
   loadAssetChildren,
@@ -49,6 +56,7 @@ const Wrapper = styled.div`
   height: 100%;
   width: 100%;
 
+<<<<<<< HEAD
   && > div {
     position: relative;
     height: 100%;
@@ -57,6 +65,9 @@ const Wrapper = styled.div`
 
   && .selector {
     z-index: 1;
+=======
+  && .selector {
+>>>>>>> Added VX Viewer
     position: absolute;
     right: 12px;
     height: auto;
@@ -68,6 +79,7 @@ const Wrapper = styled.div`
     margin-left: 4px;
     margin-right: 4px;
   }
+<<<<<<< HEAD
   && .controls {
     z-index: 1;
     position: absolute;
@@ -84,6 +96,8 @@ const Wrapper = styled.div`
   && .controls > *:nth-child(1) {
     margin-left: 0px;
   }
+=======
+>>>>>>> Added VX Viewer
 `;
 
 type OwnProps = {
@@ -131,11 +145,14 @@ class TreeViewer extends Component<Props, State> {
       app: { rootAssetId },
     } = this.props;
 
+<<<<<<< HEAD
     const { nodes, length } = this.getData();
     if (length !== this.state.length) {
       this.setState({ data: nodes, length });
     }
 
+=======
+>>>>>>> Added VX Viewer
     if (asset && asset.id !== rootAssetId && asset.parentId) {
       this.props.loadParentRecurse(asset.parentId, rootAssetId!);
     }
@@ -276,6 +293,7 @@ class TreeViewer extends Component<Props, State> {
   render() {
     let height = 0;
     let width = 0;
+<<<<<<< HEAD
     let origHeight = 0;
     let origWidth = 0;
     if (this.wrapperRef && this.wrapperRef.current) {
@@ -283,6 +301,10 @@ class TreeViewer extends Component<Props, State> {
         height: origHeight,
         width: origWidth,
       } = this.wrapperRef.current.getBoundingClientRect());
+=======
+    if (this.wrapperRef && this.wrapperRef.current) {
+      ({ height, width } = this.wrapperRef.current.getBoundingClientRect());
+>>>>>>> Added VX Viewer
     }
     const margin = {
       top: 120,
@@ -291,9 +313,12 @@ class TreeViewer extends Component<Props, State> {
       bottom: 60,
     };
 
+<<<<<<< HEAD
     width = Math.max(origWidth, origHeight, 800);
     height = Math.max(origWidth, origHeight, 800);
 
+=======
+>>>>>>> Added VX Viewer
     const { controls, orientation, linkType, data: nodeData } = this.state;
 
     const innerWidth = width - margin.left - margin.right;
@@ -303,8 +328,13 @@ class TreeViewer extends Component<Props, State> {
       x: number;
       y: number;
     };
+<<<<<<< HEAD
     let sizeWidth: number;
     let sizeHeight: number;
+=======
+    let sizeWidth;
+    let sizeHeight;
+>>>>>>> Added VX Viewer
 
     if (controls === 'polar') {
       origin = {
@@ -329,6 +359,7 @@ class TreeViewer extends Component<Props, State> {
 
     return (
       <Wrapper ref={this.wrapperRef}>
+<<<<<<< HEAD
         <Zoom
           width={width}
           height={height}
@@ -555,6 +586,159 @@ class TreeViewer extends Component<Props, State> {
             );
           }}
         </Zoom>
+=======
+        {this.renderControlSection()}
+        <svg
+          width={width}
+          height="100%"
+          style={{
+            display: 'block',
+          }}
+        >
+          <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
+          <rect width={width} height={height} fill="#272b4d" />
+          <Group top={margin.top} left={margin.left}>
+            <Tree
+              root={hierarchy(nodeData, d =>
+                d.isExpanded ? null : d.children
+              )}
+              size={[sizeWidth, sizeHeight]}
+              separation={(a: any, b: any) =>
+                (a.parent === b.parent ? 1 : 0.5) / a.depth
+              }
+            >
+              {(data: any) => (
+                <Group top={origin.y} left={origin.x}>
+                  {data.links().map((link: any, i: number) => {
+                    let LinkComponent;
+
+                    if (controls === 'polar') {
+                      if (linkType === 'step') {
+                        LinkComponent = LinkRadialStep;
+                      } else if (linkType === 'curve') {
+                        LinkComponent = LinkRadialCurve;
+                      } else if (linkType === 'line') {
+                        LinkComponent = LinkRadialLine;
+                      } else {
+                        LinkComponent = LinkRadial;
+                      }
+                    } else if (orientation === 'vertical') {
+                      if (linkType === 'step') {
+                        LinkComponent = LinkVerticalStep;
+                      } else if (linkType === 'curve') {
+                        LinkComponent = LinkVerticalCurve;
+                      } else if (linkType === 'line') {
+                        LinkComponent = LinkVerticalLine;
+                      } else {
+                        LinkComponent = LinkVertical;
+                      }
+                    } else if (linkType === 'step') {
+                      LinkComponent = LinkHorizontalStep;
+                    } else if (linkType === 'curve') {
+                      LinkComponent = LinkHorizontalCurve;
+                    } else if (linkType === 'line') {
+                      LinkComponent = LinkHorizontalLine;
+                    } else {
+                      LinkComponent = LinkHorizontal;
+                    }
+
+                    return (
+                      <LinkComponent
+                        data={link}
+                        percent={+0.5}
+                        stroke="#374469"
+                        strokeWidth="1"
+                        fill="none"
+                        key={i}
+                      />
+                    );
+                  })}
+
+                  {data.descendants().map((node: any, key: any) => {
+                    const innerNodeWidth = 8 * node.data.node.name.length;
+                    const innerNodeHeight = 20;
+
+                    let top;
+                    let left;
+                    if (controls === 'polar') {
+                      const [radialX, radialY] = pointRadial(node.x, node.y);
+                      top = radialY;
+                      left = radialX;
+                    } else if (orientation === 'vertical') {
+                      top = node.y;
+                      left = node.x;
+                    } else {
+                      top = node.x;
+                      left = node.y;
+                    }
+
+                    let color = '#71248e';
+                    if (node.depth > 0) {
+                      if (node.children) {
+                        color = 'white';
+                      } else {
+                        color = '#26deb0';
+                      }
+                    }
+
+                    return (
+                      <Group top={top} left={left} key={key}>
+                        {node.depth === 0 && (
+                          <circle
+                            r={12}
+                            fill="url('#lg')"
+                            onClick={() => {
+                              // eslint-disable-next-line no-param-reassign
+                              node.data.isExpanded = !node.data.isExpanded;
+                              this.props.setAssetId(
+                                node.data.node.rootAssetId,
+                                node.data.node.id
+                              );
+                              this.forceUpdate();
+                            }}
+                          />
+                        )}
+                        {node.depth !== 0 && (
+                          <rect
+                            height={innerNodeHeight}
+                            width={innerNodeWidth}
+                            y={-innerNodeHeight / 2}
+                            x={-innerNodeWidth / 2}
+                            fill="#272b4d"
+                            stroke={node.data.children ? '#03c0dc' : '#26deb0'}
+                            strokeWidth={1}
+                            strokeDasharray={!node.data.children ? '2,2' : '0'}
+                            strokeOpacity={!node.data.children ? 0.6 : 1}
+                            rx={!node.data.children ? 10 : 0}
+                            onClick={() => {
+                              // eslint-disable-next-line no-param-reassign
+                              node.data.isExpanded = !node.data.isExpanded;
+                              this.props.setAssetId(
+                                node.data.node.rootAssetId,
+                                node.data.node.id
+                              );
+                              this.forceUpdate();
+                            }}
+                          />
+                        )}
+                        <Text
+                          dy=".33em"
+                          fontSize={9}
+                          textAnchor="middle"
+                          style={{ pointerEvents: 'none' }}
+                          fill={color}
+                        >
+                          {node.data.name}
+                        </Text>
+                      </Group>
+                    );
+                  })}
+                </Group>
+              )}
+            </Tree>
+          </Group>
+        </svg>
+>>>>>>> Added VX Viewer
       </Wrapper>
     );
   }
