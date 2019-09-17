@@ -4,20 +4,32 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import * as d3 from 'd3';
 import { Dispatch, bindActionCreators } from 'redux';
+import { Asset } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
 import ReactDOMServer from 'react-dom/server';
-import { RootState } from '../reducers/index';
+import { Breadcrumb, Button } from 'antd';
 import {
-  fetchRelationships,
-  selectRelationships,
-  RelationshipState,
-} from '../modules/relationships';
+  loadAssetChildren,
+  loadParentRecurse,
+  selectAssets,
+  AssetsState,
+  ExtendedAsset,
+} from '../../modules/assets';
+import { RootState } from '../../reducers/index';
+import { AppState, selectApp, setAssetId } from '../../modules/app';
 
 const Wrapper = styled.div`
   height: 100%;
   width: 100%;
   overflow: hidden;
   position: relative;
+`;
+
+const StyledBreadcrumbs = styled(Breadcrumb)`
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
 `;
 
 const LinkSection = styled.svg``;
@@ -50,19 +62,21 @@ type OwnProps = {
   topShowing: boolean;
 };
 type StateProps = {
-  relationships: RelationshipState;
+  app: AppState;
+  asset?: Asset;
+  assets: AssetsState;
 };
 type DispatchProps = {
-  fetchRelationships: typeof fetchRelationships;
+  loadAssetChildren: typeof loadAssetChildren;
+  loadParentRecurse: typeof loadParentRecurse;
+  setAssetId: typeof setAssetId;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
 
-type State = { selectedRelationship?: number };
+type State = { documentId?: number };
 
-interface D3Node extends d3.SimulationNodeDatum {
-  resourceId: string;
-}
+interface D3Node extends ExtendedAsset, d3.SimulationNodeDatum {}
 
 interface Link extends d3.SimulationLinkDatum<D3Node> {
   source: D3Node;
@@ -77,7 +91,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
   div?: d3.Selection<HTMLDivElement, any, any, any>;
 
-  displayedNodes: Map<string, D3Node> = new Map();
+  displayedNodes: Map<number, D3Node> = new Map();
 
   displayedLinkIds: string[] = [];
 
@@ -93,10 +107,6 @@ export class AssetViewer extends React.Component<Props, State> {
     super(props);
 
     this.createGraph = debounce(this.createGraph, 200);
-
-    this.state = {
-      selectedRelationship: undefined,
-    };
   }
 
   componentDidMount() {
@@ -104,8 +114,6 @@ export class AssetViewer extends React.Component<Props, State> {
       this.div!.remove();
       this.svg!.remove();
     }
-
-    this.props.fetchRelationships();
     this.svg = (d3.select('#linkSection') as d3.Selection<
       SVGSVGElement,
       any,
@@ -167,11 +175,25 @@ export class AssetViewer extends React.Component<Props, State> {
       this.node = this.div!.selectAll('div');
 
       this.createGraph();
+
+      const {
+        asset,
+        app: { rootAssetId },
+      } = this.props;
+
+      if (asset && asset.id !== rootAssetId && asset.parentId) {
+        this.props.loadParentRecurse(asset.parentId, rootAssetId!);
+      }
     }
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { topShowing } = this.props;
+    const {
+      asset,
+      topShowing,
+      app: { rootAssetId },
+      assets: { all },
+    } = this.props;
 
     if (prevProps.topShowing !== topShowing) {
       const {
@@ -197,46 +219,86 @@ export class AssetViewer extends React.Component<Props, State> {
         .on('tick', this.ticked);
     }
 
+    if (
+      asset &&
+      asset.parentId &&
+      !all[asset.parentId] &&
+      asset.id !== rootAssetId
+    ) {
+      this.props.loadParentRecurse(asset.parentId, rootAssetId!);
+    }
+
+    if (
+      (!prevProps.asset && asset) ||
+      (prevProps.asset && asset && prevProps.asset.id !== asset.id)
+    ) {
+      this.colorizeNodes();
+      this.props.loadAssetChildren(asset.id);
+    }
+
     this.createGraph();
   }
 
-  get nodes() {
+  get parentIds() {
     const {
-      relationships: { items: relationships },
+      assets: { all },
+      app: { assetId },
     } = this.props;
-
-    return relationships.reduce((prev, el) => {
-      prev.push(el.source);
-      prev.push(el.target);
-      return prev;
-    }, []);
+    const parentIds: number[] = [assetId!];
+    while (all[parentIds[parentIds.length - 1]]) {
+      const { parentId } = all[parentIds[parentIds.length - 1]];
+      if (parentId) {
+        parentIds.push(parentId);
+      } else {
+        break;
+      }
+    }
+    return parentIds;
   }
 
   createGraph = async () => {
     const {
-      relationships: { items: relationships },
+      assets: { all },
     } = this.props;
-    const allNewNodes = this.nodes.filter(
-      (el: any) => !this.displayedNodes.has(el.resourceId)
+
+    const allNewNodes = Object.keys(all).filter(
+      (id: string) => !this.displayedNodes.has(Number(id))
     );
 
-    const nodes: D3Node[] = allNewNodes.map((el: any) => {
+    // Remove the unneccesary ones
+    Array.from(this.displayedNodes.keys()).forEach((id: number) => {
+      if (!all[Number(id)]) {
+        this.displayedNodes.delete(Number(id));
+      }
+    });
+
+    const missingParent = allNewNodes.some(key => !all[all[key].rootId]);
+
+    if (missingParent) {
+      return;
+    }
+
+    const nodes: D3Node[] = allNewNodes.map((key: string) => {
+      const parent = this.displayedNodes.get(
+        all[key].parentId || all[key].rootId
+      );
       return Object.create({
-        ...el,
-        id: el.resourceId,
+        ...all[key],
+        ...(parent && { x: parent.x, y: parent.y }),
       });
     });
 
-    const links: Link[] = relationships
-      .map((relationship: any) =>
+    const links: Link[] = Object.keys(all)
+      .filter((key: string) => all[key].parentId)
+      .map((key: string) =>
         Object.create({
-          id: `${relationship.externalId}`,
+          id: `${key}-${all[key].parentId}`,
           source:
-            this.displayedNodes.get(relationship.source.resourceId) ||
-            nodes.find(el => el.resourceId === relationship.source.resourceId),
+            this.displayedNodes.get(Number(key)) ||
+            nodes.find(el => el.id === Number(key)),
           target:
-            this.displayedNodes.get(relationship.target.resourceId) ||
-            nodes.find(el => el.resourceId === relationship.target.resourceId),
+            this.displayedNodes.get(all[key].parentId!) ||
+            nodes.find(el => el.id === all[key].parentId!),
         })
       )
       .filter(
@@ -248,7 +310,7 @@ export class AssetViewer extends React.Component<Props, State> {
       );
 
     nodes.forEach(el => {
-      this.displayedNodes.set(el.resourceId, el);
+      this.displayedNodes.set(el.id, el);
     });
 
     this.displayedLinkIds = this.displayedLinkIds.concat(
@@ -260,10 +322,21 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   selectiveDisplay = () => {
-    const visibleNodes = Array.from(this.displayedNodes.values());
+    const {
+      asset,
+      assets: { all },
+    } = this.props;
+    if (!asset) {
+      return;
+    }
+    const { parentIds } = this;
 
+    const visibleNodes = Array.from(this.displayedNodes.values()).filter(
+      el =>
+        all[el.id] && (el.parentId === asset.id || parentIds.includes(el.id))
+    );
     visibleNodes.forEach((node: D3Node) => {
-      const el = document.getElementById(`${node.resourceId}`);
+      const el = document.getElementById(`${node.id}`);
       if (el) {
         el.setAttribute('style', '');
       }
@@ -275,11 +348,15 @@ export class AssetViewer extends React.Component<Props, State> {
       .enter()
       .append('div')
       .html((d: any) => {
-        return AssetNode(d, d.id === this.state.selectedRelationship, false);
+        return AssetNode(d, d.id === asset.id, d.parentId === asset.id);
       })
       .merge(this.node);
 
-    const visibleLinks = this.displayedLinks;
+    const visibleLinks = this.displayedLinks.filter(
+      el =>
+        (el.source.parentId === asset.id || parentIds.includes(el.source.id)) &&
+        (el.target.parentId === asset.id || parentIds.includes(el.target.id))
+    );
 
     // Apply the general update pattern to the links.
     this.link = this.link!.data(visibleLinks, d => d.id);
@@ -292,7 +369,7 @@ export class AssetViewer extends React.Component<Props, State> {
     this.link.select('title').remove();
     this.link.append('title').text((d: any) => d.id);
 
-    // this.colorizeNodes();
+    this.colorizeNodes();
 
     // const countExtent = d3.extent(nodes, function(d) {
     //   return d.connections;
@@ -345,7 +422,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
   onAssetClicked = (id: number) => {
     // this.props.loadAssetChildren(id);
-    this.setState({ selectedRelationship: id });
+    this.props.setAssetId(this.props.app.rootAssetId!, id);
   };
 
   ticked = () => {
@@ -373,6 +450,44 @@ export class AssetViewer extends React.Component<Props, State> {
       });
   };
 
+  colorizeNodes = () => {
+    const { asset } = this.props;
+    this.parentIds.forEach((id: number) => {
+      const el = document.getElementById(`${id}`);
+      if (el) {
+        el.setAttribute('style', 'background: rgba(34, 56, 89, 0.5)');
+      }
+    });
+    if (asset) {
+      const el = document.getElementById(`${asset.id}`);
+      if (el) {
+        el.setAttribute('style', 'background:rgba(125, 40, 0, 0.8)');
+      }
+    }
+  };
+
+  renderBreadcrumbs = () => {
+    const {
+      asset,
+      assets: { all },
+    } = this.props;
+    if (!asset) {
+      return null;
+    }
+    const breadcrumbs = [];
+    const { parentIds } = this;
+    for (let i = parentIds.length - 1; i >= 0; i--) {
+      breadcrumbs.push(
+        <Breadcrumb.Item key={parentIds[i]}>
+          <Button onClick={() => this.onAssetClicked(parentIds[i])}>
+            {all[parentIds[i]] ? all[parentIds[i]].name : 'Loading...'}
+          </Button>
+        </Breadcrumb.Item>
+      );
+    }
+    return <StyledBreadcrumbs>{breadcrumbs}</StyledBreadcrumbs>;
+  };
+
   render() {
     return (
       <Wrapper
@@ -380,6 +495,7 @@ export class AssetViewer extends React.Component<Props, State> {
         style={{ height: '100%', width: '100%' }}
         ref={this.grapharea}
       >
+        {this.renderBreadcrumbs()}
         <LinkSection id="linkSection" />
         <AssetSection id="assetSection" />
       </Wrapper>
@@ -395,23 +511,28 @@ const AssetNode = (asset: D3Node, isSelf: boolean, isChildren: boolean) => {
     color = 'rgba(100, 100, 40, 0.5)';
   }
   return ReactDOMServer.renderToStaticMarkup(
-    <Node id={`${asset.resourceId}`} color={color}>
-      <p>{asset.resourceId}</p>
+    <Node id={`${asset.id}`} color={color}>
+      <p>{asset.name}</p>
     </Node>
   );
 };
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    relationships: selectRelationships(state),
-    // assetMappings: selectAssetMappings(state),
+    assets: selectAssets(state),
+    asset: state.app.assetId
+      ? selectAssets(state).all[state.app.assetId]
+      : undefined,
+    app: selectApp(state),
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
-      fetchRelationships,
+      loadParentRecurse,
+      loadAssetChildren,
+      setAssetId,
     },
     dispatch
   );

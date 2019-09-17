@@ -13,14 +13,14 @@ import {
 } from '../modules/assetmappings';
 import { RootState } from '../reducers/index';
 import { selectThreeD, ThreeDState } from '../modules/threed';
-import RelationshipNetworkViewer from './RelationshipNetworkViewer';
+import RelationshipNetworkViewer from './NetworkViewers/RelationshipNetworkViewer';
 import {
   setAssetId,
   selectApp,
   AppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
-import TreeViewer from './AssetTreeViewer';
+import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 
 const ViewerContainer = styled.div`
   display: flex;
@@ -154,7 +154,9 @@ export class AssetViewer extends React.Component<Props, State> {
     }
     return (
       <div className="bottom">
-        <TreeViewer topShowing={this.props.show3D || this.props.showPNID} />
+        <AssetTreeViewerVX
+          topShowing={this.props.show3D || this.props.showPNID}
+        />
       </div>
     );
   };
