@@ -9,7 +9,12 @@ import {
   ThreeDState,
   setRevisionRepresentAsset,
 } from '../modules/threed';
-import { selectAssets, AssetsState, createNewAsset } from '../modules/assets';
+import {
+  selectAssets,
+  AssetsState,
+  createNewAsset,
+  fetchAssets,
+} from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from '../modules/assetmappings';
@@ -24,6 +29,7 @@ type Props = {
   assets: AssetsState;
   threed: ThreeDState;
   createNewAsset: typeof createNewAsset;
+  fetchAssets: typeof fetchAssets;
   createAssetNodeMapping: typeof createAssetNodeMapping;
 } & OrigProps;
 
@@ -54,11 +60,16 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
       this.setState({ fetching: true });
       const results = await sdk.assets.search({
         search: { name: query },
-        filter: {
-          rootIds: [{ id: this.props.app.rootAssetId! }],
-        },
-        limit: 1000,
+        filter: {},
+        limit: 100,
       });
+      const rootIds = results.reduce((prev, el) => {
+        if (!prev.has(el.rootId)) {
+          prev.add(el.rootId);
+        }
+        return prev;
+      }, new Set<number>());
+      this.props.fetchAssets(Array.from(rootIds));
       this.setState({
         searchResults: results.slice(0, results.length),
         fetching: false,
@@ -98,6 +109,9 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
       searchResults,
       parentAssetId,
     } = this.state;
+    const {
+      assets: { all },
+    } = this.props;
     return (
       <Card>
         <h3>Map Node to an Asset</h3>
@@ -115,7 +129,8 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
           {searchResults.map(asset => {
             return (
               <Option key={asset.id} value={asset.id}>
-                {asset.name} ({asset.id})
+                {asset.name} (
+                {all[asset.rootId] ? all[asset.rootId].name : asset.id})
               </Option>
             );
           })}
@@ -167,6 +182,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       createNewAsset,
       setRevisionRepresentAsset,
+      fetchAssets,
       createAssetNodeMapping,
     },
     dispatch
