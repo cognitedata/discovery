@@ -31,13 +31,14 @@ class NodeDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   selectParentClicked = async () => {
-    const { modelId, revisionId, nodeId, rootAssetId } = this.props.app;
+    const { modelId, revisionId, nodeId } = this.props.app;
     const parent = await sdk.revisions3D.list3DNodes(modelId!, revisionId!, {
       nodeId,
     });
     if (parent.items.length > 0) {
       this.props.setModelAndRevisionAndNode(
-        rootAssetId!,
+        modelId!,
+        revisionId!,
         parent.items[0].parentId
       );
     } else {
