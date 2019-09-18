@@ -289,7 +289,7 @@ class TreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    assets: selectAssets(state),
+    assets: state.assets,
     asset: state.app.assetId
       ? selectAssets(state).all[state.app.assetId]
       : undefined,
