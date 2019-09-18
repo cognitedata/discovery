@@ -126,6 +126,9 @@ class PNIDViewer extends React.Component<Props, State> {
     }
 
     const asset = this.props.assets.all[this.props.app.assetId];
+    if (!asset) {
+      return false;
+    }
 
     return getTextFromMetadataNode(metadata) === asset.name;
   };
