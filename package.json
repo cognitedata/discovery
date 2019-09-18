@@ -1,6 +1,6 @@
 {
-	"name": "digital-twin-explorer",
-	"description": "Review tool for 3D models",
+	"name": "discovery",
+	"description": "App to view, filter and edit CDF data and relationships.",
 	"version": "0.1.0",
 	"author": "Fredrik Anfinsen",
 	"license": "Apache-2.0",
@@ -88,12 +88,7 @@
 			"pre-commit": "pretty-quick --staged"
 		}
 	},
-	"browserslist": [
-		">0.2%",
-		"not dead",
-		"not ie <= 11",
-		"not op_mini all"
-	],
+	"browserslist": [">0.2%", "not dead", "not ie <= 11", "not op_mini all"],
 	"engines": {
 		"npm": ">=4",
 		"node": ">=6"
