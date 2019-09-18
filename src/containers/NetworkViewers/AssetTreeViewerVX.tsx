@@ -8,6 +8,9 @@ import { Group } from '@vx/group';
 import { Tree } from '@vx/hierarchy';
 import { LinearGradient } from '@vx/gradient';
 import { Text } from '@vx/text';
+import { Zoom } from '@vx/zoom';
+import { localPoint } from '@vx/event';
+import { RectClipPath } from '@vx/clip-path';
 import { hierarchy } from 'd3-hierarchy';
 import { pointRadial } from 'd3-shape';
 import {
@@ -24,7 +27,7 @@ import {
   LinkVerticalLine,
   LinkRadialLine,
 } from '@vx/shape';
-import { Spin, Select } from 'antd';
+import { Spin, Select, Button } from 'antd';
 import {
   loadParentRecurse,
   loadAssetChildren,
@@ -47,6 +50,7 @@ const Wrapper = styled.div`
   width: 100%;
 
   && .selector {
+    z-index: 1;
     position: absolute;
     right: 12px;
     height: auto;
@@ -255,6 +259,9 @@ class TreeViewer extends Component<Props, State> {
       bottom: 60,
     };
 
+    width = Math.max(width, height, 800);
+    height = Math.max(width, height, 800);
+
     const { controls, orientation, linkType, data: nodeData } = this.state;
 
     const innerWidth = width - margin.left - margin.right;
@@ -264,8 +271,8 @@ class TreeViewer extends Component<Props, State> {
       x: number;
       y: number;
     };
-    let sizeWidth;
-    let sizeHeight;
+    let sizeWidth: number;
+    let sizeHeight: number;
 
     if (controls === 'polar') {
       origin = {
@@ -291,156 +298,229 @@ class TreeViewer extends Component<Props, State> {
     return (
       <Wrapper ref={this.wrapperRef}>
         {this.renderControlSection()}
-        <svg
+        <Zoom
           width={width}
-          height="100%"
-          style={{
-            display: 'block',
+          height={height}
+          scaleXMin={1 / 2}
+          scaleXMax={4}
+          scaleYMin={1 / 2}
+          scaleYMax={4}
+          transformMatrix={{
+            scaleX: 1.27,
+            scaleY: 1.27,
+            translateX: -211.62,
+            translateY: 162.59,
+            skewX: 0,
+            skewY: 0,
           }}
         >
-          <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
-          <rect width={width} height={height} fill="#272b4d" />
-          <Group top={margin.top} left={margin.left}>
-            <Tree
-              root={hierarchy(nodeData, d =>
-                d.isExpanded ? null : d.children
-              )}
-              size={[sizeWidth, sizeHeight]}
-              separation={(a: any, b: any) =>
-                (a.parent === b.parent ? 1 : 0.5) / a.depth
-              }
-            >
-              {(data: any) => (
-                <Group top={origin.y} left={origin.x}>
-                  {data.links().map((link: any, i: number) => {
-                    let LinkComponent;
-
-                    if (controls === 'polar') {
-                      if (linkType === 'step') {
-                        LinkComponent = LinkRadialStep;
-                      } else if (linkType === 'curve') {
-                        LinkComponent = LinkRadialCurve;
-                      } else if (linkType === 'line') {
-                        LinkComponent = LinkRadialLine;
-                      } else {
-                        LinkComponent = LinkRadial;
+          {(zoom: any) => {
+            return (
+              <div style={{ position: 'relative' }}>
+                <svg
+                  width={width}
+                  height={height}
+                  style={{
+                    display: 'block',
+                  }}
+                >
+                  <RectClipPath id="zoom-clip" width={width} height={height} />
+                  <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
+                  <rect width={width} height={height} fill="#272b4d" />
+                  <rect
+                    width={width}
+                    height={height}
+                    rx={14}
+                    fill="transparent"
+                    onWheel={zoom.handleWheel}
+                    onMouseDown={zoom.dragStart}
+                    onMouseMove={zoom.dragMove}
+                    onMouseUp={zoom.dragEnd}
+                    onMouseLeave={() => {
+                      if (!zoom.isDragging) return;
+                      zoom.dragEnd();
+                    }}
+                    onDoubleClick={event => {
+                      const point = localPoint(event);
+                      zoom.scale({ scaleX: 1.1, scaleY: 1.1, point });
+                    }}
+                  />
+                  <Group
+                    top={margin.top}
+                    left={margin.left}
+                    transform={zoom.toString()}
+                  >
+                    <Tree
+                      root={hierarchy(nodeData, d =>
+                        d.isExpanded ? null : d.children
+                      )}
+                      size={[sizeWidth, sizeHeight]}
+                      separation={(a: any, b: any) =>
+                        (a.parent === b.parent ? 1 : 0.5) / a.depth
                       }
-                    } else if (orientation === 'vertical') {
-                      if (linkType === 'step') {
-                        LinkComponent = LinkVerticalStep;
-                      } else if (linkType === 'curve') {
-                        LinkComponent = LinkVerticalCurve;
-                      } else if (linkType === 'line') {
-                        LinkComponent = LinkVerticalLine;
-                      } else {
-                        LinkComponent = LinkVertical;
-                      }
-                    } else if (linkType === 'step') {
-                      LinkComponent = LinkHorizontalStep;
-                    } else if (linkType === 'curve') {
-                      LinkComponent = LinkHorizontalCurve;
-                    } else if (linkType === 'line') {
-                      LinkComponent = LinkHorizontalLine;
-                    } else {
-                      LinkComponent = LinkHorizontal;
-                    }
+                    >
+                      {(data: any) => (
+                        <Group top={origin.y} left={origin.x}>
+                          {data.links().map((link: any, i: number) => {
+                            let LinkComponent;
 
-                    return (
-                      <LinkComponent
-                        data={link}
-                        percent={+0.5}
-                        stroke="#374469"
-                        strokeWidth="1"
-                        fill="none"
-                        key={i}
-                      />
-                    );
-                  })}
+                            if (controls === 'polar') {
+                              if (linkType === 'step') {
+                                LinkComponent = LinkRadialStep;
+                              } else if (linkType === 'curve') {
+                                LinkComponent = LinkRadialCurve;
+                              } else if (linkType === 'line') {
+                                LinkComponent = LinkRadialLine;
+                              } else {
+                                LinkComponent = LinkRadial;
+                              }
+                            } else if (orientation === 'vertical') {
+                              if (linkType === 'step') {
+                                LinkComponent = LinkVerticalStep;
+                              } else if (linkType === 'curve') {
+                                LinkComponent = LinkVerticalCurve;
+                              } else if (linkType === 'line') {
+                                LinkComponent = LinkVerticalLine;
+                              } else {
+                                LinkComponent = LinkVertical;
+                              }
+                            } else if (linkType === 'step') {
+                              LinkComponent = LinkHorizontalStep;
+                            } else if (linkType === 'curve') {
+                              LinkComponent = LinkHorizontalCurve;
+                            } else if (linkType === 'line') {
+                              LinkComponent = LinkHorizontalLine;
+                            } else {
+                              LinkComponent = LinkHorizontal;
+                            }
 
-                  {data.descendants().map((node: any, key: any) => {
-                    const innerNodeWidth = 8 * node.data.node.name.length;
-                    const innerNodeHeight = 20;
+                            return (
+                              <LinkComponent
+                                data={link}
+                                percent={+0.5}
+                                stroke="#374469"
+                                strokeWidth="1"
+                                fill="none"
+                                key={i}
+                              />
+                            );
+                          })}
 
-                    let top;
-                    let left;
-                    if (controls === 'polar') {
-                      const [radialX, radialY] = pointRadial(node.x, node.y);
-                      top = radialY;
-                      left = radialX;
-                    } else if (orientation === 'vertical') {
-                      top = node.y;
-                      left = node.x;
-                    } else {
-                      top = node.x;
-                      left = node.y;
-                    }
+                          {data.descendants().map((node: any, key: any) => {
+                            const innerNodeWidth =
+                              8 * node.data.node.name.length;
+                            const innerNodeHeight = 20;
 
-                    let color = '#71248e';
-                    if (node.depth > 0) {
-                      if (node.children) {
-                        color = 'white';
-                      } else {
-                        color = '#26deb0';
-                      }
-                    }
-
-                    return (
-                      <Group top={top} left={left} key={key}>
-                        {node.depth === 0 && (
-                          <circle
-                            r={12}
-                            fill="url('#lg')"
-                            onClick={() => {
-                              // eslint-disable-next-line no-param-reassign
-                              node.data.isExpanded = !node.data.isExpanded;
-                              this.props.setAssetId(
-                                node.data.node.rootAssetId,
-                                node.data.node.id
+                            let top;
+                            let left;
+                            if (controls === 'polar') {
+                              const [radialX, radialY] = pointRadial(
+                                node.x,
+                                node.y
                               );
-                              this.forceUpdate();
-                            }}
-                          />
-                        )}
-                        {node.depth !== 0 && (
-                          <rect
-                            height={innerNodeHeight}
-                            width={innerNodeWidth}
-                            y={-innerNodeHeight / 2}
-                            x={-innerNodeWidth / 2}
-                            fill="#272b4d"
-                            stroke={node.data.children ? '#03c0dc' : '#26deb0'}
-                            strokeWidth={1}
-                            strokeDasharray={!node.data.children ? '2,2' : '0'}
-                            strokeOpacity={!node.data.children ? 0.6 : 1}
-                            rx={!node.data.children ? 10 : 0}
-                            onClick={() => {
-                              // eslint-disable-next-line no-param-reassign
-                              node.data.isExpanded = !node.data.isExpanded;
-                              this.props.setAssetId(
-                                node.data.node.rootAssetId,
-                                node.data.node.id
-                              );
-                              this.forceUpdate();
-                            }}
-                          />
-                        )}
-                        <Text
-                          dy=".33em"
-                          fontSize={9}
-                          textAnchor="middle"
-                          style={{ pointerEvents: 'none' }}
-                          fill={color}
-                        >
-                          {node.data.name}
-                        </Text>
-                      </Group>
-                    );
-                  })}
-                </Group>
-              )}
-            </Tree>
-          </Group>
-        </svg>
+                              top = radialY;
+                              left = radialX;
+                            } else if (orientation === 'vertical') {
+                              top = node.y;
+                              left = node.x;
+                            } else {
+                              top = node.x;
+                              left = node.y;
+                            }
+
+                            let color = '#71248e';
+                            if (node.depth > 0) {
+                              if (node.children) {
+                                color = 'white';
+                              } else {
+                                color = '#26deb0';
+                              }
+                            }
+
+                            return (
+                              <Group top={top} left={left} key={key}>
+                                {node.depth === 0 && (
+                                  <circle
+                                    r={12}
+                                    fill="url('#lg')"
+                                    onClick={() => {
+                                      // eslint-disable-next-line no-param-reassign
+                                      node.data.isExpanded = !node.data
+                                        .isExpanded;
+                                      this.props.setAssetId(
+                                        node.data.node.rootAssetId,
+                                        node.data.node.id
+                                      );
+                                      this.forceUpdate();
+                                    }}
+                                  />
+                                )}
+                                {node.depth !== 0 && (
+                                  <rect
+                                    height={innerNodeHeight}
+                                    width={innerNodeWidth}
+                                    y={-innerNodeHeight / 2}
+                                    x={-innerNodeWidth / 2}
+                                    fill="#272b4d"
+                                    stroke={
+                                      node.data.children ? '#03c0dc' : '#26deb0'
+                                    }
+                                    strokeWidth={1}
+                                    strokeDasharray={
+                                      !node.data.children ? '2,2' : '0'
+                                    }
+                                    strokeOpacity={
+                                      !node.data.children ? 0.6 : 1
+                                    }
+                                    rx={!node.data.children ? 10 : 0}
+                                    onClick={() => {
+                                      // eslint-disable-next-line no-param-reassign
+                                      node.data.isExpanded = !node.data
+                                        .isExpanded;
+                                      this.props.setAssetId(
+                                        node.data.node.rootAssetId,
+                                        node.data.node.id
+                                      );
+                                      this.forceUpdate();
+                                    }}
+                                  />
+                                )}
+                                <Text
+                                  dy=".33em"
+                                  fontSize={9}
+                                  textAnchor="middle"
+                                  style={{ pointerEvents: 'none' }}
+                                  fill={color}
+                                >
+                                  {node.data.name}
+                                </Text>
+                              </Group>
+                            );
+                          })}
+                        </Group>
+                      )}
+                    </Tree>
+                  </Group>
+                </svg>
+                <div className="controls">
+                  <Button
+                    onClick={() => zoom.scale({ scaleX: 1.2, scaleY: 1.2 })}
+                  >
+                    +
+                  </Button>
+                  <Button
+                    onClick={() => zoom.scale({ scaleX: 0.8, scaleY: 0.8 })}
+                  >
+                    -
+                  </Button>
+                  <Button onClick={zoom.center}>Center</Button>
+                  <Button onClick={zoom.reset}>Reset</Button>
+                  <Button onClick={zoom.clear}>Clear</Button>
+                </div>
+              </div>
+            );
+          }}
+        </Zoom>
       </Wrapper>
     );
   }

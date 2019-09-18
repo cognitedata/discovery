@@ -26,11 +26,15 @@
 		"@types/react-router-dom": "^4.3.4",
 		"@types/redux-actions": "^2.6.1",
 		"@types/styled-components": "^4.1.18",
+		"@vx/clip-path": "^0.0.189",
+		"@vx/event": "^0.0.189",
 		"@vx/gradient": "^0.0.189",
 		"@vx/group": "^0.0.190",
 		"@vx/hierarchy": "^0.0.190",
+		"@vx/scale": "^0.0.190",
 		"@vx/shape": "^0.0.190",
 		"@vx/text": "^0.0.191",
+		"@vx/zoom": "^0.0.189",
 		"antd": "^3.22.2",
 		"babel-eslint": "^10.0.2",
 		"connected-react-router": "^6.5.2",
@@ -92,7 +96,12 @@
 			"pre-commit": "pretty-quick --staged"
 		}
 	},
-	"browserslist": [">0.2%", "not dead", "not ie <= 11", "not op_mini all"],
+	"browserslist": [
+		">0.2%",
+		"not dead",
+		"not ie <= 11",
+		"not op_mini all"
+	],
 	"engines": {
 		"npm": ">=4",
 		"node": ">=6"
