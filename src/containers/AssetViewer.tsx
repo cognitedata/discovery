@@ -144,10 +144,6 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderPNID = () => {
-    const { asset } = this;
-    if (!asset) {
-      return null;
-    }
     return <PNIDViewer />;
   };
 
