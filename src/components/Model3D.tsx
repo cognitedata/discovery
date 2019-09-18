@@ -83,16 +83,6 @@ class Model3D extends React.Component<Props, State> {
       }
     }
 
-    if (
-      this.props.nodeId &&
-      this.props.assetMappings.byNodeId[this.props.nodeId] !==
-        prevProps.assetMappings.byNodeId[this.props.nodeId]
-    ) {
-      this.props.onAssetIdChange(
-        this.props.assetMappings.byNodeId[this.props.nodeId].assetId
-      );
-    }
-
     if (prevProps.assetMappings !== this.props.assetMappings) {
       if (this.state.nodeId && this.state.nodeId !== this.props.nodeId) {
         const assetId = this.getAssetIdForNodeId(this.state.nodeId);
