@@ -29,8 +29,6 @@
 		"@types/styled-components": "^4.1.18",
 		"@vx/clip-path": "^0.0.189",
 		"@vx/event": "^0.0.189",
-		"@vx/scale": "^0.0.190",
-		"@vx/zoom": "^0.0.189",
 		"@vx/gradient": "^0.0.189",
 		"@vx/group": "^0.0.190",
 		"@vx/hierarchy": "^0.0.190",
