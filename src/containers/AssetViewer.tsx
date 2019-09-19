@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Dispatch, bindActionCreators } from 'redux';
-import GridLayout from 'react-grid-layout';
 import Model3D from '../components/Model3D';
 import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';

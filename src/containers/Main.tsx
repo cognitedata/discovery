@@ -85,10 +85,6 @@ const AddButton = styled(Button)`
   }
 `;
 
-function stringToBool(str: string) {
-  return str === 'true';
-}
-
 type Props = {
   match: any;
   history: any;
@@ -105,12 +101,9 @@ type Props = {
 };
 
 type State = {
-  showRelationships: boolean;
-  showAssetViewer: boolean;
-  show3D: boolean;
-  showPNID: boolean;
-  selectedPane: string;
+  editLayout: boolean;
   layout: GridLayout[];
+  selectedPane: string;
 };
 
 class Main extends React.Component<Props, State> {
@@ -125,19 +118,8 @@ class Main extends React.Component<Props, State> {
       layout = JSON.parse(layoutString);
     }
     this.state = {
-      show3D: localStorage.getItem('show3D')
-        ? stringToBool(localStorage.getItem('show3D')!)
-        : true,
-      showPNID: localStorage.getItem('showPNID')
-        ? stringToBool(localStorage.getItem('showPNID')!)
-        : true,
-      showAssetViewer: localStorage.getItem('showAssetViewer')
-        ? stringToBool(localStorage.getItem('showAssetViewer')!)
-        : true,
-      showRelationships: localStorage.getItem('showRelationshipViewer')
-        ? stringToBool(localStorage.getItem('showRelationshipViewer')!)
-        : false,
       selectedPane: 'asset',
+      editLayout: false,
       layout,
     };
   }
@@ -146,13 +128,6 @@ class Main extends React.Component<Props, State> {
     this.props.doFetchTypes();
     if (!this.props.threed.loading) {
       this.props.doFetchModels();
-    }
-    // Another workaround for a bug in SVGViewer
-    if (this.state.showPNID) {
-      this.setState({ showPNID: false });
-      setTimeout(() => {
-        this.setState({ showPNID: true });
-      }, 500);
     }
 
     this.checkAndFixURL();
@@ -182,34 +157,6 @@ class Main extends React.Component<Props, State> {
     } else {
       this.props.resetAppState();
     }
-  };
-
-  on3DVisibleChange = (visible: boolean) => {
-    this.setState({ show3D: visible });
-    localStorage.setItem('show3D', `${visible}`);
-  };
-
-  onPNIDVisibleChange = (visible: boolean) => {
-    this.setState({ showPNID: visible });
-    localStorage.setItem('showPNID', `${visible}`);
-  };
-
-  onAssetViewerChange = (visible: boolean) => {
-    const { showRelationships } = this.state;
-    this.setState({
-      showAssetViewer: visible,
-      showRelationships: visible ? false : showRelationships,
-    });
-    localStorage.setItem('showAssetViewer', `${visible}`);
-  };
-
-  onRelationshipsViewerChange = (visible: boolean) => {
-    const { showAssetViewer } = this.state;
-    this.setState({
-      showRelationships: visible,
-      showAssetViewer: visible ? false : showAssetViewer,
-    });
-    localStorage.setItem('showRelationships', `${visible}`);
   };
 
   hasModelForAsset = (assetId: number) => {
@@ -292,19 +239,6 @@ class Main extends React.Component<Props, State> {
   };
 
   render() {
-    let model3D: { modelId: number; revisionId: number } | undefined;
-    const {
-      app: { modelId, revisionId },
-    } = this.props;
-
-    if (this.gridRef && this.gridRef.current) {
-      if (modelId && revisionId) {
-        model3D = {
-          modelId,
-          revisionId,
-        };
-      }
-    }
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
@@ -319,31 +253,12 @@ class Main extends React.Component<Props, State> {
             >
               <StyledHeader>
                 <Switch
-                  checked={model3D && this.state.show3D}
-                  checkedChildren="3D"
+                  checked={this.state.editLayout}
+                  checkedChildren="Edit Layout"
                   unCheckedChildren="3D"
-                  onChange={this.on3DVisibleChange}
-                  disabled={!model3D}
-                />
-                <Switch
-                  checked={this.state.showPNID}
-                  checkedChildren="P&ID"
-                  unCheckedChildren="P&ID"
-                  onChange={this.onPNIDVisibleChange}
-                />
-                <Switch
-                  checked={
-                    !this.state.showRelationships && this.state.showAssetViewer
+                  onChange={() =>
+                    this.setState(state => ({ editLayout: !state.editLayout }))
                   }
-                  checkedChildren="Asset Network Viewer"
-                  unCheckedChildren="Asset Network Viewer"
-                  onChange={this.onAssetViewerChange}
-                />
-                <Switch
-                  checked={this.state.showRelationships}
-                  checkedChildren="Relationships Viewer"
-                  unCheckedChildren="Relationships Viewer"
-                  onChange={this.onRelationshipsViewerChange}
                 />
               </StyledHeader>
               <CustomGridLayout
