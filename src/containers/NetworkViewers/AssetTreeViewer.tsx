@@ -12,9 +12,9 @@ import {
   loadAssetChildren,
   AssetsState,
   selectAssets,
-} from '../modules/assets';
-import { AppState, setAssetId, selectApp } from '../modules/app';
-import { RootState } from '../reducers/index';
+} from '../../modules/assets';
+import { AppState, setAssetId, selectApp } from '../../modules/app';
+import { RootState } from '../../reducers/index';
 
 const BGCOLOR = '#101020';
 
