@@ -1,14 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Radio } from 'antd';
+import { Layout, Switch, Radio, Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
 import {
-  AssetViewer as AssetViewerComponent,
-  // eslint-disable-next-line import/no-named-default
-  default as AssetViewer,
-} from './AssetViewer';
+  Responsive,
+  WidthProvider,
+  Layout as GridLayout,
+} from 'react-grid-layout';
 import { fetchTypes } from '../modules/types';
 import {
   fetchModels,
@@ -22,6 +22,7 @@ import ModelList from './ModelList';
 import AssetSearchComponent from './AssetSearchComponent';
 import AssetDrawer from './Sidebar/SidebarAssetView';
 import NodeDrawer from './Sidebar/SidebarNodeView';
+
 import {
   AppState,
   selectApp,
@@ -29,6 +30,8 @@ import {
   resetAppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
+
+const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
@@ -66,6 +69,22 @@ const AssetSectionWrapper = styled.div`
   }
 `;
 
+const CustomGridLayout = styled(ResponsiveReactGridLayout)`
+  position: relative;
+  .react-grid-item {
+    padding: 12px;
+    background: #fff;
+  }
+`;
+
+const AddButton = styled(Button)`
+  && {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+  }
+`;
+
 function stringToBool(str: string) {
   return str === 'true';
 }
@@ -91,28 +110,37 @@ type State = {
   show3D: boolean;
   showPNID: boolean;
   selectedPane: string;
+  layout: GridLayout[];
 };
 
 class Main extends React.Component<Props, State> {
-  state = {
-    show3D: localStorage.getItem('show3D')
-      ? stringToBool(localStorage.getItem('show3D')!)
-      : true,
-    showPNID: localStorage.getItem('showPNID')
-      ? stringToBool(localStorage.getItem('showPNID')!)
-      : true,
-    showAssetViewer: localStorage.getItem('showAssetViewer')
-      ? stringToBool(localStorage.getItem('showAssetViewer')!)
-      : true,
-    showRelationships: localStorage.getItem('showRelationshipViewer')
-      ? stringToBool(localStorage.getItem('showRelationshipViewer')!)
-      : false,
-    selectedPane: 'asset',
-  };
+  gridRef = React.createRef<Responsive>();
 
-  viewer = React.createRef<AssetViewerComponent>();
+  constructor(props: Props) {
+    super(props);
 
-  isLoading = false;
+    const layoutString = localStorage.getItem('layout');
+    let layout = [{ i: '0', x: 0, y: 0, w: 1, h: 2, static: false }];
+    if (layoutString && JSON.parse(layoutString)) {
+      layout = JSON.parse(layoutString);
+    }
+    this.state = {
+      show3D: localStorage.getItem('show3D')
+        ? stringToBool(localStorage.getItem('show3D')!)
+        : true,
+      showPNID: localStorage.getItem('showPNID')
+        ? stringToBool(localStorage.getItem('showPNID')!)
+        : true,
+      showAssetViewer: localStorage.getItem('showAssetViewer')
+        ? stringToBool(localStorage.getItem('showAssetViewer')!)
+        : true,
+      showRelationships: localStorage.getItem('showRelationshipViewer')
+        ? stringToBool(localStorage.getItem('showRelationshipViewer')!)
+        : false,
+      selectedPane: 'asset',
+      layout,
+    };
+  }
 
   componentDidMount() {
     this.props.doFetchTypes();
@@ -234,13 +262,42 @@ class Main extends React.Component<Props, State> {
     );
   };
 
+  onAddComponent = () => {
+    this.setState(state => ({
+      // Add a new item. It must have a unique key!
+      layout: state.layout.concat([
+        {
+          static: false,
+          i: `${state.layout.length}`,
+          x: (state.layout.length * 2) % 4,
+          y: Infinity, // puts it at the bottom
+          w: 2,
+          h: 2,
+        },
+      ]),
+    }));
+  };
+
+  onLayoutChange = (layout: GridLayout[]) => {
+    this.setState({ layout });
+    localStorage.setItem('layout', JSON.stringify(layout));
+  };
+
+  renderComponent = (el: GridLayout) => {
+    return (
+      <div key={el.i} data-grid={el}>
+        <pre>{JSON.stringify(el, null, 2)}</pre>
+      </div>
+    );
+  };
+
   render() {
     let model3D: { modelId: number; revisionId: number } | undefined;
     const {
       app: { modelId, revisionId },
     } = this.props;
 
-    if (this.viewer && this.viewer.current) {
+    if (this.gridRef && this.gridRef.current) {
       if (modelId && revisionId) {
         model3D = {
           modelId,
@@ -289,13 +346,24 @@ class Main extends React.Component<Props, State> {
                   onChange={this.onRelationshipsViewerChange}
                 />
               </StyledHeader>
-              <AssetViewer
-                show3D={model3D !== undefined && this.state.show3D}
-                showAssetViewer={this.state.showAssetViewer}
-                showRelationships={this.state.showRelationships}
-                showPNID={this.state.showPNID}
-                ref={this.viewer}
-              />
+              <CustomGridLayout
+                ref={this.gridRef}
+                className="layout"
+                rowHeight={30}
+                cols={{ lg: 4, sm: 2, xs: 1 }}
+                onLayoutChange={this.onLayoutChange}
+              >
+                {this.state.layout.map(el => this.renderComponent(el))}
+              </CustomGridLayout>
+              <AddButton
+                type="primary"
+                shape="round"
+                icon="plus"
+                size="large"
+                onClick={this.onAddComponent}
+              >
+                Add Layout
+              </AddButton>
             </Content>
           </Layout>
         </Layout>
