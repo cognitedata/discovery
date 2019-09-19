@@ -86,9 +86,7 @@ const Wrapper = styled.div`
   }
 `;
 
-type OwnProps = {
-  topShowing: boolean;
-};
+type OwnProps = {};
 type StateProps = {
   app: AppState;
   asset?: Asset;
