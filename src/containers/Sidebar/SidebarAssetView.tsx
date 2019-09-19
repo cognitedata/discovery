@@ -10,6 +10,7 @@ import {
   Descriptions,
   Switch,
   Pagination,
+  message,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -350,8 +351,33 @@ class AssetDrawer extends React.Component<Props, State> {
 
   renderEdit = (asset: ExtendedAsset) => {
     const { project } = sdk;
+    const {
+      app: { revisionId, modelId, rootAssetId },
+    } = this.props;
     return (
       <Panel header={<span>Edit Asset Hierarchy</span>} key="edit">
+        <Popconfirm
+          title="Are you sure you want to unmap the 3D node?"
+          onConfirm={() => {
+            if (revisionId && modelId) {
+              this.props.deleteAssetNodeMapping(modelId, revisionId, asset.id);
+              this.props.setAssetId(
+                rootAssetId!,
+                asset.parentId || asset.rootId
+              );
+            } else {
+              message.info('Nothing to unmap');
+            }
+          }}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button type="danger" disabled={!revisionId || !modelId}>
+            Unmap 3D Node
+          </Button>
+        </Popconfirm>
+        <br />
+        <br />
         <Button
           type="primary"
           onClick={() => this.setState({ showAddChild: true })}
@@ -372,9 +398,6 @@ class AssetDrawer extends React.Component<Props, State> {
           title="Are you sure you want to remove this asset and all its children?"
           onConfirm={() => {
             this.props.deleteAsset(asset.id);
-            const {
-              app: { revisionId, modelId, rootAssetId },
-            } = this.props;
             if (revisionId && modelId) {
               this.props.deleteAssetNodeMapping(modelId, revisionId, asset.id);
             }
