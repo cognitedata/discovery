@@ -49,6 +49,12 @@ const Wrapper = styled.div`
   height: 100%;
   width: 100%;
 
+  && > div {
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+
   && .selector {
     z-index: 1;
     position: absolute;
@@ -61,6 +67,22 @@ const Wrapper = styled.div`
   && .selector strong {
     margin-left: 4px;
     margin-right: 4px;
+  }
+  && .controls {
+    z-index: 1;
+    position: absolute;
+    right: 12px;
+    height: auto;
+    bottom: 12px;
+    background: #fff;
+    padding: 14px;
+  }
+
+  && .controls > * {
+    margin-left: 12px;
+  }
+  && .controls > *:nth-child(1) {
+    margin-left: 0px;
   }
 `;
 
@@ -108,6 +130,11 @@ class TreeViewer extends Component<Props, State> {
       asset,
       app: { rootAssetId },
     } = this.props;
+
+    const { nodes, length } = this.getData();
+    if (length !== this.state.length) {
+      this.setState({ data: nodes, length });
+    }
 
     if (asset && asset.id !== rootAssetId && asset.parentId) {
       this.props.loadParentRecurse(asset.parentId, rootAssetId!);
@@ -249,8 +276,13 @@ class TreeViewer extends Component<Props, State> {
   render() {
     let height = 0;
     let width = 0;
+    let origHeight = 0;
+    let origWidth = 0;
     if (this.wrapperRef && this.wrapperRef.current) {
-      ({ height, width } = this.wrapperRef.current.getBoundingClientRect());
+      ({
+        height: origHeight,
+        width: origWidth,
+      } = this.wrapperRef.current.getBoundingClientRect());
     }
     const margin = {
       top: 120,
@@ -259,8 +291,8 @@ class TreeViewer extends Component<Props, State> {
       bottom: 60,
     };
 
-    width = Math.max(width, height, 800);
-    height = Math.max(width, height, 800);
+    width = Math.max(origWidth, origHeight, 800);
+    height = Math.max(origWidth, origHeight, 800);
 
     const { controls, orientation, linkType, data: nodeData } = this.state;
 
@@ -297,7 +329,6 @@ class TreeViewer extends Component<Props, State> {
 
     return (
       <Wrapper ref={this.wrapperRef}>
-        {this.renderControlSection()}
         <Zoom
           width={width}
           height={height}
@@ -316,15 +347,18 @@ class TreeViewer extends Component<Props, State> {
         >
           {(zoom: any) => {
             return (
-              <div style={{ position: 'relative' }}>
+              <div
+                style={{ position: 'relative', width: '100%', height: '100%' }}
+              >
+                {this.renderControlSection()}
                 <svg
-                  width={width}
-                  height={height}
+                  width="100%"
+                  height="100%"
                   style={{
                     display: 'block',
                   }}
                 >
-                  <RectClipPath id="zoom-clip" width={width} height={height} />
+                  <RectClipPath id="zoom-clip" width="100%" height="100%" />
                   <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
                   <rect width={width} height={height} fill="#272b4d" />
                   <rect
