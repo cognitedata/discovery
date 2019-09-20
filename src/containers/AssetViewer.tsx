@@ -23,8 +23,9 @@ import {
 import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
 import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
+import AssetBreadcrumbs from './AssetBreadcrumbs';
 
-export const ViewerTypeMap: { [key: string]: string } = {
+export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
   threed: '3D',
   pnid: 'P&ID',
@@ -32,9 +33,18 @@ export const ViewerTypeMap: { [key: string]: string } = {
   network: 'Force Network Viewer',
   relationship: 'Relationships',
   oldnetwork: 'Old Network Viewer',
+  assetbreadcrumbs: 'Asset Breadcrumbs',
 };
 
-export type ViewerType = keyof typeof ViewerTypeMap;
+export type ViewerType =
+  | 'none'
+  | 'threed'
+  | 'pnid'
+  | 'vx'
+  | 'network'
+  | 'relationship'
+  | 'oldnetwork'
+  | 'assetbreadcrumbs';
 
 type OwnProps = {
   type: ViewerType;
@@ -156,6 +166,10 @@ export class AssetViewer extends React.Component<Props, State> {
     return <AssetNetworkViewer hasResized={false} />;
   };
 
+  renderAssetBreadcrumbs = () => {
+    return <AssetBreadcrumbs />;
+  };
+
   renderRelationshipsViewer = () => {
     const { rootAssetId } = this;
     if (!rootAssetId) {
@@ -181,6 +195,8 @@ export class AssetViewer extends React.Component<Props, State> {
         return this.renderAssetNetworkVX();
       case 'relationship':
         return this.renderRelationshipsViewer();
+      case 'assetbreadcrumbs':
+        return this.renderAssetBreadcrumbs();
       case 'pnid':
         return this.renderPNID();
       case 'none':
@@ -195,7 +211,7 @@ export class AssetViewer extends React.Component<Props, State> {
             >
               {Object.keys(ViewerTypeMap).map((viewType: string) => (
                 <Select.Option key={viewType} value={viewType}>
-                  {`${ViewerTypeMap[viewType]}`}
+                  {`${ViewerTypeMap[viewType as ViewerType]}`}
                 </Select.Option>
               ))}
             </Select>
