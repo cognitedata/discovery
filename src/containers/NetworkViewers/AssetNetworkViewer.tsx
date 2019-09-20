@@ -17,7 +17,7 @@ import {
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { AppState, selectApp, setAssetId } from '../../modules/app';
-import NoAssetSelected from '../../components/NoAssetSelected';
+import NoAssetSelected from '../../components/Placeholder';
 
 const Wrapper = styled.div`
   height: 100%;

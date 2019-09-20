@@ -36,7 +36,7 @@ import {
 } from '../../modules/assets';
 import { AppState, setAssetId, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
-import NoAssetSelected from '../../components/NoAssetSelected';
+import NoAssetSelected from '../../components/Placeholder';
 
 type Node = {
   name: string;
