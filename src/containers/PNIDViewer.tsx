@@ -84,10 +84,6 @@ class PNIDViewer extends React.Component<Props, State> {
     }
   }
 
-  onClick = (name: string) => {
-    this.searchAndSelectAssetName(name);
-  };
-
   searchAndSelectAssetName = async (nameString: string) => {
     let asset;
 
@@ -118,6 +114,32 @@ class PNIDViewer extends React.Component<Props, State> {
       [asset] = matches;
     }
     this.props.setAssetId(asset.rootId, asset.id);
+  };
+
+  loadNextPNID = async (nameString: string) => {
+    let { currentFile } = this.state;
+
+    let name = nameString;
+
+    if (name.indexOf('<tag>') > -1) {
+      const startingLocation = name.indexOf('<tag>') + 5;
+      name = name.slice(
+        startingLocation,
+        name.indexOf('</tag>', startingLocation)
+      );
+    }
+    const result = await sdk.files.search({ search: { name: `${name}.svg` } });
+    const exactMatch = result.find(a => a.name === `${name}.svg`);
+    if (exactMatch) {
+      currentFile = {
+        id: exactMatch.id,
+        fileName: exactMatch.name,
+      };
+    } else {
+      message.info('Did not find next pnid graph');
+      return;
+    }
+    this.setState({ currentFile });
   };
 
   isCurrentAsset = (metadata: any) => {
@@ -157,7 +179,11 @@ class PNIDViewer extends React.Component<Props, State> {
           // ]}
           handleItemClick={item => {
             const name = item.children[0].children[0].innerHTML;
-            this.onClick(name);
+            if (item.children[0].children[0].tagName === 'file_id') {
+              this.loadNextPNID(name);
+            } else {
+              this.searchAndSelectAssetName(name);
+            }
           }}
         />
       </StyledSVGViewerContainer>
