@@ -37,6 +37,7 @@
 		"@vx/text": "^0.0.191",
 		"@vx/zoom": "^0.0.189",
 		"antd": "^3.22.2",
+		"babel-eslint": "10.0.2",
 		"connected-react-router": "^6.5.2",
 		"d3": "^5.9.7",
 		"lodash": "^4.17.15",
