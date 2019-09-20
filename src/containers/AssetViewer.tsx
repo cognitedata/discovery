@@ -119,6 +119,10 @@ export class AssetViewer extends React.Component<Props, State> {
     const { rootAssetId, assetId } = this;
     const { nodeId: propNodeId, modelId, revisionId } = this.props.app;
     const nodeId = propNodeId || this.getNodeId(false);
+
+    if (!modelId || !revisionId) {
+      return <p>No 3D Model is mapped to this asset.</p>;
+    }
     return (
       <Model3D
         assetId={assetId!}
