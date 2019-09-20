@@ -58,9 +58,7 @@ const LoadingWrapper = styled.div<{ visible: string }>`
   }
 `;
 
-type OwnProps = {
-  topShowing: boolean;
-};
+type OwnProps = {};
 type StateProps = {
   app: AppState;
   asset?: Asset;

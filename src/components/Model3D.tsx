@@ -67,6 +67,12 @@ class Model3D extends React.Component<Props, State> {
 
   viewer?: Cognite3DViewer = undefined;
 
+  componentDidMount() {
+    if (this.props.nodeId) {
+      this.setState({ nodeId: this.props.nodeId });
+    }
+  }
+
   componentDidUpdate(prevProps: Props, prevState: State) {
     if (prevProps.nodeId !== this.props.nodeId) {
       // eslint-disable-next-line react/no-did-update-set-state
@@ -365,6 +371,7 @@ class Model3D extends React.Component<Props, State> {
           max={510}
           style={{
             position: 'absolute',
+            top: '40px',
             paddingLeft: 10,
             paddingTop: 10,
             height: '50%',
