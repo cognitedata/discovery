@@ -159,7 +159,7 @@ class Main extends React.Component<Props, State> {
           y: 0,
           w: 2,
           h: 31,
-          viewType: 'vx',
+          viewType: 'none',
         },
         {
           i: '1',
@@ -167,7 +167,7 @@ class Main extends React.Component<Props, State> {
           y: 0,
           w: 2,
           h: 31,
-          viewType: 'pnid',
+          viewType: 'none',
         },
       ];
     }
@@ -282,7 +282,7 @@ class Main extends React.Component<Props, State> {
           x: (state.layout.length * 2) % 4,
           y: Infinity, // puts it at the bottom
           w: 2,
-          h: 2,
+          h: 8,
           viewType: 'none',
         },
       ]),

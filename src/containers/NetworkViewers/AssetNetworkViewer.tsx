@@ -17,6 +17,7 @@ import {
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { AppState, selectApp, setAssetId } from '../../modules/app';
+import NoAssetSelected from '../../components/NoAssetSelected';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -114,66 +115,8 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
       this.div!.remove();
       this.svg!.remove();
     }
-    this.svg = (d3.select('#linkSection') as d3.Selection<
-      SVGSVGElement,
-      any,
-      any,
-      any
-    >)
-      .attr('width', '100%')
-      .attr('height', '100%');
 
-    this.div = d3.select('#assetSection');
-
-    if (this.grapharea) {
-      const {
-        clientHeight: height,
-        clientWidth: width,
-      } = this.grapharea.current!;
-
-      // @ts-ignore
-      d3.select('#graphSection').call(
-        // @ts-ignore
-        d3
-          .zoom()
-          .extent([[0, 0], [width, height]])
-          .scaleExtent([1, 8])
-          .on('zoom', () => {
-            const { transform } = d3.event;
-            this.div!.style(
-              'transform',
-              `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
-            );
-            this.div!.style('transform-origin', '0 0');
-            this.svg!.style(
-              'transform',
-              `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
-            );
-            this.svg!.style('transform-origin', '0 0');
-          })
-      );
-
-      this.simulation = d3
-        .forceSimulation()
-        .force(
-          'link',
-          d3
-            .forceLink()
-            .distance(77)
-            .id((d: any) => d.id)
-        )
-        .force('charge', d3.forceManyBody().strength(-200))
-        .force('collide', d3.forceCollide(40))
-        .force('center', d3.forceCenter(width / 2, height / 2))
-        .on('tick', this.ticked);
-
-      this.link = this.svg!.append('g')
-        .attr('stroke', '#999')
-        .attr('stroke-opacity', 0.6)
-        .selectAll('line');
-
-      this.node = this.div!.selectAll('div');
-
+    if (this.grapharea && this.grapharea.current) {
       this.createGraph();
 
       const {
@@ -236,7 +179,18 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
       this.props.loadAssetChildren(asset.id);
     }
 
-    this.createGraph();
+    if (this.grapharea && this.grapharea.current) {
+      if (!asset || prevProps.app.rootAssetId !== rootAssetId) {
+        this.div = undefined;
+        this.node = undefined;
+        this.link = undefined;
+        this.displayedLinkIds = [];
+        this.displayedLinks = [];
+        this.displayedNodes = new Map();
+      } else {
+        this.createGraph();
+      }
+    }
   }
 
   get parentIds() {
@@ -260,6 +214,67 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
     const {
       assets: { all },
     } = this.props;
+
+    this.svg = (d3.select('#linkSection') as d3.Selection<
+      SVGSVGElement,
+      any,
+      any,
+      any
+    >)
+      .attr('width', '100%')
+      .attr('height', '100%');
+
+    if (!this.div || !this.node || !this.link) {
+      this.div = d3.select('#assetSection');
+
+      const {
+        clientHeight: height,
+        clientWidth: width,
+      } = this.grapharea.current!;
+
+      // @ts-ignore
+      d3.select('#graphSection').call(
+        // @ts-ignore
+        d3
+          .zoom()
+          .extent([[0, 0], [width, height]])
+          .scaleExtent([1, 8])
+          .on('zoom', () => {
+            const { transform } = d3.event;
+            this.div!.style(
+              'transform',
+              `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
+            );
+            this.div!.style('transform-origin', '0 0');
+            this.svg!.style(
+              'transform',
+              `translate(${transform.x}px,${transform.y}px) scale(${transform.k})`
+            );
+            this.svg!.style('transform-origin', '0 0');
+          })
+      );
+
+      this.simulation = d3
+        .forceSimulation()
+        .force(
+          'link',
+          d3
+            .forceLink()
+            .distance(77)
+            .id((d: any) => d.id)
+        )
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('collide', d3.forceCollide(40))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .on('tick', this.ticked);
+
+      this.link = this.svg!.append('g')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .selectAll('line');
+
+      this.node = this.div!.selectAll('div');
+    }
 
     const allNewNodes = Object.keys(all).filter(
       (id: string) => !this.displayedNodes.has(Number(id))
@@ -326,15 +341,15 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
       asset,
       assets: { all },
     } = this.props;
-    if (!asset) {
-      return;
-    }
     const { parentIds } = this;
 
-    const visibleNodes = Array.from(this.displayedNodes.values()).filter(
-      el =>
-        all[el.id] && (el.parentId === asset.id || parentIds.includes(el.id))
-    );
+    const visibleNodes = asset
+      ? Array.from(this.displayedNodes.values()).filter(
+          el =>
+            all[el.id] &&
+            (el.parentId === asset.id || parentIds.includes(el.id))
+        )
+      : [];
     visibleNodes.forEach((node: D3Node) => {
       const el = document.getElementById(`${node.id}`);
       if (el) {
@@ -348,15 +363,19 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
       .enter()
       .append('div')
       .html((d: any) => {
-        return AssetNode(d, d.id === asset.id, d.parentId === asset.id);
+        return AssetNode(d, d.id === asset!.id, d.parentId === asset!.id);
       })
       .merge(this.node);
 
-    const visibleLinks = this.displayedLinks.filter(
-      el =>
-        (el.source.parentId === asset.id || parentIds.includes(el.source.id)) &&
-        (el.target.parentId === asset.id || parentIds.includes(el.target.id))
-    );
+    const visibleLinks = asset
+      ? this.displayedLinks.filter(
+          el =>
+            (el.source.parentId === asset.id ||
+              parentIds.includes(el.source.id)) &&
+            (el.target.parentId === asset.id ||
+              parentIds.includes(el.target.id))
+        )
+      : [];
 
     // Apply the general update pattern to the links.
     this.link = this.link!.data(visibleLinks, d => d.id);
@@ -489,6 +508,10 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
   };
 
   render() {
+    const { asset } = this.props;
+    if (!asset) {
+      return <NoAssetSelected />;
+    }
     return (
       <Wrapper
         id="graphSection"
