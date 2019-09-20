@@ -22,6 +22,7 @@
 		"@types/node": "^12.6.3",
 		"@types/react": "^16.8.23",
 		"@types/react-dom": "^16.8.4",
+		"@types/react-grid-layout": "^0.16.7",
 		"@types/react-redux": "^7.1.1",
 		"@types/react-router-dom": "^4.3.4",
 		"@types/redux-actions": "^2.6.1",
@@ -36,7 +37,7 @@
 		"@vx/text": "^0.0.191",
 		"@vx/zoom": "^0.0.189",
 		"antd": "^3.22.2",
-		"babel-eslint": "^10.0.2",
+		"babel-eslint": "10.0.2",
 		"connected-react-router": "^6.5.2",
 		"d3": "^5.9.7",
 		"lodash": "^4.17.15",
@@ -50,6 +51,7 @@
 		"react-dev-utils": "^9.0.2",
 		"react-dom": "^16.8.4",
 		"react-force-graph": "^1.24.1",
+		"react-grid-layout": "^0.16.6",
 		"react-redux": "^7.1.1",
 		"react-router-dom": "^5.0.1",
 		"redux": "^4.0.1",
@@ -96,12 +98,7 @@
 			"pre-commit": "pretty-quick --staged"
 		}
 	},
-	"browserslist": [
-		">0.2%",
-		"not dead",
-		"not ie <= 11",
-		"not op_mini all"
-	],
+	"browserslist": [">0.2%", "not dead", "not ie <= 11", "not op_mini all"],
 	"engines": {
 		"npm": ">=4",
 		"node": ">=6"

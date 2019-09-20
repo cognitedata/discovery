@@ -1,14 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Radio } from 'antd';
+import { Layout, Switch, Radio, Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
 import {
-  AssetViewer as AssetViewerComponent,
-  // eslint-disable-next-line import/no-named-default
-  default as AssetViewer,
-} from './AssetViewer';
+  Responsive,
+  WidthProvider,
+  Layout as GridLayout,
+} from 'react-grid-layout';
 import { fetchTypes } from '../modules/types';
 import {
   fetchModels,
@@ -22,6 +22,7 @@ import ModelList from './ModelList';
 import AssetSearchComponent from './AssetSearchComponent';
 import AssetDrawer from './Sidebar/SidebarAssetView';
 import NodeDrawer from './Sidebar/SidebarNodeView';
+
 import {
   AppState,
   selectApp,
@@ -29,6 +30,15 @@ import {
   resetAppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
+import AssetViewer, { ViewerType } from './AssetViewer';
+
+const LAYOUT_LOCAL_STORAGE = 'layout';
+
+interface DiscoveryLayout extends GridLayout {
+  viewType: ViewerType;
+}
+
+const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 // 13FV1234 is useful asset
 const { Content, Header, Sider } = Layout;
@@ -66,9 +76,36 @@ const AssetSectionWrapper = styled.div`
   }
 `;
 
-function stringToBool(str: string) {
-  return str === 'true';
-}
+const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
+  editable: boolean;
+}>`
+  position: relative;
+  .react-grid-item {
+    padding: 12px;
+    background: #fff;
+  }
+
+  .react-resizable-handle {
+    display: ${props => (props.editable ? 'block' : 'none')};
+  }
+`;
+
+const AddButton = styled(Button)`
+  && {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1000;
+  }
+`;
+const DeleteButton = styled(Button)`
+  && {
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    z-index: 1000;
+  }
+`;
 
 type Props = {
   match: any;
@@ -86,48 +123,72 @@ type Props = {
 };
 
 type State = {
-  showRelationships: boolean;
-  showAssetViewer: boolean;
-  show3D: boolean;
-  showPNID: boolean;
+  editLayout: boolean;
+  layout: DiscoveryLayout[];
   selectedPane: string;
 };
 
 class Main extends React.Component<Props, State> {
-  state = {
-    show3D: localStorage.getItem('show3D')
-      ? stringToBool(localStorage.getItem('show3D')!)
-      : true,
-    showPNID: localStorage.getItem('showPNID')
-      ? stringToBool(localStorage.getItem('showPNID')!)
-      : true,
-    showAssetViewer: localStorage.getItem('showAssetViewer')
-      ? stringToBool(localStorage.getItem('showAssetViewer')!)
-      : true,
-    showRelationships: localStorage.getItem('showRelationshipViewer')
-      ? stringToBool(localStorage.getItem('showRelationshipViewer')!)
-      : false,
-    selectedPane: 'asset',
-  };
+  gridRef = React.createRef<Responsive>();
 
-  viewer = React.createRef<AssetViewerComponent>();
+  constructor(props: Props) {
+    super(props);
 
-  isLoading = false;
+    const layoutString = localStorage.getItem(LAYOUT_LOCAL_STORAGE);
+    let layout: DiscoveryLayout[] = [];
+    if (layoutString) {
+      const parsed = JSON.parse(layoutString);
+      if (parsed && parsed.length && parsed.length > 0) {
+        layout = JSON.parse(layoutString).filter(
+          (el: any) =>
+            el.x !== undefined &&
+            el.y !== undefined &&
+            el.w !== undefined &&
+            el.h !== undefined &&
+            el.i !== undefined &&
+            el.viewType !== undefined
+        );
+      }
+      localStorage.removeItem(LAYOUT_LOCAL_STORAGE);
+    }
+    if (layout.length === 0) {
+      layout = [
+        {
+          i: '0',
+          x: 0,
+          y: 0,
+          w: 2,
+          h: 31,
+          viewType: 'vx',
+        },
+        {
+          i: '1',
+          x: 2,
+          y: 0,
+          w: 2,
+          h: 31,
+          viewType: 'pnid',
+        },
+      ];
+    }
+    this.state = {
+      selectedPane: 'asset',
+      editLayout: false,
+      layout,
+    };
+  }
 
   componentDidMount() {
     this.props.doFetchTypes();
     if (!this.props.threed.loading) {
       this.props.doFetchModels();
     }
-    // Another workaround for a bug in SVGViewer
-    if (this.state.showPNID) {
-      this.setState({ showPNID: false });
-      setTimeout(() => {
-        this.setState({ showPNID: true });
-      }, 500);
-    }
 
     this.checkAndFixURL();
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 200);
   }
 
   componentDidUpdate() {
@@ -154,34 +215,6 @@ class Main extends React.Component<Props, State> {
     } else {
       this.props.resetAppState();
     }
-  };
-
-  on3DVisibleChange = (visible: boolean) => {
-    this.setState({ show3D: visible });
-    localStorage.setItem('show3D', `${visible}`);
-  };
-
-  onPNIDVisibleChange = (visible: boolean) => {
-    this.setState({ showPNID: visible });
-    localStorage.setItem('showPNID', `${visible}`);
-  };
-
-  onAssetViewerChange = (visible: boolean) => {
-    const { showRelationships } = this.state;
-    this.setState({
-      showAssetViewer: visible,
-      showRelationships: visible ? false : showRelationships,
-    });
-    localStorage.setItem('showAssetViewer', `${visible}`);
-  };
-
-  onRelationshipsViewerChange = (visible: boolean) => {
-    const { showAssetViewer } = this.state;
-    this.setState({
-      showRelationships: visible,
-      showAssetViewer: visible ? false : showAssetViewer,
-    });
-    localStorage.setItem('showRelationships', `${visible}`);
   };
 
   hasModelForAsset = (assetId: number) => {
@@ -234,20 +267,46 @@ class Main extends React.Component<Props, State> {
     );
   };
 
-  render() {
-    let model3D: { modelId: number; revisionId: number } | undefined;
-    const {
-      app: { modelId, revisionId },
-    } = this.props;
+  onAddComponent = () => {
+    const i =
+      this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
+      1;
+    this.setState(state => ({
+      // Add a new item. It must have a unique key!
+      layout: state.layout.concat([
+        {
+          static: false,
+          isDraggable: true,
+          isResizable: true,
+          i: `${i}`,
+          x: (state.layout.length * 2) % 4,
+          y: Infinity, // puts it at the bottom
+          w: 2,
+          h: 2,
+          viewType: 'none',
+        },
+      ]),
+    }));
+  };
 
-    if (this.viewer && this.viewer.current) {
-      if (modelId && revisionId) {
-        model3D = {
-          modelId,
-          revisionId,
-        };
-      }
-    }
+  changeEdit = (edit = false) => {
+    this.setState({
+      editLayout: edit,
+    });
+  };
+
+  onLayoutChange = (newLayout: DiscoveryLayout[]) => {
+    const layout = newLayout.map(el => ({
+      ...el,
+      viewType: this.state.layout.find(it => it.i === el.i)!.viewType,
+    }));
+    this.setState({ layout });
+    localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(layout));
+    return true;
+  };
+
+  render() {
+    const { layout, editLayout } = this.state;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
@@ -262,40 +321,77 @@ class Main extends React.Component<Props, State> {
             >
               <StyledHeader>
                 <Switch
-                  checked={model3D && this.state.show3D}
-                  checkedChildren="3D"
-                  unCheckedChildren="3D"
-                  onChange={this.on3DVisibleChange}
-                  disabled={!model3D}
-                />
-                <Switch
-                  checked={this.state.showPNID}
-                  checkedChildren="P&ID"
-                  unCheckedChildren="P&ID"
-                  onChange={this.onPNIDVisibleChange}
-                />
-                <Switch
-                  checked={
-                    !this.state.showRelationships && this.state.showAssetViewer
-                  }
-                  checkedChildren="Asset Network Viewer"
-                  unCheckedChildren="Asset Network Viewer"
-                  onChange={this.onAssetViewerChange}
-                />
-                <Switch
-                  checked={this.state.showRelationships}
-                  checkedChildren="Relationships Viewer"
-                  unCheckedChildren="Relationships Viewer"
-                  onChange={this.onRelationshipsViewerChange}
+                  checked={editLayout}
+                  checkedChildren="Edit ON"
+                  unCheckedChildren="Edit OFF"
+                  onChange={this.changeEdit}
                 />
               </StyledHeader>
-              <AssetViewer
-                show3D={model3D !== undefined && this.state.show3D}
-                showAssetViewer={this.state.showAssetViewer}
-                showRelationships={this.state.showRelationships}
-                showPNID={this.state.showPNID}
-                ref={this.viewer}
-              />
+              <CustomGridLayout
+                editable={editLayout}
+                ref={this.gridRef}
+                className="layout"
+                rowHeight={30}
+                cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
+                onLayoutChange={this.onLayoutChange}
+                onDragStart={() => {
+                  return editLayout;
+                }}
+              >
+                {layout.map((el, i) => (
+                  <div
+                    key={el.i}
+                    data-grid={el}
+                    style={{ position: 'relative' }}
+                  >
+                    <AssetViewer
+                      type={el.viewType}
+                      onComponentChange={(type: ViewerType) => {
+                        const newArray = [...layout];
+                        const arrayItem = newArray.find(
+                          item => item.i === el.i
+                        );
+                        if (arrayItem) {
+                          arrayItem.viewType = type;
+                          this.setState({ layout: newArray }, () => {
+                            localStorage.setItem(
+                              LAYOUT_LOCAL_STORAGE,
+                              JSON.stringify(newArray)
+                            );
+                          });
+                        }
+                      }}
+                    />
+                    {editLayout && (
+                      <DeleteButton
+                        type="primary"
+                        shape="circle"
+                        icon="close-circle"
+                        size="small"
+                        onClick={() => {
+                          this.setState({
+                            layout: [
+                              ...layout.slice(0, i),
+                              ...layout.slice(i + 1),
+                            ],
+                          });
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </CustomGridLayout>
+              {editLayout && (
+                <AddButton
+                  type="primary"
+                  shape="round"
+                  icon="plus"
+                  size="large"
+                  onClick={this.onAddComponent}
+                >
+                  Add Layout
+                </AddButton>
+              )}
             </Content>
           </Layout>
         </Layout>

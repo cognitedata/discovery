@@ -86,9 +86,7 @@ const Wrapper = styled.div`
   }
 `;
 
-type OwnProps = {
-  topShowing: boolean;
-};
+type OwnProps = {};
 type StateProps = {
   app: AppState;
   asset?: Asset;
@@ -360,10 +358,10 @@ class TreeViewer extends Component<Props, State> {
                 >
                   <RectClipPath id="zoom-clip" width="100%" height="100%" />
                   <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
-                  <rect width={width} height={height} fill="#272b4d" />
+                  <rect width="100%" height="100%" fill="#272b4d" />
                   <rect
-                    width={width}
-                    height={height}
+                    width="100%"
+                    height="100%"
                     rx={14}
                     fill="transparent"
                     onWheel={zoom.handleWheel}

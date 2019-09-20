@@ -59,7 +59,7 @@ const Node = styled.div<{ color: string }>`
 `;
 
 type OwnProps = {
-  topShowing: boolean;
+  hasResized: boolean;
 };
 type StateProps = {
   app: AppState;
@@ -84,7 +84,7 @@ interface Link extends d3.SimulationLinkDatum<D3Node> {
   id: string;
 }
 
-export class AssetViewer extends React.Component<Props, State> {
+export class AssetNetworkViewer extends React.Component<Props, State> {
   grapharea = React.createRef<HTMLDivElement>();
 
   svg?: d3.Selection<SVGSVGElement, any, any, any>;
@@ -190,12 +190,12 @@ export class AssetViewer extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     const {
       asset,
-      topShowing,
+      hasResized,
       app: { rootAssetId },
       assets: { all },
     } = this.props;
 
-    if (prevProps.topShowing !== topShowing) {
+    if (hasResized) {
       const {
         clientHeight: height,
         clientWidth: width,
@@ -540,4 +540,4 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
 export default connect<StateProps, DispatchProps, OwnProps, RootState>(
   mapStateToProps,
   mapDispatchToProps
-)(AssetViewer);
+)(AssetNetworkViewer);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import styled from 'styled-components';
 import { Dispatch, bindActionCreators } from 'redux';
+import { Select } from 'antd';
 import Model3D from '../components/Model3D';
 import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
@@ -21,31 +21,24 @@ import {
   setModelAndRevisionAndNode,
 } from '../modules/app';
 import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
+import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
+import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
 
-const ViewerContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+export const ViewerTypeMap: { [key: string]: string } = {
+  none: 'None',
+  threed: '3D',
+  pnid: 'P&ID',
+  vx: 'VX Network Viewer',
+  network: 'Force Network Viewer',
+  relationship: 'Relationships',
+  oldnetwork: 'Old Network Viewer',
+};
 
-  && .split {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    flex: 2;
-  }
-  && .bottom {
-    height: 0;
-    flex: 1;
-    width: 100%;
-  }
-`;
+export type ViewerType = keyof typeof ViewerTypeMap;
 
 type OwnProps = {
-  show3D: boolean;
-  showPNID: boolean;
-  showAssetViewer: boolean;
-  showRelationships: boolean;
+  type: ViewerType;
+  onComponentChange: (type: ViewerType) => void;
 };
 type StateProps = {
   app: AppState;
@@ -147,18 +140,16 @@ export class AssetViewer extends React.Component<Props, State> {
     return <PNIDViewer />;
   };
 
+  renderAssetNetworkVX = () => {
+    return <AssetTreeViewerVX />;
+  };
+
   renderAssetNetwork = () => {
-    const { rootAssetId } = this;
-    if (!rootAssetId) {
-      return null;
-    }
-    return (
-      <div className="bottom">
-        <AssetTreeViewerVX
-          topShowing={this.props.show3D || this.props.showPNID}
-        />
-      </div>
-    );
+    return <AssetTreeViewer />;
+  };
+
+  renderOldAssetNetwork = () => {
+    return <AssetNetworkViewer hasResized={false} />;
   };
 
   renderRelationshipsViewer = () => {
@@ -168,35 +159,45 @@ export class AssetViewer extends React.Component<Props, State> {
     }
     return (
       <div className="bottom">
-        <RelationshipNetworkViewer
-          topShowing={this.props.show3D || this.props.showPNID}
-        />
+        <RelationshipNetworkViewer topShowing={false} />
       </div>
     );
   };
 
   render() {
-    return (
-      <div
-        className="main-layout"
-        style={{ width: '100%', height: 0, flex: 1 }}
-      >
-        <div style={{ height: '100%' }}>
-          <ViewerContainer>
-            {(this.props.show3D || this.props.showPNID) && (
-              <div className="split">
-                {this.props.show3D && this.render3D()}
-                {this.props.showPNID && this.renderPNID()}
-              </div>
-            )}
-            {this.props.showRelationships && this.renderRelationshipsViewer()}
-            {!this.props.showRelationships &&
-              this.props.showAssetViewer &&
-              this.renderAssetNetwork()}
-          </ViewerContainer>
-        </div>
-      </div>
-    );
+    const { type } = this.props;
+    switch (type) {
+      case 'threed':
+        return this.render3D();
+      case 'network':
+        return this.renderAssetNetwork();
+      case 'oldnetwork':
+        return this.renderOldAssetNetwork();
+      case 'vx':
+        return this.renderAssetNetworkVX();
+      case 'relationship':
+        return this.renderRelationshipsViewer();
+      case 'pnid':
+        return this.renderPNID();
+      case 'none':
+      default:
+        return (
+          <>
+            <h3>Select a Component</h3>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Choose a View"
+              onChange={this.props.onComponentChange}
+            >
+              {Object.keys(ViewerTypeMap).map((viewType: string) => (
+                <Select.Option key={viewType} value={viewType}>
+                  {`${ViewerTypeMap[viewType]}`}
+                </Select.Option>
+              ))}
+            </Select>
+          </>
+        );
+    }
   }
 }
 
