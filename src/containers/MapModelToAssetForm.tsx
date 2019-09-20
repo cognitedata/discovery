@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Select, Input, Divider, Card, Button, message } from 'antd';
+import { Select, Input, Divider, Card, Button, message, Spin } from 'antd';
 import { Asset } from '@cognite/sdk';
 import {
   selectThreeD,
@@ -11,6 +11,7 @@ import {
 import { selectAssets, AssetsState, createNewAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { selectApp, AppState } from '../modules/app';
+import { sdk } from '../index';
 
 type OrigProps = {};
 
@@ -23,19 +24,19 @@ type Props = {
 } & OrigProps;
 
 type State = {
+  fetching: boolean;
   assetId?: number;
   assetName?: string;
-  searchResults?: Asset[];
+  searchResults: Asset[];
 };
 
 class MapModelToAssetForm extends React.Component<Props, State> {
-  readonly state: Readonly<State> = {};
-
-  get rootAssets() {
-    return Object.values(this.props.assets.all).filter(
+  readonly state: Readonly<State> = {
+    fetching: false,
+    searchResults: Object.values(this.props.assets.all).filter(
       el => el.rootId === el.id
-    );
-  }
+    ),
+  };
 
   addMapping = () => {
     const { assetId, assetName } = this.state;
@@ -55,8 +56,26 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
   };
 
+  doSearch = async (query: string) => {
+    // TODO filter already assigned ones!
+    if (query.length > 0) {
+      this.setState({ fetching: true });
+      const results = await sdk.assets.search({
+        search: { name: query },
+        filter: {
+          root: true,
+        },
+        limit: 1000,
+      });
+      this.setState({
+        searchResults: results.slice(0, results.length),
+        fetching: false,
+      });
+    }
+  };
+
   render() {
-    const { assetId, assetName } = this.state;
+    const { assetId, assetName, fetching, searchResults } = this.state;
     return (
       <Card>
         <h3>Map 3D Model to an Asset</h3>
@@ -66,14 +85,12 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           style={{ width: '100%' }}
           placeholder="Select existing asset"
           value={assetId}
+          notFoundContent={fetching ? <Spin size="small" /> : null}
+          onSearch={this.doSearch}
+          filterOption={false}
           onChange={(id: any) => this.setState({ assetId: Number(id) })}
-          filterOption={(input, option) =>
-            (option.props.children! as string)
-              .toLowerCase()
-              .indexOf(input.toLowerCase()) >= 0
-          }
         >
-          {this.rootAssets.map(asset => (
+          {searchResults.map(asset => (
             <Select.Option key={asset.id} value={asset.id}>
               {asset.name}
             </Select.Option>
