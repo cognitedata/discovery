@@ -115,7 +115,7 @@ class TreeViewer extends Component<Props, State> {
     super(props);
 
     this.state = {
-      controls: 'cartesian',
+      controls: 'polar',
       orientation: 'horizontal',
       linkType: 'diagonal',
       data: undefined,
