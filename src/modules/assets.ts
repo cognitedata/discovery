@@ -59,7 +59,7 @@ export function searchForAsset(query: string) {
     //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
     // );
     const result = await sdk.assets.search({
-      search: { name: query, description: query },
+      search: { name: query },
       limit: 1000,
     });
 
