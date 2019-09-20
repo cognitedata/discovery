@@ -24,6 +24,7 @@ import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
 import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
 import AssetBreadcrumbs from './AssetBreadcrumbs';
+import Placeholder from '../components/Placeholder';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
@@ -131,7 +132,10 @@ export class AssetViewer extends React.Component<Props, State> {
     const nodeId = propNodeId || this.getNodeId(false);
 
     if (!modelId || !revisionId) {
-      return <p>No 3D Model is mapped to this asset.</p>;
+      if (rootAssetId) {
+        return <Placeholder text="No 3D Model Mapped to Asset" />;
+      }
+      return <Placeholder text="No 3D Model Selected" />;
     }
     return (
       <Model3D

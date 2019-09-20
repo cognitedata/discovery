@@ -332,7 +332,7 @@ class Main extends React.Component<Props, State> {
                 ref={this.gridRef}
                 className="layout"
                 rowHeight={30}
-                cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
+                cols={{ lg: 4, md: 4, sm: 4, xs: 4, xxs: 4 }}
                 onLayoutChange={this.onLayoutChange}
                 onDragStart={() => {
                   return editLayout;
