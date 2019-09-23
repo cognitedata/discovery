@@ -40,7 +40,7 @@ podTemplate(
             if (env.CHANGE_ID) {
               stage('Remove GitHub comments') {
                 pullRequest.comments.each({
-                  if (it.user == "cognite-cicd" && it.body.startsWith(PR_SERVER_MARKER)) {
+                  if (it.user == "cognite-cicd" && it.body.startsWith(PR_COMMENT_MARKER)) {
                     pullRequest.deleteComment(it.id)
                   }
                 })
@@ -58,7 +58,7 @@ podTemplate(
             stage('Comment on GitHub') {
               if (env.CHANGE_ID) {
                 url = "https://pr-${env.CHANGE_ID}.discovery.preview.cogniteapp.com"
-                pullRequest.comment("${PR_SERVER_MARKER}View this change on [PR Server](${url})")
+                pullRequest.comment("${PR_COMMENT_MARKER}View this change on [PR Server](${url})")
               }
             }
         }
