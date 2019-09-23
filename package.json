@@ -2,7 +2,7 @@
 	"name": "discovery",
 	"description": "App to view, filter and edit CDF data and relationships.",
 	"version": "0.1.0",
-	"author": "Fredrik Anfinsen",
+	"contributors": ["David Liu <david.liu@cognite.com>", "Anders Hafreager <anders.hafreager@cognite.com>"],
 	"license": "Apache-2.0",
 	"dependencies": {
 		"@cognite/3d-viewer": "^6.0.2",
@@ -10,6 +10,7 @@
 		"@cognite/griff-react": "^0.5.0-rc.54",
 		"@cognite/react-auth": "^2.2.3",
 		"@cognite/react-scripts": "4.0.0-2",
+		"@cognite/release-manager": "^0.1.86",
 		"@cognite/sdk": "2.0.3",
 		"@emotion/core": "^10.0.9",
 		"@emotion/styled": "^10.0.9",
