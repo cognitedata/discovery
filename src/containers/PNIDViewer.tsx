@@ -115,8 +115,8 @@ class PNIDViewer extends React.Component<Props, State> {
       .filter(a => a.name === name);
 
     if (matches.length === 0) {
-      const result = await sdk.assets.list({ filter: { name } });
-      const exactMatches = result.items.filter(a => a.name === name);
+      const result = await sdk.assets.search({ search: { name } });
+      const exactMatches = result.filter(a => a.name === name);
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
       } else {
@@ -141,8 +141,8 @@ class PNIDViewer extends React.Component<Props, State> {
         name.indexOf('</tag>', startingLocation)
       );
     }
-    const result = await sdk.files.search({ search: { name: `${name}.svg` } });
-    const exactMatch = result.find(a => a.name === `${name}.svg`);
+    const result = await sdk.files.list({ filter: { name } });
+    const exactMatch = result.items.find(a => a.name === name);
     if (exactMatch) {
       currentFiles.push({
         id: exactMatch.id,
