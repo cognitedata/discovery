@@ -97,9 +97,7 @@ export class AssetViewer extends React.Component<Props, State> {
   }
 
   getNodeId = (fetchIfMissing: boolean) => {
-    const {
-      app: { modelId, revisionId, nodeId, assetId },
-    } = this.props;
+    const { modelId, revisionId, nodeId, assetId } = this.props.app;
     if (nodeId) {
       return nodeId;
     }
