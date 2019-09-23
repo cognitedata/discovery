@@ -4,7 +4,7 @@ podTemplate(
     containers: [
       containerTemplate(
         name: 'node',
-        image: 'node:9',
+        image: 'node:carbon',
         envVars: [
           envVar(key: 'CI', value: 'true'),
           envVar(key: 'NODE_PATH', value: 'src/'),
