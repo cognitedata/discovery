@@ -21,14 +21,17 @@ const Wrapper = styled.div`
 
 const Placeholder = ({
   text = 'Please select an Asset!',
+  componentName,
 }: {
   text?: string;
+  componentName: string;
 }) => {
   return (
     <Wrapper>
       <div>
+        <h3>{componentName}</h3>
         <img src={NoDataImg} alt="" />
-        <h3>{text}</h3>
+        <h2>{text}</h2>
       </div>
     </Wrapper>
   );

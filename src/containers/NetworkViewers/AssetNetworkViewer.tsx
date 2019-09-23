@@ -510,7 +510,7 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
   render() {
     const { asset } = this.props;
     if (!asset) {
-      return <NoAssetSelected />;
+      return <NoAssetSelected componentName="Asset Network Explorer" />;
     }
     return (
       <Wrapper

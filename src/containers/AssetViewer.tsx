@@ -133,9 +133,16 @@ export class AssetViewer extends React.Component<Props, State> {
 
     if (!modelId || !revisionId) {
       if (rootAssetId) {
-        return <Placeholder text="No 3D Model Mapped to Asset" />;
+        return (
+          <Placeholder
+            componentName="3D Viewer"
+            text="No 3D Model Mapped to Asset"
+          />
+        );
       }
-      return <Placeholder text="No 3D Model Selected" />;
+      return (
+        <Placeholder componentName="3D Viewer" text="No 3D Model Selected" />
+      );
     }
     return (
       <Model3D

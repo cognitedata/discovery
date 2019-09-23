@@ -222,7 +222,7 @@ class TreeViewer extends Component<Props, State> {
     return (
       <Wrapper>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
-          <NoAssetSelected />
+          <NoAssetSelected componentName="Asset Network Explorer" />
         </LoadingWrapper>
         <ForceGraph2D
           ref={this.forceGraphRef}

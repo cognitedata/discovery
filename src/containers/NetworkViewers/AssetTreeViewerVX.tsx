@@ -323,7 +323,7 @@ class TreeViewer extends Component<Props, State> {
       }
     }
     if (!nodeData) {
-      return <NoAssetSelected />;
+      return <NoAssetSelected componentName="Asset Network Explorer" />;
     }
 
     return (
