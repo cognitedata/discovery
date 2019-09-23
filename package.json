@@ -10,7 +10,6 @@
 		"@cognite/griff-react": "^0.5.0-rc.54",
 		"@cognite/react-auth": "^2.2.3",
 		"@cognite/react-scripts": "4.0.0-2",
-		"@cognite/release-manager": "^0.1.86",
 		"@cognite/sdk": "2.0.3",
 		"@emotion/core": "^10.0.9",
 		"@emotion/styled": "^10.0.9",
@@ -92,8 +91,7 @@
 		"format:changed": "pretty-quick",
 		"format:staged": "pretty-quick --staged",
 		"lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-		"lint:fix": "eslint . --ext .jsx,.js,.tsx,.ts --fix",
-		"autodeploy": "cognite-release-manager autodeploy --repo=discovery"
+		"lint:fix": "eslint . --ext .jsx,.js,.tsx,.ts --fix"
 	},
 	"husky": {
 		"hooks": {

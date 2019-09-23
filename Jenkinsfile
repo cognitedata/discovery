@@ -39,6 +39,9 @@ podTemplate(
               secretVolume(secretName: 'npm-credentials',
                            mountPath: '/npm-credentials',
                            readOnly: true),
+              secretVolume(secretName: 'preview-cli-jenkins-google-credentials',
+                           mountPath: '/secrets/google-credentials',
+                           readOnly: true),
               hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')]) {
    properties([buildDiscarder(logRotator(daysToKeepStr: '30', numToKeepStr: '20'))])
    node('discovery') {
@@ -58,24 +61,16 @@ podTemplate(
             stage('Build') {
               sh('yarn build')
             }
-            stage('Autodeploy') {
-                sh('yarn autodeploy')
+            stage('Build and deploy PR') {
+              sh('yarn build')
+              sh('yarn global add @cognite/preview-cli')
+              sh("GOOGLE_APPLICATION_CREDENTIALS=/secrets/google-credentials/key.json preview upload build admin/pr-${env.CHANGE_ID}")
             }
-            // If the autodeploy dropped a pr.md file, then it should be posted
-            // as a comment on GitHub.
-            if (fileExists('pr.md')) {
-                stage('Comment on GitHub (PR Server)') {
-                    markdown = readFile('pr.md')
-                    pullRequest.comment("${PR_COMMENT_MARKER}${markdown}")
-                }
-            }
-            // If the autodeploy dropped a comment.md file, then it should be posted
-            // as a comment on GitHub.
-            if (fileExists('comment.md')) {
-                stage('Comment on GitHub') {
-                    markdown = readFile('comment.md')
-                    pullRequest.comment("${PR_COMMENT_MARKER}${markdown}")
-                }
+            stage('Comment on GitHub') {
+              if (env.CHANGE_ID) {
+                url = "https://pr-${env.CHANGE_ID}.discovery.preview.cogniteapp.com"
+                pullRequest.comment("${PR_SERVER_MARKER}View this change on [PR Server](${url})")
+              }
             }
         }
     }
