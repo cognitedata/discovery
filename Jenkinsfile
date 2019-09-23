@@ -9,10 +9,10 @@ podTemplate(
           envVar(key: 'CI', value: 'true'),
           envVar(key: 'NODE_PATH', value: 'src/'),
         ],
-        resourceRequestCpu: '2000m',
-        resourceRequestMemory: '2500Mi',
-        resourceLimitCpu: '2000m',
-        resourceLimitMemory: '2500Mi',
+        resourceRequestCpu: '4000m',
+        resourceRequestMemory: '4500Mi',
+        resourceLimitCpu: '4000m',
+        resourceLimitMemory: '4500Mi',
         ttyEnabled: true
       )
     ],
