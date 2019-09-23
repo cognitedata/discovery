@@ -7,8 +7,8 @@ sudo: false
 install:
   - yarn
 script:
-  - yarn lint
-  - yarn build
+  - yarn lint || travis_terminate 1
+  - yarn build || travis_terminate 1
 deploy:
   - provider: firebase
     on: explorer
