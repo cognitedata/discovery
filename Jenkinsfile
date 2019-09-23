@@ -58,9 +58,6 @@ podTemplate(
                 sh('echo always-auth=true >> ~/.npmrc')
                 sh('yarn')
             }
-            stage('Build') {
-              sh('yarn build')
-            }
             stage('Build and deploy PR') {
               sh('yarn build')
               sh('yarn global add @cognite/preview-cli')
