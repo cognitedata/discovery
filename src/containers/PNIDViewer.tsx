@@ -114,8 +114,8 @@ class PNIDViewer extends React.Component<Props, State> {
       .filter(a => a.name === name);
 
     if (matches.length === 0) {
-      const result = await sdk.assets.search({ search: { name } });
-      const exactMatches = result.filter(a => a.name === name);
+      const result = await sdk.assets.list({ filter: { name } });
+      const exactMatches = result.items.filter(a => a.name === name);
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
       } else {
