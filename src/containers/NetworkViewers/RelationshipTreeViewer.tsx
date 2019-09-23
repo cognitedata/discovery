@@ -6,12 +6,12 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Select, Spin } from 'antd';
 import * as d3 from 'd3';
-import { AppState, selectApp } from '../modules/app';
-import { RootState } from '../reducers/index';
+import { AppState, selectApp } from '../../modules/app';
+import { RootState } from '../../reducers/index';
 import {
   fetchRelationships,
   RelationshipState,
-} from '../modules/relationships';
+} from '../../modules/relationships';
 
 const BGCOLOR = '#101020';
 
@@ -176,7 +176,7 @@ class TreeViewer extends Component<Props, State> {
             ctx: CanvasRenderingContext2D,
             globalScale: number
           ) => {
-            const label = node.name;
+            const label = `${node.resourceId} - ${node.resource}`;
             const fontSize = 16 / globalScale;
             ctx.font = `${fontSize}px Sans-Serif`;
             const textWidth = ctx.measureText(label).width;

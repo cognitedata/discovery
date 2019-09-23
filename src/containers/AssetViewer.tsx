@@ -13,7 +13,6 @@ import {
 } from '../modules/assetmappings';
 import { RootState } from '../reducers/index';
 import { selectThreeD, ThreeDState } from '../modules/threed';
-import RelationshipTreeViewer from './RelationshipTreeViewer';
 import {
   setAssetId,
   selectApp,
@@ -23,6 +22,7 @@ import {
 import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
 import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
+import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 
 export const ViewerTypeMap: { [key: string]: string } = {
   none: 'None',
@@ -35,25 +35,6 @@ export const ViewerTypeMap: { [key: string]: string } = {
 };
 
 export type ViewerType = keyof typeof ViewerTypeMap;
-
-const ViewerContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-
-  && .split {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    flex: 2;
-  }
-  && .bottom {
-    height: 0;
-    flex: 1;
-    width: 100%;
-  }
-`;
 
 type OwnProps = {
   type: ViewerType;
@@ -176,15 +157,7 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderRelationshipsViewer = () => {
-    const { rootAssetId } = this;
-    if (!rootAssetId) {
-      return null;
-    }
-    return (
-        <RelationshipTreeViewer
-          topShowing={false}
-        />
-    );
+    return <RelationshipTreeViewer topShowing={false} />;
   };
 
   render() {
