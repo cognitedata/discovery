@@ -7,7 +7,7 @@ import { Slider, message } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
 import { Asset } from '@cognite/sdk';
 import { SliderValue } from 'antd/lib/slider';
-import LoadingScreen, { ProgressObject } from './LoadingScreen';
+import Model3DLoadingDialog, { ProgressObject } from './Model3DLoadingDialog';
 import {
   fetchMappingsFromNodeId,
   selectAssetMappings,
@@ -351,7 +351,7 @@ class Model3D extends React.Component<Props, State> {
     return (
       <>
         {this.state.progress && (
-          <LoadingScreen progress={this.state.progress} />
+          <Model3DLoadingDialog progress={this.state.progress} />
         )}
         <Model3DViewer
           modelId={this.props.modelId}
