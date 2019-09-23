@@ -53,7 +53,7 @@ podTemplate(
             stage('Build and deploy PR') {
               sh('yarn build')
               sh('yarn global add @cognite/preview-cli')
-              sh("GOOGLE_APPLICATION_CREDENTIALS=/secrets/google-credentials/key.json preview upload build admin/pr-${env.CHANGE_ID}")
+              sh("GOOGLE_APPLICATION_CREDENTIALS=/secrets/google-credentials/key.json preview upload build discovery/pr-${env.CHANGE_ID}")
             }
             stage('Comment on GitHub') {
               if (env.CHANGE_ID) {
