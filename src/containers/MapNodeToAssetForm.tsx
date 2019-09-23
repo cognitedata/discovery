@@ -53,7 +53,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
     if (query.length > 0) {
       this.setState({ fetching: true });
       const results = await sdk.assets.search({
-        search: { name: query, description: query },
+        search: { name: query },
         filter: {
           rootIds: [{ id: this.props.app.rootAssetId! }],
         },
