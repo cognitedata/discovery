@@ -88,9 +88,7 @@ export class AssetViewer extends React.Component<Props, State> {
   }
 
   get asset() {
-    const {
-      app: { assetId },
-    } = this.props;
+    const { assetId } = this.props.app;
     const { assets } = this.props;
     if (assetId) {
       return assets.all[assetId];
