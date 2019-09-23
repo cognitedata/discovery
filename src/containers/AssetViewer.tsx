@@ -77,7 +77,7 @@ export class AssetViewer extends React.Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.app.assetId !== this.assetId && this.assetId) {
+    if (prevProps.app.assetId !== this.props.app.assetId && this.assetId) {
       this.props.doFetchFiles(this.assetId);
       this.props.doFetchAsset(this.assetId);
       this.getNodeId(true);
