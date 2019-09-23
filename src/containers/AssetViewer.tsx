@@ -69,55 +69,58 @@ export class AssetViewer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
-    if (this.assetId) {
-      this.props.doFetchFiles(this.assetId);
-      this.props.doFetchAsset(this.assetId);
+    if (this.props.app.assetId) {
+      this.props.doFetchFiles(this.props.app.assetId);
+      this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
     }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.app.assetId !== this.props.app.assetId && this.assetId) {
-      this.props.doFetchFiles(this.assetId);
-      this.props.doFetchAsset(this.assetId);
+    if (
+      prevProps.app.assetId !== this.props.app.assetId &&
+      this.props.app.assetId
+    ) {
+      this.props.doFetchFiles(this.props.app.assetId);
+      this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
     }
   }
 
-  get assetId() {
-    return this.props.app.assetId || this.props.app.rootAssetId;
-  }
-
-  get rootAssetId() {
-    return this.props.app.rootAssetId;
-  }
-
   get asset() {
+    const {
+      app: { assetId },
+    } = this.props;
     const { assets } = this.props;
-    if (this.assetId) {
-      return assets.all[this.assetId];
+    if (assetId) {
+      return assets.all[assetId];
     }
     return undefined;
   }
 
   getNodeId = (fetchIfMissing: boolean) => {
     const {
-      app: { modelId, revisionId, nodeId },
+      app: { modelId, revisionId, nodeId, assetId },
     } = this.props;
     if (nodeId) {
       return nodeId;
     }
 
-    if (this.assetId && fetchIfMissing && modelId && revisionId) {
-      this.props.doFetchMappingsFromAssetId(modelId, revisionId, this.assetId);
+    if (assetId && fetchIfMissing && modelId && revisionId) {
+      this.props.doFetchMappingsFromAssetId(modelId, revisionId, assetId);
     }
 
     return undefined;
   };
 
   render3D = () => {
-    const { rootAssetId, assetId } = this;
-    const { nodeId: propNodeId, modelId, revisionId } = this.props.app;
+    const {
+      nodeId: propNodeId,
+      modelId,
+      revisionId,
+      assetId,
+      rootAssetId,
+    } = this.props.app;
     const nodeId = propNodeId || this.getNodeId(false);
 
     if (!modelId || !revisionId) {
@@ -157,7 +160,7 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderRelationshipsViewer = () => {
-    const { rootAssetId } = this;
+    const { rootAssetId } = this.props.app;
     if (!rootAssetId) {
       return null;
     }
