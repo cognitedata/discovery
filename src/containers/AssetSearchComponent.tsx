@@ -335,10 +335,7 @@ class AssetSearch extends Component<Props, State> {
         if (query || filterMap.events.length === 0) {
           results = await sdk.assets.search({
             limit: 1000,
-            ...(query &&
-              query.length > 0 && {
-                search: { name: query, description: query },
-              }),
+            ...(query && query.length > 0 && { search: { name: query } }),
             filter: {
               ...(onlyRootAsset && { root: true }),
               ...(filterMap.source && { source: filterMap.source }),
