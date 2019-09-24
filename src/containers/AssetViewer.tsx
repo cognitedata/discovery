@@ -24,6 +24,7 @@ import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
 import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
 import Placeholder from '../components/Placeholder';
+import AssetBreadcrumbs from './AssetBreadcrumbs';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
@@ -33,6 +34,7 @@ export const ViewerTypeMap: { [key in ViewerType]: string } = {
   network: 'Force Network Viewer',
   relationship: 'Relationships',
   oldnetwork: 'Old Network Viewer',
+  assetbreadcrumbs: 'Asset Breadcrumbs',
 };
 
 export type ViewerType =
@@ -42,6 +44,7 @@ export type ViewerType =
   | 'vx'
   | 'network'
   | 'relationship'
+  | 'assetbreadcrumbs'
   | 'oldnetwork';
 
 type OwnProps = {
@@ -174,6 +177,10 @@ export class AssetViewer extends React.Component<Props, State> {
     return <AssetNetworkViewer hasResized={false} />;
   };
 
+  renderAssetBreadcrumbs = () => {
+    return <AssetBreadcrumbs />;
+  };
+
   renderRelationshipsViewer = () => {
     const { rootAssetId } = this;
     if (!rootAssetId) {
@@ -199,6 +206,8 @@ export class AssetViewer extends React.Component<Props, State> {
         return this.renderAssetNetworkVX();
       case 'relationship':
         return this.renderRelationshipsViewer();
+      case 'assetbreadcrumbs':
+        return this.renderAssetBreadcrumbs();
       case 'pnid':
         return this.renderPNID();
       case 'none':
