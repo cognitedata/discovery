@@ -74,7 +74,7 @@ const initialState: RelationshipState = {
   items: [],
 };
 
-export default function types(
+export default function relationships(
   state = initialState,
   action: RelationshipActions
 ): RelationshipState {
