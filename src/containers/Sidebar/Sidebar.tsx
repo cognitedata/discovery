@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Radio } from 'antd';
+import { Layout, Radio, Divider } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
@@ -15,7 +15,6 @@ import {
 import AssetSearchComponent from '../AssetSearchComponent';
 import AssetPane from './AssetPane';
 import ThreeDPane from './ThreeDPane';
-import ModelList from './ModelList';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 
@@ -52,16 +51,13 @@ class Main extends React.Component<Props, State> {
 
   render() {
     const {
-      app: { rootAssetId, modelId, revisionId },
-      assets: { all },
-      threed: { models },
+      app: { rootAssetId, modelId },
     } = this.props;
 
-    let assetPane = null;
-    let threeDPane = null;
+    let onboardingText = null;
     // Nothing selected
     if (!modelId && !rootAssetId) {
-      const onboardingText = (
+      onboardingText = (
         <>
           <p style={{ marginBottom: '16px' }}>
             Welcome to <strong>Discovery</strong>.
@@ -70,37 +66,9 @@ class Main extends React.Component<Props, State> {
             Start by searching using the search bar above or choosing a root
             asset or 3D model via the tabs.
           </p>
+          <Divider />
         </>
       );
-      assetPane = <>{onboardingText}</>;
-      threeDPane = (
-        <>
-          {onboardingText}
-          <ModelList />
-        </>
-      );
-    } else if (rootAssetId) {
-      assetPane = <AssetPane />;
-      if (!modelId || !revisionId) {
-        threeDPane = (
-          <>
-            <p>{`Need to map a 3D Model to ${
-              all[rootAssetId] ? all[rootAssetId].name : 'Loading...'
-            } first.`}</p>
-          </>
-        );
-      } else {
-        threeDPane = <ThreeDPane />;
-      }
-    } else if (modelId) {
-      assetPane = (
-        <>
-          <p>{`Need to map ${
-            models[modelId] ? models[modelId].name : 'Loading...'
-          } to a root asset first.`}</p>
-        </>
-      );
-      threeDPane = <ThreeDPane />;
     }
     return (
       <Sider
@@ -124,10 +92,11 @@ class Main extends React.Component<Props, State> {
           onChange={el => this.setState({ selectedPane: el.target.value })}
           value={this.state.selectedPane}
         >
-          <Radio.Button value="asset">Assets</Radio.Button>
-          <Radio.Button value="3d">3D Models</Radio.Button>
+          <Radio.Button value="asset">Asset View</Radio.Button>
+          <Radio.Button value="3d">3D View</Radio.Button>
         </RootSelector>
-        {this.state.selectedPane === 'asset' ? assetPane : threeDPane}
+        {onboardingText}
+        {this.state.selectedPane === 'asset' ? <AssetPane /> : <ThreeDPane />}
       </Sider>
     );
   }

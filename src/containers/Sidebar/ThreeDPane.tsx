@@ -1,7 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button, message } from 'antd';
+import { Button, message, Descriptions, Divider } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
+import { THREE } from '@cognite/3d-viewer';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { fetchAsset, selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -14,6 +15,7 @@ import {
   selectApp,
   setModelAndRevisionAndNode,
 } from '../../modules/app';
+import ModelList from './ModelList';
 
 type OrigProps = {};
 
@@ -57,46 +59,87 @@ class NodeDrawer extends React.Component<Props, State> {
 
   render() {
     const {
-      app: { modelId, revisionId, nodeId, rootAssetId },
+      app: { modelId, nodeId, rootAssetId, assetId },
+      threed: { currentNode },
+      assets: { all },
       threed: { models },
     } = this.props;
-    if (
-      !revisionId ||
-      !modelId ||
-      !models[modelId] ||
-      !models[modelId].revisions
-    ) {
-      return null;
-    }
     let rootAsset;
     if (rootAssetId) {
-      rootAsset = this.props.assets.all[rootAssetId];
+      rootAsset = all[rootAssetId];
     }
     // if already connected to root asset and nodeID is null, dont show.
-    if (rootAsset && !nodeId) {
-      return null;
+    let infoPane = null;
+    if (nodeId && currentNode) {
+      const boundingBox = new THREE.Box3(
+        new THREE.Vector3(...currentNode.boundingBox!.min),
+        new THREE.Vector3(...currentNode.boundingBox!.max)
+      );
+      const center = boundingBox.getCenter(new THREE.Vector3());
+      const size = boundingBox.max.clone().sub(boundingBox.min);
+      infoPane = (
+        <>
+          <h3>3D Node Info</h3>
+          <Descriptions bordered size="small" column={1}>
+            <Descriptions.Item label="Position">
+              x: {center.x.toFixed(1)} m
+              <br />
+              y: {center.y.toFixed(1)} m
+              <br />
+              z: {center.z.toFixed(1)} m
+              <br />
+            </Descriptions.Item>
+            <Descriptions.Item label="Size">
+              Height: {size.z.toFixed(1)} m
+              <br />
+              Depth: {size.x.toFixed(1)} m
+              <br />
+              Width: {size.y.toFixed(1)} m
+              <br />
+            </Descriptions.Item>
+          </Descriptions>
+        </>
+      );
+    }
+    let form = null;
+    let title = null;
+    if (!rootAssetId && !modelId) {
+      title = 'All 3D Models';
+      form = <ModelList />;
+    } else if (rootAssetId && !modelId) {
+      title = 'Map to a 3D Model';
+      form = <ModelList />;
+    } else if (rootAssetId && modelId && !nodeId) {
+      title = 'No Node Selected';
+    } else if (rootAssetId && modelId && nodeId && !assetId) {
+      title = 'No Asset Linked to Node';
+      form = (
+        <>
+          <Button onClick={this.selectParentClicked}>Select Parent</Button>
+          <br />
+          <br />
+          <MapNodeToAssetForm />
+        </>
+      );
+    } else if (rootAssetId && modelId && !nodeId && assetId) {
+      title = 'No Node Linked to Asset';
+    } else if (rootAssetId && modelId && nodeId && assetId) {
+      title = `Mapped Node: ${all[assetId] ? all[assetId].name : 'Loading...'}`;
+    } else if (!rootAssetId && modelId) {
+      title = `No Asset linked to ${
+        models[modelId] ? models[modelId].name : 'Loading...'
+      } right now`;
+      form = <MapModelToAssetForm />;
     }
     return (
       <>
-        <h3>
-          {rootAsset ? (
-            <>
-              <span>Unmapped Node</span>
-              <Button onClick={this.unselectNodeClicked}>Unselect Node</Button>
-            </>
-          ) : (
-            <span>Unmapped Model</span>
-          )}
-        </h3>
-        {rootAsset ? (
-          <>
-            <Button onClick={this.selectParentClicked}>Select Parent</Button>
-            <p>Model is Mapped to: {rootAsset ? rootAsset.name : 'N/A'}</p>
-            <MapNodeToAssetForm />
-          </>
-        ) : (
-          <MapModelToAssetForm />
+        <h3>{title}</h3>
+        {modelId && rootAsset && (
+          <p>Model is Mapped to: {rootAsset ? rootAsset.name : 'N/A'}</p>
         )}
+        {form}
+        <Divider />
+        {infoPane}
       </>
     );
   }
