@@ -58,8 +58,8 @@ import { selectFiles } from '../../modules/files';
 import { deleteAssetNodeMapping } from '../../modules/assetmappings';
 import ChangeAssetParent from '../Modals/ChangeAssetParentModal';
 import { selectApp, AppState, setAssetId } from '../../modules/app';
-import MapModelToAssetForm from '../MapModelToAssetForm';
 import RootAssetList from './RootAssetList';
+import MapNodeToAssetForm from '../MapNodeToAssetForm';
 
 const { Panel } = Collapse;
 
@@ -447,7 +447,7 @@ class AssetDrawer extends React.Component<Props, State> {
           <h3>{`No Asset linked to ${
             models[modelId] ? models[modelId].name : 'Loading...'
           } right now`}</h3>
-          <MapModelToAssetForm />
+          <MapNodeToAssetForm />
         </>
       );
     }
