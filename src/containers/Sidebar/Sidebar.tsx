@@ -24,7 +24,7 @@ const { Sider } = Layout;
 const RootSelector = styled(Radio.Group)`
   && {
     margin-top: 12px;
-    margin-bottom: 0px;
+    margin-bottom: 12px;
     display: flex;
   }
   && > * {
@@ -63,7 +63,7 @@ class Main extends React.Component<Props, State> {
     if (!modelId && !rootAssetId) {
       const onboardingText = (
         <>
-          <p style={{ marginTop: '16px', marginBottom: '16px' }}>
+          <p style={{ marginBottom: '16px' }}>
             Welcome to <strong>Discovery</strong>.
           </p>
           <p>
@@ -84,7 +84,9 @@ class Main extends React.Component<Props, State> {
       if (!modelId || !revisionId) {
         threeDPane = (
           <>
-            <p>{`Need to map a 3D Model to ${all[rootAssetId].name} first.`}</p>
+            <p>{`Need to map a 3D Model to ${
+              all[rootAssetId] ? all[rootAssetId].name : 'Loading...'
+            } first.`}</p>
           </>
         );
       } else {
@@ -93,7 +95,9 @@ class Main extends React.Component<Props, State> {
     } else if (modelId) {
       assetPane = (
         <>
-          <p>{`Need to map ${models[modelId].name} Model to a Root Asset first.`}</p>
+          <p>{`Need to map ${
+            models[modelId] ? models[modelId].name : 'Loading...'
+          } to a root asset first.`}</p>
         </>
       );
       threeDPane = <ThreeDPane />;

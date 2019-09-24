@@ -292,12 +292,14 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   resetState = () => {
-    this.setState({
-      disableEditHierarchy: !!(
-        this.asset!.metadata && this.asset!.metadata!.SOURCE
-      ),
-      documentsTablePage: 0,
-    });
+    if (this.asset) {
+      this.setState({
+        disableEditHierarchy: !!(
+          this.asset!.metadata && this.asset!.metadata!.SOURCE
+        ),
+        documentsTablePage: 0,
+      });
+    }
   };
 
   renderThreeD = (node: CurrentNode) => {
