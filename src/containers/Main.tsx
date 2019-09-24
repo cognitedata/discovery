@@ -27,6 +27,8 @@ import {
 import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
 import Sidebar from './Sidebar';
 import TimeseriesPreview from './TimeseriesPreview';
+import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -153,6 +155,12 @@ class Main extends React.Component<Props, State> {
       }
       localStorage.removeItem(LAYOUT_LOCAL_STORAGE);
     }
+
+    trackUsage('App Started', {
+      project: sdk.project,
+      reinitializeLayout: layout.length === 0,
+    });
+
     if (layout.length === 0) {
       layout = [
         {
@@ -173,6 +181,7 @@ class Main extends React.Component<Props, State> {
         },
       ];
     }
+
     this.state = {
       editLayout: false,
       layout,
@@ -222,6 +231,7 @@ class Main extends React.Component<Props, State> {
   };
 
   onAddComponent = () => {
+    trackUsage('Componented Added');
     const i =
       this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
       1;
@@ -353,6 +363,9 @@ class Main extends React.Component<Props, State> {
                         icon="close-circle"
                         size="small"
                         onClick={() => {
+                          trackUsage('Component Deleted', {
+                            type: layout[i].viewType,
+                          });
                           this.setState({
                             layout: [
                               ...layout.slice(0, i),

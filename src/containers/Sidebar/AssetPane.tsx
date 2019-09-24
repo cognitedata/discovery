@@ -15,7 +15,11 @@ import {
 
 import styled from 'styled-components';
 import moment from 'moment';
+<<<<<<< HEAD:src/containers/Sidebar/AssetPane.tsx
 import mixpanel from 'mixpanel-browser';
+=======
+import { THREE } from '@cognite/3d-viewer';
+>>>>>>> wip:src/containers/Sidebar/SidebarAssetView.tsx
 import { bindActionCreators, Dispatch } from 'redux';
 import { CogniteEvent, FilesMetadata } from '@cognite/sdk';
 import {
@@ -53,9 +57,13 @@ import { selectFiles } from '../../modules/files';
 import { deleteAssetNodeMapping } from '../../modules/assetmappings';
 import ChangeAssetParent from '../Modals/ChangeAssetParentModal';
 import { selectApp, AppState, setAssetId } from '../../modules/app';
+<<<<<<< HEAD:src/containers/Sidebar/AssetPane.tsx
 import RootAssetList from './RootAssetList';
 import MapNodeToAssetForm from '../MapNodeToAssetForm';
 import TimeseriesSection from './TimeseriesSection';
+=======
+import { trackUsage } from '../../utils/metrics';
+>>>>>>> wip:src/containers/Sidebar/SidebarAssetView.tsx
 
 const { Panel } = Collapse;
 
@@ -153,10 +161,19 @@ class AssetDrawer extends React.Component<Props, State> {
     return undefined;
   }
 
+<<<<<<< HEAD:src/containers/Sidebar/AssetPane.tsx
+=======
+  addTimeseriesClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const { asset } = this.state;
+    trackUsage('addTimeseries.click', { asset });
+    this.setState({ showAddTimeseries: true });
+    event.stopPropagation();
+  };
+
+>>>>>>> wip:src/containers/Sidebar/SidebarAssetView.tsx
   addTypeClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     const { asset } = this.state;
-    // @ts-ignore
-    mixpanel.context.track('addType.click', { asset });
+    trackUsage('addType.click', { asset });
     this.setState({ showAddTypes: true });
     event.stopPropagation();
   };
