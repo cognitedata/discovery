@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Radio, Button } from 'antd';
+import { Layout, Switch, Radio, Button, Icon } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
@@ -22,7 +22,6 @@ import ModelList from './ModelList';
 import AssetSearchComponent from './AssetSearchComponent';
 import AssetDrawer from './Sidebar/SidebarAssetView';
 import NodeDrawer from './Sidebar/SidebarNodeView';
-
 import {
   AppState,
   selectApp,
@@ -30,7 +29,7 @@ import {
   resetAppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
-import AssetViewer, { ViewerType } from './AssetViewer';
+import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -86,7 +85,35 @@ const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
   }
 
   .react-resizable-handle {
+    z-index: 1001;
     display: ${props => (props.editable ? 'block' : 'none')};
+  }
+`;
+
+const DraggingView = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffffdd;
+  z-index: 1000;
+  display: flex;
+  flex-direction: row;
+
+  && > div {
+    text-align: center;
+    align-self: center;
+    margin: 0 auto;
+  }
+  && i svg {
+    height: 24px;
+    width: 24px;
+    margin-bottom: 12px;
+  }
+
+  &&:hover {
+    cursor: move;
   }
 `;
 
@@ -103,7 +130,7 @@ const DeleteButton = styled(Button)`
     position: absolute;
     right: -6px;
     top: -6px;
-    z-index: 1000;
+    z-index: 1001;
   }
 `;
 
@@ -344,6 +371,18 @@ class Main extends React.Component<Props, State> {
                     data-grid={el}
                     style={{ position: 'relative' }}
                   >
+                    {editLayout && (
+                      <DraggingView>
+                        <div>
+                          <Icon type="drag" />
+                          <h3>{ViewerTypeMap[el.viewType]}</h3>
+                          <p>
+                            Resize by dragging the bottom right corner, drag
+                            around each component to make your own layout
+                          </p>
+                        </div>
+                      </DraggingView>
+                    )}
                     <AssetViewer
                       type={el.viewType}
                       onComponentChange={(type: ViewerType) => {
