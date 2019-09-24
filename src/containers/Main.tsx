@@ -1,9 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Radio, Button } from 'antd';
+import { Layout, Switch, Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
-import { Asset } from '@cognite/sdk';
 import {
   Responsive,
   WidthProvider,
@@ -11,18 +10,13 @@ import {
 } from 'react-grid-layout';
 import { fetchTypes } from '../modules/types';
 import {
-  fetchModels,
   selectThreeD,
   ThreeDState,
   fetchRevisions,
+  fetchModels,
 } from '../modules/threed';
 import { selectAssets, AssetsState } from '../modules/assets';
 import { RootState } from '../reducers/index';
-import ModelList from './ModelList';
-import AssetSearchComponent from './AssetSearchComponent';
-import AssetDrawer from './Sidebar/SidebarAssetView';
-import NodeDrawer from './Sidebar/SidebarNodeView';
-
 import {
   AppState,
   selectApp,
@@ -31,6 +25,7 @@ import {
   setModelAndRevisionAndNode,
 } from '../modules/app';
 import AssetViewer, { ViewerType } from './AssetViewer';
+import Sidebar from './Sidebar';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -41,7 +36,7 @@ interface DiscoveryLayout extends GridLayout {
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 // 13FV1234 is useful asset
-const { Content, Header, Sider } = Layout;
+const { Content, Header } = Layout;
 
 const StyledHeader = styled(Header)`
   && {
@@ -52,27 +47,6 @@ const StyledHeader = styled(Header)`
   }
   && button {
     margin-right: 12px;
-  }
-`;
-
-const RootSelector = styled(Radio.Group)`
-  && {
-    margin: 12px;
-    margin-bottom: 0px;
-    display: flex;
-  }
-  && > * {
-    flex: 1;
-  }
-`;
-
-const AssetSectionWrapper = styled.div`
-  margin-top: 16px;
-  margin-left: 12px;
-  margin-right: 12px;
-
-  .content-section {
-    margin-top: 12px;
   }
 `;
 
@@ -115,8 +89,8 @@ type Props = {
   app: AppState;
   assets: AssetsState;
   doFetchRevisions: typeof fetchRevisions;
+  fetchModels: typeof fetchModels;
   doFetchTypes: typeof fetchTypes;
-  doFetchModels: typeof fetchModels;
   setAssetId: typeof setAssetId;
   setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
   resetAppState: typeof resetAppState;
@@ -125,7 +99,6 @@ type Props = {
 type State = {
   editLayout: boolean;
   layout: DiscoveryLayout[];
-  selectedPane: string;
 };
 
 class Main extends React.Component<Props, State> {
@@ -172,7 +145,6 @@ class Main extends React.Component<Props, State> {
       ];
     }
     this.state = {
-      selectedPane: 'asset',
       editLayout: false,
       layout,
     };
@@ -180,11 +152,10 @@ class Main extends React.Component<Props, State> {
 
   componentDidMount() {
     this.props.doFetchTypes();
-    if (!this.props.threed.loading) {
-      this.props.doFetchModels();
-    }
 
     this.checkAndFixURL();
+
+    this.props.fetchModels();
 
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
@@ -219,52 +190,6 @@ class Main extends React.Component<Props, State> {
 
   hasModelForAsset = (assetId: number) => {
     return this.props.threed.representsAsset[assetId];
-  };
-
-  renderSidebar = () => {
-    const {
-      app: { assetId, rootAssetId },
-      assets,
-    } = this.props;
-    const asset = assets.all[Number(assetId)];
-    return (
-      <Sider
-        style={{
-          overflow: 'auto',
-          height: '100vh',
-          background: 'rgb(255,255,255)',
-        }}
-        width={350}
-      >
-        <RootSelector
-          onChange={el => this.setState({ selectedPane: el.target.value })}
-          value={this.state.selectedPane}
-        >
-          <Radio.Button value="asset">Assets</Radio.Button>
-          <Radio.Button value="3d">3D Models</Radio.Button>
-        </RootSelector>
-        {this.state.selectedPane === 'asset' ? (
-          <>
-            <AssetSectionWrapper>
-              <AssetSearchComponent
-                rootAsset={
-                  rootAssetId ? this.props.assets.all[rootAssetId] : undefined
-                }
-                onAssetClicked={(selectedAsset: Asset) =>
-                  this.onAssetIdChange(selectedAsset.rootId, selectedAsset.id)
-                }
-              />
-              <div className="content-section">
-                {asset && <AssetDrawer />}
-                {!asset && <NodeDrawer />}
-              </div>
-            </AssetSectionWrapper>
-          </>
-        ) : (
-          <ModelList />
-        )}
-      </Sider>
-    );
   };
 
   onAddComponent = () => {
@@ -311,7 +236,7 @@ class Main extends React.Component<Props, State> {
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
         <Layout>
           <Layout>
-            {this.renderSidebar()}
+            <Sidebar />
             <Content
               style={{
                 display: 'flex',
@@ -413,7 +338,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doFetchTypes: fetchTypes,
       doFetchRevisions: fetchRevisions,
-      doFetchModels: fetchModels,
+      fetchModels,
       setAssetId,
       setModelAndRevisionAndNode,
       resetAppState,
