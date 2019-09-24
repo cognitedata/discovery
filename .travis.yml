@@ -18,6 +18,13 @@ deploy:
   - provider: firebase
     on: master
     skip_cleanup: true
+    project: discovery-staging
+    token:
+      secure: pMxQgqMbS6UyztGDY6o4+llqAQZmP2f3v+v6qhFIRU0342xnO7D33WBDLOG6u6vVzFT6mk2MVbk1kvyChokcxQ8vUDfbC3mV3UhaSvkcSp9Dbu4xISOHZ+/abSw3H/7z+Ixm1uO8q3g2PgxA7cEHY5xjXzXVdRXimel1WryZBgw7FRW2KmPoKtfmMmzk/iuG4zTFzTUQbohRqlpbQdT0H/xbzCYJ9o2gLHJHVn4AKGgCDslNJVbkyMZMgTv+czsJlLFkKkPhtKTfdwyXDhTJoBwD5NCRws+tHNPy9PcsBZFwVx6bFh7UluJyY4mQgB8dcja18pp0Thn0mpP1ViFwecPY/OafQDOZmoHGsmUbH4gFvvQ7WRqpaadcJfn08KJQzq60OkIA8D1uofXYMgGg73Yxo+BLOAKBCwxbljAfBaeD/WTqUPoIvCBzIJHtbkFrev4ng1EijgJLIChYrhdEhtbTPlVOReva2eIU30YRowMPzOuAvKQfhkwE8yNQHQDw1UFAKcVa1JRtdgT2xjLK+8VeKvk2tZo6kNfrS51+zoZhgIJMFHMsXAuVRVBxZ/++suMm6IiNpyIZ6+aMGKa9ZpwacjtmtHgBLDcZkRoyoglGAgqnENwqed3YGmV3Hz/b0t07fFvIBsqlQXo+Y9OGdRHKbBjz6U9O9OUprs0pQ/w=
+  - provider: firebase
+    on: production
+    skip_cleanup: true
     project: digital-twin-explorer-ts
     token:
       secure: ibcXvFxDnX0J6dRx++nj/Ka951m80RpC+iAxDC0EOKMHY4ZjkEssUA7DoRTG/U2hVPYZDeoiQbdtzxU8BTzaRyQBucvy6xDhwTtas3fr6Ft7sxdx5gVzK2qvotYvsaB0DL6LyWtOAVl9oirC6kD1X11cotgyEN9VSkf2lroLhIizJe2Nb679eX28aG2kPyZpsmFvMKzMwGLSw1Y2arjWV7FT4iYFRc8XCpnz4OLjhYQrkgsyzrDSPUzzr47ez0VwFbJDl0wqFx3ldLU3GBbVJhI7Aka/2ke5T+t4oLCoyGG0VWEDbGd7aB7NLy7gVNaxRihxdBisiXBDiS5x/wFF73FV52iXKILNjVMgt7U/YAswElSYlGOyaMzvx51R+/GltmBVJYV/O9pifYb/CwWIz8PzNSlrHTAa7oEPbpbpAnHFTC1ViIlAdTv1Up1UIs96hRjeV5W7aAPPQUsmGefXFG5CrpRbWRz5+EdVBu+q2wHdYyDh9k822mWH9SEEpNc5W70bFo48gC19S9A+YB1K2ce/E6AbVlps8AOSpPprv/FjkFzw1+J+TLtJXG31B57OBvvRW9R9aRZsJCvQnzSDf+VWBojlbzWVFuPQHtYrSrDMFPKFga3soHQTLBEGupLULSWlOpzyKoypmBPfW39DodaxyzoroeYWcBS3N0ouMXk=
+      
