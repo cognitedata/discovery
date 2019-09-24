@@ -44,6 +44,7 @@ export type ViewerType =
   | 'vx'
   | 'network'
   | 'relationship'
+  | 'oldnetwork'
   | 'assetbreadcrumbs';
 
 type OwnProps = {
