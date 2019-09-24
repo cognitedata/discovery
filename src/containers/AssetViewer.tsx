@@ -13,7 +13,6 @@ import {
 } from '../modules/assetmappings';
 import { RootState } from '../reducers/index';
 import { selectThreeD, ThreeDState } from '../modules/threed';
-import RelationshipNetworkViewer from './NetworkViewers/RelationshipNetworkViewer';
 import {
   setAssetId,
   selectApp,
@@ -24,6 +23,7 @@ import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
 import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
 import Placeholder from '../components/Placeholder';
+import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
@@ -77,55 +77,54 @@ export class AssetViewer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
-    if (this.assetId) {
-      this.props.doFetchFiles(this.assetId);
-      this.props.doFetchAsset(this.assetId);
+    if (this.props.app.assetId) {
+      this.props.doFetchFiles(this.props.app.assetId);
+      this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
     }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.app.assetId !== this.assetId && this.assetId) {
-      this.props.doFetchFiles(this.assetId);
-      this.props.doFetchAsset(this.assetId);
+    if (
+      prevProps.app.assetId !== this.props.app.assetId &&
+      this.props.app.assetId
+    ) {
+      this.props.doFetchFiles(this.props.app.assetId);
+      this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
     }
   }
 
-  get assetId() {
-    return this.props.app.assetId || this.props.app.rootAssetId;
-  }
-
-  get rootAssetId() {
-    return this.props.app.rootAssetId;
-  }
-
   get asset() {
+    const { assetId } = this.props.app;
     const { assets } = this.props;
-    if (this.assetId) {
-      return assets.all[this.assetId];
+    if (assetId) {
+      return assets.all[assetId];
     }
     return undefined;
   }
 
   getNodeId = (fetchIfMissing: boolean) => {
-    const {
-      app: { modelId, revisionId, nodeId },
-    } = this.props;
+    const { modelId, revisionId, nodeId, assetId } = this.props.app;
     if (nodeId) {
       return nodeId;
     }
 
-    if (this.assetId && fetchIfMissing && modelId && revisionId) {
-      this.props.doFetchMappingsFromAssetId(modelId, revisionId, this.assetId);
+    if (assetId && fetchIfMissing && modelId && revisionId) {
+      this.props.doFetchMappingsFromAssetId(modelId, revisionId, assetId);
     }
 
     return undefined;
   };
 
   render3D = () => {
-    const { rootAssetId, assetId } = this;
-    const { nodeId: propNodeId, modelId, revisionId } = this.props.app;
+    const {
+      nodeId: propNodeId,
+      modelId,
+      revisionId,
+      assetId,
+      rootAssetId,
+    } = this.props.app;
     const nodeId = propNodeId || this.getNodeId(false);
 
     if (!modelId || !revisionId) {
@@ -175,15 +174,7 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderRelationshipsViewer = () => {
-    const { rootAssetId } = this;
-    if (!rootAssetId) {
-      return null;
-    }
-    return (
-      <div className="bottom">
-        <RelationshipNetworkViewer topShowing={false} />
-      </div>
-    );
+    return <RelationshipTreeViewer topShowing={false} />;
   };
 
   render() {

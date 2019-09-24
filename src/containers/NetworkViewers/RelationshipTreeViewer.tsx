@@ -1,21 +1,17 @@
 import React, { Component } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import ForceGraph from 'force-graph';
-import { Asset } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
-import { Select } from 'antd';
+import { Select, Spin } from 'antd';
 import * as d3 from 'd3';
-import {
-  loadParentRecurse,
-  loadAssetChildren,
-  AssetsState,
-  selectAssets,
-} from '../../modules/assets';
-import { AppState, setAssetId, selectApp } from '../../modules/app';
+import { AppState, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
-import NoAssetSelected from '../../components/Placeholder';
+import {
+  fetchRelationships,
+  RelationshipState,
+} from '../../modules/relationships';
 
 const BGCOLOR = '#101020';
 
@@ -46,7 +42,7 @@ const LoadingWrapper = styled.div<{ visible: string }>`
   width: 100%;
   top: 0;
   left: 0;
-  background: #fff;
+  background: ${BGCOLOR};
   align-items: center;
   text-align: center;
 
@@ -59,16 +55,15 @@ const LoadingWrapper = styled.div<{ visible: string }>`
   }
 `;
 
-type OwnProps = {};
+type OwnProps = {
+  topShowing: boolean;
+};
 type StateProps = {
   app: AppState;
-  asset?: Asset;
-  assets: AssetsState;
+  relationships: RelationshipState;
 };
 type DispatchProps = {
-  loadAssetChildren: typeof loadAssetChildren;
-  loadParentRecurse: typeof loadParentRecurse;
-  setAssetId: typeof setAssetId;
+  fetchRelationships: typeof fetchRelationships;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -89,7 +84,7 @@ class TreeViewer extends Component<Props, State> {
 
     this.state = {
       controls: 'bu',
-      loading: true,
+      loading: false,
       data: { nodes: [], links: [] },
     };
   }
@@ -99,47 +94,18 @@ class TreeViewer extends Component<Props, State> {
     this.forceGraphRef.current!.d3Force(
       'collision',
       // @ts-ignore
-      d3.forceCollide(node => Math.sqrt(400 / (node.level + 1)))
+      d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
     );
     this.forceGraphRef.current!.d3Force(
       'charge',
       // @ts-ignore
-      d3.forceManyBody().strength(-200)
+      d3.forceManyBody().strength(-80)
     );
 
-    const {
-      asset,
-      app: { rootAssetId },
-    } = this.props;
-
-    if (asset && asset.id !== rootAssetId && asset.parentId) {
-      this.props.loadParentRecurse(asset.parentId, rootAssetId!);
-    }
+    this.props.fetchRelationships();
   }
 
-  componentDidUpdate(prevProps: Props) {
-    const {
-      asset,
-      app: { rootAssetId },
-      assets: { all },
-    } = this.props;
-
-    if (
-      asset &&
-      asset.parentId &&
-      !all[asset.parentId] &&
-      asset.id !== rootAssetId
-    ) {
-      this.props.loadParentRecurse(asset.parentId, rootAssetId!);
-    }
-
-    if (
-      (!prevProps.asset && asset) ||
-      (prevProps.asset && asset && prevProps.asset.id !== asset.id)
-    ) {
-      this.props.loadAssetChildren(asset.id);
-    }
-
+  componentDidUpdate() {
     const data = this.getData();
     if (
       data.nodes.length !== this.state.data.nodes.length ||
@@ -156,63 +122,30 @@ class TreeViewer extends Component<Props, State> {
 
   getData = () => {
     const {
-      assets: { all },
-      app: { assetId, rootAssetId },
+      relationships: { items },
     } = this.props;
-    if (rootAssetId && assetId) {
-      const nodes = [];
-      const links = [];
-      let currentAssetId: number | undefined = assetId;
-      do {
-        if (currentAssetId && all[currentAssetId]) {
-          nodes.push({
-            ...all[currentAssetId!],
-            color: nodes.length === 0 ? 'red' : 'green',
-            size: 20,
-            level: -nodes.length,
-          });
-          if (currentAssetId === rootAssetId) {
-            break;
-          }
-          links.push({
-            source: currentAssetId,
-            target: all[currentAssetId!].parentId,
-          });
-          currentAssetId = all[currentAssetId!].parentId;
-        } else {
-          return {
-            nodes: [],
-            links: [],
-          };
-        }
-      } while (currentAssetId);
-      const level = nodes.length;
-      nodes.forEach(el => {
-        // eslint-disable-next-line no-param-reassign
-        el.level = el.level + level - 1;
-      });
-      Object.values(all)
-        .filter(el => el.parentId === assetId)
-        .forEach(el => {
-          nodes.push({
-            ...el,
-            color: 'blue',
-            size: 20,
-            level,
-          });
-          links.push({
-            source: el.id,
-            target: assetId,
-          });
-        });
-      return {
-        nodes,
-        links,
+    const nodes: { [key: string]: any } = {};
+    const links: any[] = [];
+    items.forEach((relationship: any) => {
+      nodes[relationship.source.resourceId as string] = {
+        ...relationship.source,
+        id: relationship.source.resourceId,
       };
-    }
+      nodes[relationship.target.resourceId as string] = {
+        ...relationship.target,
+        id: relationship.target.resourceId,
+      };
+      if (relationship.source.resourceId !== relationship.target.resourceId) {
+        links.push({
+          ...relationship,
+          source: nodes[relationship.source.resourceId],
+          target: nodes[relationship.target.resourceId],
+        });
+      }
+    });
     return {
-      nodes: [],
-      links: [],
+      nodes: Object.values(nodes),
+      links,
     };
   };
 
@@ -222,7 +155,7 @@ class TreeViewer extends Component<Props, State> {
     return (
       <Wrapper>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
-          <NoAssetSelected componentName="Asset Network Explorer" />
+          <Spin size="large" />
         </LoadingWrapper>
         <ForceGraph2D
           ref={this.forceGraphRef}
@@ -232,11 +165,8 @@ class TreeViewer extends Component<Props, State> {
           backgroundColor={BGCOLOR}
           linkColor={() => 'rgba(255,255,255,0.2)'}
           nodeRelSize={1}
-          onNodeClick={(node: any) =>
-            this.props.setAssetId(node.rootId, node.id)
-          }
           nodeId="id"
-          nodeVal={(node: any) => 400 / (node.level + 1)}
+          nodeVal={(node: any) => 100 / (node.level + 1)}
           nodeLabel="name"
           nodeAutoColorBy="color"
           linkDirectionalParticles={2}
@@ -246,7 +176,7 @@ class TreeViewer extends Component<Props, State> {
             ctx: CanvasRenderingContext2D,
             globalScale: number
           ) => {
-            const label = node.name;
+            const label = `${node.resourceId} - ${node.resource}`;
             const fontSize = 16 / globalScale;
             ctx.font = `${fontSize}px Sans-Serif`;
             const textWidth = ctx.measureText(label).width;
@@ -290,10 +220,7 @@ class TreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    assets: state.assets,
-    asset: state.app.assetId
-      ? selectAssets(state).all[state.app.assetId]
-      : undefined,
+    relationships: state.relationships,
     app: selectApp(state),
   };
 };
@@ -301,9 +228,7 @@ const mapStateToProps = (state: RootState): StateProps => {
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
-      loadParentRecurse,
-      loadAssetChildren,
-      setAssetId,
+      fetchRelationships,
     },
     dispatch
   );
