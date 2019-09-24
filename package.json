@@ -2,7 +2,7 @@
 	"name": "discovery",
 	"description": "App to view, filter and edit CDF data and relationships.",
 	"version": "0.1.0",
-	"author": "Fredrik Anfinsen",
+	"contributors": ["David Liu <david.liu@cognite.com>", "Anders Hafreager <anders.hafreager@cognite.com>"],
 	"license": "Apache-2.0",
 	"dependencies": {
 		"@cognite/3d-viewer": "^6.0.2",
@@ -65,7 +65,7 @@
 		"tslint": "^5.11.0",
 		"tslint-config-prettier": "^1.18.0",
 		"tslint-plugin-prettier": "^2.0.1",
-		"typescript": "^3.5.3"
+		"typescript": "3.5.3"
 	},
 	"devDependencies": {
 		"@cognite/eslint-config": "^1.2.0",
