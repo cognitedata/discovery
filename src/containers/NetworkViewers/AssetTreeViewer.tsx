@@ -5,7 +5,7 @@ import { Asset } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
-import { Select, Spin } from 'antd';
+import { Select } from 'antd';
 import * as d3 from 'd3';
 import {
   loadParentRecurse,
@@ -15,6 +15,7 @@ import {
 } from '../../modules/assets';
 import { AppState, setAssetId, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
+import NoAssetSelected from '../../components/Placeholder';
 
 const BGCOLOR = '#101020';
 
@@ -45,7 +46,7 @@ const LoadingWrapper = styled.div<{ visible: string }>`
   width: 100%;
   top: 0;
   left: 0;
-  background: ${BGCOLOR};
+  background: #fff;
   align-items: center;
   text-align: center;
 
@@ -221,7 +222,7 @@ class TreeViewer extends Component<Props, State> {
     return (
       <Wrapper>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
-          <Spin size="large" />
+          <NoAssetSelected componentName="Asset Network Explorer" />
         </LoadingWrapper>
         <ForceGraph2D
           ref={this.forceGraphRef}

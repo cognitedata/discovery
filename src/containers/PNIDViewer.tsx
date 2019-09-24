@@ -10,6 +10,7 @@ import { sleep } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { selectApp, AppState, setAssetId } from '../modules/app';
+import Placeholder from '../components/Placeholder';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
   (node.textContent || '').replace(/\s/g, '');
@@ -225,7 +226,7 @@ class PNIDViewer extends React.Component<Props, State> {
 
   renderFileList() {
     if (!this.props.app.assetId) {
-      return null;
+      return <Placeholder componentName="P&ID Viewer" />;
     }
 
     const filesForThisAsset =

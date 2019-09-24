@@ -22,9 +22,10 @@ import {
 import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
 import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
+import Placeholder from '../components/Placeholder';
 import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 
-export const ViewerTypeMap: { [key: string]: string } = {
+export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
   threed: '3D',
   pnid: 'P&ID',
@@ -34,7 +35,14 @@ export const ViewerTypeMap: { [key: string]: string } = {
   oldnetwork: 'Old Network Viewer',
 };
 
-export type ViewerType = keyof typeof ViewerTypeMap;
+export type ViewerType =
+  | 'none'
+  | 'threed'
+  | 'pnid'
+  | 'vx'
+  | 'network'
+  | 'relationship'
+  | 'oldnetwork';
 
 type OwnProps = {
   type: ViewerType;
@@ -120,7 +128,17 @@ export class AssetViewer extends React.Component<Props, State> {
     const nodeId = propNodeId || this.getNodeId(false);
 
     if (!modelId || !revisionId) {
-      return <p>No 3D Model is mapped to this asset.</p>;
+      if (rootAssetId) {
+        return (
+          <Placeholder
+            componentName="3D Viewer"
+            text="No 3D Model Mapped to Asset"
+          />
+        );
+      }
+      return (
+        <Placeholder componentName="3D Viewer" text="No 3D Model Selected" />
+      );
     }
     return (
       <Model3D
@@ -186,7 +204,7 @@ export class AssetViewer extends React.Component<Props, State> {
             >
               {Object.keys(ViewerTypeMap).map((viewType: string) => (
                 <Select.Option key={viewType} value={viewType}>
-                  {`${ViewerTypeMap[viewType]}`}
+                  {`${ViewerTypeMap[viewType as ViewerType]}`}
                 </Select.Option>
               ))}
             </Select>

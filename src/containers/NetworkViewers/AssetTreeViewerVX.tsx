@@ -27,7 +27,7 @@ import {
   LinkVerticalLine,
   LinkRadialLine,
 } from '@vx/shape';
-import { Spin, Select, Button } from 'antd';
+import { Select, Button } from 'antd';
 import {
   loadParentRecurse,
   loadAssetChildren,
@@ -36,6 +36,7 @@ import {
 } from '../../modules/assets';
 import { AppState, setAssetId, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
+import NoAssetSelected from '../../components/Placeholder';
 
 type Node = {
   name: string;
@@ -322,7 +323,7 @@ class TreeViewer extends Component<Props, State> {
       }
     }
     if (!nodeData) {
-      return <Spin />;
+      return <NoAssetSelected componentName="Asset Network Explorer" />;
     }
 
     return (

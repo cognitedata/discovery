@@ -1,12 +1,17 @@
 import React from 'react';
-import { Modal, Progress } from 'antd';
+import { Progress } from 'antd';
 import styled from 'styled-components';
 
 const FlexDiv = styled.div`
   display: flex;
-  width: 100%;
+  padding: 16px;
+  background-color: #fff;
   align-items: center;
   justify-content: space-between;
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 100;
 `;
 
 export type ProgressObject = {
@@ -26,16 +31,15 @@ const LoadingScreen = ({ progress: progressObject }: Props) => {
   const percentTotal = Math.round((100 * step) / numSteps);
   const percentCurrent = Math.round((100 * progress) / max);
   return (
-    <Modal visible title="Loading 3D model ..." footer={null} closable={false}>
-      <FlexDiv>
-        <Progress
-          percent={percentCurrent}
-          successPercent={percentTotal}
-          type="circle"
-        />
-        {title}
-      </FlexDiv>
-    </Modal>
+    <FlexDiv>
+      <Progress
+        width={80}
+        percent={percentCurrent}
+        successPercent={percentTotal}
+        type="circle"
+      />
+      <span style={{ marginLeft: '12px' }}>{title}</span>
+    </FlexDiv>
   );
 };
 
