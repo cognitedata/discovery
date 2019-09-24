@@ -19,6 +19,7 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { BetterTag } from '../components/BetterTag';
 import { ExtendedAsset } from '../modules/assets';
+import { trackUsage } from '../utils/metrics';
 
 const Overlay = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'block' : 'none')};
@@ -236,6 +237,30 @@ class AssetSearch extends Component<Props, State> {
     ) {
       this.searchForAsset(this.state.query);
     }
+    if (prevState.currentRootOnly !== this.state.currentRootOnly) {
+      trackUsage('SearchFilterToggled', {
+        type: 'rootOnly',
+        value: this.state.currentRootOnly,
+      });
+    }
+    if (prevState.addingEventFilter !== this.state.addingEventFilter) {
+      trackUsage('SearchFilterToggled', {
+        type: 'eventFilter',
+        value: this.state.addingEventFilter,
+      });
+    }
+    if (prevState.addingLocationFilter !== this.state.addingLocationFilter) {
+      trackUsage('SearchFilterToggled', {
+        type: 'locationFilter',
+        value: this.state.addingLocationFilter,
+      });
+    }
+    if (prevState.addingSourceFilter !== this.state.addingSourceFilter) {
+      trackUsage('SearchFilterToggled', {
+        type: 'sourceFilter',
+        value: this.state.addingSourceFilter,
+      });
+    }
   }
 
   onSearchFieldFocus = () => {
@@ -273,6 +298,10 @@ class AssetSearch extends Component<Props, State> {
       this.queryId = this.queryId + 1;
       const queryId = 0 + this.queryId;
       if (isParentQuery) {
+        trackUsage('Search', {
+          type: 'parentFilter',
+          query,
+        });
         const results = await sdk.post(
           `/api/playground/projects/${sdk.project}/assets/search`,
           {
@@ -406,6 +435,11 @@ class AssetSearch extends Component<Props, State> {
           results = results.filter(asset => events!.has(asset.id));
         }
         if (queryId === this.queryId) {
+          trackUsage('Search', {
+            type: 'asset',
+            query,
+            filters: filterMap,
+          });
           this.setState({ results, loading: false });
           this.queryId = 0;
         }

@@ -12,6 +12,7 @@ import { selectAssets, AssetsState, createNewAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { selectApp, AppState } from '../modules/app';
 import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 type OrigProps = {};
 
@@ -42,6 +43,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     const { assetId, assetName } = this.state;
     const { modelId, revisionId } = this.props.app;
     if (assetName && assetName.length > 0) {
+      trackUsage('MapModelToAsset', {
+        type: 'new',
+        name: assetName,
+      });
       this.props.createNewAsset(
         { name: assetName },
         {
@@ -50,6 +55,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         }
       );
     } else if (assetId) {
+      trackUsage('MapModelToAsset', {
+        type: 'existing',
+        assetId,
+      });
       this.props.setRevisionRepresentAsset(modelId!, revisionId!, assetId);
     } else {
       message.error('You need to select or provide name for a new asset.');
@@ -57,6 +66,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   doSearch = async (query: string) => {
+    trackUsage('Search', {
+      type: 'asset',
+      location: 'MapModelToAsset',
+      query,
+    });
     // TODO filter already assigned ones!
     if (query.length > 0) {
       this.setState({ fetching: true });

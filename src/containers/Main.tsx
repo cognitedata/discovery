@@ -254,6 +254,7 @@ class Main extends React.Component<Props, State> {
   };
 
   changeEdit = (edit = false) => {
+    trackUsage('LayoutEdit', { edit });
     this.setState({
       editLayout: edit,
     });
