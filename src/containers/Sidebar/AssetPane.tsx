@@ -7,7 +7,6 @@ import {
   Button,
   Icon,
   Popconfirm,
-  Descriptions,
   Switch,
   Pagination,
   message,
@@ -16,7 +15,6 @@ import {
 import styled from 'styled-components';
 import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
-import { THREE } from '@cognite/3d-viewer';
 import { bindActionCreators, Dispatch } from 'redux';
 import {
   CogniteEvent,
@@ -45,7 +43,7 @@ import AddTypes from '../Modals/AddTypesModal';
 import EventPreview from '../../components/EventPreview';
 import TimeseriesPreview from '../../components/TimeseriesPreview';
 import { createAssetTitle } from '../../utils/utils';
-import { selectThreeD, CurrentNode, ThreeDState } from '../../modules/threed';
+import { selectThreeD, ThreeDState } from '../../modules/threed';
 import {
   ExtendedAsset,
   fetchAsset,
@@ -60,6 +58,8 @@ import { selectFiles } from '../../modules/files';
 import { deleteAssetNodeMapping } from '../../modules/assetmappings';
 import ChangeAssetParent from '../Modals/ChangeAssetParentModal';
 import { selectApp, AppState, setAssetId } from '../../modules/app';
+import RootAssetList from './RootAssetList';
+import MapNodeToAssetForm from '../MapNodeToAssetForm';
 
 const { Panel } = Collapse;
 
@@ -292,48 +292,14 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   resetState = () => {
-    this.setState({
-      disableEditHierarchy: !!(
-        this.asset!.metadata && this.asset!.metadata!.SOURCE
-      ),
-      documentsTablePage: 0,
-    });
-  };
-
-  renderThreeD = (node: CurrentNode) => {
-    if (node === null || node === undefined) {
-      return null;
+    if (this.asset) {
+      this.setState({
+        disableEditHierarchy: !!(
+          this.asset!.metadata && this.asset!.metadata!.SOURCE
+        ),
+        documentsTablePage: 0,
+      });
     }
-
-    const boundingBox = new THREE.Box3(
-      new THREE.Vector3(...node.boundingBox!.min),
-      new THREE.Vector3(...node.boundingBox!.max)
-    );
-    const center = boundingBox.getCenter(new THREE.Vector3());
-    const size = boundingBox.max.clone().sub(boundingBox.min);
-
-    return (
-      <Panel header={<span>3D</span>} key="3d">
-        <Descriptions bordered size="small" column={1}>
-          <Descriptions.Item label="Position">
-            x: {center.x.toFixed(1)} m
-            <br />
-            y: {center.y.toFixed(1)} m
-            <br />
-            z: {center.z.toFixed(1)} m
-            <br />
-          </Descriptions.Item>
-          <Descriptions.Item label="Size">
-            Height: {size.z.toFixed(1)} m
-            <br />
-            Depth: {size.x.toFixed(1)} m
-            <br />
-            Width: {size.y.toFixed(1)} m
-            <br />
-          </Descriptions.Item>
-        </Descriptions>
-      </Panel>
-    );
   };
 
   renderExternalLinks = (assetId: number) => {
@@ -463,6 +429,28 @@ class AssetDrawer extends React.Component<Props, State> {
 
   render() {
     const { asset } = this;
+    const {
+      threed: { models },
+    } = this.props;
+    const { assetId, modelId } = this.props.app;
+    if (!assetId && !modelId) {
+      return (
+        <>
+          <h3>{`Root Assets in ${sdk.project}`}</h3>
+          <RootAssetList />
+        </>
+      );
+    }
+    if (!assetId && modelId) {
+      return (
+        <>
+          <h3>{`No Asset linked to ${
+            models[modelId] ? models[modelId].name : 'Loading...'
+          } right now`}</h3>
+          <MapNodeToAssetForm />
+        </>
+      );
+    }
 
     if (!asset) {
       return (
@@ -541,8 +529,6 @@ class AssetDrawer extends React.Component<Props, State> {
               defaultActiveKey={defaultActiveKey}
             >
               {asset != null && this.renderExternalLinks(asset.id)}
-              {this.props.threed.currentNode &&
-                this.renderThreeD(this.props.threed.currentNode)}
               {this.renderTimeseries(asset, timeseries)}
               {this.renderTypes(asset, types)}
               {this.renderDocuments(asset.id)}

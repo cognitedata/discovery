@@ -70,6 +70,11 @@ class Model3D extends React.Component<Props, State> {
   componentDidMount() {
     if (this.props.nodeId) {
       this.setState({ nodeId: this.props.nodeId });
+      this.props.doFetchNode(
+        this.props.modelId,
+        this.props.revisionId,
+        this.props.nodeId
+      );
     }
   }
 
