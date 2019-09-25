@@ -205,8 +205,6 @@ type State = {
 };
 
 class AssetSearch extends Component<Props, State> {
-  queryId: number = 0;
-
   inputRef = React.createRef<HTMLInputElement>();
 
   wrapperRef = React.createRef<HTMLDivElement>();
@@ -270,8 +268,6 @@ class AssetSearch extends Component<Props, State> {
   searchForAsset = async (query: string, isParentQuery = false) => {
     try {
       this.setState({ loading: true });
-      this.queryId = this.queryId + 1;
-      const queryId = 0 + this.queryId;
       if (isParentQuery) {
         const results = await sdk.assets.search({
           search: { name: query },
@@ -395,10 +391,7 @@ class AssetSearch extends Component<Props, State> {
         if (events) {
           results = results.filter(asset => events!.has(asset.id));
         }
-        if (queryId === this.queryId) {
-          this.setState({ results, loading: false });
-          this.queryId = 0;
-        }
+        this.setState({ results, loading: false });
       }
     } catch (ex) {
       message.error('Unable to search.');
@@ -683,23 +676,9 @@ class AssetSearch extends Component<Props, State> {
   };
 
   renderCurrentFilters = () => {
-    const { filters, onlyRootAsset, currentRootOnly, query } = this.state;
+    const { filters, onlyRootAsset, currentRootOnly } = this.state;
     const { rootAsset } = this.props;
     let allFilters = [];
-    if (query && query.length > 0) {
-      allFilters.push(
-        <BetterTag
-          closable
-          onClose={() =>
-            this.setState({
-              query: '',
-            })
-          }
-        >
-          Query: {query}
-        </BetterTag>
-      );
-    }
     if (currentRootOnly && rootAsset) {
       allFilters.push(
         <BetterTag
