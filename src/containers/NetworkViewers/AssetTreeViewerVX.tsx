@@ -481,7 +481,7 @@ class TreeViewer extends Component<Props, State> {
                                       node.data.isExpanded = !node.data
                                         .isExpanded;
                                       this.props.setAssetId(
-                                        node.data.node.rootAssetId,
+                                        node.data.node.rootId,
                                         node.data.node.id
                                       );
                                       this.forceUpdate();
@@ -511,7 +511,7 @@ class TreeViewer extends Component<Props, State> {
                                       node.data.isExpanded = !node.data
                                         .isExpanded;
                                       this.props.setAssetId(
-                                        node.data.node.rootAssetId,
+                                        node.data.node.rootId,
                                         node.data.node.id
                                       );
                                       this.forceUpdate();
