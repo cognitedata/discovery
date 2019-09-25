@@ -168,7 +168,7 @@ export function fetchModels() {
     const requestResult = await sdk.models3D.list({ limit: 200 });
     if (requestResult) {
       const { items } = requestResult;
-      // items.forEach(el => dispatch(fetchRevisions(el.id)));
+      items.forEach(el => dispatch(fetchRevisions(el.id)));
 
       dispatch({
         type: SET_MODELS,

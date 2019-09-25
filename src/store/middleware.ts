@@ -54,7 +54,7 @@ export const locationStateMiddleware: Middleware<
         );
       }
     } else if (app.tenant !== tenant) {
-      store.dispatch(setTenant(tenant));
+      store.dispatch(setTenant(tenant, false));
     }
   }
   return response;
