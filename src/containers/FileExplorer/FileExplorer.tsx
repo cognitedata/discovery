@@ -25,7 +25,7 @@ import {
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
-import DocumentPreview from './DocumentPreview';
+import FilePreview from './FilePreview';
 
 const { TabPane } = Tabs;
 
@@ -424,7 +424,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     } = this.state;
     if (selectedDocument) {
       return (
-        <DocumentPreview
+        <FilePreview
           selectedDocument={selectedDocument}
           unselectDocument={() =>
             this.setState({ selectedDocument: undefined })
