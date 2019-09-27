@@ -25,8 +25,10 @@ const ItemPreview = styled.div`
   display: flex;
   flex: 1;
   margin-top: 12px;
+  overflow: hidden;
   .content {
     flex: 2;
+    overflow: auto;
   }
   .preview {
     flex: 1 400px;
@@ -108,6 +110,12 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
     return (
       <Wrapper>
+        <div>
+          <Button onClick={() => this.setState({ detectingAsset: false })}>
+            <Icon type="arrow-left" />
+            Back To File Information
+          </Button>
+        </div>
         <Table
           onRowClick={(asset: Asset) =>
             this.props.setAssetId(asset.rootId, asset.id)
@@ -117,6 +125,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               key: 'name',
               title: 'Asset Name',
               dataIndex: 'name',
+            },
+            {
+              key: 'description',
+              title: 'Asset Description',
+              dataIndex: 'description',
             },
             {
               key: 'rootAsset',

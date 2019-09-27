@@ -399,10 +399,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                 <span>
                   {item.assetIds
                     ? item.assetIds
+                        .slice(0, 10)
                         .map((el: number) =>
                           assets[el] ? assets[el].name : el
                         )
-                        .join(', ')
+                        .join(', ') + (item.assetIds.length > 0 ? '...' : '')
                     : 'N/A'}
                 </span>
               ),
