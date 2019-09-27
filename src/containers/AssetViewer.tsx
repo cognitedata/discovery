@@ -25,6 +25,7 @@ import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
 import Placeholder from '../components/Placeholder';
 import AssetBreadcrumbs from './AssetBreadcrumbs';
 import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
+import FileExplorer from './FileExplorer';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
@@ -34,11 +35,13 @@ export const ViewerTypeMap: { [key in ViewerType]: string } = {
   network: 'Force Network Viewer',
   relationship: 'Relationships',
   oldnetwork: 'Old Network Viewer',
+  file: 'File Viewer',
   assetbreadcrumbs: 'Asset Breadcrumbs',
 };
 
 export type ViewerType =
   | 'none'
+  | 'file'
   | 'threed'
   | 'pnid'
   | 'vx'
@@ -184,6 +187,10 @@ export class AssetViewer extends React.Component<Props, State> {
     return <RelationshipTreeViewer topShowing={false} />;
   };
 
+  renderFileExplorer = () => {
+    return <FileExplorer />;
+  };
+
   render() {
     const { type } = this.props;
     switch (type) {
@@ -201,6 +208,8 @@ export class AssetViewer extends React.Component<Props, State> {
         return this.renderAssetBreadcrumbs();
       case 'pnid':
         return this.renderPNID();
+      case 'file':
+        return this.renderFileExplorer();
       case 'none':
       default:
         return (
