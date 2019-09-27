@@ -271,7 +271,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                   },
                 })
               }
-              onLoadError={e => {
+              onLoadError={() => {
                 this.setState({
                   pdfState: {
                     numPages: 0,
