@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Divider, message, Spin, Table, Icon } from 'antd';
+import { Button, Divider, message, Spin, Table, Icon, Pagination } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
@@ -37,12 +37,21 @@ const ItemPreview = styled.div`
   .preview {
     flex: 1 400px;
     margin-right: 12px;
+    min-width: 400px;
     background-repeat: no-repeat;
     background-size: contain;
+    display: flex;
+    flex-direction: column;
   }
   .preview img {
     width: 100%;
   }
+`;
+
+const StyledPDFViewer = styled(Document)`
+  flex: 1;
+  height: 0;
+  overflow: hidden;
 `;
 
 type OrigProps = {
@@ -228,44 +237,67 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   renderPDF = () => {
     const { filePreviewUrl, pdfState } = this.state;
+
+    if (!filePreviewUrl) {
+      return (
+        <div className="preview">
+          <p>Loading...</p>
+        </div>
+      );
+    }
     if (pdfState.isError) {
       return (
-        <>
+        <div className="preview">
           <p>Unable to Load PDF.</p>
           <Button download href={filePreviewUrl} target="_blank">
             Download File
           </Button>
-        </>
+        </div>
       );
     }
 
     return (
       <div className="preview">
         {filePreviewUrl ? (
-          <Document
-            file={filePreviewUrl}
-            onLoadSuccess={file =>
-              this.setState({
-                pdfState: {
-                  numPages: file.numPages,
-                  page: 1,
-                  isError: false,
-                },
-              })
-            }
-            onLoadError={e => {
-              this.setState({
-                pdfState: {
-                  numPages: 0,
-                  page: 1,
-                  isError: true,
-                },
-              });
-              console.log(e);
-            }}
-          >
-            <Page pageNumber={pdfState.page} />
-          </Document>
+          <>
+            <StyledPDFViewer
+              file={filePreviewUrl}
+              onLoadSuccess={file =>
+                this.setState({
+                  pdfState: {
+                    numPages: file.numPages,
+                    page: 1,
+                    isError: false,
+                  },
+                })
+              }
+              onLoadError={e => {
+                this.setState({
+                  pdfState: {
+                    numPages: 0,
+                    page: 1,
+                    isError: true,
+                  },
+                });
+              }}
+            >
+              <Page pageNumber={pdfState.page} />
+            </StyledPDFViewer>
+            <Pagination
+              onChange={page =>
+                this.setState(state => ({
+                  ...state,
+                  pdfState: {
+                    ...state.pdfState,
+                    page,
+                  },
+                }))
+              }
+              current={pdfState.page}
+              total={pdfState.numPages}
+              pageSize={1}
+            />
+          </>
         ) : (
           <p>Loading...</p>
         )}
@@ -293,11 +325,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               {!filePreviewUrl && <p>Loading...</p>}
             </div>
           )}
-          {this.type === 'documents' && filePreviewUrl ? (
-            this.renderPDF()
-          ) : (
-            <p>Loading...</p>
-          )}
+          {this.type === 'documents' && this.renderPDF()}
           <div className="content">
             {detectingAsset
               ? this.renderDocumentAssetDetection()

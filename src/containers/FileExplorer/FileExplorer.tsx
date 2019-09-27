@@ -140,6 +140,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     imageUrls: [],
   };
 
+  currentQuery: number = 0;
+
   constructor(props: Props) {
     super(props);
 
@@ -177,6 +179,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       assets: { all: assets },
       app: { assetId },
     } = this.props;
+    this.currentQuery = this.currentQuery + 1;
+    const thisQuery = this.currentQuery;
     const { tab } = this.state;
     const config: FilesSearchFilter = {
       filter: {
@@ -228,10 +232,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           })
         );
       }
-      this.setState({
-        searchResults: results.slice(0, results.length),
-        fetching: false,
-      });
     } else {
       this.setState({ fetching: true });
       results = (await sdk.files.list(config)).items;
@@ -266,10 +266,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           })).items
         );
       }
+    }
+    if (thisQuery === this.currentQuery) {
       this.setState({
         searchResults: results.slice(0, results.length),
         fetching: false,
-        current: 0,
       });
     }
     const extraAssets: Set<number> = results.reduce(
