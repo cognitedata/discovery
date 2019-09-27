@@ -55,7 +55,10 @@ class Main extends React.Component<Props, State> {
     } = this.props;
 
     let onboardingText = (
-      <Button onClick={() => this.props.resetAppState()}>
+      <Button
+        style={{ marginBottom: '12px' }}
+        onClick={() => this.props.resetAppState()}
+      >
         Clear Selection
       </Button>
     );

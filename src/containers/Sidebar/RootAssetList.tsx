@@ -18,12 +18,7 @@ type Props = {
 };
 class ModelList extends Component<Props, {}> {
   componentDidMount() {
-    if (
-      Object.values(this.props.assets.all).filter(el => el.rootId === el.id)
-        .length === 0
-    ) {
-      this.props.fetchRootAssets();
-    }
+    this.props.fetchRootAssets();
   }
 
   render() {
