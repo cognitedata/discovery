@@ -1,10 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Divider, message, Spin, Table, Icon } from 'antd';
+import { Button, Divider, message, Spin, Table, Icon, Pagination } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -14,6 +15,9 @@ import {
   FilesMetadataWithDownload,
   FileExplorerTabsType,
 } from './FileExplorer';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 const Wrapper = styled.div`
   display: flex;
@@ -33,12 +37,21 @@ const ItemPreview = styled.div`
   .preview {
     flex: 1 400px;
     margin-right: 12px;
+    min-width: 400px;
     background-repeat: no-repeat;
     background-size: contain;
+    display: flex;
+    flex-direction: column;
   }
   .preview img {
     width: 100%;
   }
+`;
+
+const StyledPDFViewer = styled(Document)`
+  flex: 1;
+  height: 0;
+  overflow: hidden;
 `;
 
 type OrigProps = {
@@ -57,10 +70,19 @@ type State = {
   filePreviewUrl?: string;
   detectingAsset: boolean;
   assetResults?: Asset[];
+
+  pdfState: { numPages: number; page: number; isError: boolean };
 };
 
 class MapModelToAssetForm extends React.Component<Props, State> {
-  state: Readonly<State> = { detectingAsset: false };
+  state: Readonly<State> = {
+    detectingAsset: false,
+    pdfState: {
+      numPages: 0,
+      page: 1,
+      isError: false,
+    },
+  };
 
   componentDidMount() {
     this.componentDidUpdate();
@@ -213,6 +235,76 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     );
   };
 
+  renderPDF = () => {
+    const { filePreviewUrl, pdfState } = this.state;
+
+    if (!filePreviewUrl) {
+      return (
+        <div className="preview">
+          <p>Loading...</p>
+        </div>
+      );
+    }
+    if (pdfState.isError) {
+      return (
+        <div className="preview">
+          <p>Unable to Load PDF.</p>
+          <Button download href={filePreviewUrl} target="_blank">
+            Download File
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="preview">
+        {filePreviewUrl ? (
+          <>
+            <StyledPDFViewer
+              file={filePreviewUrl}
+              onLoadSuccess={file =>
+                this.setState({
+                  pdfState: {
+                    numPages: file.numPages,
+                    page: 1,
+                    isError: false,
+                  },
+                })
+              }
+              onLoadError={() => {
+                this.setState({
+                  pdfState: {
+                    numPages: 0,
+                    page: 1,
+                    isError: true,
+                  },
+                });
+              }}
+            >
+              <Page pageNumber={pdfState.page} />
+            </StyledPDFViewer>
+            <Pagination
+              onChange={page =>
+                this.setState(state => ({
+                  ...state,
+                  pdfState: {
+                    ...state.pdfState,
+                    page,
+                  },
+                }))
+              }
+              current={pdfState.page}
+              total={pdfState.numPages}
+              pageSize={1}
+            />
+          </>
+        ) : (
+          <p>Loading...</p>
+        )}
+      </div>
+    );
+  };
+
   render() {
     const { filePreviewUrl, detectingAsset } = this.state;
 
@@ -233,22 +325,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               {!filePreviewUrl && <p>Loading...</p>}
             </div>
           )}
-          {this.type === 'documents' && (
-            <div className="preview">
-              {filePreviewUrl ? (
-                <object
-                  width="100%"
-                  height="100%"
-                  data={filePreviewUrl}
-                  type="application/pdf"
-                >
-                  <embed src={filePreviewUrl} type="application/pdf" />
-                </object>
-              ) : (
-                <p>Loading...</p>
-              )}
-            </div>
-          )}
+          {this.type === 'documents' && this.renderPDF()}
           <div className="content">
             {detectingAsset
               ? this.renderDocumentAssetDetection()
