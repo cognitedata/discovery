@@ -31,7 +31,7 @@ const Overlay = styled.div<{ visible: string }>`
   z-index: 1000;
 `;
 const SearchArea = styled.div`
-  z-index: 2;
+  z-index: 1001;
 `;
 const FilterEditArea = styled.div`
   background: #efefef;
