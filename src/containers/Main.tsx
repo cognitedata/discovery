@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Button, Icon } from 'antd';
+import { Layout, Switch, Button, Icon, Select } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import {
@@ -81,9 +81,9 @@ const DraggingView = styled.div`
     align-self: center;
     margin: 0 auto;
   }
-  && i svg {
-    height: 24px;
-    width: 24px;
+  && i.big svg {
+    height: 36px;
+    width: 36px;
     margin-bottom: 12px;
   }
 
@@ -258,6 +258,18 @@ class Main extends React.Component<Props, State> {
     return true;
   };
 
+  changeLayoutType = (type: ViewerType, index: string) => {
+    const { layout } = this.state;
+    const newArray = [...layout];
+    const arrayItem = newArray.find(item => item.i === index);
+    if (arrayItem) {
+      arrayItem.viewType = type;
+      this.setState({ layout: newArray }, () => {
+        localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(newArray));
+      });
+    }
+  };
+
   render() {
     const { layout, editLayout } = this.state;
     return (
@@ -300,31 +312,36 @@ class Main extends React.Component<Props, State> {
                     {editLayout && (
                       <DraggingView>
                         <div>
-                          <Icon type="drag" />
-                          <h3>{ViewerTypeMap[el.viewType]}</h3>
+                          <Icon className="big" type="drag" />
+                          <h2>{ViewerTypeMap[el.viewType]}</h2>
                           <p>
                             Resize by dragging the bottom right corner, drag
                             around each component to make your own layout
                           </p>
+                          <h3>Change Component</h3>
+                          <Select
+                            style={{ width: '100%' }}
+                            placeholder="Choose a View"
+                            value={el.viewType}
+                            onChange={(type: string) =>
+                              this.changeLayoutType(type as ViewerType, el.i!)
+                            }
+                          >
+                            {Object.keys(ViewerTypeMap).map(
+                              (viewType: string) => (
+                                <Select.Option key={viewType} value={viewType}>
+                                  {`${ViewerTypeMap[viewType as ViewerType]}`}
+                                </Select.Option>
+                              )
+                            )}
+                          </Select>
                         </div>
                       </DraggingView>
                     )}
                     <AssetViewer
                       type={el.viewType}
                       onComponentChange={(type: ViewerType) => {
-                        const newArray = [...layout];
-                        const arrayItem = newArray.find(
-                          item => item.i === el.i
-                        );
-                        if (arrayItem) {
-                          arrayItem.viewType = type;
-                          this.setState({ layout: newArray }, () => {
-                            localStorage.setItem(
-                              LAYOUT_LOCAL_STORAGE,
-                              JSON.stringify(newArray)
-                            );
-                          });
-                        }
+                        this.changeLayoutType(type, el.i!);
                       }}
                     />
                     {editLayout && (
