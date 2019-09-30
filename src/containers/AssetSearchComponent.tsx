@@ -28,7 +28,7 @@ const Overlay = styled.div<{ visible: string }>`
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  z-index: 1;
+  z-index: 1000;
 `;
 const SearchArea = styled.div`
   z-index: 2;
@@ -54,7 +54,7 @@ const FilterEditArea = styled.div`
 `;
 const ResultList = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'block' : 'none')};
-  z-index: 2;
+  z-index: 1001;
 
   position: absolute;
   width: 100%;
@@ -205,6 +205,8 @@ type State = {
 };
 
 class AssetSearch extends Component<Props, State> {
+  queryId: number = 0;
+
   inputRef = React.createRef<HTMLInputElement>();
 
   wrapperRef = React.createRef<HTMLDivElement>();
@@ -268,6 +270,8 @@ class AssetSearch extends Component<Props, State> {
   searchForAsset = async (query: string, isParentQuery = false) => {
     try {
       this.setState({ loading: true });
+      this.queryId = this.queryId + 1;
+      const queryId = 0 + this.queryId;
       if (isParentQuery) {
         const results = await sdk.assets.search({
           search: { name: query },
@@ -391,7 +395,10 @@ class AssetSearch extends Component<Props, State> {
         if (events) {
           results = results.filter(asset => events!.has(asset.id));
         }
-        this.setState({ results, loading: false });
+        if (queryId === this.queryId) {
+          this.setState({ results, loading: false });
+          this.queryId = 0;
+        }
       }
     } catch (ex) {
       message.error('Unable to search.');
@@ -676,9 +683,23 @@ class AssetSearch extends Component<Props, State> {
   };
 
   renderCurrentFilters = () => {
-    const { filters, onlyRootAsset, currentRootOnly } = this.state;
+    const { filters, onlyRootAsset, currentRootOnly, query } = this.state;
     const { rootAsset } = this.props;
     let allFilters = [];
+    if (query && query.length > 0) {
+      allFilters.push(
+        <BetterTag
+          closable
+          onClose={() =>
+            this.setState({
+              query: '',
+            })
+          }
+        >
+          Query: {query}
+        </BetterTag>
+      );
+    }
     if (currentRootOnly && rootAsset) {
       allFilters.push(
         <BetterTag

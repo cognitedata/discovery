@@ -2,6 +2,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { Middleware } from 'redux';
 import { RootState } from '../reducers/index';
 import {
+  resetAppState,
   setTenant,
   SetAppStateAction,
   setAssetId,
@@ -55,6 +56,8 @@ export const locationStateMiddleware: Middleware<
       }
     } else if (app.tenant !== tenant) {
       store.dispatch(setTenant(tenant, false));
+    } else if (!p1 && (app.rootAssetId || app.modelId)) {
+      store.dispatch(resetAppState());
     }
   }
   return response;

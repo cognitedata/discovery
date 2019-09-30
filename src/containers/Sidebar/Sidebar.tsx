@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Radio, Divider } from 'antd';
+import { Layout, Radio, Divider, Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { Asset } from '@cognite/sdk';
@@ -54,7 +54,14 @@ class Main extends React.Component<Props, State> {
       app: { rootAssetId, modelId },
     } = this.props;
 
-    let onboardingText = null;
+    let onboardingText = (
+      <Button
+        style={{ marginBottom: '12px' }}
+        onClick={() => this.props.resetAppState()}
+      >
+        Clear Selection
+      </Button>
+    );
     // Nothing selected
     if (!modelId && !rootAssetId) {
       onboardingText = (
