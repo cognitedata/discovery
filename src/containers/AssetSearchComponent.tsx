@@ -28,7 +28,7 @@ const Overlay = styled.div<{ visible: string }>`
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  z-index: 1;
+  z-index: 1000;
 `;
 const SearchArea = styled.div`
   z-index: 2;
@@ -54,7 +54,7 @@ const FilterEditArea = styled.div`
 `;
 const ResultList = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'block' : 'none')};
-  z-index: 2;
+  z-index: 1001;
 
   position: absolute;
   width: 100%;
