@@ -58,13 +58,18 @@ export function searchForAsset(query: string) {
     // const requestResult = await sdk.rawGet(
     //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
     // );
-    const result = await sdk.assets.search({
-      search: { name: query },
-      limit: 1000,
-    });
+    const result = (await sdk.post(
+      `/api/playground/projects/${sdk.project}/assets/search`,
+      {
+        data: {
+          limit: 1000,
+          ...(query && query.length > 0 && { search: { query } }),
+        },
+      }
+    )).data.items;
 
     if (result) {
-      const assetResults = result.map(asset => ({
+      const assetResults = result.map((asset: Asset) => ({
         id: asset.id,
         name: asset.name,
         rootId: asset.rootId,
@@ -76,7 +81,7 @@ export function searchForAsset(query: string) {
         dispatch({
           type: ADD_ASSETS,
           payload: arrayToObjectById(
-            result.map(asset => slimAssetObject(asset))
+            result.map((asset: Asset) => slimAssetObject(asset))
           ),
         });
         dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
