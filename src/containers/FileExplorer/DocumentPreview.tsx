@@ -109,7 +109,14 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   render() {
     const { selectedDocument } = this.props;
     const { filePreviewUrl } = this.state;
-    const { name, source, mimeType, createdTime, metadata } = selectedDocument;
+    const {
+      name,
+      source,
+      mimeType,
+      createdTime,
+      metadata,
+      id,
+    } = selectedDocument;
     return (
       <Wrapper>
         <Button onClick={this.props.unselectDocument}>BACK</Button>
@@ -142,6 +149,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             <p>Name: {name}</p>
             <p>Source: {source}</p>
             <p>Type: {mimeType}</p>
+            <p>ID: {id}</p>
             <p>Created Date: {moment(createdTime).format('DD/MM/YYYY')}</p>
             <pre>{JSON.stringify(metadata, null, 2)}</pre>
 

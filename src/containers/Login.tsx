@@ -27,7 +27,26 @@ const Login = ({ doSetTenant }: Props) => (
     <TenantSelectorContainer>
       <TenantSelector
         title="Discovery"
-        onTenantSelected={tenant => doSetTenant(tenant, true)}
+        onTenantSelected={(tenant, advancedOptions) => {
+          const cdfEnv = advancedOptions
+            ? advancedOptions['CDF Environment']
+            : undefined;
+          doSetTenant(tenant, cdfEnv as string, true);
+        }}
+        header="Cognite Data Fusion project name"
+        validateTenant={(tenant, advancedOptions) => {
+          const cdfEnv = advancedOptions
+            ? advancedOptions['CDF Environment']
+            : null;
+          const clusterParam = cdfEnv ? `&cluster=${cdfEnv}` : '';
+          return fetch(
+            `https://opin-api.cognite.ai/tenant?tenant=${tenant}&app=opin${clusterParam}`
+          ).then(response => response.json());
+        }}
+        loginText="Authenticate"
+        placeholder="Project name"
+        unknownMessage="The name you entered is not a valid project in Cognite Data Fusion"
+        advancedOptions={{ 'CDF Environment': '' }}
       />
     </TenantSelectorContainer>
   </Wrapper>

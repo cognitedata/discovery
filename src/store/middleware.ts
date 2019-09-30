@@ -55,7 +55,7 @@ export const locationStateMiddleware: Middleware<
         );
       }
     } else if (app.tenant !== tenant) {
-      store.dispatch(setTenant(tenant, false));
+      store.dispatch(setTenant(tenant, undefined, false));
     } else if (!p1 && (app.rootAssetId || app.modelId)) {
       store.dispatch(resetAppState());
     }

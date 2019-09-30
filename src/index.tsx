@@ -12,7 +12,10 @@ import * as serviceWorker from './utils/serviceWorker';
 
 mixpanel.init('fb25742efb56d116b736515a0ad5f6ef', {}, 'context');
 
-export const sdk = new CogniteClient({ appId: 'Digital Twin Explorer' });
+export const sdk = new CogniteClient({
+  appId: 'Discovery',
+  baseUrl: 'https://greenfield.cognitedata.com/api/playground/',
+});
 
 render(
   <ClientSDKProvider client={sdk}>
