@@ -146,14 +146,14 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     });
   };
 
-  detectAssetClicked = async () => {
+  detectAssetClicked = async (fileId: number) => {
     this.setState({ detectingAsset: true });
     try {
       const response = await sdk.post(
         `/api/playground/projects/${sdk.project}/context/string-matcher/extract`,
         {
           data: {
-            pdf_file_id: 6289549173298911,
+            pdf_file_id: fileId,
           },
         }
       );
@@ -237,7 +237,14 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   renderDefaultContentView = () => {
     const { selectedDocument } = this.props;
-    const { name, source, mimeType, createdTime, metadata } = selectedDocument;
+    const {
+      name,
+      source,
+      mimeType,
+      createdTime,
+      metadata,
+      id,
+    } = selectedDocument;
     return (
       <>
         <p>Name: {name}</p>
@@ -265,7 +272,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             <Button
               size="large"
               type="primary"
-              onClick={this.detectAssetClicked}
+              onClick={() => this.detectAssetClicked(id)}
             >
               Detect Assets In Document
             </Button>
