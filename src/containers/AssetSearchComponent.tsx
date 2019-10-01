@@ -273,11 +273,16 @@ class AssetSearch extends Component<Props, State> {
       this.queryId = this.queryId + 1;
       const queryId = 0 + this.queryId;
       if (isParentQuery) {
-        const results = await sdk.assets.search({
-          search: { name: query },
-          limit: 100,
-        });
-        this.setState({ possibleParents: results, loading: false });
+        const results = await sdk.post(
+          `/api/playground/projects/${sdk.project}/assets/search`,
+          {
+            data: {
+              search: { query },
+              limit: 100,
+            },
+          }
+        );
+        this.setState({ possibleParents: results.data.items, loading: false });
       } else {
         const { filters, onlyRootAsset, currentRootOnly } = this.state;
         const { rootAsset } = this.props;
@@ -337,20 +342,25 @@ class AssetSearch extends Component<Props, State> {
         }
 
         if (query || filterMap.events.length === 0) {
-          results = await sdk.assets.search({
-            limit: 1000,
-            ...(query && query.length > 0 && { search: { name: query } }),
-            filter: {
-              ...(onlyRootAsset && { root: true }),
-              ...(filterMap.source && { source: filterMap.source }),
-              ...(filterMap.metadata && { metadata: filterMap.metadata }),
-              ...(filterMap.locations.length > 0 && {
-                parentIds: filterMap.locations.map(el => Number(el)),
-              }),
-              ...(rootAsset &&
-                currentRootOnly && { rootIds: [{ id: rootAsset.id }] }),
-            },
-          });
+          results = (await sdk.post(
+            `/api/playground/projects/${sdk.project}/assets/search`,
+            {
+              data: {
+                limit: 1000,
+                ...(query && query.length > 0 && { search: { query } }),
+                filter: {
+                  ...(onlyRootAsset && { root: true }),
+                  ...(filterMap.source && { source: filterMap.source }),
+                  ...(filterMap.metadata && { metadata: filterMap.metadata }),
+                  ...(filterMap.locations.length > 0 && {
+                    parentIds: filterMap.locations.map(el => Number(el)),
+                  }),
+                  ...(rootAsset &&
+                    currentRootOnly && { rootIds: [{ id: rootAsset.id }] }),
+                },
+              },
+            }
+          )).data.items;
         } else if (events && events.size > 0) {
           results = await sdk.assets.retrieve(
             Array.from(events).map(el => ({ id: el }))
