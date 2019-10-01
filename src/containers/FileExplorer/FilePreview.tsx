@@ -4,13 +4,13 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, Divider, message, Spin, Table, Icon, Pagination } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
-import { Asset } from '@cognite/sdk';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState, setAssetId } from '../../modules/app';
 import { sdk } from '../../index';
+import LoaderBPSvg from '../../assets/loader-bp.svg';
 import {
   FilesMetadataWithDownload,
   FileExplorerTabsType,
@@ -23,6 +23,10 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+
+  && .current {
+    background-color: #dfdfdf;
+  }
 `;
 
 const ItemPreview = styled.div`
@@ -48,10 +52,28 @@ const ItemPreview = styled.div`
   }
 `;
 
+const SpinWrapper = styled.div`
+  flex: 1;
+  display: flex;
+  height: 100%;
+
+  && > * {
+    align-self: center;
+    margin: 0 auto;
+  }
+
+  && img {
+    width: 36px;
+    height: 36px;
+  }
+`;
+
 const StyledPDFViewer = styled(Document)`
   flex: 1;
   height: 0;
-  overflow: hidden;
+  && {
+    overflow: scroll;
+  }
 `;
 
 type OrigProps = {
@@ -69,7 +91,7 @@ type Props = {
 type State = {
   filePreviewUrl?: string;
   detectingAsset: boolean;
-  assetResults?: Asset[];
+  assetResults?: { page: number; name: string }[];
 
   pdfState: { numPages: number; page: number; isError: boolean };
 };
@@ -124,50 +146,91 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     });
   };
 
+  detectAssetClicked = async () => {
+    this.setState({ detectingAsset: true });
+    try {
+      const response = await sdk.post(
+        `/api/playground/projects/${sdk.project}/context/string-matcher/extract`,
+        {
+          data: {
+            pdf_file_id: 6289549173298911,
+          },
+        }
+      );
+      const names = response.data.reduce(
+        (prev: { page: number; name: string }[], data: string[], i: number) => {
+          data.forEach(name => prev.push({ page: i + 1, name }));
+          return prev;
+        },
+        [] as { page: number; name: string }[]
+      );
+      this.setState({ assetResults: names });
+    } catch (e) {
+      message.error('Unable to process document, please try again');
+      this.setState({ assetResults: undefined, detectingAsset: false });
+    }
+  };
+
+  onAssetSelected = async (asset: { page: number; name: string }) => {
+    const [result] = await sdk.assets.search({
+      search: { name: asset.name },
+    });
+    this.props.setAssetId(result.rootId, result.id);
+    this.setState(state => ({
+      ...state,
+      pdfState: {
+        ...state.pdfState,
+        page: asset.page,
+      },
+    }));
+  };
+
   renderDocumentAssetDetection = () => {
-    const { assetResults } = this.state;
-    const { all } = this.props.assets;
+    const { assetResults, pdfState } = this.state;
     if (!assetResults) {
-      return <Spin tip="Loading...." />;
+      return (
+        <SpinWrapper>
+          <Spin
+            indicator={<img src={LoaderBPSvg} alt="" />}
+            tip="Loading...."
+          />
+        </SpinWrapper>
+      );
     }
     return (
       <Wrapper>
         <div>
-          <Button onClick={() => this.setState({ detectingAsset: false })}>
+          <Button
+            onClick={() =>
+              this.setState({ detectingAsset: false, assetResults: undefined })
+            }
+          >
             <Icon type="arrow-left" />
             Back To File Information
           </Button>
         </div>
-        <Table
-          onRowClick={(asset: Asset) =>
-            this.props.setAssetId(asset.rootId, asset.id)
-          }
-          columns={[
-            {
-              key: 'name',
-              title: 'Asset Name',
-              dataIndex: 'name',
-            },
-            {
-              key: 'description',
-              title: 'Asset Description',
-              dataIndex: 'description',
-            },
-            {
-              key: 'rootAsset',
-              title: 'Root Asset',
-              dataIndex: 'rootId',
-              render: rootId => {
-                return (
-                  <span>
-                    {rootId && all[rootId] ? all[rootId].name : rootId}
-                  </span>
-                );
+        <div style={{ flex: 1, marginTop: '12px' }}>
+          <Table
+            onRowClick={this.onAssetSelected}
+            pagination={false}
+            rowClassName={item =>
+              item.page === pdfState.page ? 'current' : ''
+            }
+            columns={[
+              {
+                key: 'name',
+                title: 'Asset Name',
+                dataIndex: 'name',
               },
-            },
-          ]}
-          dataSource={assetResults}
-        />
+              {
+                key: 'page',
+                title: 'Page in Document',
+                dataIndex: 'page',
+              },
+            ]}
+            dataSource={assetResults}
+          />
+        </div>
       </Wrapper>
     );
   };
@@ -202,30 +265,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             <Button
               size="large"
               type="primary"
-              onClick={() =>
-                this.setState({ detectingAsset: true }, () => {
-                  const { all } = this.props.assets;
-                  const allAssets = Object.values(all);
-                  const results: Asset[] = [];
-                  const selectedIndex: number[] = [];
-                  const total = Math.floor(Math.random() * 12 + 4);
-                  for (let i = 0; i < total; i += 1) {
-                    let randomIndex = Math.floor(
-                      Math.random() * allAssets.length
-                    );
-                    while (selectedIndex.indexOf(randomIndex) !== -1) {
-                      randomIndex = Math.floor(
-                        Math.random() * allAssets.length
-                      );
-                    }
-                    results.push(allAssets[randomIndex]);
-                  }
-                  setTimeout(
-                    () => this.setState({ assetResults: results }),
-                    5000
-                  );
-                })
-              }
+              onClick={this.detectAssetClicked}
             >
               Detect Assets In Document
             </Button>
