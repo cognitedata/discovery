@@ -25,7 +25,7 @@ import {
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
-import DocumentPreview from './DocumentPreview';
+import FilePreview from './FilePreview';
 
 const { TabPane } = Tabs;
 
@@ -140,6 +140,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     imageUrls: [],
   };
 
+  currentQuery: number = 0;
+
   constructor(props: Props) {
     super(props);
 
@@ -177,6 +179,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       assets: { all: assets },
       app: { assetId },
     } = this.props;
+    this.currentQuery = this.currentQuery + 1;
+    const thisQuery = this.currentQuery;
     const { tab } = this.state;
     const config: FilesSearchFilter = {
       filter: {
@@ -228,10 +232,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           })
         );
       }
-      this.setState({
-        searchResults: results.slice(0, results.length),
-        fetching: false,
-      });
     } else {
       this.setState({ fetching: true });
       results = (await sdk.files.list(config)).items;
@@ -266,10 +266,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           })).items
         );
       }
+    }
+    if (thisQuery === this.currentQuery) {
       this.setState({
         searchResults: results.slice(0, results.length),
         fetching: false,
-        current: 0,
       });
     }
     const extraAssets: Set<number> = results.reduce(
@@ -399,10 +400,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                 <span>
                   {item.assetIds
                     ? item.assetIds
+                        .slice(0, 10)
                         .map((el: number) =>
                           assets[el] ? assets[el].name : el
                         )
-                        .join(', ')
+                        .join(', ') + (item.assetIds.length > 0 ? '...' : '')
                     : 'N/A'}
                 </span>
               ),
@@ -424,7 +426,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     } = this.state;
     if (selectedDocument) {
       return (
-        <DocumentPreview
+        <FilePreview
           selectedDocument={selectedDocument}
           unselectDocument={() =>
             this.setState({ selectedDocument: undefined })
