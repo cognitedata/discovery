@@ -10,6 +10,7 @@ import {
   Switch,
   Pagination,
   message,
+  Descriptions,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -82,6 +83,15 @@ const HeaderWithButton = styled.div`
   width: 100%;
   align-items: center;
   justify-content: space-between;
+`;
+const MetadataPanel = styled(Panel)`
+  display: flex;
+  max-height: 500px;
+  flex-direction: column;
+  && .ant-collapse-content {
+    overflow: auto;
+    flex: 1;
+  }
 `;
 
 type OrigProps = {};
@@ -315,6 +325,29 @@ class AssetDrawer extends React.Component<Props, State> {
     );
   };
 
+  renderMetadata = () => {
+    const { asset } = this;
+
+    return (
+      <MetadataPanel header={<span>Metadata</span>} key="metadata">
+        <Descriptions size="small" column={1}>
+          {asset && asset.metadata ? (
+            Object.keys(asset.metadata).map(key => (
+              <Descriptions.Item
+                key={key}
+                label={key.replace(/^\w/, c => c.toUpperCase())}
+              >
+                {asset.metadata![key]}
+              </Descriptions.Item>
+            ))
+          ) : (
+            <Spin />
+          )}
+        </Descriptions>
+      </MetadataPanel>
+    );
+  };
+
   renderEdit = (asset: ExtendedAsset) => {
     const { project } = sdk;
     const {
@@ -533,6 +566,7 @@ class AssetDrawer extends React.Component<Props, State> {
               {this.renderTypes(asset, types)}
               {this.renderDocuments(asset.id)}
               {this.renderEvents(this.props.events.items)}
+              {this.renderMetadata()}
               {this.state.showEditHierarchy && this.renderEdit(asset)}
             </Collapse>
           }
