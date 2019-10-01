@@ -3,7 +3,6 @@ import { push, CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
-import { sdk } from '../index';
 import {
   UPDATE_REVISON,
   UpdateRevisionAction,
@@ -18,7 +17,6 @@ export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
 export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
     tenant?: string;
-    enviornment?: string;
     modelId?: number;
     revisionId?: number;
     nodeId?: number;
@@ -114,21 +112,15 @@ export const setAssetId = (
   }
 };
 
-export const setTenant = (
-  tenant: string,
-  enviornment?: string,
-  redirect = false
-) => async (
+export const setTenant = (tenant: string, redirect = false) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
   dispatch({
     type: SET_APP_STATE,
     payload: {
       tenant,
-      enviornment,
     },
   });
-  sdk.setBaseUrl(`https://${enviornment || 'api'}.cognitedata.com`);
   if (redirect) {
     dispatch(push(`/${tenant}`));
   }

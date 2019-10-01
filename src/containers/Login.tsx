@@ -4,6 +4,7 @@ import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
 import { setTenant } from '../modules/app';
+import { sdk } from '..';
 
 const Wrapper = styled.div`
   display: flex;
@@ -31,7 +32,8 @@ const Login = ({ doSetTenant }: Props) => (
           const cdfEnv = advancedOptions
             ? advancedOptions['CDF Environment']
             : undefined;
-          doSetTenant(tenant, cdfEnv as string, true);
+          sdk.setBaseUrl(`https://${cdfEnv || 'api'}.cognitedata.com`);
+          doSetTenant(tenant, true);
         }}
         header="Cognite Data Fusion project name"
         validateTenant={(tenant, advancedOptions) => {
