@@ -250,6 +250,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <p>Name: {name}</p>
         <p>Source: {source}</p>
         <p>Type: {mimeType}</p>
+        <p>ID: {id}</p>
         <p>Created Date: {moment(createdTime).format('DD/MM/YYYY')}</p>
         <pre>{JSON.stringify(metadata, null, 2)}</pre>
 
@@ -346,8 +347,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             />
           </>
         ) : (
-          <p>Loading...</p>
-        )}
+            <p>Loading...</p>
+          )}
       </div>
     );
   };
