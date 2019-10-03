@@ -347,8 +347,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             />
           </>
         ) : (
-            <p>Loading...</p>
-          )}
+          <p>Loading...</p>
+        )}
       </div>
     );
   };
