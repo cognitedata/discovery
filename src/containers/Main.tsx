@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Button, Icon, Select } from 'antd';
+import { Layout, Switch, Button, Icon } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import {
@@ -26,6 +26,7 @@ import {
 } from '../modules/app';
 import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
 import Sidebar from './Sidebar';
+import ComponentSelector from '../components/ComponentSelector';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -318,23 +319,11 @@ class Main extends React.Component<Props, State> {
                             Resize by dragging the bottom right corner, drag
                             around each component to make your own layout
                           </p>
-                          <h3>Change Component</h3>
-                          <Select
-                            style={{ width: '100%' }}
-                            placeholder="Choose a View"
-                            value={el.viewType}
-                            onChange={(type: string) =>
-                              this.changeLayoutType(type as ViewerType, el.i!)
-                            }
-                          >
-                            {Object.keys(ViewerTypeMap).map(
-                              (viewType: string) => (
-                                <Select.Option key={viewType} value={viewType}>
-                                  {`${ViewerTypeMap[viewType as ViewerType]}`}
-                                </Select.Option>
-                              )
-                            )}
-                          </Select>
+                          <ComponentSelector
+                            onComponentChange={(viewType: ViewerType) => {
+                              this.changeLayoutType(viewType, el.i!);
+                            }}
+                          />
                         </div>
                       </DraggingView>
                     )}
