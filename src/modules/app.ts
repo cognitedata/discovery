@@ -1,6 +1,7 @@
 import { Action } from 'redux';
 import { push, CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
+import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
 import {
@@ -22,6 +23,7 @@ export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
     nodeId?: number;
     assetId?: number;
     rootAssetId?: number;
+    timeseriesId?: number;
   };
 }
 interface ClearAppStateAction extends Action<typeof CLEAR_APP_STATE> {}
@@ -112,6 +114,60 @@ export const setAssetId = (
   }
 };
 
+export const setTimeseriesId = (timeseriesId?: number) => async (
+  dispatch: ThunkDispatch<
+    any,
+    any,
+    SetAppStateAction | CallHistoryMethodAction
+  >,
+  getState: () => RootState
+) => {
+  if (!timeseriesId) {
+    dispatch({
+      type: SET_APP_STATE,
+      payload: {
+        timeseriesId,
+      },
+    });
+    return;
+  }
+  const {
+    threed: { representsAsset },
+    assetMappings: { byAssetId },
+    assets: { all },
+    timeseries: { timeseriesData },
+  } = getState();
+  const timeseries = timeseriesData[timeseriesId];
+  if (!timeseries) {
+    message.error(`Unable to find timeseries`);
+    return;
+  }
+  let assetId;
+  let rootAssetId;
+  let modelMapping;
+  let assetMapping;
+
+  if (timeseries.assetId) {
+    // eslint-disable-next-line prefer-destructuring
+    assetId = timeseries.assetId;
+    rootAssetId = all[assetId].rootId;
+    modelMapping = representsAsset[rootAssetId];
+    assetMapping = byAssetId[assetId];
+  }
+
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      modelId: modelMapping ? modelMapping.modelId : undefined,
+      revisionId: modelMapping ? modelMapping.revisionId : undefined,
+      nodeId: modelMapping && assetMapping ? assetMapping.nodeId : undefined,
+      assetId,
+      timeseriesId,
+      rootAssetId,
+    },
+  });
+};
+
 export const setTenant = (tenant: string, redirect = false) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
@@ -147,6 +203,7 @@ export const resetAppState = () => async (
 export interface AppState {
   tenant?: string;
   modelId?: number;
+  timeseriesId?: number;
   revisionId?: number;
   nodeId?: number;
   assetId?: number;
@@ -162,6 +219,7 @@ export default function app(state = initialState, action: AppAction): AppState {
     case CLEAR_APP_STATE:
       return {
         ...state,
+        timeseriesId: undefined,
         modelId: undefined,
         revisionId: undefined,
         nodeId: undefined,

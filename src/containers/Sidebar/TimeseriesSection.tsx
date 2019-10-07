@@ -1,21 +1,22 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { List, Spin, Button, Icon, Popconfirm, Pagination } from 'antd';
+import { List, Button, Icon, Popconfirm, Pagination, Input } from 'antd';
 import moment from 'moment';
 import mixpanel from 'mixpanel-browser';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
+import debounce from 'lodash/debounce';
 import {
   fetchTimeseries,
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
+  searchTimeseries,
 } from '../../modules/timeseries';
 import AddTimeseries from '../Modals/AddTimeseriesModal';
-import TimeseriesPreview from '../../components/TimeseriesPreview';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState } from '../../modules/app';
+import { selectApp, AppState, setTimeseriesId } from '../../modules/app';
 
 const ListItemContent = styled.div`
   display: flex;
@@ -45,21 +46,27 @@ type OrigProps = {};
 type Props = {
   doFetchTimeseries: typeof fetchTimeseries;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
+  setTimeseriesId: typeof setTimeseriesId;
+  searchTimeseries: typeof searchTimeseries;
   timeseries: TimeseriesState;
   app: AppState;
 } & OrigProps;
 
 type State = {
   showAddTimeseries: boolean;
-  showTimeseries?: { id: number; name: string };
   timeseriesTablePage: number;
 };
 
-class AssetDrawer extends React.Component<Props, State> {
-  readonly state: Readonly<State> = {
-    showAddTimeseries: false,
-    timeseriesTablePage: 0,
-  };
+class TimeseriesSection extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.doSearch = debounce(this.doSearch, 100);
+    this.state = {
+      showAddTimeseries: false,
+      timeseriesTablePage: 0,
+    };
+  }
 
   addTimeseriesClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     // @ts-ignore
@@ -72,7 +79,6 @@ class AssetDrawer extends React.Component<Props, State> {
 
   resetState = () => {
     this.setState({
-      showAddTimeseries: false,
       timeseriesTablePage: 0,
     });
   };
@@ -80,30 +86,25 @@ class AssetDrawer extends React.Component<Props, State> {
   onModalClose = () => {
     this.setState({
       showAddTimeseries: false,
-      showTimeseries: undefined,
     });
   };
 
-  timeseriesOnClick = (timeseriesId: number, timeseriesName: string) => {
-    this.setState({
-      showTimeseries: { id: timeseriesId, name: timeseriesName },
-    });
+  timeseriesOnClick = (timeseriesId: number) => {
+    this.props.setTimeseriesId(timeseriesId);
+  };
+
+  doSearch = (query: string) => {
+    const { assetId } = this.props.app;
+    this.props.searchTimeseries(query, assetId);
   };
 
   render() {
     const {
-      timeseries: { items },
+      timeseries: { timeseriesData },
       app: { assetId },
     } = this.props;
-    const {
-      timeseriesTablePage,
-      showAddTimeseries,
-      showTimeseries,
-    } = this.state;
-    if (!items) {
-      return <Spin />;
-    }
-    const timeseriesItems = items;
+    const { timeseriesTablePage, showAddTimeseries } = this.state;
+    const timeseriesItems = Object.values(timeseriesData);
     return (
       <>
         {assetId != null && showAddTimeseries && (
@@ -113,15 +114,14 @@ class AssetDrawer extends React.Component<Props, State> {
             timeseries={timeseriesItems}
           />
         )}
-        {showTimeseries != null && (
-          <TimeseriesPreview
-            timeseries={{ id: showTimeseries.id, name: showTimeseries.name }}
-            onClose={this.onModalClose}
-          />
-        )}
         <Button type="primary" onClick={this.addTimeseriesClick}>
           Add
         </Button>
+        <Input
+          placeholder="Find the timeseries most relevant to you"
+          onChange={ev => this.doSearch(ev.target.value)}
+          style={{ marginTop: '6px', marginBottom: '6px' }}
+        />
         <List
           itemLayout="horizontal"
           dataSource={
@@ -137,7 +137,7 @@ class AssetDrawer extends React.Component<Props, State> {
               <ListItemContent>
                 <p
                   className="title"
-                  onClick={() => this.timeseriesOnClick(ts.id, ts.name!)}
+                  onClick={() => this.timeseriesOnClick(ts.id)}
                   role="presentation"
                 >
                   {ts.name}
@@ -184,6 +184,8 @@ const mapStateToProps = (state: RootState) => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
+      setTimeseriesId,
+      searchTimeseries,
       doFetchTimeseries: fetchTimeseries,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
     },
@@ -192,4 +194,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(AssetDrawer);
+)(TimeseriesSection);

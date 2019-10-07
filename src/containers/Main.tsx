@@ -26,6 +26,7 @@ import {
 } from '../modules/app';
 import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
 import Sidebar from './Sidebar';
+import TimeseriesPreview from './TimeseriesPreview';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -274,6 +275,7 @@ class Main extends React.Component<Props, State> {
     const { layout, editLayout } = this.state;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+        <TimeseriesPreview />
         <Layout>
           <Layout>
             <Sidebar />

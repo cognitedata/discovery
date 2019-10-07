@@ -483,8 +483,7 @@ class AssetDrawer extends React.Component<Props, State> {
               <Panel
                 header={
                   <span>
-                    Timeseries ({timeseries.items ? timeseries.items.length : 0}
-                    )
+                    Timeseries ({Object.keys(timeseries.timeseriesData).length})
                   </span>
                 }
                 key="timeseries"

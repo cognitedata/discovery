@@ -7,6 +7,7 @@ import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { fetchEvents, createEvent } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
+import { arrayToObjectById } from '../utils/utils';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -30,6 +31,33 @@ export function fetchTimeseries(assetId: number) {
       limit: 1000,
     });
     dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
+  };
+}
+let searchTimeseriesRID = 0;
+// Functions
+export function searchTimeseries(query: string, assetId?: number) {
+  return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    searchTimeseriesRID += 1;
+    const id = searchTimeseriesRID;
+    const results = await sdk.post(
+      `/api/playground/projects/${sdk.project}/timeseries/search`,
+      {
+        data: {
+          filter: {
+            ...(assetId && { assetIds: [assetId] }),
+          },
+          limit: 1000,
+          search: { query },
+        },
+      }
+    );
+    if (searchTimeseriesRID === id) {
+      dispatch({
+        type: SET_TIMESERIES,
+        payload: { items: results.data.items },
+      });
+      searchTimeseriesRID = 0;
+    }
   };
 }
 
@@ -95,9 +123,9 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
 
 // Reducer
 export interface TimeseriesState {
-  items?: GetTimeSeriesMetadataDTO[];
+  timeseriesData: { [key: number]: GetTimeSeriesMetadataDTO };
 }
-const initialState: TimeseriesState = {};
+const initialState: TimeseriesState = { timeseriesData: {} };
 
 export default function timeseries(
   state = initialState,
@@ -108,20 +136,20 @@ export default function timeseries(
       const { items } = action.payload;
       return {
         ...state,
-        items,
+        timeseriesData: {
+          ...arrayToObjectById(items),
+        },
       };
     }
 
     case REMOVE_ASSET_FROM_TIMESERIES: {
       const { timeseriesId } = action.payload;
-      if (state.items) {
-        const items = state.items.filter(ts => ts.id !== timeseriesId);
-        return {
-          ...state,
-          items,
-        };
-      }
-      return state;
+      const { timeseriesData } = state;
+      delete timeseriesData[timeseriesId];
+      return {
+        ...state,
+        timeseriesData,
+      };
     }
     default:
       return state;
