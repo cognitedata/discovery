@@ -3,11 +3,7 @@ import { sdk } from '../index';
 
 const MIXPANEL_TOKEN = 'fb25742efb56d116b736515a0ad5f6ef';
 
-const mixpanel = mixpanelConfig.init(
-  MIXPANEL_TOKEN,
-  {},
-  'context'
-);
+const mixpanel = mixpanelConfig.init(MIXPANEL_TOKEN, {}, 'context');
 
 export const trackUsage = (
   event: string,
