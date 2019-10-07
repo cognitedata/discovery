@@ -11,6 +11,7 @@ import {
 } from '../modules/assets';
 import { selectApp, setAssetId, AppState } from '../modules/app';
 import { RootState } from '../reducers/index';
+import { trackUsage } from '../utils/metrics';
 
 const StyledBreadcrumbs = styled(Breadcrumb)`
   z-index: 100;
@@ -56,9 +57,10 @@ class AssetBreadcrumbs extends Component<
       breadcrumbs.push(
         <Breadcrumb.Item key={parentIds[i]}>
           <Button
-            onClick={() =>
-              this.props.setAssetId(this.props.app.rootAssetId!, parentIds[i])
-            }
+            onClick={() => {
+              trackUsage('AssetBreadcrumbs.Clicked', { assetId: parentIds[i] });
+              this.props.setAssetId(this.props.app.rootAssetId!, parentIds[i]);
+            }}
           >
             {all[parentIds[i]] ? all[parentIds[i]].name : 'Loading...'}
           </Button>

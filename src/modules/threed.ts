@@ -6,6 +6,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById } from '../utils/utils';
 import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 export interface ThreeDModel extends Model3D {
   id: number;
@@ -110,6 +111,11 @@ export function setRevisionRepresentAsset(
     dispatch: Dispatch<UpdateRevisionAction>,
     getState: () => RootState
   ) => {
+    trackUsage('3D.setRevisionRepresentAsset', {
+      assetId,
+      revisionId,
+      modelId,
+    });
     try {
       const revision = getState().threed.models[modelId].revisions!.find(
         el => el.id === revisionId
@@ -143,6 +149,11 @@ export function setRevisionRepresentAsset(
 }
 
 export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
+  trackUsage('3D.fetchNode', {
+    nodeId,
+    revisionId,
+    modelId,
+  });
   return async (dispatch: Dispatch<SetNodeAction>) => {
     dispatch({ type: SET_NODE, payload: { currentNode: undefined } });
 

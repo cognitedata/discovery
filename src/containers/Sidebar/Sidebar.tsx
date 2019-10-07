@@ -17,6 +17,7 @@ import AssetPane from './AssetPane';
 import ThreeDPane from './ThreeDPane';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
+import { trackUsage } from '../../utils/metrics';
 
 const { Sider } = Layout;
 
@@ -96,7 +97,10 @@ class Main extends React.Component<Props, State> {
           }
         />
         <RootSelector
-          onChange={el => this.setState({ selectedPane: el.target.value })}
+          onChange={el => {
+            this.setState({ selectedPane: el.target.value });
+            trackUsage('Sidebar.SelectPane', { selectedPane: el.target.value });
+          }}
           value={this.state.selectedPane}
         >
           <Radio.Button value="asset">Asset View</Radio.Button>

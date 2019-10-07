@@ -16,6 +16,7 @@ import {
   setModelAndRevisionAndNode,
 } from '../../modules/app';
 import ModelList from './ModelList';
+import { trackUsage } from '../../utils/metrics';
 
 type OrigProps = {};
 
@@ -37,6 +38,9 @@ class NodeDrawer extends React.Component<Props, State> {
     const parent = await sdk.revisions3D.list3DNodes(modelId!, revisionId!, {
       nodeId,
     });
+    trackUsage('ThreeDPane.SelectParentClicked', {
+      nodeId,
+    });
     if (parent.items.length > 0) {
       this.props.setModelAndRevisionAndNode(
         modelId!,
@@ -49,6 +53,7 @@ class NodeDrawer extends React.Component<Props, State> {
   };
 
   unselectNodeClicked = () => {
+    trackUsage('ThreeDPane.UnselectNodeClicked', {});
     const { modelId, revisionId } = this.props.app;
     if (modelId && revisionId) {
       this.props.setModelAndRevisionAndNode(modelId!, revisionId!);

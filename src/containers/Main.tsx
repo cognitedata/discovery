@@ -26,6 +26,9 @@ import {
 } from '../modules/app';
 import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
 import Sidebar from './Sidebar';
+import TimeseriesPreview from './TimeseriesPreview';
+import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
@@ -153,6 +156,12 @@ class Main extends React.Component<Props, State> {
       }
       localStorage.removeItem(LAYOUT_LOCAL_STORAGE);
     }
+
+    trackUsage('App Started', {
+      project: sdk.project,
+      reinitializeLayout: layout.length === 0,
+    });
+
     if (layout.length === 0) {
       layout = [
         {
@@ -173,6 +182,7 @@ class Main extends React.Component<Props, State> {
         },
       ];
     }
+
     this.state = {
       editLayout: false,
       layout,
@@ -222,6 +232,7 @@ class Main extends React.Component<Props, State> {
   };
 
   onAddComponent = () => {
+    trackUsage('Main.ComponentedAdded');
     const i =
       this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
       1;
@@ -244,6 +255,7 @@ class Main extends React.Component<Props, State> {
   };
 
   changeEdit = (edit = false) => {
+    trackUsage('Main.LayoutEdit', { edit });
     this.setState({
       editLayout: edit,
     });
@@ -255,6 +267,18 @@ class Main extends React.Component<Props, State> {
       viewType: this.state.layout.find(it => it.i === el.i)!.viewType,
     }));
     this.setState({ layout });
+    // Track usage where the size has changed.
+    trackUsage('Main.LayoutSizeChange', {
+      layoutChanged: newLayout.filter(el => {
+        const orig = this.state.layout.find(it => it.i === el.i)!;
+        return (
+          orig.x !== el.x ||
+          orig.y !== el.y ||
+          orig.w !== el.w ||
+          orig.h !== el.h
+        );
+      }),
+    });
     localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(layout));
     return true;
   };
@@ -265,6 +289,7 @@ class Main extends React.Component<Props, State> {
     const arrayItem = newArray.find(item => item.i === index);
     if (arrayItem) {
       arrayItem.viewType = type;
+      trackUsage('Main.LayoutTypeChange', { layout: arrayItem, type });
       this.setState({ layout: newArray }, () => {
         localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(newArray));
       });
@@ -275,6 +300,7 @@ class Main extends React.Component<Props, State> {
     const { layout, editLayout } = this.state;
     return (
       <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+        <TimeseriesPreview />
         <Layout>
           <Layout>
             <Sidebar />
@@ -340,6 +366,9 @@ class Main extends React.Component<Props, State> {
                         icon="close-circle"
                         size="small"
                         onClick={() => {
+                          trackUsage('Component Deleted', {
+                            type: layout[i].viewType,
+                          });
                           this.setState({
                             layout: [
                               ...layout.slice(0, i),
