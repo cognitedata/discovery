@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, bindActionCreators } from 'redux';
-import { Select } from 'antd';
 import Model3D from '../components/Model3D';
 import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
@@ -21,12 +20,12 @@ import {
 } from '../modules/app';
 import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
-import AssetNetworkViewer from './NetworkViewers/AssetNetworkViewer';
 import Placeholder from '../components/Placeholder';
 import AssetBreadcrumbs from './AssetBreadcrumbs';
 import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 import FileExplorer from './FileExplorer';
 import { trackUsage } from '../utils/metrics';
+import ComponentSelector from '../components/ComponentSelector';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
@@ -35,7 +34,6 @@ export const ViewerTypeMap: { [key in ViewerType]: string } = {
   vx: 'VX Network Viewer',
   network: 'Force Network Viewer',
   relationship: 'Relationships',
-  oldnetwork: 'Old Network Viewer',
   file: 'File Viewer',
   assetbreadcrumbs: 'Asset Breadcrumbs',
 };
@@ -48,7 +46,6 @@ export type ViewerType =
   | 'vx'
   | 'network'
   | 'relationship'
-  | 'oldnetwork'
   | 'assetbreadcrumbs';
 
 type OwnProps = {
@@ -180,10 +177,6 @@ export class AssetViewer extends React.Component<Props, State> {
     return <AssetTreeViewer />;
   };
 
-  renderOldAssetNetwork = () => {
-    return <AssetNetworkViewer hasResized={false} />;
-  };
-
   renderAssetBreadcrumbs = () => {
     return <AssetBreadcrumbs />;
   };
@@ -203,8 +196,6 @@ export class AssetViewer extends React.Component<Props, State> {
         return this.render3D();
       case 'network':
         return this.renderAssetNetwork();
-      case 'oldnetwork':
-        return this.renderOldAssetNetwork();
       case 'vx':
         return this.renderAssetNetworkVX();
       case 'relationship':
@@ -216,23 +207,11 @@ export class AssetViewer extends React.Component<Props, State> {
       case 'file':
         return this.renderFileExplorer();
       case 'none':
-      default:
+      default: {
         return (
-          <>
-            <h3>Select a Component</h3>
-            <Select
-              style={{ width: '100%' }}
-              placeholder="Choose a View"
-              onChange={this.props.onComponentChange}
-            >
-              {Object.keys(ViewerTypeMap).map((viewType: string) => (
-                <Select.Option key={viewType} value={viewType}>
-                  {`${ViewerTypeMap[viewType as ViewerType]}`}
-                </Select.Option>
-              ))}
-            </Select>
-          </>
+          <ComponentSelector onComponentChange={this.props.onComponentChange} />
         );
+      }
     }
   }
 }
