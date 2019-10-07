@@ -38,15 +38,17 @@ const ComponentSelector = ({
         placeholder="Choose a View"
         onChange={onComponentChange}
       >
-        {Object.keys(views).map(key => (
-          <Select.OptGroup label={key}>
-            {views[key].map(viewType => (
-              <Select.Option key={viewType} value={viewType}>
-                {`${ViewerTypeMap[viewType as ViewerType]}`}
-              </Select.Option>
-            ))}
-          </Select.OptGroup>
-        ))}
+        {Object.keys(views)
+          .sort()
+          .map(key => (
+            <Select.OptGroup label={key}>
+              {views[key].map(viewType => (
+                <Select.Option key={viewType} value={viewType}>
+                  {`${ViewerTypeMap[viewType as ViewerType]}`}
+                </Select.Option>
+              ))}
+            </Select.OptGroup>
+          ))}
       </Select>
     </>
   );
