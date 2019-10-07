@@ -20,6 +20,7 @@ import { ExtendedAsset } from '../modules/assets';
 
 import { fetchNode } from '../modules/threed';
 import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 declare global {
   interface Window {
@@ -184,6 +185,7 @@ class Model3D extends React.Component<Props, State> {
   };
 
   onComplete = () => {
+    trackUsage('3DViewer.Complete');
     this.setState({ progress: undefined });
     let { nodeId } = this.props;
     if (this.state.nodeId) {
@@ -206,6 +208,7 @@ class Model3D extends React.Component<Props, State> {
   };
 
   onClick = (nodeId: number) => {
+    trackUsage('3DViewer.SelectNode', { nodeId });
     this.setState({ nodeId });
   };
 
@@ -220,6 +223,7 @@ class Model3D extends React.Component<Props, State> {
     window.viewer = viewer;
     window.THREE = THREE;
     window.model = model;
+    trackUsage('3DViewer.Ready');
   };
 
   selectNode = async (

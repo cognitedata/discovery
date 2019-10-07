@@ -10,6 +10,7 @@ import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
 import { setRevisionRepresentAsset } from './threed';
+import { trackUsage } from '../utils/metrics';
 
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
@@ -47,6 +48,9 @@ let searchCounter = 0;
 // Functions
 export function searchForAsset(query: string) {
   return async (dispatch: Dispatch) => {
+    trackUsage('Assets.searchForAsset', {
+      query,
+    });
     const currentCounter = searchCounter + 1;
     searchCounter += 1;
 
@@ -242,6 +246,9 @@ export function createNewAsset(
   callback?: (asset: Asset) => void
 ) {
   return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
+    trackUsage('Assets.createNewAsset', {
+      mappedTo3D: !!mappingInfo,
+    });
     try {
       const results = await sdk.assets.create([
         {
@@ -284,6 +291,9 @@ export function createNewAsset(
 
 export function editAsset(asset: AssetChange) {
   return async (dispatch: Dispatch<UpdateAction>) => {
+    trackUsage('Assets.editAsset', {
+      assetd: asset.update.externalId,
+    });
     try {
       const results = await sdk.assets.update([asset]);
 
@@ -304,6 +314,9 @@ export function editAsset(asset: AssetChange) {
 
 export function deleteAsset(assetId: number) {
   return async (dispatch: Dispatch<DeleteAssetAction>) => {
+    trackUsage('Assets.deleteAsset', {
+      assetId,
+    });
     try {
       const results = await sdk.assets.delete([{ id: assetId }], {
         recursive: true,

@@ -24,6 +24,7 @@ import Placeholder from '../components/Placeholder';
 import AssetBreadcrumbs from './AssetBreadcrumbs';
 import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 import FileExplorer from './FileExplorer';
+import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
@@ -85,6 +86,7 @@ export class AssetViewer extends React.Component<Props, State> {
       this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
     }
+    trackUsage('AssetViewer.ComponentMounted', { type: this.props.type });
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -95,6 +97,9 @@ export class AssetViewer extends React.Component<Props, State> {
       this.props.doFetchFiles(this.props.app.assetId);
       this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
+    }
+    if (prevProps.type !== this.props.type) {
+      trackUsage('AssetViewer.ComponentMounted', { type: this.props.type });
     }
   }
 

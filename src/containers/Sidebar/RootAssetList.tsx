@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../../reducers/index';
 import { selectApp, setAssetId } from '../../modules/app';
+import { trackUsage } from '../../utils/metrics';
 import {
   selectAssets,
   fetchRootAssets,
@@ -36,7 +37,12 @@ class ModelList extends Component<Props, {}> {
         renderItem={item => {
           return (
             <List.Item
-              onClick={() => this.props.setAssetId(item.rootId, item.id)}
+              onClick={() => {
+                this.props.setAssetId(item.rootId, item.id);
+                trackUsage('RootAssetList.SelectAsset', {
+                  assetId: item.rootId,
+                });
+              }}
               style={{
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',

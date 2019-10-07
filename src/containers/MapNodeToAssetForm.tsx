@@ -14,6 +14,7 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from '../modules/assetmappings';
 import { selectApp, AppState } from '../modules/app';
+import { trackSearchUsage } from '../utils/metrics';
 
 const { Option } = Select;
 
@@ -50,6 +51,9 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
   }
 
   doSearch = async (query: string) => {
+    trackSearchUsage('MapNodeToAsset', 'Asset', {
+      query,
+    });
     if (query.length > 0) {
       this.setState({ fetching: true });
       const results = await sdk.assets.search({
