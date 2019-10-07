@@ -168,7 +168,7 @@ class EditAssetModal extends React.Component<Props, State> {
     return (
       <Modal
         visible
-        title="Change Asset Parent"
+        title="Edit Asset"
         onCancel={this.props.onClose}
         footer={[
           <Button key="submit" type="primary" onClick={this.saveChanges}>
