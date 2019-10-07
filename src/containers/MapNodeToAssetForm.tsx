@@ -14,7 +14,7 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from '../modules/assetmappings';
 import { selectApp, AppState } from '../modules/app';
-import { trackUsage } from '../utils/metrics';
+import { trackSearchUsage } from '../utils/metrics';
 
 const { Option } = Select;
 
@@ -51,9 +51,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
   }
 
   doSearch = async (query: string) => {
-    trackUsage('Search', {
-      type: 'asset',
-      location: 'MapNodeToAsset',
+    trackSearchUsage('MapNodeToAsset', 'Asset', {
       query,
     });
     if (query.length > 0) {
@@ -76,11 +74,6 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
     const { assetId, assetName, parentAssetId } = this.state;
     const { modelId, revisionId, nodeId } = this.props.app;
     if (assetName && assetName.length > 0 && parentAssetId) {
-      trackUsage('MapNodeToAsset', {
-        type: 'new',
-        name: assetName,
-        parentId: parentAssetId,
-      });
       this.props.createNewAsset(
         { name: assetName, parentId: parentAssetId },
         {
@@ -90,10 +83,6 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
         }
       );
     } else if (assetId) {
-      trackUsage('MapNodeToAsset', {
-        type: 'existing',
-        assetId,
-      });
       this.props.createAssetNodeMapping(
         modelId!,
         revisionId!,

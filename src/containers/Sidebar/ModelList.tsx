@@ -5,6 +5,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { selectThreeD, fetchModels, ThreeDState } from '../../modules/threed';
 import { RootState } from '../../reducers/index';
 import { selectApp, setModelAndRevisionAndNode } from '../../modules/app';
+import { trackUsage } from '../../utils/metrics';
 
 type Props = {
   setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
@@ -49,9 +50,12 @@ class ModelList extends Component<Props, {}> {
                   textOverflow: 'ellipsis',
                   overflow: 'hidden',
                 }}
-                onClick={() =>
-                  this.props.setModelAndRevisionAndNode(item.id, revision.id)
-                }
+                onClick={() => {
+                  this.props.setModelAndRevisionAndNode(item.id, revision.id);
+                  trackUsage('ModelList.SelectModel', {
+                    modelId: item.id,
+                  });
+                }}
               >
                 <Icon type="code-sandbox" />
                 {item.name}

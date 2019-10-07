@@ -38,7 +38,7 @@ function ModelList({
             <Link
               to={`/${tenant}/models/${item.id}/${revision.id}`}
               onClick={() =>
-                trackUsage('Load3DModel', {
+                trackUsage('ModelList.Click', {
                   modelId: item.id,
                   revisionId: revision.id,
                 })

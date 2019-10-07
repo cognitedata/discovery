@@ -19,7 +19,7 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { BetterTag } from '../components/BetterTag';
 import { ExtendedAsset } from '../modules/assets';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage, trackSearchUsage } from '../utils/metrics';
 
 const Overlay = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'block' : 'none')};
@@ -238,25 +238,25 @@ class AssetSearch extends Component<Props, State> {
       this.searchForAsset(this.state.query);
     }
     if (prevState.currentRootOnly !== this.state.currentRootOnly) {
-      trackUsage('SearchFilterToggled', {
+      trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'rootOnly',
         value: this.state.currentRootOnly,
       });
     }
     if (prevState.addingEventFilter !== this.state.addingEventFilter) {
-      trackUsage('SearchFilterToggled', {
+      trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'eventFilter',
         value: this.state.addingEventFilter,
       });
     }
     if (prevState.addingLocationFilter !== this.state.addingLocationFilter) {
-      trackUsage('SearchFilterToggled', {
+      trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'locationFilter',
         value: this.state.addingLocationFilter,
       });
     }
     if (prevState.addingSourceFilter !== this.state.addingSourceFilter) {
-      trackUsage('SearchFilterToggled', {
+      trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'sourceFilter',
         value: this.state.addingSourceFilter,
       });
@@ -298,8 +298,7 @@ class AssetSearch extends Component<Props, State> {
       this.queryId = this.queryId + 1;
       const queryId = 0 + this.queryId;
       if (isParentQuery) {
-        trackUsage('Search', {
-          type: 'parentFilter',
+        trackSearchUsage('GlobalSearch', 'ParentFilter', {
           query,
         });
         const results = await sdk.post(
@@ -435,8 +434,7 @@ class AssetSearch extends Component<Props, State> {
           results = results.filter(asset => events!.has(asset.id));
         }
         if (queryId === this.queryId) {
-          trackUsage('Search', {
-            type: 'asset',
+          trackSearchUsage('GlobalSearch', 'Asset', {
             query,
             filters: filterMap,
           });
@@ -473,7 +471,8 @@ class AssetSearch extends Component<Props, State> {
     return set;
   };
 
-  onAssetClicked = (item: Asset) => {
+  onAssetClicked = (item: Asset, index: number) => {
+    trackUsage('GlobalSearch.AssetClicked', { assetId: item.id, index });
     this.setState({
       showSearchExtended: false,
     });
@@ -925,9 +924,9 @@ class AssetSearch extends Component<Props, State> {
                 <ListWrapper>
                   <List
                     dataSource={results}
-                    renderItem={(item: Asset) => {
+                    renderItem={(item: Asset, i: number) => {
                       return (
-                        <ListItem onClick={() => this.onAssetClicked(item)}>
+                        <ListItem onClick={() => this.onAssetClicked(item, i)}>
                           <h4>{item.name}</h4>
                           <p>{item.description}</p>
                         </ListItem>

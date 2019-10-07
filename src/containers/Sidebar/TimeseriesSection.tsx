@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { List, Button, Icon, Popconfirm, Pagination, Input } from 'antd';
 import moment from 'moment';
-import mixpanel from 'mixpanel-browser';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import debounce from 'lodash/debounce';
@@ -17,6 +16,7 @@ import AddTimeseries from '../Modals/AddTimeseriesModal';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState, setTimeseriesId } from '../../modules/app';
+import { trackUsage } from '../../utils/metrics';
 
 const ListItemContent = styled.div`
   display: flex;
@@ -69,8 +69,7 @@ class TimeseriesSection extends React.Component<Props, State> {
   }
 
   addTimeseriesClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
-    // @ts-ignore
-    mixpanel.context.track('addTimeseries.click', {
+    trackUsage('TimeseriesSection.AddTimeseriesClicked', {
       assetId: this.props.app.assetId,
     });
     this.setState({ showAddTimeseries: true });
@@ -90,6 +89,9 @@ class TimeseriesSection extends React.Component<Props, State> {
   };
 
   timeseriesOnClick = (timeseriesId: number) => {
+    trackUsage('TimeseriesSection.ViewTimeseries', {
+      timeseriesId,
+    });
     this.props.setTimeseriesId(timeseriesId);
   };
 
@@ -167,7 +169,10 @@ class TimeseriesSection extends React.Component<Props, State> {
           simple
           current={timeseriesTablePage + 1}
           total={timeseriesItems ? timeseriesItems.length : 0}
-          onChange={page => this.setState({ timeseriesTablePage: page - 1 })}
+          onChange={page => {
+            this.setState({ timeseriesTablePage: page - 1 });
+            trackUsage('TimeseriesSection.PaginationChange', { page });
+          }}
         />
       </>
     );

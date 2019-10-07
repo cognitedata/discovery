@@ -120,10 +120,13 @@ class PNIDViewer extends React.Component<Props, State> {
       const exactMatches = result.filter(a => a.name === name);
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
-        trackUsage('PNIDViewer.findAsset', { id: asset.id });
+        trackUsage('PNIDViewer.searchAndSelectAssetName', {
+          id: asset.id,
+          query: name,
+        });
       } else {
         message.info('Did not find any asset associated to this object.');
-        trackUsage('PNIDViewer.findAssetError', { query: name });
+        trackUsage('PNIDViewer.searchAndSelectAssetNameError', { query: name });
         return;
       }
     } else {
@@ -151,13 +154,13 @@ class PNIDViewer extends React.Component<Props, State> {
         id: exactMatch.id,
         fileName: exactMatch.name,
       });
-      trackUsage('PNIDViewer.viewFile', {
+      trackUsage('PNIDViewer.loadNextPNID', {
         id: exactMatch.id,
         fromParsedPNID: true,
       });
     } else {
       message.info('Did not find next pnid graph');
-      trackUsage('PNIDViewer.loadNextError', { query: name });
+      trackUsage('PNIDViewer.loadNextPNIDError', { query: name });
       return;
     }
     this.setState({ currentFiles, currentIndex: currentFiles.length - 1 });

@@ -231,7 +231,7 @@ class Main extends React.Component<Props, State> {
   };
 
   onAddComponent = () => {
-    trackUsage('Componented Added');
+    trackUsage('Main.ComponentedAdded');
     const i =
       this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
       1;
@@ -254,7 +254,7 @@ class Main extends React.Component<Props, State> {
   };
 
   changeEdit = (edit = false) => {
-    trackUsage('LayoutEdit', { edit });
+    trackUsage('Main.LayoutEdit', { edit });
     this.setState({
       editLayout: edit,
     });
@@ -266,6 +266,18 @@ class Main extends React.Component<Props, State> {
       viewType: this.state.layout.find(it => it.i === el.i)!.viewType,
     }));
     this.setState({ layout });
+    // Track usage where the size has changed.
+    trackUsage('Main.LayoutSizeChange', {
+      layoutChanged: newLayout.filter(el => {
+        const orig = this.state.layout.find(it => it.i === el.i)!;
+        return (
+          orig.x !== el.x ||
+          orig.y !== el.y ||
+          orig.w !== el.w ||
+          orig.h !== el.h
+        );
+      }),
+    });
     localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(layout));
     return true;
   };
@@ -276,6 +288,7 @@ class Main extends React.Component<Props, State> {
     const arrayItem = newArray.find(item => item.i === index);
     if (arrayItem) {
       arrayItem.viewType = type;
+      trackUsage('Main.LayoutTypeChange', { layout: arrayItem, type });
       this.setState({ layout: newArray }, () => {
         localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(newArray));
       });

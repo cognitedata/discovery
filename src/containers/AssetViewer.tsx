@@ -89,7 +89,7 @@ export class AssetViewer extends React.Component<Props, State> {
       this.props.doFetchAsset(this.props.app.assetId);
       this.getNodeId(true);
     }
-    trackUsage('Component Mounted', { type: this.props.type });
+    trackUsage('AssetViewer.ComponentMounted', { type: this.props.type });
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -102,7 +102,7 @@ export class AssetViewer extends React.Component<Props, State> {
       this.getNodeId(true);
     }
     if (prevProps.type !== this.props.type) {
-      trackUsage('Component Changed', { type: this.props.type });
+      trackUsage('AssetViewer.ComponentMounted', { type: this.props.type });
     }
   }
 

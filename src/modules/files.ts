@@ -3,6 +3,7 @@ import { Dispatch, Action } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 // Constants
 export const ADD_FILES = 'files/SET_FILES';
@@ -17,6 +18,9 @@ interface AddFilesAction extends Action<typeof ADD_FILES> {
 type FilesAction = AddFilesAction;
 
 export function fetchFiles(assetId: number) {
+  trackUsage('Files.fetchFiles', {
+    assetId,
+  });
   return async (dispatch: Dispatch) => {
     const result = await sdk.files.list({
       filter: { assetIds: [assetId] },
