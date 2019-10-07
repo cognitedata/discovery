@@ -57,9 +57,6 @@ export async function createEvent(
 
 export function fetchEvents(assetId: number) {
   return async (dispatch: Dispatch) => {
-    trackUsage('Events.fetchEvents', {
-      assetId,
-    });
     const result = await sdk.events.list({
       filter: { assetIds: [assetId] },
       limit: 1000,

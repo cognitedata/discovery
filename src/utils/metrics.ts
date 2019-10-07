@@ -1,5 +1,11 @@
-import mixpanel from 'mixpanel-browser';
+import * as mixpanelConfig from 'mixpanel-browser';
 import { sdk } from '../index';
+
+const mixpanel = mixpanelConfig.init(
+  'fb25742efb56d116b736515a0ad5f6ef',
+  {},
+  'context'
+);
 
 export const trackUsage = (
   event: string,
