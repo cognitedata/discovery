@@ -4,6 +4,7 @@ import { CogniteEvent } from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 export interface EventFilter {
   eventType?: string;
@@ -35,6 +36,10 @@ export async function createEvent(
   assetIds?: number[],
   metadata?: { [key: string]: any }
 ) {
+  trackUsage('Events.createEvent', {
+    assetIds,
+    subtype,
+  });
   const now = Date.now(); // ms
   // Create event for this mapping
   await sdk.events.create([

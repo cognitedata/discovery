@@ -16,6 +16,7 @@ import {
 import { AppState, setAssetId, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import NoAssetSelected from '../../components/Placeholder';
+import { trackUsage } from '../../utils/metrics';
 
 const BGCOLOR = '#101020';
 
@@ -232,9 +233,12 @@ class TreeViewer extends Component<Props, State> {
           backgroundColor={BGCOLOR}
           linkColor={() => 'rgba(255,255,255,0.2)'}
           nodeRelSize={1}
-          onNodeClick={(node: any) =>
-            this.props.setAssetId(node.rootId, node.id)
-          }
+          onNodeClick={(node: any) => {
+            this.props.setAssetId(node.rootId, node.id);
+            trackUsage('AssetTreeViewer.AssetClicked', {
+              assetId: node.id,
+            });
+          }}
           nodeId="id"
           nodeVal={(node: any) => 400 / (node.level + 1)}
           nodeLabel="name"
@@ -272,7 +276,12 @@ class TreeViewer extends Component<Props, State> {
             style={{ width: '200px' }}
             placeholder="Choose a layout"
             value={controls}
-            onChange={(val: string) => this.setState({ controls: val })}
+            onChange={(val: string) => {
+              this.setState({ controls: val });
+              trackUsage('AssetTreeViewer.LayoutChange', {
+                layout: val,
+              });
+            }}
           >
             {['td', 'bu', 'lr', 'rl', 'radialout', 'radialin', 'none'].map(
               el => (

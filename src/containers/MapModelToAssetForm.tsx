@@ -12,6 +12,7 @@ import { selectAssets, AssetsState, createNewAsset } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import { selectApp, AppState } from '../modules/app';
 import { sdk } from '../index';
+import { trackSearchUsage } from '../utils/metrics';
 
 type OrigProps = {};
 
@@ -57,6 +58,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   doSearch = async (query: string) => {
+    trackSearchUsage('MapModelToAsset', 'Asset', {
+      query,
+      isRoot: true,
+    });
     // TODO filter already assigned ones!
     if (query.length > 0) {
       this.setState({ fetching: true });

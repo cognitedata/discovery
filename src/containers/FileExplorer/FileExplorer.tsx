@@ -26,6 +26,7 @@ import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
 import FilePreview from './FilePreview';
+import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 
 const { TabPane } = Tabs;
 
@@ -268,6 +269,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       }
     }
     if (thisQuery === this.currentQuery) {
+      trackSearchUsage('FileExplorer', 'File', { query, tab });
       this.setState({
         searchResults: results.slice(0, results.length),
         fetching: false,
@@ -323,6 +325,15 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     });
   };
 
+  onClickDocument = (documentId: FilesMetadata, index: number) => {
+    const { current, tab } = this.state;
+    this.setState({ selectedDocument: documentId });
+    trackUsage('FileExplorer.SelectItem', {
+      index: current * 20 + index,
+      tab,
+    });
+  };
+
   renderImages = () => {
     const { current } = this.state;
     return (
@@ -336,7 +347,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                 role="button"
                 tabIndex={i}
                 onKeyDown={() => this.setState({ selectedDocument: image })}
-                onClick={() => this.setState({ selectedDocument: image })}
+                onClick={() => this.onClickDocument(image, i)}
               >
                 <div
                   className="image"
@@ -363,7 +374,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <Table
           dataSource={searchResults.slice(current * 20, current * 20 + 20)}
           pagination={false}
-          onRowClick={item => this.setState({ selectedDocument: item })}
+          onRowClick={(item, i) => this.onClickDocument(item, i)}
           columns={[
             {
               title: 'Name',
@@ -449,6 +460,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           activeKey={tab}
           tabPosition="left"
           onChange={(selectedTab: string) => {
+            trackUsage('FileExplorer.ChangeTab', { selectedTab });
             this.setState({
               tab: selectedTab as FileExplorerTabsType,
               current: 0,

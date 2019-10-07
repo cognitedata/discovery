@@ -47,7 +47,7 @@
 		"lodash": "^4.17.15",
 		"makecancelable": "^1.1.1",
 		"mixpanel": "^0.10.2",
-		"mixpanel-browser": "^2.29.0",
+		"mixpanel-browser": "^2.29.1",
 		"moment": "^2.24.0",
 		"prop-types": "^15.6.2",
 		"query-string": "^6.5.0",
