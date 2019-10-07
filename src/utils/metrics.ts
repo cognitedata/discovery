@@ -1,8 +1,10 @@
 import * as mixpanelConfig from 'mixpanel-browser';
 import { sdk } from '../index';
 
+const MIXPANEL_TOKEN = 'fb25742efb56d116b736515a0ad5f6ef';
+
 const mixpanel = mixpanelConfig.init(
-  'fb25742efb56d116b736515a0ad5f6ef',
+  MIXPANEL_TOKEN,
   {},
   'context'
 );
