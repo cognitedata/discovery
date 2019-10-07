@@ -46,22 +46,17 @@ export function searchTimeseries(query: string, assetId?: number) {
     });
     searchTimeseriesRID += 1;
     const id = searchTimeseriesRID;
-    const results = await sdk.post(
-      `/api/playground/projects/${sdk.project}/timeseries/search`,
-      {
-        data: {
-          filter: {
-            ...(assetId && { assetIds: [assetId] }),
-          },
-          limit: 1000,
-          search: { query },
-        },
-      }
-    );
+    const results = await sdk.timeseries.search({
+      filter: {
+        ...(assetId && { assetIds: [assetId] }),
+      },
+      limit: 1000,
+      search: { query },
+    });
     if (searchTimeseriesRID === id) {
       dispatch({
         type: SET_TIMESERIES,
-        payload: { items: results.data.items },
+        payload: { items: results },
       });
       searchTimeseriesRID = 0;
     }
