@@ -11,6 +11,7 @@ import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { selectApp, AppState, setAssetId } from '../modules/app';
 import Placeholder from '../components/Placeholder';
+import { trackUsage } from '../utils/metrics';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
   (node.textContent || '').replace(/\s/g, '');
@@ -119,8 +120,13 @@ class PNIDViewer extends React.Component<Props, State> {
       const exactMatches = result.filter(a => a.name === name);
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
+        trackUsage('PNIDViewer.searchAndSelectAssetName', {
+          id: asset.id,
+          query: name,
+        });
       } else {
         message.info('Did not find any asset associated to this object.');
+        trackUsage('PNIDViewer.searchAndSelectAssetNameError', { query: name });
         return;
       }
     } else {
@@ -148,8 +154,13 @@ class PNIDViewer extends React.Component<Props, State> {
         id: exactMatch.id,
         fileName: exactMatch.name,
       });
+      trackUsage('PNIDViewer.loadNextPNID', {
+        id: exactMatch.id,
+        fromParsedPNID: true,
+      });
     } else {
       message.info('Did not find next pnid graph');
+      trackUsage('PNIDViewer.loadNextPNIDError', { query: name });
       return;
     }
     this.setState({ currentFiles, currentIndex: currentFiles.length - 1 });
@@ -250,6 +261,7 @@ class PNIDViewer extends React.Component<Props, State> {
             <Button
               type="link"
               onClick={() => {
+                trackUsage('PNIDViewer.viewFile', { id: item.id });
                 this.setState({
                   currentFiles: [{ id: item.id, fileName: item.name }],
                   currentIndex: 0,

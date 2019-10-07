@@ -7,6 +7,7 @@ import debounce from 'lodash/debounce';
 import { ExtendedAsset, editAsset } from '../../modules/assets';
 import { sdk } from '../../index';
 import { RootState } from '../../reducers/index';
+import { trackSearchUsage } from '../../utils/metrics';
 
 type Props = {
   assetId: number;
@@ -39,6 +40,7 @@ class AddChildAsset extends React.Component<Props, State> {
 
   doSearch = async (query: string) => {
     if (query.length > 0) {
+      trackSearchUsage('AddChildAssetModal', 'Asset', { query });
       this.setState({ fetching: true });
       const results = await sdk.assets.search({
         search: { name: query },

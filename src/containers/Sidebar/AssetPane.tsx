@@ -15,7 +15,6 @@ import {
 
 import styled from 'styled-components';
 import moment from 'moment';
-import mixpanel from 'mixpanel-browser';
 import { bindActionCreators, Dispatch } from 'redux';
 import { CogniteEvent, FilesMetadata } from '@cognite/sdk';
 import {
@@ -56,6 +55,7 @@ import { selectApp, AppState, setAssetId } from '../../modules/app';
 import RootAssetList from './RootAssetList';
 import MapNodeToAssetForm from '../MapNodeToAssetForm';
 import TimeseriesSection from './TimeseriesSection';
+import { trackUsage } from '../../utils/metrics';
 
 const { Panel } = Collapse;
 
@@ -155,13 +155,20 @@ class AssetDrawer extends React.Component<Props, State> {
 
   addTypeClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     const { asset } = this.state;
-    // @ts-ignore
-    mixpanel.context.track('addType.click', { asset });
+    trackUsage('AssetPane.AddTypeClick', {
+      assetId: asset && asset.id,
+    });
     this.setState({ showAddTypes: true });
     event.stopPropagation();
   };
 
   onModalClose = () => {
+    trackUsage('AssetPane.HideModals', {
+      showEvent: this.state.showEvent,
+      showAddChild: this.state.showAddChild,
+      showEditParent: this.state.showEditParent,
+      showAddTypes: this.state.showAddTypes,
+    });
     this.setState({
       showEvent: undefined,
       showAddChild: false,
@@ -171,6 +178,9 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   eventOnClick = (eventId: number) => {
+    trackUsage('AssetPane.EventClick', {
+      eventId,
+    });
     this.setState({ showEvent: eventId });
   };
 
@@ -233,6 +243,9 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   onCollapseChange = (change: string | string[]) => {
+    trackUsage('AssetPane.VisiblePanes', {
+      change,
+    });
     this.setState({ activeCollapsed: change as string[] });
   };
 
@@ -253,7 +266,13 @@ class AssetDrawer extends React.Component<Props, State> {
     const opintUrl = `https://opint.cogniteapp.com/${project}/assets/${assetId}`;
     return (
       <Panel header={<span>External links</span>} key="links">
-        <Button type="link" onClick={() => window.open(opintUrl)}>
+        <Button
+          type="link"
+          onClick={() => {
+            window.open(opintUrl);
+            trackUsage('AssetPane.OpenInsights', {});
+          }}
+        >
           Operational Intelligence
         </Button>
       </Panel>
@@ -314,7 +333,10 @@ class AssetDrawer extends React.Component<Props, State> {
         <br />
         <Button
           type="primary"
-          onClick={() => this.setState({ showAddChild: true })}
+          onClick={() => {
+            this.setState({ showAddChild: true });
+            trackUsage('AssetEditSection.ShowAdd', {});
+          }}
         >
           Add Child Asset
         </Button>
@@ -322,7 +344,10 @@ class AssetDrawer extends React.Component<Props, State> {
         <br />
         <Button
           type="primary"
-          onClick={() => this.setState({ showEditParent: true })}
+          onClick={() => {
+            this.setState({ showEditParent: true });
+            trackUsage('AssetEditSection.ShowEditParent', {});
+          }}
         >
           Change Asset Parent
         </Button>
@@ -389,7 +414,10 @@ class AssetDrawer extends React.Component<Props, State> {
           simple
           current={documentsTablePage + 1}
           total={files ? files.length : 0}
-          onChange={page => this.setState({ documentsTablePage: page - 1 })}
+          onChange={page => {
+            this.setState({ documentsTablePage: page - 1 });
+            trackUsage('DocumentSection.PaginationChange', { page });
+          }}
         />
       </Panel>
     );

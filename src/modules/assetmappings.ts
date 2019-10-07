@@ -5,6 +5,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { DELETE_ASSETS, DeleteAssetAction } from './assets';
+import { trackUsage } from '../utils/metrics';
 
 // Constants
 export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
@@ -149,6 +150,10 @@ export function createAssetNodeMapping(
   assetId: number
 ) {
   return async (dispatch: Dispatch) => {
+    trackUsage('AssetMappings.createAssetNodeMapping', {
+      modelId,
+      assetId,
+    });
     try {
       const mappings = await sdk.assetMappings3D.create(modelId, revisionId, [
         {
@@ -179,6 +184,10 @@ export function deleteAssetNodeMapping(
   assetId: number
 ) {
   return async (dispatch: Dispatch, getState: () => RootState) => {
+    trackUsage('AssetMappings.deleteAssetNodeMapping', {
+      modelId,
+      assetId,
+    });
     const { byAssetId } = getState().assetMappings;
     if (byAssetId[assetId]) {
       try {

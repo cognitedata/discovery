@@ -4,6 +4,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
+import { trackUsage } from '../utils/metrics';
 import {
   UPDATE_REVISON,
   UpdateRevisionAction,
@@ -48,6 +49,11 @@ export const setModelAndRevisionAndNode = (
   >,
   getState: () => RootState
 ) => {
+  trackUsage('App.setModelAndRevisionAndNode', {
+    modelId,
+    revisionId,
+    nodeId,
+  });
   const {
     threed: { representsAsset },
     assetMappings: { byNodeId },
@@ -92,6 +98,9 @@ export const setAssetId = (
   >,
   getState: () => RootState
 ) => {
+  trackUsage('App.setAssetId', {
+    assetId,
+  });
   const {
     threed: { representsAsset },
     assetMappings: { byAssetId },
@@ -122,6 +131,9 @@ export const setTimeseriesId = (timeseriesId?: number) => async (
   >,
   getState: () => RootState
 ) => {
+  trackUsage('App.setTimeseriesId', {
+    timeseriesId,
+  });
   if (!timeseriesId) {
     dispatch({
       type: SET_APP_STATE,

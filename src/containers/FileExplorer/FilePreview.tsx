@@ -16,6 +16,7 @@ import {
   FileExplorerTabsType,
 } from './FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { trackUsage } from '../../utils/metrics';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -149,6 +150,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   detectAssetClicked = async (fileId: number) => {
     this.setState({ detectingAsset: true });
     try {
+      trackUsage('FilePreview.DetectAsset', { fileId });
       const response = await sdk.post(
         `/api/playground/projects/${sdk.project}/context/string-matcher/extract`,
         {
@@ -172,6 +174,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   onAssetSelected = async (asset: { page: number; name: string }) => {
+    trackUsage('FilePreview.DetectAsset.AssetSelected', { asset });
     const [result] = await sdk.assets.search({
       search: { name: asset.name },
     });
@@ -310,16 +313,20 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           <>
             <StyledPDFViewer
               file={filePreviewUrl}
-              onLoadSuccess={file =>
+              onLoadSuccess={file => {
+                trackUsage('FilePreview.PDFLoadingSuccess', {});
                 this.setState({
                   pdfState: {
                     numPages: file.numPages,
                     page: 1,
                     isError: false,
                   },
-                })
-              }
+                });
+              }}
               onLoadError={() => {
+                trackUsage('FilePreview.PDFLoadingFailed', {
+                  fileId: this.props.selectedDocument.id,
+                });
                 this.setState({
                   pdfState: {
                     numPages: 0,
@@ -332,15 +339,15 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               <Page pageNumber={pdfState.page} />
             </StyledPDFViewer>
             <Pagination
-              onChange={page =>
+              onChange={page => {
                 this.setState(state => ({
                   ...state,
                   pdfState: {
                     ...state.pdfState,
                     page,
                   },
-                }))
-              }
+                }));
+              }}
               current={pdfState.page}
               total={pdfState.numPages}
               pageSize={1}

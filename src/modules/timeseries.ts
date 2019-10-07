@@ -1,5 +1,4 @@
 import { createAction } from 'redux-actions';
-import mixpanel from 'mixpanel-browser';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -8,6 +7,7 @@ import { fetchEvents, createEvent } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
+import { trackUsage } from '../utils/metrics';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -26,6 +26,9 @@ type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
 // Functions
 export function fetchTimeseries(assetId: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    trackUsage('Timeseries.fetchTimeseries', {
+      assetId,
+    });
     const results = await sdk.timeseries.list({
       assetIds: [assetId],
       limit: 1000,
@@ -37,6 +40,10 @@ let searchTimeseriesRID = 0;
 // Functions
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    trackUsage('Timeseries.fetchTimeseries', {
+      assetId,
+      query,
+    });
     searchTimeseriesRID += 1;
     const id = searchTimeseriesRID;
     const results = await sdk.post(
@@ -66,6 +73,10 @@ export function removeAssetFromTimeseries(
   assetId: number
 ) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+    trackUsage('Timeseries.removeAssetFromTimeseries', {
+      assetId,
+      timeseriesId,
+    });
     await sdk.timeseries.update([
       {
         id: timeseriesId,
@@ -95,8 +106,7 @@ export function removeAssetFromTimeseries(
 
 export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    // @ts-ignore
-    mixpanel.context.track('Timeseries.addToAsset', {
+    trackUsage('Timeseries.addTimeseriesToAsset', {
       assetId,
       timeseriesIds,
     });
