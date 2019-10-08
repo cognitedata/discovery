@@ -9,7 +9,9 @@ import 'antd/dist/antd.css';
 import './styles/globalStyles.css';
 import * as serviceWorker from './utils/serviceWorker';
 
-export const sdk = new CogniteClient({ appId: 'Digital Twin Explorer' });
+export const sdk = new CogniteClient({
+  appId: 'Discovery',
+});
 
 render(
   <ClientSDKProvider client={sdk}>
