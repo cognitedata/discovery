@@ -122,7 +122,7 @@ type State = {
   fetching: boolean;
   query: string;
   searchResults: FilesMetadata[];
-  imageUrls: { [id: number]: string | boolean };
+  imageUrls: { [id: number]: string | false };
   selectedDocument?: FilesMetadataWithDownload;
 };
 
@@ -168,6 +168,16 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     ) {
       this.fetchImageUrls();
     }
+  }
+
+  componentWillUnmount() {
+    const { imageUrls } = this.state;
+    Object.keys(imageUrls).forEach((key: string) => {
+      const val = imageUrls[Number(key)];
+      if (val) {
+        URL.revokeObjectURL(val);
+      }
+    });
   }
 
   doSearch = async (query?: string) => {
@@ -284,12 +294,15 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   fetchImageUrls = async () => {
-    const { searchResults, current } = this.state;
+    const { searchResults, current, imageUrls } = this.state;
 
     searchResults
       .slice(current * 20, current * 20 + 20)
       .forEach(async result => {
         try {
+          if (imageUrls[result.id]) {
+            return;
+          }
           const response = await sdk.get(
             `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
             {

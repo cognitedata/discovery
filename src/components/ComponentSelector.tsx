@@ -41,7 +41,7 @@ const ComponentSelector = ({
         {Object.keys(views)
           .sort()
           .map(key => (
-            <Select.OptGroup label={key}>
+            <Select.OptGroup label={key} key={key}>
               {views[key].map(viewType => (
                 <Select.Option key={viewType} value={viewType}>
                   {`${ViewerTypeMap[viewType as ViewerType]}`}
