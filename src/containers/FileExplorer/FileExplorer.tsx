@@ -2,12 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Tabs, Pagination, Spin, Input, Table } from 'antd';
-import {
-  FilesMetadata,
-  InternalId,
-  FilesSearchFilter,
-  IdEither,
-} from '@cognite/sdk';
+import { FilesMetadata, FilesSearchFilter } from '@cognite/sdk';
 import styled from 'styled-components';
 import debounce from 'lodash/debounce';
 import moment from 'moment';
@@ -127,7 +122,7 @@ type State = {
   fetching: boolean;
   query: string;
   searchResults: FilesMetadata[];
-  imageUrls: FilesMetadataWithDownload[];
+  imageUrls: { [id: number]: string | false };
   selectedDocument?: FilesMetadataWithDownload;
 };
 
@@ -138,7 +133,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     fetching: false,
     current: 0,
     searchResults: [],
-    imageUrls: [],
+    imageUrls: {},
   };
 
   currentQuery: number = 0;
@@ -175,6 +170,16 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
   }
 
+  componentWillUnmount() {
+    const { imageUrls } = this.state;
+    Object.keys(imageUrls).forEach((key: string) => {
+      const val = imageUrls[Number(key)];
+      if (val) {
+        URL.revokeObjectURL(val);
+      }
+    });
+  }
+
   doSearch = async (query?: string) => {
     const {
       assets: { all: assets },
@@ -192,7 +197,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       },
       limit: 1000,
     };
-    this.setState({ fetching: true, searchResults: [], imageUrls: [] });
+    this.setState({ fetching: true, searchResults: [] });
     let results: FilesMetadata[] = [];
     if (query && query.length > 0) {
       results = await sdk.files.search({
@@ -289,40 +294,46 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   fetchImageUrls = async () => {
-    const { searchResults, current } = this.state;
+    const { searchResults, current, imageUrls } = this.state;
 
-    // WIP, thumbnails
-
-    // const promises = searchResults.map(async result => {
-    //   try {
-    //     return {
-    //       ...result,
-    //       downloadUrl: await sdk.get(
-    //         `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`
-    //       ),
-    //     };
-    //   } catch (e) {
-    //     return result;
-    //   }
-    // });
-
-    // console.log(await Promise.all(promises));
-
-    const ids: IdEither[] = searchResults
+    searchResults
       .slice(current * 20, current * 20 + 20)
-      .map(el => ({ id: el.id }));
-    const urls = await sdk.files.getDownloadUrls(ids);
-    this.setState({
-      imageUrls: searchResults.map(el => {
-        const url = urls.find(
-          downloadUrl => (downloadUrl as InternalId).id === el.id
-        );
-        if (!url) {
-          return { ...el, downloadUrl: undefined };
+      .forEach(async result => {
+        try {
+          if (imageUrls[result.id]) {
+            return;
+          }
+          const response = await sdk.get(
+            `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
+            {
+              responseType: 'arraybuffer',
+            }
+          );
+          if (response.status === 200) {
+            const arrayBufferView = new Uint8Array(response.data);
+            const blob = new Blob([arrayBufferView], {
+              type: response.headers['content-type'],
+            });
+            this.setState(state => ({
+              ...state,
+              imageUrls: {
+                ...state.imageUrls,
+                [result.id]: URL.createObjectURL(blob),
+              },
+            }));
+          } else {
+            throw new Error('Unable to load file');
+          }
+        } catch (e) {
+          this.setState(state => ({
+            ...state,
+            imageUrls: {
+              ...state.imageUrls,
+              [result.id]: false,
+            },
+          }));
         }
-        return { ...el, downloadUrl: url.downloadUrl };
-      }) as FilesMetadataWithDownload[],
-    });
+      });
   };
 
   onClickDocument = (documentId: FilesMetadata, index: number) => {
@@ -335,12 +346,18 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   renderImages = () => {
-    const { current } = this.state;
+    const { current, searchResults, imageUrls } = this.state;
     return (
       <Images>
-        {this.state.imageUrls
+        {searchResults
           .slice(current * 20, current * 20 + 20)
           .map((image, i) => {
+            let imagePlaceholder;
+            if (imageUrls[image.id] === undefined) {
+              imagePlaceholder = <Spin />;
+            } else if (imageUrls[image.id] === false) {
+              imagePlaceholder = <p>Unable to load image.</p>;
+            }
             return (
               <div
                 className="item"
@@ -351,9 +368,9 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               >
                 <div
                   className="image"
-                  style={{ backgroundImage: `url(${image.downloadUrl})` }}
+                  style={{ backgroundImage: `url(${imageUrls[image.id]})` }}
                 >
-                  {!image.downloadUrl && <p>Unable to Load Image</p>}
+                  {imagePlaceholder}
                 </div>
                 <p>{image.name}</p>
                 <p>
@@ -463,6 +480,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             trackUsage('FileExplorer.ChangeTab', { selectedTab });
             this.setState({
               tab: selectedTab as FileExplorerTabsType,
+              searchResults: [],
               current: 0,
             });
           }}
