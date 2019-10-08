@@ -136,6 +136,11 @@ class EditAssetModal extends React.Component<Props, State> {
               set: description,
             },
           }),
+          ...((!description || description.length === 0) && {
+            description: {
+              setNull: true,
+            },
+          }),
           ...(metadata && {
             metadata: {
               set: {
