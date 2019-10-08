@@ -4,7 +4,7 @@ import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
 import { setTenant } from '../modules/app';
-import { sdk } from '..';
+import { sdk } from '../index';
 
 const Wrapper = styled.div`
   display: flex;
