@@ -9,7 +9,6 @@ import {
   Popconfirm,
   Switch,
   Pagination,
-  message,
   Descriptions,
 } from 'antd';
 
@@ -50,7 +49,7 @@ import { sdk } from '../../index';
 import AddChildAsset from '../Modals/AddChildAssetModal';
 import { selectFiles } from '../../modules/files';
 import { deleteAssetNodeMapping } from '../../modules/assetmappings';
-import ChangeAssetParent from '../Modals/ChangeAssetParentModal';
+import EditAssetModal from '../Modals/EditAssetModal';
 import { selectApp, AppState, setAssetId } from '../../modules/app';
 import RootAssetList from './RootAssetList';
 import MapNodeToAssetForm from '../MapNodeToAssetForm';
@@ -111,7 +110,7 @@ type Props = {
 type State = {
   showAddChild: boolean;
   showAddTypes: boolean;
-  showEditParent: boolean;
+  showeditAsset: boolean;
   showEvent?: number;
   asset?: ExtendedAsset;
   activeCollapsed?: any[];
@@ -123,7 +122,7 @@ type State = {
 class AssetDrawer extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     showAddChild: false,
-    showEditParent: false,
+    showeditAsset: false,
     showEditHierarchy: false,
     disableEditHierarchy: true,
     documentsTablePage: 0,
@@ -138,10 +137,18 @@ class AssetDrawer extends React.Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { doFetchTimeseries, doFetchEvents, app } = this.props;
+    const {
+      doFetchTimeseries,
+      doFetchEvents,
+      app,
+      assets: { all },
+    } = this.props;
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      this.resetState();
+    }
+    if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
       this.resetState();
     }
   }
@@ -166,13 +173,13 @@ class AssetDrawer extends React.Component<Props, State> {
     trackUsage('AssetPane.HideModals', {
       showEvent: this.state.showEvent,
       showAddChild: this.state.showAddChild,
-      showEditParent: this.state.showEditParent,
+      showeditAsset: this.state.showeditAsset,
       showAddTypes: this.state.showAddTypes,
     });
     this.setState({
       showEvent: undefined,
       showAddChild: false,
-      showEditParent: false,
+      showeditAsset: false,
       showAddTypes: false,
     });
   };
@@ -309,28 +316,6 @@ class AssetDrawer extends React.Component<Props, State> {
     } = this.props;
     return (
       <Panel header={<span>Edit Asset Hierarchy</span>} key="edit">
-        <Popconfirm
-          title="Are you sure you want to unmap the 3D node?"
-          onConfirm={() => {
-            if (revisionId && modelId) {
-              this.props.deleteAssetNodeMapping(modelId, revisionId, asset.id);
-              this.props.setAssetId(
-                rootAssetId!,
-                asset.parentId || asset.rootId
-              );
-            } else {
-              message.info('Nothing to unmap');
-            }
-          }}
-          okText="Yes"
-          cancelText="No"
-        >
-          <Button type="danger" disabled={!revisionId || !modelId}>
-            Unmap 3D Node
-          </Button>
-        </Popconfirm>
-        <br />
-        <br />
         <Button
           type="primary"
           onClick={() => {
@@ -345,11 +330,11 @@ class AssetDrawer extends React.Component<Props, State> {
         <Button
           type="primary"
           onClick={() => {
-            this.setState({ showEditParent: true });
-            trackUsage('AssetEditSection.ShowEditParent', {});
+            this.setState({ showeditAsset: true });
+            trackUsage('AssetEditSection.ShoweditAsset', {});
           }}
         >
-          Change Asset Parent
+          Edit Asset
         </Button>
         <br />
         <br />
@@ -456,12 +441,7 @@ class AssetDrawer extends React.Component<Props, State> {
         </SpinContainer>
       );
     }
-    const {
-      showEditParent,
-      showEvent,
-      showAddChild,
-      showAddTypes,
-    } = this.state;
+    const { showeditAsset, showEvent, showAddChild, showAddTypes } = this.state;
 
     const allTypes = this.props.types.items ? this.props.types.items : [];
 
@@ -488,8 +468,8 @@ class AssetDrawer extends React.Component<Props, State> {
             onClose={this.onModalClose}
           />
         )}
-        {asset != null && showEditParent && (
-          <ChangeAssetParent
+        {asset != null && showeditAsset && (
+          <EditAssetModal
             assetId={asset.id}
             onClose={this.onModalClose}
             rootAssetId={asset.rootId}
