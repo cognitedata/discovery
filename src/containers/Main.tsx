@@ -322,7 +322,7 @@ class Main extends React.Component<Props, State> {
                   style={{ float: 'right', color: '#fff' }}
                   target="_blank"
                   rel="noopener noreferrer"
-                  href="https://cognitedata.atlassian.net/wiki/spaces/CON/pages/1039401091/Discovery"
+                  href="https://docs.cognite.com/discovery/blog/releasenotes.html"
                 >
                   v{process.env.REACT_APP_VERSION}
                 </a>
