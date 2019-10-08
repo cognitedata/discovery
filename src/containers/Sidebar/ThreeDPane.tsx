@@ -1,8 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button, message, Descriptions, Divider } from 'antd';
+import { Button, message, Descriptions, Divider, Popconfirm } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { THREE } from '@cognite/3d-viewer';
+import { Asset } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { fetchAsset, selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -14,9 +15,11 @@ import {
   AppState,
   selectApp,
   setModelAndRevisionAndNode,
+  setAssetId,
 } from '../../modules/app';
 import ModelList from './ModelList';
 import { trackUsage } from '../../utils/metrics';
+import { deleteAssetNodeMapping } from '../../modules/assetmappings';
 
 type OrigProps = {};
 
@@ -24,6 +27,8 @@ type Props = {
   app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
+  setAssetId: typeof setAssetId;
+  deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
   setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
   resetAppState: typeof resetAppState;
 } & OrigProps;
@@ -64,14 +69,18 @@ class NodeDrawer extends React.Component<Props, State> {
 
   render() {
     const {
-      app: { modelId, nodeId, rootAssetId, assetId },
+      app: { modelId, nodeId, rootAssetId, assetId, revisionId },
       threed: { currentNode },
       assets: { all },
       threed: { models },
     } = this.props;
-    let rootAsset;
+    let rootAsset: Asset | undefined;
     if (rootAssetId) {
       rootAsset = all[rootAssetId];
+    }
+    let asset: Asset | undefined;
+    if (assetId) {
+      asset = all[assetId];
     }
     // if already connected to root asset and nodeID is null, dont show.
     let infoPane = null;
@@ -130,6 +139,28 @@ class NodeDrawer extends React.Component<Props, State> {
       title = 'No Node Linked to Asset';
     } else if (rootAssetId && modelId && nodeId && assetId) {
       title = `Mapped Node: ${all[assetId] ? all[assetId].name : 'Loading...'}`;
+      form = (
+        <Popconfirm
+          title="Are you sure you want to unmap the 3D node?"
+          onConfirm={() => {
+            if (revisionId && modelId) {
+              this.props.deleteAssetNodeMapping(modelId, revisionId, asset!.id);
+              this.props.setAssetId(
+                rootAssetId!,
+                asset!.parentId || asset!.rootId
+              );
+            } else {
+              message.info('Nothing to unmap');
+            }
+          }}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button type="danger" disabled={!revisionId || !modelId}>
+            Unmap 3D Node
+          </Button>
+        </Popconfirm>
+      );
     } else if (!rootAssetId && modelId) {
       title = `No Asset linked to ${
         models[modelId] ? models[modelId].name : 'Loading...'
@@ -162,6 +193,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doFetchAsset: fetchAsset,
       setModelAndRevisionAndNode,
+      deleteAssetNodeMapping,
+      setAssetId,
       resetAppState,
     },
     dispatch
