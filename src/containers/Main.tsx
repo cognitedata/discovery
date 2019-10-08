@@ -318,6 +318,14 @@ class Main extends React.Component<Props, State> {
                   unCheckedChildren="Edit OFF"
                   onChange={this.changeEdit}
                 />
+                <a
+                  style={{ float: 'right', color: '#fff' }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://docs.cognite.com/discovery/blog/releasenotes.html"
+                >
+                  v{process.env.REACT_APP_VERSION}
+                </a>
               </StyledHeader>
               <CustomGridLayout
                 editable={editLayout}
