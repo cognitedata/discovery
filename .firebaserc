@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "digital-twin-explorer"
+    "default": "digital-twin-explorer-ts",
+    "explorer": "digital-twin-explorer",
+    "staging": "discovery-staging-b8752"
   }
 }

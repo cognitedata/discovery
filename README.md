@@ -1,29 +1,17 @@
-# Cognite Digital Twin Explorer
-[![generator-create-redux-app](https://img.shields.io/badge/built%20with-generator--create--redux--app-brightgreen.svg)](https://github.com/jonidelv/generator-create-redux-app)
+# [Discovery](https://discovery.cogniteapp.com)
 
-This project was generated with [Create Redux App](https://github.com/jonidelv/generator-create-redux-app). Refer to `docs/create-redux-app` to find more information on how to perform common tasks.
+Discovery is a tool build by the Contextualization team at Cognite to help users **view, filter and edit** data in **CDF**.
 
-Once the installation is done, you can run some commands inside the project folder (needs HTTPS):
+### Building locally
+Setup
 
-### `env HTTPS=true npm start` or `env HTTPS=true yarn start`
+- install `yarn`
+- `yarn install`
 
-Runs the app in development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+To run, run `yarn start`
 
-The page will reload if you make edits.<br>
-You will see the build errors and lint warnings in the console.
+### Deploying to production
+Deployments are done automatically on merge to `master` branch. To deploy to `explore.cogniteapp.com`, PR to `explorer` branch.
 
-### `npm test` or `yarn test`
-
-Runs the test watcher in an interactive mode.<br>
-By default, runs tests related to files changes since the last commit.
-
-[Read more about testing.](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#running-tests)
-
-### `npm run build` or `yarn build`
-
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+### Feature requests
+Make issues here or on the [Context Board](https://cognitedata.atlassian.net/projects/CONTEXT/issues)
