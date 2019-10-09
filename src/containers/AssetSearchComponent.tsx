@@ -8,18 +8,20 @@ import {
   Select,
   message,
   List,
-  Spin,
+  notification,
 } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
 import styled from 'styled-components';
 import moment from 'moment';
 import { RangePickerValue } from 'antd/lib/date-picker/interface';
-import { Asset } from '@cognite/sdk';
+import { Asset, GetTimeSeriesMetadataDTO } from '@cognite/sdk';
+import debounce from 'lodash/debounce';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { BetterTag } from '../components/BetterTag';
 import { ExtendedAsset } from '../modules/assets';
 import { trackUsage, trackSearchUsage } from '../utils/metrics';
+import { fetchAndSetTimeseries } from '../modules/timeseries';
 
 const Overlay = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'block' : 'none')};
@@ -29,7 +31,7 @@ const Overlay = styled.div<{ visible: string }>`
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  z-index: 1000;
+  z-index: -1;
 `;
 const SearchArea = styled.div`
   z-index: 1001;
@@ -56,9 +58,10 @@ const FilterEditArea = styled.div`
 const ResultList = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'block' : 'none')};
   z-index: 1001;
-
-  position: absolute;
-  width: 100%;
+  margin-top: 16px;
+  position: fixed;
+  width: 60vh;
+  min-width: 800px;
   max-height: 80vh;
   font-size: 12px;
 
@@ -67,7 +70,7 @@ const ResultList = styled.div<{ visible: string }>`
     padding: 16px;
     padding-top: 8px;
     max-height: 80vh;
-    box-shadow: 0px 0px 6px #efefef;
+    box-shadow: 0px 0px 6px #cdcdcd;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -124,7 +127,16 @@ const MetadataEditRow = styled.div`
   }
 `;
 const ListWrapper = styled.div`
-  overflow: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  flex: 1;
+  height: 0;
+  && > * {
+    overflow: auto;
+    flex: 1;
+  }
 `;
 const ListItem = styled.div`
   padding-top: 12px;
@@ -187,11 +199,14 @@ type OwnProps = {
   rootAsset?: ExtendedAsset;
   onAssetClicked: (asset: Asset) => void;
 };
-type DispatchProps = {};
+type DispatchProps = {
+  fetchAndSetTimeseries: typeof fetchAndSetTimeseries;
+};
 type Props = DispatchProps & OwnProps;
 
 type State = {
   loading: boolean;
+  tsLoading: boolean;
   currentRootOnly: boolean;
   showSearchExtended: boolean;
   addingEventFilter?: EventFilter;
@@ -202,11 +217,14 @@ type State = {
   addingMetadataFilter?: MetadataFilter;
   filters: Filter[];
   results: Asset[];
+  tsResults: GetTimeSeriesMetadataDTO[];
   possibleParents: Asset[];
 };
 
 class AssetSearch extends Component<Props, State> {
   queryId: number = 0;
+
+  tsQueryId: number = 0;
 
   inputRef = React.createRef<HTMLInputElement>();
 
@@ -225,7 +243,12 @@ class AssetSearch extends Component<Props, State> {
       filters: [],
       possibleParents: [],
       results: [],
+      tsResults: [],
+      tsLoading: false,
     };
+
+    this.searchForAsset = debounce(this.searchForAsset, 700);
+    this.searchForTimeseries = debounce(this.searchForTimeseries, 700);
   }
 
   componentDidUpdate(prevProps: Props, prevState: State) {
@@ -236,6 +259,7 @@ class AssetSearch extends Component<Props, State> {
       prevState.currentRootOnly !== this.state.currentRootOnly
     ) {
       this.searchForAsset(this.state.query);
+      this.searchForTimeseries(this.state.query);
     }
     if (prevState.currentRootOnly !== this.state.currentRootOnly) {
       trackUsage('GlobalSearch.SearchFilterToggled', {
@@ -447,6 +471,78 @@ class AssetSearch extends Component<Props, State> {
     }
   };
 
+  searchForTimeseries = async (query: string) => {
+    try {
+      this.setState({ tsLoading: true });
+      this.tsQueryId = this.tsQueryId + 1;
+      const tsQueryId = 0 + this.tsQueryId;
+      const { filters, currentRootOnly } = this.state;
+      const { rootAsset } = this.props;
+      const filterMap = filters.reduce(
+        (prev, filter) => {
+          switch (filter.type) {
+            case 'event':
+              prev.events.push(filter);
+              break;
+            case 'location':
+              prev.locations.push(filter.id!);
+              break;
+            case 'metadata':
+              // eslint-disable-next-line no-param-reassign
+              prev.metadata[filter.key!] = filter.value!;
+              break;
+            case 'source':
+              // eslint-disable-next-line no-param-reassign
+              prev.source = filter.source;
+              break;
+          }
+          return prev;
+        },
+        {
+          source: undefined,
+          events: [],
+          locations: [],
+          metadata: {},
+        } as {
+          source?: string;
+          events: EventFilter[];
+          locations: string[];
+          metadata: { [key: string]: string };
+        }
+      );
+      // event filter
+      let results: GetTimeSeriesMetadataDTO[] = [];
+
+      results = (await sdk.post(
+        `/api/playground/projects/${sdk.project}/timeseries/search`,
+        {
+          data: {
+            limit: 1000,
+            ...(query && query.length > 0 && { search: { query } }),
+            filter: {
+              ...(filterMap.metadata && { metadata: filterMap.metadata }),
+              ...(filterMap.locations.length > 0 && {
+                assetIds: filterMap.locations.map(el => Number(el)),
+              }),
+              ...(rootAsset &&
+                currentRootOnly && { rootAssetIds: [rootAsset.id] }),
+            },
+          },
+        }
+      )).data.items;
+      if (tsQueryId === this.tsQueryId) {
+        trackSearchUsage('GlobalSearch', 'Timeseries', {
+          query,
+          filters: filterMap,
+        });
+        this.setState({ tsResults: results, tsLoading: false });
+        this.tsQueryId = 0;
+      }
+    } catch (ex) {
+      message.error('Unable to search.');
+    }
+  };
+
   fetchEventsByFilter = async (
     eventFilter: EventFilter
   ): Promise<Set<number>> => {
@@ -477,6 +573,21 @@ class AssetSearch extends Component<Props, State> {
       showSearchExtended: false,
     });
     this.props.onAssetClicked(item);
+  };
+
+  onTimeseriesClicked = (item: GetTimeSeriesMetadataDTO, index: number) => {
+    trackUsage('GlobalSearch.TimeseriesClicked', {
+      timeseriesId: item.id,
+      index,
+    });
+    this.setState({
+      showSearchExtended: false,
+    });
+    notification.info({
+      message: item.name,
+      description: item.id,
+    });
+    this.props.fetchAndSetTimeseries(item.id, true);
   };
 
   renderPendingFilters = () => {
@@ -819,12 +930,14 @@ class AssetSearch extends Component<Props, State> {
       onlyRootAsset,
       currentRootOnly,
       results,
+      tsResults,
+      tsLoading,
       query,
       loading,
     } = this.state;
     const { rootAsset } = this.props;
     return (
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', zIndex: 1000 }}>
         <Overlay
           visible={showSearchExtended ? 'true' : 'false'}
           onClick={this.onOverlayClick}
@@ -918,23 +1031,36 @@ class AssetSearch extends Component<Props, State> {
                 )}
               </div>
               <Divider />
-              {loading ? (
-                <Spin size="large" />
-              ) : (
-                <ListWrapper>
-                  <List
-                    dataSource={results}
-                    renderItem={(item: Asset, i: number) => {
-                      return (
-                        <ListItem onClick={() => this.onAssetClicked(item, i)}>
-                          <h4>{item.name}</h4>
-                          <p>{item.description}</p>
-                        </ListItem>
-                      );
-                    }}
-                  />
-                </ListWrapper>
-              )}
+              <ListWrapper>
+                <List
+                  dataSource={results}
+                  header="Assets"
+                  loading={loading}
+                  renderItem={(item: Asset, i: number) => {
+                    return (
+                      <ListItem onClick={() => this.onAssetClicked(item, i)}>
+                        <h4>{item.name}</h4>
+                        <p>{item.description}</p>
+                      </ListItem>
+                    );
+                  }}
+                />
+                <List
+                  dataSource={tsResults}
+                  header="Timeseries"
+                  loading={tsLoading}
+                  renderItem={(item: GetTimeSeriesMetadataDTO, i: number) => {
+                    return (
+                      <ListItem
+                        onClick={() => this.onTimeseriesClicked(item, i)}
+                      >
+                        <h4>{item.name}</h4>
+                        <p>{item.description}</p>
+                      </ListItem>
+                    );
+                  }}
+                />
+              </ListWrapper>
             </div>
           </ResultList>
         </SearchArea>
@@ -948,7 +1074,7 @@ const mapStateToProps = (state: RootState) => {
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({}, dispatch);
+  bindActionCreators({ fetchAndSetTimeseries }, dispatch);
 
 export default connect(
   mapStateToProps,

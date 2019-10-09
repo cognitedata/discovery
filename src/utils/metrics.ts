@@ -13,7 +13,7 @@ export const trackUsage = (
 };
 export const trackSearchUsage = (
   location: string,
-  type: 'ParentFilter' | 'Asset' | 'File',
+  type: 'ParentFilter' | 'Asset' | 'File' | 'Timeseries',
   metadata?: { [key: string]: any }
 ) => {
   mixpanel.track('Search', {

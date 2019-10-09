@@ -8,6 +8,7 @@ import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
 import { trackUsage } from '../utils/metrics';
+import { setTimeseriesId } from './app';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -34,6 +35,14 @@ export function fetchTimeseries(assetId: number) {
       limit: 1000,
     });
     dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
+  };
+}
+// Functions
+export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
+  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
+    const results = await sdk.timeseries.retrieve([{ id: timeseriesId }]);
+    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+    dispatch(setTimeseriesId(timeseriesId, redirect));
   };
 }
 let searchTimeseriesRID = 0;

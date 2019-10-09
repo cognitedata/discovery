@@ -5,6 +5,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
 import { trackUsage } from '../utils/metrics';
+import { fetchAsset, AddAssetAction, ADD_ASSETS } from './assets';
 import {
   UPDATE_REVISON,
   UpdateRevisionAction,
@@ -34,7 +35,8 @@ type AppAction =
   | ClearAppStateAction
   | UpdateRevisionAction
   | AddRevisionAction
-  | AddNodeAssetMappingAction;
+  | AddNodeAssetMappingAction
+  | AddAssetAction;
 
 export const setModelAndRevisionAndNode = (
   modelId: number,
@@ -123,7 +125,10 @@ export const setAssetId = (
   }
 };
 
-export const setTimeseriesId = (timeseriesId?: number) => async (
+export const setTimeseriesId = (
+  timeseriesId?: number,
+  redirect = false
+) => async (
   dispatch: ThunkDispatch<
     any,
     any,
@@ -148,6 +153,7 @@ export const setTimeseriesId = (timeseriesId?: number) => async (
     assetMappings: { byAssetId },
     assets: { all },
     timeseries: { timeseriesData },
+    app: { tenant },
   } = getState();
   const timeseries = timeseriesData[timeseriesId];
   if (!timeseries) {
@@ -162,9 +168,13 @@ export const setTimeseriesId = (timeseriesId?: number) => async (
   if (timeseries.assetId) {
     // eslint-disable-next-line prefer-destructuring
     assetId = timeseries.assetId;
-    rootAssetId = all[assetId].rootId;
-    modelMapping = representsAsset[rootAssetId];
-    assetMapping = byAssetId[assetId];
+    if (all[assetId]) {
+      rootAssetId = all[assetId].rootId;
+      modelMapping = representsAsset[rootAssetId];
+      assetMapping = byAssetId[assetId];
+    } else {
+      dispatch(fetchAsset(assetId, true));
+    }
   }
 
   dispatch({
@@ -178,6 +188,10 @@ export const setTimeseriesId = (timeseriesId?: number) => async (
       rootAssetId,
     },
   });
+
+  if (redirect && rootAssetId) {
+    dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
+  }
 };
 
 export const setTenant = (tenant: string, redirect = false) => async (
@@ -282,6 +296,18 @@ export default function app(state = initialState, action: AppAction): AppState {
           revisionId,
           ...(state.assetId && { nodeId: mapping.nodeId }),
           ...(state.nodeId && { assetId: mapping.assetId }),
+        };
+      }
+      return state;
+    }
+    case ADD_ASSETS: {
+      const { items } = action.payload;
+      const { assetId } = state;
+      const asset = assetId ? items[assetId] : undefined;
+      if (asset) {
+        return {
+          ...state,
+          rootAssetId: asset.rootId,
         };
       }
       return state;
