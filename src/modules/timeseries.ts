@@ -45,6 +45,14 @@ export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
     dispatch(setTimeseriesId(timeseriesId, redirect));
   };
 }
+export function fetchTimeseriesByIds(timeseriesIds: number[]) {
+  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
+    const results = await sdk.timeseries.retrieve(
+      timeseriesIds.map(id => ({ id }))
+    );
+    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+  };
+}
 let searchTimeseriesRID = 0;
 // Functions
 export function searchTimeseries(query: string, assetId?: number) {
@@ -156,6 +164,7 @@ export default function timeseries(
       return {
         ...state,
         timeseriesData: {
+          ...state.timeseriesData,
           ...arrayToObjectById(items),
         },
       };

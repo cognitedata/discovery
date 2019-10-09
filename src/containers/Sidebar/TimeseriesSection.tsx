@@ -106,7 +106,9 @@ class TimeseriesSection extends React.Component<Props, State> {
       app: { assetId },
     } = this.props;
     const { timeseriesTablePage, showAddTimeseries } = this.state;
-    const timeseriesItems = Object.values(timeseriesData);
+    const timeseriesItems = Object.values(timeseriesData).filter(
+      el => el.assetId === assetId
+    );
     return (
       <>
         {assetId != null && showAddTimeseries && (

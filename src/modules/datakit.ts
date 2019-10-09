@@ -64,7 +64,6 @@ export function createDataKit(data: {
 }
 
 export function removeDataKit(name: string) {
-  console.log(name);
   return async (dispatch: Dispatch<RemoveDatakitAction>) => {
     dispatch({
       type: REMOVE_DATAKIT,

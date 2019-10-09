@@ -1,18 +1,24 @@
 import React from 'react';
-import { Modal, Button, Cascader } from 'antd';
+import { Modal, Button, Cascader, message } from 'antd';
 import { TimeseriesChartMeta } from '@cognite/gearbox';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { selectTimeseries, TimeseriesState } from '../modules/timeseries';
 import { RootState } from '../reducers/index';
 import { selectApp, AppState, setTimeseriesId } from '../modules/app';
-import { selectDatakit, DataKitState, addToDataKit } from '../modules/datakit';
+import {
+  selectDatakit,
+  DataKitState,
+  addToDataKit,
+  createDataKit,
+} from '../modules/datakit';
 
 type Props = {
   datakit: DataKitState;
   timeseries: TimeseriesState;
   app: AppState;
   addToDataKit: typeof addToDataKit;
+  createDataKit: typeof createDataKit;
   setTimeseriesId: typeof setTimeseriesId;
 };
 
@@ -42,6 +48,20 @@ class TimeseriesPreview extends React.PureComponent<Props, {}> {
         },
       ],
     }));
+    options.push({
+      value: 'new',
+      label: `NEW Kit`,
+      children: [
+        {
+          value: 'input',
+          label: 'Add As Input',
+        },
+        {
+          value: 'output',
+          label: 'Add As Output',
+        },
+      ],
+    });
     return (
       <Modal
         visible={timeseriesId !== undefined}
@@ -52,13 +72,21 @@ class TimeseriesPreview extends React.PureComponent<Props, {}> {
       >
         <Cascader
           options={options}
-          onChange={values =>
-            this.props.addToDataKit(
-              values[0],
-              timeseriesId!,
-              values[1] === 'output'
-            )
-          }
+          onChange={values => {
+            if (values[0] === 'new') {
+              this.props.createDataKit({
+                timeseriesId: timeseriesId!,
+                output: values[1] === 'output',
+              });
+            } else {
+              this.props.addToDataKit(
+                values[0],
+                timeseriesId!,
+                values[1] === 'output'
+              );
+            }
+            message.success('Added to Data Kit');
+          }}
         >
           <Button>Add to Data Kit</Button>
         </Cascader>
@@ -77,7 +105,10 @@ const mapStateToProps = (state: RootState) => {
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ setTimeseriesId, addToDataKit }, dispatch);
+  bindActionCreators(
+    { setTimeseriesId, addToDataKit, createDataKit },
+    dispatch
+  );
 
 export default connect(
   mapStateToProps,

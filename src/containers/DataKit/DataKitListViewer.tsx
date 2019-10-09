@@ -1,11 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Table } from 'antd';
+import { Table, Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button } from 'antd/lib/radio';
 import { RootState } from '../../reducers/index';
 import {
-  DataKit,
   removeDataKit,
   selectDatakit,
   updateDataKit,
@@ -53,9 +51,6 @@ class DataKitList extends React.Component<Props, State> {
         <Table
           dataSource={Object.values(datakit)}
           rowKey="name"
-          onRowClick={(row: DataKit) =>
-            this.setState({ selectedDatakit: row.name })
-          }
           columns={[
             {
               dataIndex: 'name',
@@ -78,9 +73,23 @@ class DataKitList extends React.Component<Props, State> {
               title: 'Actions',
               render: name => {
                 return (
-                  <Button onClick={() => this.props.removeDataKit(name)}>
-                    Delete
-                  </Button>
+                  <>
+                    <Button
+                      onClick={() => {
+                        this.setState({ selectedDatakit: name });
+                      }}
+                      type="primary"
+                    >
+                      View
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        this.props.removeDataKit(name);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </>
                 );
               },
             },
