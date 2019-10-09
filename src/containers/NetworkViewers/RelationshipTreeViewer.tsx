@@ -8,6 +8,7 @@ import { Select, Spin } from 'antd';
 import * as d3 from 'd3';
 import { AppState, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
+import BetaWarning from '../../components/BetaWarning';
 import {
   fetchRelationships,
   RelationshipState,
@@ -154,6 +155,7 @@ class TreeViewer extends Component<Props, State> {
     const { controls, loading } = this.state;
     return (
       <Wrapper>
+        <BetaWarning />
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
           <Spin size="large" />
         </LoadingWrapper>

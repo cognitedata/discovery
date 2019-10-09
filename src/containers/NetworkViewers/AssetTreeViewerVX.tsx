@@ -37,6 +37,7 @@ import {
 import { AppState, setAssetId, selectApp } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import NoAssetSelected from '../../components/Placeholder';
+import { trackUsage } from '../../utils/metrics';
 
 type Node = {
   name: string;
@@ -235,9 +236,10 @@ class TreeViewer extends Component<Props, State> {
       <div className="selector">
         <strong>Layout:</strong>
         <Select
-          onChange={(value: 'cartesian' | 'polar') =>
-            this.setState({ controls: value })
-          }
+          onChange={(value: 'cartesian' | 'polar') => {
+            this.setState({ controls: value });
+            trackUsage('AssetVXViewer.ChangeControl', { layout: value });
+          }}
           value={controls}
         >
           <Select.Option value="cartesian">cartesian</Select.Option>
@@ -246,9 +248,10 @@ class TreeViewer extends Component<Props, State> {
 
         <strong>Orientation:</strong>
         <Select
-          onChange={(value: 'vertical' | 'horizontal') =>
-            this.setState({ orientation: value })
-          }
+          onChange={(value: 'vertical' | 'horizontal') => {
+            this.setState({ orientation: value });
+            trackUsage('AssetVXViewer.ChangeControl', { orientation: value });
+          }}
           value={orientation}
           disabled={controls === 'polar'}
         >
@@ -258,9 +261,10 @@ class TreeViewer extends Component<Props, State> {
 
         <strong>Link:</strong>
         <Select
-          onChange={(value: 'diagonal' | 'step' | 'curve' | 'line') =>
-            this.setState({ linkType: value })
-          }
+          onChange={(value: 'diagonal' | 'step' | 'curve' | 'line') => {
+            this.setState({ linkType: value });
+            trackUsage('AssetVXViewer.ChangeControl', { linkType: value });
+          }}
           value={linkType}
         >
           <Select.Option value="diagonal">diagonal</Select.Option>
@@ -480,6 +484,9 @@ class TreeViewer extends Component<Props, State> {
                                       // eslint-disable-next-line no-param-reassign
                                       node.data.isExpanded = !node.data
                                         .isExpanded;
+                                      trackUsage('AssetVXViewer.AssetClicked', {
+                                        assetId: node.data.node.id,
+                                      });
                                       this.props.setAssetId(
                                         node.data.node.rootId,
                                         node.data.node.id
@@ -510,6 +517,9 @@ class TreeViewer extends Component<Props, State> {
                                       // eslint-disable-next-line no-param-reassign
                                       node.data.isExpanded = !node.data
                                         .isExpanded;
+                                      trackUsage('AssetVXViewer.AssetClicked', {
+                                        assetId: node.data.node.id,
+                                      });
                                       this.props.setAssetId(
                                         node.data.node.rootId,
                                         node.data.node.id
@@ -546,9 +556,36 @@ class TreeViewer extends Component<Props, State> {
                   >
                     -
                   </Button>
-                  <Button onClick={zoom.center}>Center</Button>
-                  <Button onClick={zoom.reset}>Reset</Button>
-                  <Button onClick={zoom.clear}>Clear</Button>
+                  <Button
+                    onClick={() => {
+                      zoom.center();
+                      trackUsage('AssetVXViewer.ControlsClicked', {
+                        center: true,
+                      });
+                    }}
+                  >
+                    Center
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      zoom.reset();
+                      trackUsage('AssetVXViewer.ControlsClicked', {
+                        reset: true,
+                      });
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      zoom.clear();
+                      trackUsage('AssetVXViewer.ControlsClicked', {
+                        clear: true,
+                      });
+                    }}
+                  >
+                    Clear
+                  </Button>
                 </div>
               </div>
             );

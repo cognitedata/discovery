@@ -2,12 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Tabs, Pagination, Spin, Input, Table } from 'antd';
-import {
-  FilesMetadata,
-  InternalId,
-  FilesSearchFilter,
-  IdEither,
-} from '@cognite/sdk';
+import { FilesMetadata, FilesSearchFilter } from '@cognite/sdk';
 import styled from 'styled-components';
 import debounce from 'lodash/debounce';
 import moment from 'moment';
@@ -25,7 +20,8 @@ import {
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
-import DocumentPreview from './DocumentPreview';
+import FilePreview from './FilePreview';
+import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 
 const { TabPane } = Tabs;
 
@@ -126,7 +122,7 @@ type State = {
   fetching: boolean;
   query: string;
   searchResults: FilesMetadata[];
-  imageUrls: FilesMetadataWithDownload[];
+  imageUrls: { [id: number]: string | false };
   selectedDocument?: FilesMetadataWithDownload;
 };
 
@@ -137,8 +133,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     fetching: false,
     current: 0,
     searchResults: [],
-    imageUrls: [],
+    imageUrls: {},
   };
+
+  currentQuery: number = 0;
 
   constructor(props: Props) {
     super(props);
@@ -172,11 +170,23 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
   }
 
+  componentWillUnmount() {
+    const { imageUrls } = this.state;
+    Object.keys(imageUrls).forEach((key: string) => {
+      const val = imageUrls[Number(key)];
+      if (val) {
+        URL.revokeObjectURL(val);
+      }
+    });
+  }
+
   doSearch = async (query?: string) => {
     const {
       assets: { all: assets },
       app: { assetId },
     } = this.props;
+    this.currentQuery = this.currentQuery + 1;
+    const thisQuery = this.currentQuery;
     const { tab } = this.state;
     const config: FilesSearchFilter = {
       filter: {
@@ -187,7 +197,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       },
       limit: 1000,
     };
-    this.setState({ fetching: true, searchResults: [], imageUrls: [] });
+    this.setState({ fetching: true, searchResults: [] });
     let results: FilesMetadata[] = [];
     if (query && query.length > 0) {
       results = await sdk.files.search({
@@ -228,10 +238,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           })
         );
       }
-      this.setState({
-        searchResults: results.slice(0, results.length),
-        fetching: false,
-      });
     } else {
       this.setState({ fetching: true });
       results = (await sdk.files.list(config)).items;
@@ -266,10 +272,12 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           })).items
         );
       }
+    }
+    if (thisQuery === this.currentQuery) {
+      trackSearchUsage('FileExplorer', 'File', { query, tab });
       this.setState({
         searchResults: results.slice(0, results.length),
         fetching: false,
-        current: 0,
       });
     }
     const extraAssets: Set<number> = results.reduce(
@@ -286,62 +294,83 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   fetchImageUrls = async () => {
-    const { searchResults, current } = this.state;
+    const { searchResults, current, imageUrls } = this.state;
 
-    // WIP, thumbnails
-
-    // const promises = searchResults.map(async result => {
-    //   try {
-    //     return {
-    //       ...result,
-    //       downloadUrl: await sdk.get(
-    //         `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`
-    //       ),
-    //     };
-    //   } catch (e) {
-    //     return result;
-    //   }
-    // });
-
-    // console.log(await Promise.all(promises));
-
-    const ids: IdEither[] = searchResults
+    searchResults
       .slice(current * 20, current * 20 + 20)
-      .map(el => ({ id: el.id }));
-    const urls = await sdk.files.getDownloadUrls(ids);
-    this.setState({
-      imageUrls: searchResults.map(el => {
-        const url = urls.find(
-          downloadUrl => (downloadUrl as InternalId).id === el.id
-        );
-        if (!url) {
-          return { ...el, downloadUrl: undefined };
+      .forEach(async result => {
+        try {
+          if (imageUrls[result.id]) {
+            return;
+          }
+          const response = await sdk.get(
+            `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
+            {
+              responseType: 'arraybuffer',
+            }
+          );
+          if (response.status === 200) {
+            const arrayBufferView = new Uint8Array(response.data);
+            const blob = new Blob([arrayBufferView], {
+              type: response.headers['content-type'],
+            });
+            this.setState(state => ({
+              ...state,
+              imageUrls: {
+                ...state.imageUrls,
+                [result.id]: URL.createObjectURL(blob),
+              },
+            }));
+          } else {
+            throw new Error('Unable to load file');
+          }
+        } catch (e) {
+          this.setState(state => ({
+            ...state,
+            imageUrls: {
+              ...state.imageUrls,
+              [result.id]: false,
+            },
+          }));
         }
-        return { ...el, downloadUrl: url.downloadUrl };
-      }) as FilesMetadataWithDownload[],
+      });
+  };
+
+  onClickDocument = (documentId: FilesMetadata, index: number) => {
+    const { current, tab } = this.state;
+    this.setState({ selectedDocument: documentId });
+    trackUsage('FileExplorer.SelectItem', {
+      index: current * 20 + index,
+      tab,
     });
   };
 
   renderImages = () => {
-    const { current } = this.state;
+    const { current, searchResults, imageUrls } = this.state;
     return (
       <Images>
-        {this.state.imageUrls
+        {searchResults
           .slice(current * 20, current * 20 + 20)
           .map((image, i) => {
+            let imagePlaceholder;
+            if (imageUrls[image.id] === undefined) {
+              imagePlaceholder = <Spin />;
+            } else if (imageUrls[image.id] === false) {
+              imagePlaceholder = <p>Unable to load image.</p>;
+            }
             return (
               <div
                 className="item"
                 role="button"
                 tabIndex={i}
                 onKeyDown={() => this.setState({ selectedDocument: image })}
-                onClick={() => this.setState({ selectedDocument: image })}
+                onClick={() => this.onClickDocument(image, i)}
               >
                 <div
                   className="image"
-                  style={{ backgroundImage: `url(${image.downloadUrl})` }}
+                  style={{ backgroundImage: `url(${imageUrls[image.id]})` }}
                 >
-                  {!image.downloadUrl && <p>Unable to Load Image</p>}
+                  {imagePlaceholder}
                 </div>
                 <p>{image.name}</p>
                 <p>
@@ -362,7 +391,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <Table
           dataSource={searchResults.slice(current * 20, current * 20 + 20)}
           pagination={false}
-          onRowClick={item => this.setState({ selectedDocument: item })}
+          onRowClick={(item, i) => this.onClickDocument(item, i)}
           columns={[
             {
               title: 'Name',
@@ -399,10 +428,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                 <span>
                   {item.assetIds
                     ? item.assetIds
+                        .slice(0, 10)
                         .map((el: number) =>
                           assets[el] ? assets[el].name : el
                         )
-                        .join(', ')
+                        .join(', ') + (item.assetIds.length > 0 ? '...' : '')
                     : 'N/A'}
                 </span>
               ),
@@ -424,7 +454,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     } = this.state;
     if (selectedDocument) {
       return (
-        <DocumentPreview
+        <FilePreview
           selectedDocument={selectedDocument}
           unselectDocument={() =>
             this.setState({ selectedDocument: undefined })
@@ -447,8 +477,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           activeKey={tab}
           tabPosition="left"
           onChange={(selectedTab: string) => {
+            trackUsage('FileExplorer.ChangeTab', { selectedTab });
             this.setState({
               tab: selectedTab as FileExplorerTabsType,
+              searchResults: [],
               current: 0,
             });
           }}
