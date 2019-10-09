@@ -26,6 +26,7 @@ import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 import FileExplorer from './FileExplorer';
 import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
+import DataKitListViewer from './DataKit';
 
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
@@ -36,6 +37,7 @@ export const ViewerTypeMap: { [key in ViewerType]: string } = {
   relationship: 'Relationships',
   file: 'File Viewer',
   assetbreadcrumbs: 'Asset Breadcrumbs',
+  datakit: 'Data Kit',
 };
 
 export type ViewerType =
@@ -45,6 +47,7 @@ export type ViewerType =
   | 'pnid'
   | 'vx'
   | 'network'
+  | 'datakit'
   | 'relationship'
   | 'assetbreadcrumbs';
 
@@ -189,6 +192,10 @@ export class AssetViewer extends React.Component<Props, State> {
     return <FileExplorer />;
   };
 
+  renderDataKit = () => {
+    return <DataKitListViewer />;
+  };
+
   render() {
     const { type } = this.props;
     switch (type) {
@@ -206,6 +213,8 @@ export class AssetViewer extends React.Component<Props, State> {
         return this.renderPNID();
       case 'file':
         return this.renderFileExplorer();
+      case 'datakit':
+        return this.renderDataKit();
       case 'none':
       default: {
         return (

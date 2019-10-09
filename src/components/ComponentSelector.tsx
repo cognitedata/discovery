@@ -11,6 +11,7 @@ export const ViewerTypeCategory: { [key in ViewerType]: string } = {
   relationship: 'Beta',
   file: 'Files',
   assetbreadcrumbs: 'Asset',
+  datakit: 'Beta',
 };
 
 const ComponentSelector = ({

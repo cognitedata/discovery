@@ -1,15 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import {
-  Input,
-  Icon,
-  Button,
-  DatePicker,
-  Select,
-  message,
-  List,
-  notification,
-} from 'antd';
+import { Input, Icon, Button, DatePicker, Select, message, List } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
 import styled from 'styled-components';
 import moment from 'moment';
@@ -582,10 +573,6 @@ class AssetSearch extends Component<Props, State> {
     });
     this.setState({
       showSearchExtended: false,
-    });
-    notification.info({
-      message: item.name,
-      description: item.id,
     });
     this.props.fetchAndSetTimeseries(item.id, true);
   };
