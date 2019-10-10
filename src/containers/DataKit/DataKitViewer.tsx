@@ -119,6 +119,7 @@ class DataKitViewer extends React.Component<Props, State> {
             <>
               <Button
                 onClick={() => {
+                  // eslint-disable-next-line no-alert
                   const alias = prompt('Add an Alias', row.alias);
                   this.props.updateDataKit(datakitName, {
                     ...datakit[datakitName],
@@ -218,6 +219,7 @@ class DataKitViewer extends React.Component<Props, State> {
         <h2>Data Kit: {name}</h2>
         <Button
           onClick={() => {
+            // eslint-disable-next-line no-alert
             const newName = prompt('New Name');
             if (newName) {
               this.props.updateDataKit(name, {
