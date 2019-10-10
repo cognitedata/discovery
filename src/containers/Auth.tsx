@@ -178,7 +178,7 @@ class Auth extends React.Component<Props, State> {
                 rel="noopener noreferrer"
                 href="https://docs.cognite.com/discovery/blog/releasenotes.html"
               >
-                v{process.env.REACT_APP_VERSION}
+                {process.env.REACT_APP_VERSION}
               </a>
             </StyledHeader>
             <Switch>
