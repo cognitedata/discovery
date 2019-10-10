@@ -18,6 +18,7 @@ import { RootState } from '../reducers/index';
 import TimeseriesPreview from './TimeseriesPreview';
 import DataKitMainList from './DataKit/DataKitMainList';
 import { selectDatakit, DataKitState } from '../modules/datakit';
+import QualityCheck from './QualityCheck';
 
 const { Content, Header } = Layout;
 
@@ -101,9 +102,16 @@ class Auth extends React.Component<Props, State> {
         break;
       }
       case 2: {
-        message.info('Coming soon!');
+        if (!datakit || !this.props.datakit[datakit]) {
+          message.error('Select a datakit first to navigate!');
+          return;
+        }
+        this.props.push(`/${tenant}/datakits/${datakit}/verify`);
         break;
       }
+      case 3:
+        message.info('Coming soon!');
+        return;
       case 0:
       default:
         this.props.push(`/${tenant}/datakits`);
@@ -183,6 +191,11 @@ class Auth extends React.Component<Props, State> {
                 path={`${match.path}/datakits/:datakit/edit`}
                 exact
                 component={Main}
+              />
+              <Route
+                path={`${match.path}/datakits/:datakit/verify`}
+                exact
+                component={QualityCheck}
               />
               {/* <Route
                 path={`${match.path}/asset/:rootAssetId`}
