@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Asset } from '@cognite/sdk';
-import { Select, Spin, Button } from 'antd';
+import { Asset, UploadFileMetadataResponse } from '@cognite/sdk';
+import { Select, Spin, Button, message } from 'antd';
 import styled from 'styled-components';
 import {
   ExtendedAsset,
@@ -25,6 +25,7 @@ const Wrapper = styled.div`
 type Props = {
   assetId?: number;
   asset?: ExtendedAsset;
+  onFileUploaded: (file: UploadFileMetadataResponse) => void;
 };
 
 type State = {
@@ -96,7 +97,10 @@ class FileUploadTab extends React.Component<Props, State> {
         {this.props.assetId && <Button>Set as Current Asset</Button>}
         <div className="wrapper">
           <FileUploader
-            onUploadSuccess={console.log}
+            onUploadSuccess={file => {
+              message.success('File Uploaded!');
+              this.props.onFileUploaded(file);
+            }}
             assetId={includeAssetId}
           />
         </div>

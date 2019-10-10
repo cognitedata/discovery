@@ -36,7 +36,7 @@ enum STATUS {
 type Props = {
   assetId?: number;
   validExtensions?: string[];
-  onUploadSuccess: (fileId: number) => void;
+  onUploadSuccess: (file: UploadFileMetadataResponse) => void;
   onUploadFailure: (error: string) => void;
   onCancel: () => void;
   beforeUploadStart: () => void;
@@ -121,12 +121,13 @@ class FileUploader extends React.Component<Props, State> {
       return;
     }
 
-    const { uploadUrl, id } = (await sdk.files.upload({
+    const fileMetadata = (await sdk.files.upload({
       name: file.name,
       mimeType,
       source: 'Discovery',
       ...(assetId && { assetIds: [assetId] }),
     })) as UploadFileMetadataResponse;
+    const { uploadUrl, id } = fileMetadata;
 
     if (!uploadUrl || !id) {
       this.props.onUploadFailure('Unable to create file');
@@ -165,11 +166,7 @@ class FileUploader extends React.Component<Props, State> {
       // catch CORS errors
     }
 
-    this.props.onUploadSuccess(id);
-
-    message.success(
-      'Upload complete, starting processing job to render 3d model!'
-    );
+    this.props.onUploadSuccess(fileMetadata);
 
     this.currentUpload.meta.reset(); // clears the locally stored metadata
     this.setState({});

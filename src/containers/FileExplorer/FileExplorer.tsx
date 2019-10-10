@@ -486,7 +486,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         list = this.renderImages();
         break;
       case 'upload':
-        list = <FileUploadTab />;
+        list = (
+          <FileUploadTab
+            onFileUploaded={file => this.onClickDocument(file, 0)}
+          />
+        );
         break;
       default:
         list = <p>Invalid Tab</p>;
