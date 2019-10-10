@@ -69,7 +69,10 @@ class Auth extends React.Component<Props, State> {
     }
 
     if (!status) {
-      sdk.loginWithOAuth({ project: tenant || pathTenant });
+      sdk.loginWithOAuth({
+        project: tenant || pathTenant,
+        onTokens: console.log,
+      });
       await sdk.authenticate();
     }
 

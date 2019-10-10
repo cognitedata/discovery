@@ -2,8 +2,15 @@ import React from 'react';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
 import { connect } from 'react-redux';
-import { setAppCurrentPage, selectApp, AppState } from '../modules/app';
+import { push } from 'connected-react-router';
+import {
+  setAppCurrentPage,
+  selectApp,
+  AppState,
+  setAppDataKit,
+} from '../modules/app';
 import { RootState } from '../reducers/index';
+import { DataKitState, selectDatakit } from '../modules/datakit';
 
 const Wrapper = styled.div`
   margin: 12px;
@@ -20,18 +27,33 @@ const Wrapper = styled.div`
   }
 `;
 
+const TOKEN = 'abc';
+
 type Props = {
+  datakit: DataKitState;
   app: AppState;
+  match: any;
+  push: typeof push;
   setAppCurrentPage: typeof setAppCurrentPage;
+  setAppDataKit: typeof setAppDataKit;
 };
 type State = {};
 
 class QualityCheckView extends React.Component<Props, State> {
   componentDidMount() {
-    // if (!this.props.app.datakit){
-
-    // }
     this.props.setAppCurrentPage(2);
+    const {
+      match: {
+        params: { datakit },
+      },
+      datakit: dataKitStore,
+      app: { datakit: currentAppDataKit, tenant },
+    } = this.props;
+    if (datakit !== currentAppDataKit && datakit && dataKitStore[datakit]) {
+      this.props.setAppDataKit(datakit);
+    } else if (!dataKitStore[currentAppDataKit || datakit]) {
+      this.props.push(`/${tenant}/datakits`);
+    }
   }
 
   render() {
@@ -40,7 +62,7 @@ class QualityCheckView extends React.Component<Props, State> {
         <h1>Quality Check</h1>
         <div style={{ flex: 1 }}>
           <iframe
-            src="https://jupyter-notebooks.cogniteapp.com/contextualization-notebooks/notebook/589509274589915/"
+            src={`https://jupyter-notebooks.cogniteapp.com/contextualization-notebooks/notebook/3620768500534677/?access_token=${TOKEN}`}
             title="Quality Check Notebook"
             height="100%"
             width="100%"
@@ -54,11 +76,12 @@ class QualityCheckView extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     app: selectApp(state),
+    datakit: selectDatakit(state),
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ setAppCurrentPage }, dispatch);
+  bindActionCreators({ setAppCurrentPage, push, setAppDataKit }, dispatch);
 
 export default connect(
   mapStateToProps,
