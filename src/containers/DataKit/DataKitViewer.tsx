@@ -27,6 +27,11 @@ type Props = {
 
 type State = {};
 
+type ExtendedGetTimeSeriesMetadataDTO = GetTimeSeriesMetadataDTO & {
+  alias?: string;
+  timeseriesId: number;
+};
+
 class DataKitViewer extends React.Component<Props, State> {
   state = {};
 
@@ -39,6 +44,84 @@ class DataKitViewer extends React.Component<Props, State> {
       this.fetchTimeseries();
     }
   }
+
+  tableColumns = (isInput: boolean) => {
+    const { datakit, datakitName, assets } = this.props;
+    const { input, output } = datakit[datakitName];
+
+    return [
+      {
+        title: 'Name',
+        key: 'name',
+        render: (item: ExtendedGetTimeSeriesMetadataDTO) => {
+          return <span>{item.name || 'Loading...'}</span>;
+        },
+      },
+      {
+        title: 'Description',
+        key: 'description',
+        render: (item: ExtendedGetTimeSeriesMetadataDTO) => {
+          return <span>{item.description || 'N/A'}</span>;
+        },
+      },
+      {
+        title: 'Unit',
+        key: 'unit',
+        render: (item: ExtendedGetTimeSeriesMetadataDTO) => {
+          return <span>{item.unit || 'N/A'}</span>;
+        },
+      },
+      {
+        dataIndex: 'alias',
+        title: 'Alias',
+        key: 'alias',
+      },
+      {
+        title: 'Asset',
+        key: 'asset',
+        render: (item: ExtendedGetTimeSeriesMetadataDTO) => {
+          if (!item.assetId) {
+            return <span>None</span>;
+          }
+          return (
+            <span>
+              {assets[item.assetId] ? assets[item.assetId].name : item.assetId}
+            </span>
+          );
+        },
+      },
+      {
+        dataIndex: 'name',
+        key: 'actions',
+        title: 'Actions',
+        render: (name: string, row: ExtendedGetTimeSeriesMetadataDTO) => {
+          return (
+            <>
+              <Button
+                onClick={() => {
+                  this.props.updateDataKit(datakitName, {
+                    ...datakit[datakitName],
+                    ...(isInput && {
+                      input: input.filter(
+                        el => el.timeseriesId !== row.timeseriesId
+                      ),
+                    }),
+                    ...(!isInput && {
+                      output: output.filter(
+                        el => el.timeseriesId !== row.timeseriesId
+                      ),
+                    }),
+                  });
+                }}
+              >
+                Delete
+              </Button>
+            </>
+          );
+        },
+      },
+    ];
+  };
 
   fetchTimeseries = () => {
     const { timeseries } = this.props;
@@ -57,89 +140,28 @@ class DataKitViewer extends React.Component<Props, State> {
   };
 
   render() {
-    const { datakit, datakitName, assets, timeseries } = this.props;
-    const { input } = datakit[datakitName];
+    const { datakit, datakitName, timeseries } = this.props;
+    const { input, output } = datakit[datakitName];
     return (
       <>
         <pre>{JSON.stringify(datakit[datakitName], null, 2)}</pre>
+        <h3>Input</h3>
         <Table
           dataSource={input.map(el => ({
             ...el,
             ...timeseries[el.timeseriesId],
           }))}
           rowKey="name"
-          columns={[
-            {
-              title: 'Name',
-              key: 'name',
-              render: item => {
-                const ts = timeseries[item.timeseriesId];
-                return <span>{ts ? ts.name : '...'}</span>;
-              },
-            },
-            {
-              title: 'Description',
-              key: 'description',
-              render: item => {
-                const ts = timeseries[item.timeseriesId];
-                return <span>{ts ? ts.description : '...'}</span>;
-              },
-            },
-            {
-              title: 'Unit',
-              key: 'unit',
-              render: item => {
-                const ts = timeseries[item.timeseriesId];
-                return <span>{ts ? ts.unit : '...'}</span>;
-              },
-            },
-            {
-              dataIndex: 'alias',
-              title: 'Alias',
-              key: 'alias',
-            },
-            {
-              title: 'Asset',
-              key: 'asset',
-              render: item => {
-                const ts = timeseries[item.timeseriesId];
-                if (!ts) {
-                  return <span>...</span>;
-                }
-                if (!ts.assetId) {
-                  return <span>None</span>;
-                }
-                return (
-                  <span>
-                    {assets[ts.assetId] ? assets[ts.assetId].name : ts.assetId}
-                  </span>
-                );
-              },
-            },
-            {
-              dataIndex: 'name',
-              key: 'actions',
-              title: 'Actions',
-              render: (name, row) => {
-                return (
-                  <>
-                    <Button
-                      onClick={() => {
-                        this.props.updateDataKit(datakitName, {
-                          ...datakit[datakitName],
-                          input: input.filter(
-                            el => el.timeseriesId !== row.timeseriesId
-                          ),
-                        });
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </>
-                );
-              },
-            },
-          ]}
+          columns={this.tableColumns(true)}
+        />
+        <h3>Output</h3>
+        <Table
+          dataSource={output.map(el => ({
+            ...el,
+            ...timeseries[el.timeseriesId],
+          }))}
+          rowKey="name"
+          columns={this.tableColumns(false)}
         />
       </>
     );

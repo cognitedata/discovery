@@ -59,6 +59,7 @@ class AddTimeseries extends React.Component<Props, State> {
       >
         <TimeseriesSearch
           hideSelected
+          styles={{ list: { maxHeight: '400px', overflow: 'auto' } }}
           onTimeserieSelectionChange={this.onTimeserieSelectionChange}
           filterRule={this.timeseriesFilter}
         />

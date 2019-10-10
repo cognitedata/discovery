@@ -118,8 +118,15 @@ class TimeseriesSection extends React.Component<Props, State> {
             timeseries={timeseriesItems}
           />
         )}
-        <Button type="primary" onClick={this.addTimeseriesClick}>
-          Add
+        <Button
+          type="primary"
+          onClick={this.addTimeseriesClick}
+          style={{ marginBottom: '6px' }}
+        >
+          New Timeseries
+        </Button>
+        <Button type="default" onClick={this.addTimeseriesClick}>
+          Link Timeseries to Asset
         </Button>
         <Input
           placeholder="Find the timeseries most relevant to you"
