@@ -8,7 +8,7 @@ import {
   selectTimeseries,
   fetchTimeseriesByIds,
 } from '../../modules/timeseries';
-import { selectAssets, ExtendedAsset } from '../../modules/assets';
+import { selectAssets, ExtendedAsset, fetchAssets } from '../../modules/assets';
 import {
   removeDataKit,
   selectDatakit,
@@ -23,6 +23,7 @@ type Props = {
   timeseries: { [id: number]: GetTimeSeriesMetadataDTO };
   datakit: DataKitState;
   datakitName: string;
+  fetchAssets: typeof fetchAssets;
   updateDataKit: typeof updateDataKit;
   removeDataKit: typeof removeDataKit;
   setAppDataKit: typeof setAppDataKit;
@@ -41,11 +42,13 @@ class DataKitViewer extends React.Component<Props, State> {
 
   componentDidMount() {
     this.fetchTimeseries();
+    this.fetchAssets();
   }
 
   componentDidUpdate(prevProps: Props) {
     if (prevProps.datakitName !== this.props.datakitName) {
       this.fetchTimeseries();
+      this.fetchAssets();
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
         datakitName: this.props.datakitName,
@@ -182,6 +185,27 @@ class DataKitViewer extends React.Component<Props, State> {
     );
   };
 
+  fetchAssets = () => {
+    const { assets } = this.props;
+    const { input, output } = this.props.datakit[this.props.datakitName];
+    this.props.fetchAssets(
+      Array.from(
+        input
+          .concat(output)
+          .filter(
+            el =>
+              el.query &&
+              el.query.assetId &&
+              assets[el.query.assetId] === undefined
+          )
+          .reduce(
+            (prev: Set<number>, el) => prev.add(el.query.assetId!),
+            new Set<number>()
+          )
+      )
+    );
+  };
+
   render() {
     const { datakit, timeseries } = this.props;
     const { datakitName } = this.state;
@@ -244,6 +268,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       updateDataKit,
       removeDataKit,
       setAppDataKit,
+      fetchAssets,
       fetchTimeseriesByIds,
     },
     dispatch
