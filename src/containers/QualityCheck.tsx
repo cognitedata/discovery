@@ -27,8 +27,6 @@ const Wrapper = styled.div`
   }
 `;
 
-const TOKEN = 'abc';
-
 type Props = {
   datakit: DataKitState;
   app: AppState;
@@ -57,12 +55,18 @@ class QualityCheckView extends React.Component<Props, State> {
   }
 
   render() {
+    const {
+      app: { token },
+    } = this.props;
     return (
       <Wrapper>
         <h1>Quality Check</h1>
         <div style={{ flex: 1 }}>
           <iframe
-            src={`https://jupyter-notebooks.cogniteapp.com/contextualization-notebooks/notebook/3620768500534677/?access_token=${TOKEN}`}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            src={`https://jupyter-notebooks.cogniteapp.com/contextualization-notebooks/notebook/402030468482084/?access_token=${encodeURIComponent(
+              token!
+            )}`}
             title="Quality Check Notebook"
             height="100%"
             width="100%"

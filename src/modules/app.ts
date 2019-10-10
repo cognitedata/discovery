@@ -21,6 +21,7 @@ export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
 
 export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
+    token?: string;
     tenant?: string;
     currentPage?: number;
     datakit?: string;
@@ -250,8 +251,20 @@ export const setAppCurrentPage = (currentPage: number) => async (
   });
 };
 
+export const setAuthToken = (token: string) => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction>
+) => {
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      token,
+    },
+  });
+};
+
 // Reducer
 export interface AppState {
+  token?: string;
   currentPage: number;
   datakit?: string;
   tenant?: string;

@@ -323,6 +323,7 @@ class Main extends React.Component<Props, State> {
 
   render() {
     const { layout, editLayout } = this.state;
+    const { tenant, datakit } = this.props.app;
     return (
       <Layout style={{ display: 'flex' }}>
         <Sidebar />
@@ -405,7 +406,9 @@ class Main extends React.Component<Props, State> {
           shape="round"
           icon="edit"
           size="large"
-          onClick={() => this.changeEdit()}
+          onClick={() =>
+            this.props.push(`/${tenant}/datakits/${datakit}/verify`)
+          }
         >
           Finished Discovery
         </NextButton>

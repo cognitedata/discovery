@@ -13,6 +13,7 @@ import {
   setTenant,
   AppState,
   setAppCurrentPage,
+  setAuthToken,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
 import TimeseriesPreview from './TimeseriesPreview';
@@ -41,6 +42,7 @@ type Props = {
   match: { params: { tenant: string }; path: string };
   setTenant: typeof setTenant;
   setAppCurrentPage: typeof setAppCurrentPage;
+  setAuthToken: typeof setAuthToken;
   push: typeof push;
 };
 
@@ -71,7 +73,7 @@ class Auth extends React.Component<Props, State> {
     if (!status) {
       sdk.loginWithOAuth({
         project: tenant || pathTenant,
-        onTokens: console.log,
+        onTokens: tokens => this.props.setAuthToken(tokens.accessToken),
       });
       await sdk.authenticate();
     }
@@ -240,6 +242,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setTenant,
+      setAuthToken,
       setAppCurrentPage,
       push,
     },
