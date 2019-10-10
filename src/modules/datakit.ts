@@ -9,11 +9,20 @@ export const EDIT_DATAKIT = 'datakit/EDIT_DATAKIT';
 
 const DATAKIT_LOCAL_STORAGE = 'datakit';
 
+export interface DataKitItem {
+  timeseriesId: number;
+  query: {
+    assetId?: number;
+    assetName?: string;
+    timeseriesName?: string;
+  };
+  alias?: string;
+}
 export interface DataKit {
   // TODO fix snould not just be name
   name: string;
-  input: { timeseriesId: number; alias?: string }[];
-  output: { timeseriesId: number; alias?: string }[];
+  input: DataKitItem[];
+  output: DataKitItem[];
 }
 
 interface CreateDataKitAction extends Action<typeof ADD_DATAKIT> {
@@ -30,10 +39,15 @@ interface AddToDatakitAction extends Action<typeof ADD_TO_DATAKIT> {
     timeseriesId: number;
     alias?: string;
     output: boolean;
+    query: {
+      assetId?: number;
+      assetName?: string;
+      timeseriesName?: string;
+    };
   };
 }
 
-interface EditDatakitAction extends Action<typeof EDIT_DATAKIT> {
+export interface EditDatakitAction extends Action<typeof EDIT_DATAKIT> {
   payload: { name: string; datakit: DataKit };
 }
 
@@ -48,16 +62,32 @@ export function createDataKit(data: {
   name?: string;
   timeseriesId?: number;
   output?: boolean;
+  assetId?: number;
+  assetName?: string;
+  timeseriesName?: string;
 }) {
   return async (dispatch: Dispatch<CreateDataKitAction>) => {
-    const { name, timeseriesId, output } = data;
+    const {
+      name,
+      timeseriesId,
+      output,
+      assetId,
+      assetName,
+      timeseriesName,
+    } = data;
     const nameString = name || new Date().toISOString();
     dispatch({
       type: ADD_DATAKIT,
       payload: {
         name: nameString,
-        input: !output && timeseriesId ? [{ timeseriesId }] : [],
-        output: output && timeseriesId ? [{ timeseriesId }] : [],
+        input:
+          !output && timeseriesId
+            ? [{ timeseriesId, query: { assetId, assetName, timeseriesName } }]
+            : [],
+        output:
+          output && timeseriesId
+            ? [{ timeseriesId, query: { assetId, assetName, timeseriesName } }]
+            : [],
       },
     });
   };
@@ -75,7 +105,12 @@ export function removeDataKit(name: string) {
 export function addToDataKit(
   name: string,
   timeseriesId: number,
-  output = false
+  output = false,
+  query: {
+    assetId?: number;
+    assetName?: string;
+    timeseriesName?: string;
+  }
 ) {
   return async (dispatch: Dispatch<AddToDatakitAction>) => {
     dispatch({
@@ -84,6 +119,7 @@ export function addToDataKit(
         name,
         timeseriesId,
         output,
+        query,
       },
     });
   };
@@ -123,8 +159,11 @@ export default function datakit(
     case EDIT_DATAKIT:
       newState = {
         ...state,
-        [action.payload.name]: action.payload.datakit,
+        [action.payload.datakit.name]: action.payload.datakit,
       };
+      if (action.payload.name !== action.payload.datakit.name) {
+        delete newState[action.payload.name];
+      }
       break;
     case REMOVE_DATAKIT:
       newState = {
@@ -133,13 +172,17 @@ export default function datakit(
       delete newState[action.payload.name];
       break;
     case ADD_TO_DATAKIT: {
-      const { name, timeseriesId, output } = action.payload;
+      const { name, timeseriesId, output, query, alias } = action.payload;
       newState = {
         ...state,
         [name]: {
           ...state[name],
-          ...(output && { output: [...state[name].output, { timeseriesId }] }),
-          ...(!output && { input: [...state[name].input, { timeseriesId }] }),
+          ...(output && {
+            output: [...state[name].output, { timeseriesId, alias, query }],
+          }),
+          ...(!output && {
+            input: [...state[name].input, { timeseriesId, alias, query }],
+          }),
         },
       };
       break;

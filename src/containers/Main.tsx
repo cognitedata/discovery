@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Button, Icon } from 'antd';
+import { Button, Icon, Layout } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import {
@@ -8,6 +8,7 @@ import {
   WidthProvider,
   Layout as GridLayout,
 } from 'react-grid-layout';
+import { push } from 'connected-react-router';
 import { fetchTypes } from '../modules/types';
 import {
   selectThreeD,
@@ -23,13 +24,15 @@ import {
   setAssetId,
   resetAppState,
   setModelAndRevisionAndNode,
+  setAppDataKit,
+  setAppCurrentPage,
 } from '../modules/app';
 import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
-import Sidebar from './Sidebar';
-import TimeseriesPreview from './TimeseriesPreview';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
+import Sidebar from './Sidebar';
+import { selectDatakit, DataKitState } from '../modules/datakit';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -39,25 +42,11 @@ interface DiscoveryLayout extends GridLayout {
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
-// 13FV1234 is useful asset
-const { Content, Header } = Layout;
-
-const StyledHeader = styled(Header)`
-  && {
-    background-color: rgba(0, 0, 0, 0);
-    z-index: 100;
-    padding-left: 24px;
-    background: #343434;
-  }
-  && button {
-    margin-right: 12px;
-  }
-`;
-
 const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
   editable: boolean;
 }>`
   position: relative;
+  flex: 1;
   .react-grid-item {
     padding: 12px;
     background: #fff;
@@ -99,11 +88,28 @@ const DraggingView = styled.div`
 const AddButton = styled(Button)`
   && {
     position: absolute;
+    left: 374px;
+    bottom: 68px;
+    z-index: 1000;
+  }
+`;
+const EditButton = styled(Button)`
+  && {
+    position: absolute;
+    left: 374px;
+    bottom: 24px;
+    z-index: 1000;
+  }
+`;
+const NextButton = styled(Button)`
+  && {
+    position: absolute;
     right: 24px;
     bottom: 24px;
     z-index: 1000;
   }
 `;
+
 const DeleteButton = styled(Button)`
   && {
     position: absolute;
@@ -117,6 +123,7 @@ type Props = {
   match: any;
   history: any;
   location: any;
+  datakit: DataKitState;
   threed: ThreeDState;
   app: AppState;
   assets: AssetsState;
@@ -126,6 +133,9 @@ type Props = {
   setAssetId: typeof setAssetId;
   setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
   resetAppState: typeof resetAppState;
+  setAppDataKit: typeof setAppDataKit;
+  setAppCurrentPage: typeof setAppCurrentPage;
+  push: typeof push;
 };
 
 type State = {
@@ -199,6 +209,8 @@ class Main extends React.Component<Props, State> {
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 200);
+
+    this.props.setAppCurrentPage(1);
   }
 
   componentDidUpdate() {
@@ -206,16 +218,28 @@ class Main extends React.Component<Props, State> {
   }
 
   checkAndFixURL = () => {
+    // const {
+    //   match: {
+    //     params: { rootAssetId, assetId },
+    //   },
+    // } = this.props;
+    // if (assetId || rootAssetId) {
+    //   const asset = this.props.assets.all[Number(assetId || rootAssetId)];
+    //   if (asset && Number(asset.rootId) !== Number(rootAssetId)) {
+    //     this.onAssetIdChange(asset.rootId, asset.id);
+    //   }
+    // }
     const {
       match: {
-        params: { rootAssetId, assetId },
+        params: { datakit },
       },
+      datakit: dataKitStore,
+      app: { datakit: currentAppDataKit, tenant },
     } = this.props;
-    if (assetId || rootAssetId) {
-      const asset = this.props.assets.all[Number(assetId || rootAssetId)];
-      if (asset && Number(asset.rootId) !== Number(rootAssetId)) {
-        this.onAssetIdChange(asset.rootId, asset.id);
-      }
+    if (datakit !== currentAppDataKit && datakit && dataKitStore[datakit]) {
+      this.props.setAppDataKit(datakit);
+    } else if (!dataKitStore[currentAppDataKit || datakit]) {
+      this.props.push(`/${tenant}/datakits`);
     }
   };
 
@@ -254,10 +278,11 @@ class Main extends React.Component<Props, State> {
     }));
   };
 
-  changeEdit = (edit = false) => {
-    trackUsage('Main.LayoutEdit', { edit });
+  changeEdit = () => {
+    const { editLayout } = this.state;
+    trackUsage('Main.LayoutEdit', { edit: !editLayout });
     this.setState({
-      editLayout: edit,
+      editLayout: !editLayout,
     });
   };
 
@@ -299,111 +324,92 @@ class Main extends React.Component<Props, State> {
   render() {
     const { layout, editLayout } = this.state;
     return (
-      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        <TimeseriesPreview />
-        <Layout>
-          <Layout>
-            <Sidebar />
-            <Content
-              style={{
-                display: 'flex',
-                height: '100vh',
-                flexDirection: 'column',
-              }}
-            >
-              <StyledHeader>
-                <Switch
-                  checked={editLayout}
-                  checkedChildren="Edit ON"
-                  unCheckedChildren="Edit OFF"
-                  onChange={this.changeEdit}
-                />
-                <a
-                  style={{ float: 'right', color: '#fff' }}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://docs.cognite.com/discovery/blog/releasenotes.html"
-                >
-                  v{process.env.REACT_APP_VERSION}
-                </a>
-              </StyledHeader>
-              <CustomGridLayout
-                editable={editLayout}
-                ref={this.gridRef}
-                className="layout"
-                rowHeight={30}
-                cols={{ lg: 4, md: 4, sm: 4, xs: 4, xxs: 4 }}
-                onLayoutChange={this.onLayoutChange}
-                onDragStart={() => {
-                  return editLayout;
-                }}
-              >
-                {layout.map((el, i) => (
-                  <div
-                    key={el.i}
-                    data-grid={el}
-                    style={{ position: 'relative' }}
-                  >
-                    {editLayout && (
-                      <DraggingView>
-                        <div>
-                          <Icon className="big" type="drag" />
-                          <h2>{ViewerTypeMap[el.viewType]}</h2>
-                          <p>
-                            Resize by dragging the bottom right corner, drag
-                            around each component to make your own layout
-                          </p>
-                          <ComponentSelector
-                            onComponentChange={(viewType: ViewerType) => {
-                              this.changeLayoutType(viewType, el.i!);
-                            }}
-                          />
-                        </div>
-                      </DraggingView>
-                    )}
-                    <AssetViewer
-                      type={el.viewType}
-                      onComponentChange={(type: ViewerType) => {
-                        this.changeLayoutType(type, el.i!);
+      <Layout style={{ display: 'flex' }}>
+        <Sidebar />
+        <CustomGridLayout
+          editable={editLayout}
+          ref={this.gridRef}
+          className="layout"
+          rowHeight={30}
+          style={{ height: '100%', overflow: 'auto' }}
+          cols={{ lg: 4, md: 4, sm: 4, xs: 4, xxs: 4 }}
+          onLayoutChange={this.onLayoutChange}
+          onDragStart={() => {
+            return editLayout;
+          }}
+        >
+          {layout.map((el, i) => (
+            <div key={el.i} data-grid={el} style={{ position: 'relative' }}>
+              {editLayout && (
+                <DraggingView>
+                  <div>
+                    <Icon className="big" type="drag" />
+                    <h2>{ViewerTypeMap[el.viewType]}</h2>
+                    <p>
+                      Resize by dragging the bottom right corner, drag around
+                      each component to make your own layout
+                    </p>
+                    <ComponentSelector
+                      onComponentChange={(viewType: ViewerType) => {
+                        this.changeLayoutType(viewType, el.i!);
                       }}
                     />
-                    {editLayout && (
-                      <DeleteButton
-                        type="primary"
-                        shape="circle"
-                        icon="close-circle"
-                        size="small"
-                        onClick={() => {
-                          trackUsage('Component Deleted', {
-                            type: layout[i].viewType,
-                          });
-                          this.setState({
-                            layout: [
-                              ...layout.slice(0, i),
-                              ...layout.slice(i + 1),
-                            ],
-                          });
-                        }}
-                      />
-                    )}
                   </div>
-                ))}
-              </CustomGridLayout>
-              {editLayout && (
-                <AddButton
-                  type="primary"
-                  shape="round"
-                  icon="plus"
-                  size="large"
-                  onClick={this.onAddComponent}
-                >
-                  Add Layout
-                </AddButton>
+                </DraggingView>
               )}
-            </Content>
-          </Layout>
-        </Layout>
-      </div>
+              <AssetViewer
+                type={el.viewType}
+                onComponentChange={(type: ViewerType) => {
+                  this.changeLayoutType(type, el.i!);
+                }}
+              />
+              {editLayout && (
+                <DeleteButton
+                  type="primary"
+                  shape="circle"
+                  icon="close-circle"
+                  size="small"
+                  onClick={() => {
+                    trackUsage('Component Deleted', {
+                      type: layout[i].viewType,
+                    });
+                    this.setState({
+                      layout: [...layout.slice(0, i), ...layout.slice(i + 1)],
+                    });
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </CustomGridLayout>
+        {editLayout && (
+          <AddButton
+            shape="round"
+            icon="plus"
+            size="large"
+            onClick={this.onAddComponent}
+          >
+            Add Layout
+          </AddButton>
+        )}
+        <EditButton
+          shape="round"
+          icon="edit"
+          size="large"
+          onClick={() => this.changeEdit()}
+        >
+          {editLayout ? 'Done' : 'Edit Layout'}
+        </EditButton>
+        <NextButton
+          type="primary"
+          shape="round"
+          icon="edit"
+          size="large"
+          onClick={() => this.changeEdit()}
+        >
+          Finished Discovery
+        </NextButton>
+      </Layout>
     );
   }
 }
@@ -412,6 +418,7 @@ const mapStateToProps = (state: RootState) => {
   return {
     app: selectApp(state),
     threed: selectThreeD(state),
+    datakit: selectDatakit(state),
     assets: selectAssets(state),
   };
 };
@@ -425,6 +432,9 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setAssetId,
       setModelAndRevisionAndNode,
       resetAppState,
+      push,
+      setAppDataKit,
+      setAppCurrentPage,
     },
     dispatch
   );

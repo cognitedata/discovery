@@ -2,16 +2,45 @@ import React from 'react';
 import { Route, Switch } from 'react-router-dom';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import styled from 'styled-components';
+import { Layout, Steps, message } from 'antd';
+import { push } from 'connected-react-router';
 import Main from './Main';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
-import { selectApp, setTenant, AppState } from '../modules/app';
+import {
+  selectApp,
+  setTenant,
+  AppState,
+  setAppCurrentPage,
+} from '../modules/app';
 import { RootState } from '../reducers/index';
+import TimeseriesPreview from './TimeseriesPreview';
+import DataKitMainList from './DataKit/DataKitMainList';
+import { selectDatakit, DataKitState } from '../modules/datakit';
+
+const { Content, Header } = Layout;
+
+const StyledHeader = styled(Header)`
+  && {
+    display: flex;
+    z-index: 100;
+    padding-left: 24px;
+    background: #fff;
+    box-shadow: 0px 0px 8px #cdcdcd;
+  }
+  && button {
+    margin-right: 12px;
+  }
+`;
 
 type Props = {
   app: AppState;
+  datakit: DataKitState;
   match: { params: { tenant: string }; path: string };
   setTenant: typeof setTenant;
+  setAppCurrentPage: typeof setAppCurrentPage;
+  push: typeof push;
 };
 
 type State = {
@@ -60,37 +89,126 @@ class Auth extends React.Component<Props, State> {
     }
   }
 
+  changePath = (step: number) => {
+    const { tenant, datakit } = this.props.app;
+    switch (step) {
+      case 1: {
+        if (!datakit || !this.props.datakit[datakit]) {
+          message.error('Select a datakit first to navigate!');
+          return;
+        }
+        this.props.push(`/${tenant}/datakits/${datakit}/edit`);
+        break;
+      }
+      case 2: {
+        message.info('Coming soon!');
+        break;
+      }
+      case 0:
+      default:
+        this.props.push(`/${tenant}/datakits`);
+    }
+    this.props.setAppCurrentPage(step);
+  };
+
   render() {
-    const { match } = this.props;
+    const {
+      match,
+      app: { datakit: datakitName, currentPage },
+      datakit,
+    } = this.props;
     if (!this.state.auth) {
       return <Loader />;
     }
     return (
-      <>
-        <Switch>
-          <Route
-            path={`${match.path}/asset/:rootAssetId`}
-            exact
-            component={Main}
-          />
-          <Route
-            path={`${match.path}/asset/:rootAssetId/:assetId`}
-            exact
-            component={Main}
-          />
-          <Route
-            path={`${match.path}/models/:modelId/:revisionId`}
-            exact
-            component={Main}
-          />
-          <Route
-            path={`${match.path}/models/:modelId/:revisionId/:nodeId`}
-            exact
-            component={Main}
-          />
-          <Route component={Main} />
-        </Switch>
-      </>
+      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+        <TimeseriesPreview />
+        <Layout>
+          <Content
+            style={{
+              display: 'flex',
+              height: '100vh',
+              flexDirection: 'column',
+            }}
+          >
+            <StyledHeader>
+              <div style={{ flex: 1, alignSelf: 'center' }}>
+                <Steps
+                  current={currentPage}
+                  onChange={this.changePath}
+                  size="small"
+                  style={{ maxWidth: '1200px' }}
+                >
+                  <Steps.Step title="Data Kit" />
+                  <Steps.Step
+                    title="Discovery"
+                    subTitle={
+                      <span
+                        style={{
+                          textOverflow: 'ellipsis',
+                          maxWidth: '160px',
+                          // this line hurts
+                          display: 'table-cell',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        Kit:{' '}
+                        {datakitName && datakit[datakitName]
+                          ? datakitName
+                          : 'None'}
+                      </span>
+                    }
+                  />
+                  <Steps.Step title="Quality Checks" />
+                  <Steps.Step title="Deploy" />
+                </Steps>
+              </div>
+              <a
+                style={{ float: 'right', color: '#000', marginLeft: '12px' }}
+                target="_blank"
+                rel="noopener noreferrer"
+                href="https://docs.cognite.com/discovery/blog/releasenotes.html"
+              >
+                v{process.env.REACT_APP_VERSION}
+              </a>
+            </StyledHeader>
+            <Switch>
+              <Route
+                path={`${match.path}/datakits`}
+                exact
+                component={DataKitMainList}
+              />
+              <Route
+                path={`${match.path}/datakits/:datakit/edit`}
+                exact
+                component={Main}
+              />
+              {/* <Route
+                path={`${match.path}/asset/:rootAssetId`}
+                exact
+                component={Main}
+              />
+              <Route
+                path={`${match.path}/asset/:rootAssetId/:assetId`}
+                exact
+                component={Main}
+              />
+              <Route
+                path={`${match.path}/models/:modelId/:revisionId`}
+                exact
+                component={Main}
+              />
+              <Route
+                path={`${match.path}/models/:modelId/:revisionId/:nodeId`}
+                exact
+                component={Main}
+              /> */}
+              <Route component={DataKitMainList} />
+            </Switch>
+          </Content>
+        </Layout>
+      </div>
     );
   }
 }
@@ -98,6 +216,7 @@ class Auth extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     app: selectApp(state),
+    datakit: selectDatakit(state),
   };
 };
 
@@ -105,6 +224,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setTenant,
+      setAppCurrentPage,
+      push,
     },
     dispatch
   );

@@ -47,10 +47,20 @@ export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
 }
 export function fetchTimeseriesByIds(timeseriesIds: number[]) {
   return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
-    const results = await sdk.timeseries.retrieve(
-      timeseriesIds.map(id => ({ id }))
-    );
-    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+    try {
+      const results = await sdk.timeseries.retrieve(
+        timeseriesIds.map(id => ({ id }))
+      );
+      dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+    } catch (e) {
+      const missingIds = e.missing.map((el: { id: number }) => el.id);
+      const results = await sdk.timeseries.retrieve(
+        timeseriesIds
+          .filter(el => missingIds.indexOf(el) === -1)
+          .map(id => ({ id }))
+      );
+      dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+    }
   };
 }
 let searchTimeseriesRID = 0;

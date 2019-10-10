@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Table, Button } from 'antd';
+import { Table, Button, Spin } from 'antd';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { RootState } from '../../reducers/index';
 import {
@@ -9,12 +9,14 @@ import {
   fetchTimeseriesByIds,
 } from '../../modules/timeseries';
 import { selectAssets, ExtendedAsset } from '../../modules/assets';
-
 import {
+  removeDataKit,
   selectDatakit,
   updateDataKit,
   DataKitState,
+  DataKitItem,
 } from '../../modules/datakit';
+import { setAppDataKit } from '../../modules/app';
 
 type Props = {
   assets: { [id: number]: ExtendedAsset };
@@ -22,18 +24,20 @@ type Props = {
   datakit: DataKitState;
   datakitName: string;
   updateDataKit: typeof updateDataKit;
+  removeDataKit: typeof removeDataKit;
+  setAppDataKit: typeof setAppDataKit;
   fetchTimeseriesByIds: typeof fetchTimeseriesByIds;
 };
 
-type State = {};
+type State = { datakitName: string };
 
-type ExtendedGetTimeSeriesMetadataDTO = GetTimeSeriesMetadataDTO & {
-  alias?: string;
-  timeseriesId: number;
-};
+type ExtendedGetTimeSeriesMetadataDTO = GetTimeSeriesMetadataDTO & DataKitItem;
 
 class DataKitViewer extends React.Component<Props, State> {
-  state = {};
+  constructor(props: Props) {
+    super(props);
+    this.state = { datakitName: props.datakitName };
+  }
 
   componentDidMount() {
     this.fetchTimeseries();
@@ -42,11 +46,16 @@ class DataKitViewer extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     if (prevProps.datakitName !== this.props.datakitName) {
       this.fetchTimeseries();
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({
+        datakitName: this.props.datakitName,
+      });
     }
   }
 
   tableColumns = (isInput: boolean) => {
-    const { datakit, datakitName, assets } = this.props;
+    const { datakit, assets } = this.props;
+    const { datakitName } = this.state;
     const { input, output } = datakit[datakitName];
 
     return [
@@ -61,7 +70,15 @@ class DataKitViewer extends React.Component<Props, State> {
         title: 'Description',
         key: 'description',
         render: (item: ExtendedGetTimeSeriesMetadataDTO) => {
-          return <span>{item.description || 'N/A'}</span>;
+          return (
+            <span>
+              {item.description
+                ? item.description
+                    .substr(0, 255)
+                    .concat(item.description.length > 255 ? '...' : '')
+                : 'N/A'}
+            </span>
+          );
         },
       },
       {
@@ -97,6 +114,32 @@ class DataKitViewer extends React.Component<Props, State> {
         render: (name: string, row: ExtendedGetTimeSeriesMetadataDTO) => {
           return (
             <>
+              <Button
+                onClick={() => {
+                  const alias = prompt('Add an Alias', row.alias);
+                  this.props.updateDataKit(datakitName, {
+                    ...datakit[datakitName],
+                    ...(isInput && {
+                      input: input.map(el => {
+                        if (el.timeseriesId === row.timeseriesId) {
+                          return { ...el, alias: alias || undefined };
+                        }
+                        return el;
+                      }),
+                    }),
+                    ...(!isInput && {
+                      output: output.map(el => {
+                        if (el.timeseriesId === row.timeseriesId) {
+                          return { ...el, alias: alias || undefined };
+                        }
+                        return el;
+                      }),
+                    }),
+                  });
+                }}
+              >
+                Add Alias
+              </Button>
               <Button
                 onClick={() => {
                   this.props.updateDataKit(datakitName, {
@@ -140,12 +183,30 @@ class DataKitViewer extends React.Component<Props, State> {
   };
 
   render() {
-    const { datakit, datakitName, timeseries } = this.props;
-    const { input, output } = datakit[datakitName];
+    const { datakit, timeseries } = this.props;
+    const { datakitName } = this.state;
+    if (!datakit[datakitName]) {
+      return <Spin />;
+    }
+    const { input, output, name } = datakit[datakitName];
     return (
-      <>
-        <pre>{JSON.stringify(datakit[datakitName], null, 2)}</pre>
-        <h3>Input</h3>
+      <div style={{ overflow: 'auto', flex: 1 }}>
+        <h2>Data Kit: {name}</h2>
+        <Button
+          onClick={() => {
+            const newName = prompt('New Name');
+            if (newName) {
+              this.props.updateDataKit(name, {
+                ...datakit[name],
+                name: newName,
+              });
+              this.setState({ datakitName: newName });
+            }
+          }}
+        >
+          Rename
+        </Button>
+        <h3>Inputs</h3>
         <Table
           dataSource={input.map(el => ({
             ...el,
@@ -154,7 +215,7 @@ class DataKitViewer extends React.Component<Props, State> {
           rowKey="name"
           columns={this.tableColumns(true)}
         />
-        <h3>Output</h3>
+        <h3>Outputs</h3>
         <Table
           dataSource={output.map(el => ({
             ...el,
@@ -163,7 +224,8 @@ class DataKitViewer extends React.Component<Props, State> {
           rowKey="name"
           columns={this.tableColumns(false)}
         />
-      </>
+        <pre>{JSON.stringify(datakit[datakitName], null, 2)}</pre>
+      </div>
     );
   }
 }
@@ -180,6 +242,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       updateDataKit,
+      removeDataKit,
+      setAppDataKit,
       fetchTimeseriesByIds,
     },
     dispatch

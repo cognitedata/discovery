@@ -82,7 +82,7 @@ class Main extends React.Component<Props, State> {
       <Sider
         style={{
           overflow: 'auto',
-          height: '100vh',
+          height: '100%',
           padding: '12px',
           background: 'rgb(255,255,255)',
         }}

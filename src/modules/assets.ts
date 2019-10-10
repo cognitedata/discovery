@@ -3,7 +3,7 @@ import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
-import { push } from 'connected-react-router';
+// import { push } from 'connected-react-router';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
@@ -101,8 +101,8 @@ const requestedAssetIds: RequestedAssetIds = {};
 
 export function fetchAsset(assetId: number, redirect = false) {
   return async (
-    dispatch: ThunkDispatch<any, any, AnyAction>,
-    getState: () => RootState
+    dispatch: ThunkDispatch<any, any, AnyAction>
+    // getState: () => RootState
   ) => {
     // Skip if we did it before
     if (requestedAssetIds[assetId]) {
@@ -120,12 +120,12 @@ export function fetchAsset(assetId: number, redirect = false) {
 
         dispatch({ type: ADD_ASSETS, payload: { items } });
         if (redirect) {
-          const {
-            app: { tenant },
-          } = getState();
-          dispatch(
-            push(`/${tenant}/asset/${items[assetId].rootId}/${assetId}`)
-          );
+          // const {
+          //   app: { tenant },
+          // } = getState();
+          // dispatch(
+          //   push(`/${tenant}/asset/${items[assetId].rootId}/${assetId}`)
+          // );
         }
       }
     } catch (ex) {

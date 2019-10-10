@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
+import { push } from 'connected-react-router';
 import { setTenant } from '../modules/app';
 import { sdk } from '../index';
 
@@ -21,9 +22,10 @@ const TenantSelectorContainer = styled.div`
 
 type Props = {
   doSetTenant: typeof setTenant;
+  doPush: typeof push;
 };
 
-const Login = ({ doSetTenant }: Props) => (
+const Login = ({ doSetTenant, doPush }: Props) => (
   <Wrapper>
     <TenantSelectorContainer>
       <TenantSelector
@@ -34,6 +36,7 @@ const Login = ({ doSetTenant }: Props) => (
             : undefined;
           sdk.setBaseUrl(`https://${cdfEnv || 'api'}.cognitedata.com`);
           doSetTenant(tenant, true);
+          doPush(`/${tenant}`);
         }}
         header="Cognite Data Fusion project name"
         validateTenant={(tenant, advancedOptions) => {
@@ -62,6 +65,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       doSetTenant: setTenant,
+      doPush: push,
     },
     dispatch
   );

@@ -2,6 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Table, Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
+import { push } from 'connected-react-router';
+import styled from 'styled-components';
 import { RootState } from '../../reducers/index';
 import {
   removeDataKit,
@@ -11,13 +13,27 @@ import {
   DataKitState,
 } from '../../modules/datakit';
 import DataKitViewer from './DataKitViewer';
+import { selectApp, AppState } from '../../modules/app';
 
 type Props = {
+  app: AppState;
   datakit: DataKitState;
   createDataKit: typeof createDataKit;
   removeDataKit: typeof removeDataKit;
   updateDataKit: typeof updateDataKit;
+  push: typeof push;
 };
+
+const Wrapper = styled.div`
+  height: 100%;
+  overflow: auto;
+  && button {
+    margin-right: 6px;
+  }
+  && > button {
+    margin-bottom: 12px;
+  }
+`;
 
 type State = { selectedDatakit?: string };
 
@@ -33,20 +49,25 @@ class DataKitList extends React.Component<Props, State> {
   };
 
   render() {
-    const { datakit } = this.props;
+    const {
+      datakit,
+      app: { tenant, currentPage },
+    } = this.props;
     const { selectedDatakit } = this.state;
     if (selectedDatakit) {
       return (
-        <>
+        <div
+          style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+        >
           <Button onClick={() => this.setState({ selectedDatakit: undefined })}>
             BACK
           </Button>
           <DataKitViewer datakitName={selectedDatakit} />
-        </>
+        </div>
       );
     }
     return (
-      <>
+      <Wrapper>
         <Button onClick={() => this.addNewDatakit()}>Add New Datakit</Button>
         <Table
           dataSource={Object.values(datakit)}
@@ -74,6 +95,16 @@ class DataKitList extends React.Component<Props, State> {
               render: name => {
                 return (
                   <>
+                    {currentPage !== 1 && (
+                      <Button
+                        onClick={() => {
+                          this.props.push(`/${tenant}/datakits/${name}/edit`);
+                        }}
+                        type="primary"
+                      >
+                        Add Timeseries
+                      </Button>
+                    )}
                     <Button
                       onClick={() => {
                         this.setState({ selectedDatakit: name });
@@ -95,13 +126,14 @@ class DataKitList extends React.Component<Props, State> {
             },
           ]}
         />
-      </>
+      </Wrapper>
     );
   }
 }
 
 const mapStateToProps = (state: RootState) => {
   return {
+    app: selectApp(state),
     datakit: selectDatakit(state),
   };
 };
@@ -112,6 +144,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       createDataKit,
       removeDataKit,
       updateDataKit,
+      push,
     },
     dispatch
   );

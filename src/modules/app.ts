@@ -1,11 +1,13 @@
 import { Action } from 'redux';
-import { push, CallHistoryMethodAction } from 'connected-react-router';
+import { CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
 import { trackUsage } from '../utils/metrics';
 import { fetchAsset, AddAssetAction, ADD_ASSETS } from './assets';
+import { EDIT_DATAKIT, EditDatakitAction } from './datakit';
+
 import {
   UPDATE_REVISON,
   UpdateRevisionAction,
@@ -20,6 +22,8 @@ export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
 export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
     tenant?: string;
+    currentPage?: number;
+    datakit?: string;
     modelId?: number;
     revisionId?: number;
     nodeId?: number;
@@ -36,6 +40,7 @@ type AppAction =
   | UpdateRevisionAction
   | AddRevisionAction
   | AddNodeAssetMappingAction
+  | EditDatakitAction
   | AddAssetAction;
 
 export const setModelAndRevisionAndNode = (
@@ -59,7 +64,7 @@ export const setModelAndRevisionAndNode = (
   const {
     threed: { representsAsset },
     assetMappings: { byNodeId },
-    app: { tenant },
+    // app: { tenant },
   } = getState();
   const rootAssetId = Object.keys(representsAsset).find(
     (assetId: string) =>
@@ -84,7 +89,7 @@ export const setModelAndRevisionAndNode = (
     },
   });
   if (redirect) {
-    dispatch(push(`/${tenant}/models/${modelId}/${revisionId}/${nodeId}`));
+    // dispatch(push(`/${tenant}/models/${modelId}/${revisionId}/${nodeId}`));
   }
 };
 
@@ -106,7 +111,7 @@ export const setAssetId = (
   const {
     threed: { representsAsset },
     assetMappings: { byAssetId },
-    app: { tenant },
+    // app: { tenant },
   } = getState();
   const modelMapping = representsAsset[rootAssetId];
   const assetMapping = byAssetId[assetId];
@@ -121,7 +126,7 @@ export const setAssetId = (
     },
   });
   if (redirect) {
-    dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
+    // dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
   }
 };
 
@@ -153,7 +158,7 @@ export const setTimeseriesId = (
     assetMappings: { byAssetId },
     assets: { all },
     timeseries: { timeseriesData },
-    app: { tenant },
+    // app: { tenant },
   } = getState();
   const timeseries = timeseriesData[timeseriesId];
   if (!timeseries) {
@@ -190,7 +195,7 @@ export const setTimeseriesId = (
   });
 
   if (redirect && rootAssetId) {
-    dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
+    // dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
   }
 };
 
@@ -204,7 +209,7 @@ export const setTenant = (tenant: string, redirect = false) => async (
     },
   });
   if (redirect) {
-    dispatch(push(`/${tenant}`));
+    // dispatch(push(`/${tenant}`));
   }
 };
 
@@ -213,20 +218,42 @@ export const resetAppState = () => async (
     any,
     any,
     ClearAppStateAction | CallHistoryMethodAction
-  >,
-  getState: () => RootState
+  >
+  // getState: () => RootState
 ) => {
-  const {
-    app: { tenant },
-  } = getState();
+  // const {
+  //   app: { tenant },
+  // } = getState();
   dispatch({
     type: CLEAR_APP_STATE,
   });
-  dispatch(push(`/${tenant}`));
+  // dispatch(push(`/${tenant}`));
+};
+export const setAppDataKit = (datakit: string) => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction>
+) => {
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      datakit,
+    },
+  });
+};
+export const setAppCurrentPage = (currentPage: number) => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction>
+) => {
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      currentPage,
+    },
+  });
 };
 
 // Reducer
 export interface AppState {
+  currentPage: number;
+  datakit?: string;
   tenant?: string;
   modelId?: number;
   timeseriesId?: number;
@@ -235,7 +262,7 @@ export interface AppState {
   assetId?: number;
   rootAssetId?: number;
 }
-const initialState: AppState = {};
+const initialState: AppState = { currentPage: 0 };
 
 export default function app(state = initialState, action: AppAction): AppState {
   switch (action.type) {
@@ -245,6 +272,7 @@ export default function app(state = initialState, action: AppAction): AppState {
     case CLEAR_APP_STATE:
       return {
         ...state,
+        datakit: undefined,
         timeseriesId: undefined,
         modelId: undefined,
         revisionId: undefined,
@@ -308,6 +336,16 @@ export default function app(state = initialState, action: AppAction): AppState {
         return {
           ...state,
           rootAssetId: asset.rootId,
+        };
+      }
+      return state;
+    }
+    case EDIT_DATAKIT: {
+      const { name, datakit } = action.payload;
+      if (state.datakit === name && name !== datakit.name) {
+        return {
+          ...state,
+          datakit: datakit.name,
         };
       }
       return state;
