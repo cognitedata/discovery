@@ -45,7 +45,7 @@ export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
     dispatch(setTimeseriesId(timeseriesId, redirect));
   };
 }
-let searchTimeseriesRID = 0;
+let searchTimeseriesId = 0;
 // Functions
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
@@ -53,8 +53,8 @@ export function searchTimeseries(query: string, assetId?: number) {
       assetId,
       query,
     });
-    searchTimeseriesRID += 1;
-    const id = searchTimeseriesRID;
+    searchTimeseriesId += 1;
+    const id = searchTimeseriesId;
     const results = await sdk.post(
       `/api/playground/projects/${sdk.project}/timeseries/search`,
       {
@@ -67,12 +67,12 @@ export function searchTimeseries(query: string, assetId?: number) {
         },
       }
     );
-    if (searchTimeseriesRID === id) {
+    if (searchTimeseriesId === id) {
       dispatch({
         type: SET_TIMESERIES,
         payload: { items: results.data.items },
       });
-      searchTimeseriesRID = 0;
+      searchTimeseriesId = 0;
     }
   };
 }
