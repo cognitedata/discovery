@@ -1,15 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import {
-  Input,
-  Icon,
-  Button,
-  DatePicker,
-  Select,
-  message,
-  List,
-  notification,
-} from 'antd';
+import { Input, Icon, Button, DatePicker, Select, message, List } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
 import styled from 'styled-components';
 import moment from 'moment';
@@ -136,6 +127,10 @@ const ListWrapper = styled.div`
   && > * {
     overflow: auto;
     flex: 1;
+    margin-left: 12px;
+  }
+  && > *:nth-child(1) {
+    margin-left: 0px;
   }
 `;
 const ListItem = styled.div`
@@ -182,6 +177,12 @@ interface LocationFilter {
 
   name?: string;
 }
+interface RootFilter {
+  type: 'root';
+  id?: string;
+
+  name?: string;
+}
 interface SourceFilter {
   type: 'source';
   source?: string;
@@ -193,7 +194,12 @@ interface MetadataFilter {
   value?: string;
 }
 
-type Filter = EventFilter | LocationFilter | SourceFilter | MetadataFilter;
+type Filter =
+  | EventFilter
+  | LocationFilter
+  | SourceFilter
+  | MetadataFilter
+  | RootFilter;
 
 type OwnProps = {
   rootAsset?: ExtendedAsset;
@@ -207,8 +213,8 @@ type Props = DispatchProps & OwnProps;
 type State = {
   loading: boolean;
   tsLoading: boolean;
-  currentRootOnly: boolean;
   showSearchExtended: boolean;
+  addingRootFilter?: RootFilter;
   addingEventFilter?: EventFilter;
   addingLocationFilter?: LocationFilter;
   addingSourceFilter?: SourceFilter;
@@ -219,6 +225,7 @@ type State = {
   results: Asset[];
   tsResults: GetTimeSeriesMetadataDTO[];
   possibleParents: Asset[];
+  possibleRoots: Asset[];
 };
 
 class AssetSearch extends Component<Props, State> {
@@ -237,10 +244,9 @@ class AssetSearch extends Component<Props, State> {
       loading: false,
       showSearchExtended: false,
       onlyRootAsset: false,
-      currentRootOnly: !!props.rootAsset,
-      addingEventFilter: undefined,
       query: '',
       filters: [],
+      possibleRoots: [],
       possibleParents: [],
       results: [],
       tsResults: [],
@@ -249,40 +255,41 @@ class AssetSearch extends Component<Props, State> {
 
     this.searchForAsset = debounce(this.searchForAsset, 700);
     this.searchForTimeseries = debounce(this.searchForTimeseries, 700);
+    this.searchForRootAsset = debounce(this.searchForRootAsset, 700);
+    this.searchForAssetParent = debounce(this.searchForAssetParent, 700);
   }
 
   componentDidUpdate(prevProps: Props, prevState: State) {
     if (
       prevState.filters.length !== this.state.filters.length ||
       prevState.query.length !== this.state.query.length ||
-      prevState.onlyRootAsset !== this.state.onlyRootAsset ||
-      prevState.currentRootOnly !== this.state.currentRootOnly
+      prevState.onlyRootAsset !== this.state.onlyRootAsset
     ) {
       this.searchForAsset(this.state.query);
       this.searchForTimeseries(this.state.query);
     }
-    if (prevState.currentRootOnly !== this.state.currentRootOnly) {
+    if (prevState.addingRootFilter && !this.state.addingRootFilter) {
       trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'rootOnly',
-        value: this.state.currentRootOnly,
+        value: prevState.addingRootFilter,
       });
     }
-    if (prevState.addingEventFilter !== this.state.addingEventFilter) {
+    if (prevState.addingEventFilter && !this.state.addingEventFilter) {
       trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'eventFilter',
-        value: this.state.addingEventFilter,
+        value: prevState.addingEventFilter,
       });
     }
-    if (prevState.addingLocationFilter !== this.state.addingLocationFilter) {
+    if (prevState.addingLocationFilter && !this.state.addingLocationFilter) {
       trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'locationFilter',
-        value: this.state.addingLocationFilter,
+        value: prevState.addingLocationFilter,
       });
     }
-    if (prevState.addingSourceFilter !== this.state.addingSourceFilter) {
+    if (prevState.addingSourceFilter && !this.state.addingSourceFilter) {
       trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'sourceFilter',
-        value: this.state.addingSourceFilter,
+        value: prevState.addingSourceFilter,
       });
     }
   }
@@ -316,168 +323,48 @@ class AssetSearch extends Component<Props, State> {
     }
   };
 
-  searchForAsset = async (query: string, isParentQuery = false) => {
+  searchForAssetParent = async (query: string) => {
+    trackSearchUsage('GlobalSearch', 'ParentFilter', {
+      query,
+    });
+    const results = await sdk.post(
+      `/api/playground/projects/${sdk.project}/assets/search`,
+      {
+        data: {
+          search: { query },
+          limit: 100,
+        },
+      }
+    );
+    this.setState({ possibleParents: results.data.items, loading: false });
+  };
+
+  searchForRootAsset = async (query: string) => {
+    trackSearchUsage('GlobalSearch', 'Asset', {
+      root: true,
+      query,
+    });
+    const results = await sdk.post(
+      `/api/playground/projects/${sdk.project}/assets/search`,
+      {
+        data: {
+          search: { query },
+          filter: {
+            root: true,
+          },
+          limit: 100,
+        },
+      }
+    );
+    this.setState({ possibleRoots: results.data.items, loading: false });
+  };
+
+  searchForAsset = async (query: string) => {
     try {
       this.setState({ loading: true });
       this.queryId = this.queryId + 1;
       const queryId = 0 + this.queryId;
-      if (isParentQuery) {
-        trackSearchUsage('GlobalSearch', 'ParentFilter', {
-          query,
-        });
-        const results = await sdk.post(
-          `/api/playground/projects/${sdk.project}/assets/search`,
-          {
-            data: {
-              search: { query },
-              limit: 100,
-            },
-          }
-        );
-        this.setState({ possibleParents: results.data.items, loading: false });
-      } else {
-        const { filters, onlyRootAsset, currentRootOnly } = this.state;
-        const { rootAsset } = this.props;
-        const filterMap = filters.reduce(
-          (prev, filter) => {
-            switch (filter.type) {
-              case 'event':
-                prev.events.push(filter);
-                break;
-              case 'location':
-                prev.locations.push(filter.id!);
-                break;
-              case 'metadata':
-                // eslint-disable-next-line no-param-reassign
-                prev.metadata[filter.key!] = filter.value!;
-                break;
-              case 'source':
-                // eslint-disable-next-line no-param-reassign
-                prev.source = filter.source;
-                break;
-            }
-            return prev;
-          },
-          {
-            source: undefined,
-            events: [],
-            locations: [],
-            metadata: {},
-          } as {
-            source?: string;
-            events: EventFilter[];
-            locations: string[];
-            metadata: { [key: string]: string };
-          }
-        );
-        // event filter
-        let events: Set<number> | undefined;
-        let results: Asset[] = [];
-
-        if (filterMap.events.length > 0) {
-          const promises = filterMap.events.map(async filter => {
-            const e = await this.fetchEventsByFilter(filter);
-            if (!events) {
-              events = e;
-            } else {
-              const tmp = new Set<number>();
-              e.forEach(asset => {
-                if (events!.has(asset)) {
-                  tmp.add(asset);
-                }
-              });
-              events = tmp;
-            }
-          });
-
-          await Promise.all(promises);
-        }
-
-        if (query || filterMap.events.length === 0) {
-          results = (await sdk.post(
-            `/api/playground/projects/${sdk.project}/assets/search`,
-            {
-              data: {
-                limit: 1000,
-                ...(query && query.length > 0 && { search: { query } }),
-                filter: {
-                  ...(onlyRootAsset && { root: true }),
-                  ...(filterMap.source && { source: filterMap.source }),
-                  ...(filterMap.metadata && { metadata: filterMap.metadata }),
-                  ...(filterMap.locations.length > 0 && {
-                    parentIds: filterMap.locations.map(el => Number(el)),
-                  }),
-                  ...(rootAsset &&
-                    currentRootOnly && { rootIds: [{ id: rootAsset.id }] }),
-                },
-              },
-            }
-          )).data.items;
-        } else if (events && events.size > 0) {
-          results = await sdk.assets.retrieve(
-            Array.from(events).map(el => ({ id: el }))
-          );
-
-          // apply filters on frontend
-          results = results.filter(el => {
-            if (onlyRootAsset) {
-              if (el.rootId !== el.id) {
-                return false;
-              }
-            }
-            if (filterMap.source) {
-              if (el.source !== filterMap.source) {
-                return false;
-              }
-            }
-            if (filterMap.locations.length > 0) {
-              if (
-                !el.parentId ||
-                !filterMap.locations.includes(`${el.parentId}`)
-              ) {
-                return false;
-              }
-            }
-            if (currentRootOnly && rootAsset) {
-              if (el.rootId !== rootAsset.id) {
-                return false;
-              }
-            }
-            const anyMetadataNonMatch = Object.keys(filterMap.metadata).some(
-              (key: string) =>
-                !el.metadata || el.metadata[key] !== filterMap.metadata[key]
-            );
-            if (anyMetadataNonMatch) {
-              return false;
-            }
-            return true;
-          });
-        }
-
-        if (events) {
-          results = results.filter(asset => events!.has(asset.id));
-        }
-        if (queryId === this.queryId) {
-          trackSearchUsage('GlobalSearch', 'Asset', {
-            query,
-            filters: filterMap,
-          });
-          this.setState({ results, loading: false });
-          this.queryId = 0;
-        }
-      }
-    } catch (ex) {
-      message.error('Unable to search.');
-    }
-  };
-
-  searchForTimeseries = async (query: string) => {
-    try {
-      this.setState({ tsLoading: true });
-      this.tsQueryId = this.tsQueryId + 1;
-      const tsQueryId = 0 + this.tsQueryId;
-      const { filters, currentRootOnly } = this.state;
-      const { rootAsset } = this.props;
+      const { filters, onlyRootAsset } = this.state;
       const filterMap = filters.reduce(
         (prev, filter) => {
           switch (filter.type) {
@@ -486,6 +373,9 @@ class AssetSearch extends Component<Props, State> {
               break;
             case 'location':
               prev.locations.push(filter.id!);
+              break;
+            case 'root':
+              prev.rootIds.push(filter.id!);
               break;
             case 'metadata':
               // eslint-disable-next-line no-param-reassign
@@ -502,11 +392,157 @@ class AssetSearch extends Component<Props, State> {
           source: undefined,
           events: [],
           locations: [],
+          rootIds: [],
           metadata: {},
         } as {
           source?: string;
           events: EventFilter[];
           locations: string[];
+          rootIds: string[];
+          metadata: { [key: string]: string };
+        }
+      );
+      // event filter
+      let events: Set<number> | undefined;
+      let results: Asset[] = [];
+
+      if (filterMap.events.length > 0) {
+        const promises = filterMap.events.map(async filter => {
+          const e = await this.fetchEventsByFilter(filter);
+          if (!events) {
+            events = e;
+          } else {
+            const tmp = new Set<number>();
+            e.forEach(asset => {
+              if (events!.has(asset)) {
+                tmp.add(asset);
+              }
+            });
+            events = tmp;
+          }
+        });
+
+        await Promise.all(promises);
+      }
+
+      if (query || filterMap.events.length === 0) {
+        results = (await sdk.post(
+          `/api/playground/projects/${sdk.project}/assets/search`,
+          {
+            data: {
+              limit: 100,
+              ...(query && query.length > 0 && { search: { query } }),
+              filter: {
+                ...(onlyRootAsset && { root: true }),
+                ...(filterMap.source && { source: filterMap.source }),
+                ...(filterMap.metadata && { metadata: filterMap.metadata }),
+                ...(filterMap.locations.length > 0 && {
+                  parentIds: filterMap.locations.map(el => Number(el)),
+                }),
+                ...(filterMap.rootIds.length > 0 && {
+                  rootIds: filterMap.rootIds.map(el => ({ id: Number(el) })),
+                }),
+              },
+            },
+          }
+        )).data.items;
+      } else if (events && events.size > 0) {
+        results = await sdk.assets.retrieve(
+          Array.from(events).map(el => ({ id: el }))
+        );
+
+        // apply filters on frontend
+        results = results.filter(el => {
+          if (onlyRootAsset) {
+            if (el.rootId !== el.id) {
+              return false;
+            }
+          }
+          if (filterMap.source) {
+            if (el.source !== filterMap.source) {
+              return false;
+            }
+          }
+          if (filterMap.locations.length > 0) {
+            if (
+              !el.parentId ||
+              !filterMap.locations.includes(`${el.parentId}`)
+            ) {
+              return false;
+            }
+          }
+          if (filterMap.locations.length > 0) {
+            if (!el.rootId || !filterMap.rootIds.includes(`${el.rootId}`)) {
+              return false;
+            }
+          }
+          const anyMetadataNonMatch = Object.keys(filterMap.metadata).some(
+            (key: string) =>
+              !el.metadata || el.metadata[key] !== filterMap.metadata[key]
+          );
+          if (anyMetadataNonMatch) {
+            return false;
+          }
+          return true;
+        });
+      }
+
+      if (events) {
+        results = results.filter(asset => events!.has(asset.id));
+      }
+      if (queryId === this.queryId) {
+        trackSearchUsage('GlobalSearch', 'Asset', {
+          query,
+          filters: filterMap,
+        });
+        this.setState({ results, loading: false });
+        this.queryId = 0;
+      }
+    } catch (ex) {
+      message.error('Unable to search.');
+    }
+  };
+
+  searchForTimeseries = async (query: string) => {
+    try {
+      this.setState({ tsLoading: true });
+      this.tsQueryId = this.tsQueryId + 1;
+      const tsQueryId = 0 + this.tsQueryId;
+      const { filters } = this.state;
+      const filterMap = filters.reduce(
+        (prev, filter) => {
+          switch (filter.type) {
+            case 'event':
+              prev.events.push(filter);
+              break;
+            case 'location':
+              prev.locations.push(filter.id!);
+              break;
+            case 'root':
+              prev.rootIds.push(filter.id!);
+              break;
+            case 'metadata':
+              // eslint-disable-next-line no-param-reassign
+              prev.metadata[filter.key!] = filter.value!;
+              break;
+            case 'source':
+              // eslint-disable-next-line no-param-reassign
+              prev.source = filter.source;
+              break;
+          }
+          return prev;
+        },
+        {
+          source: undefined,
+          events: [],
+          rootIds: [],
+          locations: [],
+          metadata: {},
+        } as {
+          source?: string;
+          events: EventFilter[];
+          locations: string[];
+          rootIds: string[];
           metadata: { [key: string]: string };
         }
       );
@@ -517,15 +553,16 @@ class AssetSearch extends Component<Props, State> {
         `/api/playground/projects/${sdk.project}/timeseries/search`,
         {
           data: {
-            limit: 1000,
+            limit: 100,
             ...(query && query.length > 0 && { search: { query } }),
             filter: {
               ...(filterMap.metadata && { metadata: filterMap.metadata }),
               ...(filterMap.locations.length > 0 && {
                 assetIds: filterMap.locations.map(el => Number(el)),
               }),
-              ...(rootAsset &&
-                currentRootOnly && { rootAssetIds: [rootAsset.id] }),
+              ...(filterMap.rootIds.length > 0 && {
+                rootAssetIds: filterMap.rootIds.map(el => Number(el)),
+              }),
             },
           },
         }
@@ -546,14 +583,16 @@ class AssetSearch extends Component<Props, State> {
   fetchEventsByFilter = async (
     eventFilter: EventFilter
   ): Promise<Set<number>> => {
-    const { currentRootOnly } = this.state;
-    const { rootAsset } = this.props;
+    const { filters } = this.state;
     const result = await sdk.events.list({
       filter: {
         type: eventFilter.eventType,
         startTime: { min: eventFilter.from, max: eventFilter.to },
-        ...(currentRootOnly &&
-          rootAsset && { rootAssetIds: [{ id: rootAsset.id }] }),
+        ...(filters.find(el => el.type === 'root') && {
+          rootAssetIds: filters
+            .filter(el => el.type === 'root')
+            .map(el => ({ id: Number((el as RootFilter).id!) })),
+        }),
       },
     });
     const set = new Set<number>();
@@ -583,21 +622,19 @@ class AssetSearch extends Component<Props, State> {
     this.setState({
       showSearchExtended: false,
     });
-    notification.info({
-      message: item.name,
-      description: item.id,
-    });
     this.props.fetchAndSetTimeseries(item.id, true);
   };
 
   renderPendingFilters = () => {
     const sections = [];
     const {
+      addingRootFilter,
       addingEventFilter,
       addingMetadataFilter,
       addingSourceFilter,
       addingLocationFilter,
       filters,
+      possibleRoots,
       possibleParents,
     } = this.state;
     // Event Filter
@@ -681,7 +718,7 @@ class AssetSearch extends Component<Props, State> {
             }}
             showSearch
             filterOption={false}
-            onSearch={(value: string) => this.searchForAsset(value, true)}
+            onSearch={(value: string) => this.searchForAssetParent(value)}
             value={
               addingLocationFilter.id
                 ? `${addingLocationFilter.id}:${addingLocationFilter.name}`
@@ -701,6 +738,68 @@ class AssetSearch extends Component<Props, State> {
                 this.setState({
                   filters: [...filters, addingLocationFilter],
                   addingLocationFilter: undefined,
+                });
+              } else {
+                message.info('Unable to add filter');
+              }
+            }}
+          >
+            Add
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              this.setState({
+                addingLocationFilter: undefined,
+              })
+            }
+          >
+            Cancel
+          </Button>
+        </FilterEditArea>
+      );
+    }
+    // Root Filter
+    if (addingRootFilter) {
+      sections.push(
+        <FilterEditArea>
+          <small>New Root Asset Filter</small>
+          <Select
+            defaultValue="none"
+            size="small"
+            style={{ width: '100%' }}
+            onChange={(val: string) => {
+              const [id, name] = val.split(':');
+              this.setState({
+                addingRootFilter: {
+                  type: 'root',
+                  id,
+                  name,
+                },
+              });
+            }}
+            showSearch
+            filterOption={false}
+            onSearch={(value: string) => this.searchForRootAsset(value)}
+            value={
+              addingRootFilter.id
+                ? `${addingRootFilter.id}:${addingRootFilter.name}`
+                : undefined
+            }
+          >
+            {possibleRoots.map((asset: Asset) => (
+              <Select.Option key={asset.id} value={`${asset.id}:${asset.name}`}>
+                {asset.name}
+              </Select.Option>
+            ))}
+          </Select>
+          <Button
+            size="small"
+            onClick={() => {
+              if (addingRootFilter.id) {
+                this.setState({
+                  filters: [...filters, addingRootFilter],
+                  addingRootFilter: undefined,
                 });
               } else {
                 message.info('Unable to add filter');
@@ -837,8 +936,7 @@ class AssetSearch extends Component<Props, State> {
   };
 
   renderCurrentFilters = () => {
-    const { filters, onlyRootAsset, currentRootOnly, query } = this.state;
-    const { rootAsset } = this.props;
+    const { filters, onlyRootAsset, query } = this.state;
     let allFilters = [];
     if (query && query.length > 0) {
       allFilters.push(
@@ -851,20 +949,6 @@ class AssetSearch extends Component<Props, State> {
           }
         >
           Query: {query}
-        </BetterTag>
-      );
-    }
-    if (currentRootOnly && rootAsset) {
-      allFilters.push(
-        <BetterTag
-          closable
-          onClose={() =>
-            this.setState({
-              currentRootOnly: false,
-            })
-          }
-        >
-          Only Children of {rootAsset.name}
         </BetterTag>
       );
     }
@@ -887,6 +971,9 @@ class AssetSearch extends Component<Props, State> {
             break;
           case 'source':
             text = `Source: ${filter.source}`;
+            break;
+          case 'root':
+            text = `Root: ${filter.name}`;
             break;
         }
         return (
@@ -923,19 +1010,18 @@ class AssetSearch extends Component<Props, State> {
   render() {
     const {
       showSearchExtended,
+      addingRootFilter,
       addingEventFilter,
       addingMetadataFilter,
       addingLocationFilter,
       addingSourceFilter,
       onlyRootAsset,
-      currentRootOnly,
       results,
       tsResults,
       tsLoading,
       query,
       loading,
     } = this.state;
-    const { rootAsset } = this.props;
     return (
       <div style={{ position: 'relative', zIndex: 1000 }}>
         <Overlay
@@ -957,16 +1043,16 @@ class AssetSearch extends Component<Props, State> {
                 {this.renderCurrentFilters()}
                 <small>Add Filters</small>
                 {this.renderPendingFilters()}
-                {!currentRootOnly && rootAsset && (
+                {!addingRootFilter && (
                   <AddFilterButton
-                    icon="check"
+                    icon="plus"
                     onClick={() =>
                       this.setState({
-                        currentRootOnly: true,
+                        addingRootFilter: { type: 'root' },
                       })
                     }
                   >
-                    Only {rootAsset.name}&apos;s Children
+                    Root Asset
                   </AddFilterButton>
                 )}
                 {!addingEventFilter && (
