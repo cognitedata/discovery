@@ -131,8 +131,10 @@ class AssetDrawer extends React.Component<Props, State> {
 
   componentDidMount() {
     const { doFetchTimeseries, doFetchEvents, app } = this.props;
-    doFetchTimeseries(app.assetId!);
-    doFetchEvents(app.assetId!);
+    if (app.assetId) {
+      doFetchTimeseries(app.assetId);
+      doFetchEvents(app.assetId);
+    }
     this.resetState();
   }
 
