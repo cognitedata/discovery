@@ -267,7 +267,6 @@ export function createNewAsset(
           ...newAsset,
           metadata: {
             ...newAsset.metadata,
-            COGNITE__GENERATED: 'true',
             COGNITE__SOURCE: 'discovery',
           },
         },
