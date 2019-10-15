@@ -3,7 +3,7 @@ import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
-import { fetchEvents, createEvent } from './events';
+import { fetchEvents } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
@@ -94,11 +94,6 @@ export function removeAssetFromTimeseries(
         },
       },
     ]);
-
-    createEvent('removed_timeseries', 'Removed timeseries', [assetId], {
-      removed: timeseriesId,
-    });
-
     dispatch({
       type: REMOVE_ASSET_FROM_TIMESERIES,
       payload: { timeseriesId },
@@ -125,11 +120,6 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
       update: { assetId: { set: assetId } },
     }));
     await sdk.timeseries.update(changes);
-
-    // Create event for this mapping
-    createEvent('attached_timeseries', 'Attached timeseries', [assetId], {
-      added: JSON.stringify(timeseriesIds),
-    });
 
     message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
 
