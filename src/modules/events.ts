@@ -19,16 +19,23 @@ export type EventsAndTypes = {
 
 // Constants
 export const ADD_EVENTS = 'events/ADD_EVENTS';
+export const REMOVE_EVENT = 'events/REMOVE_EVENT';
 export const ADD_UNIQUE_EVENT_TYPES = 'events/ADD_UNIQUE_EVENT_TYPES';
 
 interface AddEventAction extends Action<typeof ADD_EVENTS> {
   payload: { items: { [key: string]: CogniteEvent } };
 }
+interface RemoveEventAction extends Action<typeof REMOVE_EVENT> {
+  payload: { eventId: number };
+}
 interface AddUniqueEventTypesAction
   extends Action<typeof ADD_UNIQUE_EVENT_TYPES> {
   payload: { items: string[] };
 }
-type EventsAction = AddEventAction | AddUniqueEventTypesAction;
+type EventsAction =
+  | AddEventAction
+  | AddUniqueEventTypesAction
+  | RemoveEventAction;
 
 export async function createEvent(
   subtype?: string,
@@ -73,6 +80,7 @@ export function fetchEvents(assetId: number) {
 export function fetchEventsByFilter(eventFilter: EventFilter) {
   return async (dispatch: Dispatch) => {
     const result = await sdk.events.list({
+      // TODO Clean up!
       filter: {
         type: eventFilter.eventType,
         subtype: 'IAA',
@@ -86,6 +94,13 @@ export function fetchEventsByFilter(eventFilter: EventFilter) {
 
     dispatch({ type: ADD_UNIQUE_EVENT_TYPES, payload: { items: types } });
     dispatch({ type: ADD_EVENTS, payload: { items } });
+  };
+}
+
+export function deleteEvent(eventId: number) {
+  return async (dispatch: Dispatch) => {
+    await sdk.events.delete([{ id: eventId }]);
+    dispatch({ type: REMOVE_EVENT, payload: { eventId } });
   };
 }
 
@@ -103,6 +118,14 @@ export default function events(
   switch (action.type) {
     case ADD_EVENTS: {
       const items = { ...state.items, ...action.payload.items };
+      return {
+        ...state,
+        items,
+      };
+    }
+    case REMOVE_EVENT: {
+      const items = { ...state.items };
+      delete items[action.payload.eventId];
       return {
         ...state,
         items,
