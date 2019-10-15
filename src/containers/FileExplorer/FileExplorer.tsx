@@ -56,6 +56,7 @@ const StyledTabs = styled(Tabs)`
   }
   && .ant-tabs-tabpane-active {
     height: 100%;
+    overflow: auto;
   }
 `;
 
@@ -405,7 +406,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <Table
           dataSource={searchResults.slice(current * 20, current * 20 + 20)}
           pagination={false}
-          onRowClick={(item, i) => this.onClickDocument(item, i)}
+          rowKey="id"
+          onRow={(item, i) => ({
+            onClick: () => this.onClickDocument(item, i),
+          })}
           columns={[
             {
               title: 'Name',
@@ -488,7 +492,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       case 'upload':
         list = (
           <FileUploadTab
-            onFileUploaded={file => this.onClickDocument(file, 0)}
+            onFileSelected={file => this.onClickDocument(file, 0)}
           />
         );
         break;
