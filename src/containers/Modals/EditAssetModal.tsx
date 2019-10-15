@@ -55,10 +55,8 @@ class EditAssetModal extends React.Component<Props, State> {
       this.props.fetchAsset(parentId);
     }
 
-    if (metadata && metadata.COGNITE__GENERATED) {
-      this.generated = metadata.COGNITE__GENERATED;
+    if (metadata && metadata.COGNITE__SOURCE) {
       this.source = metadata.COGNITE__SOURCE;
-      delete metadata.COGNITE__GENERATED;
       delete metadata.COGNITE__SOURCE;
     }
 
