@@ -205,7 +205,6 @@ class FileUploadTab extends React.Component<Props, State> {
                   style={{ width: '100%' }}
                   placeholder="Search for an asset to link to"
                   value={includeAssetId}
-                  onDropdownVisibleChange={console.log}
                   notFoundContent={fetching ? <Spin size="small" /> : null}
                   onSelect={(id: any) =>
                     this.setState({
