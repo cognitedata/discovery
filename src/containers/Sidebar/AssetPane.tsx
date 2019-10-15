@@ -15,7 +15,7 @@ import {
 import styled from 'styled-components';
 import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
-import { CogniteEvent, FilesMetadata } from '@cognite/sdk';
+import { FilesMetadata } from '@cognite/sdk';
 import {
   selectTimeseries,
   removeAssetFromTimeseries,
@@ -34,7 +34,6 @@ import {
   EventsAndTypes,
 } from '../../modules/events';
 import AddTypes from '../Modals/AddTypesModal';
-import EventPreview from '../../components/EventPreview';
 import { createAssetTitle } from '../../utils/utils';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import {
@@ -55,6 +54,7 @@ import RootAssetList from './RootAssetList';
 import MapNodeToAssetForm from '../MapNodeToAssetForm';
 import TimeseriesSection from './TimeseriesSection';
 import { trackUsage } from '../../utils/metrics';
+import EventsSection from './EventsSection';
 
 const { Panel } = Collapse;
 
@@ -186,13 +186,6 @@ class AssetDrawer extends React.Component<Props, State> {
     });
   };
 
-  eventOnClick = (eventId: number) => {
-    trackUsage('AssetPane.EventClick', {
-      eventId,
-    });
-    this.setState({ showEvent: eventId });
-  };
-
   renderTypes = (asset: ExtendedAsset, types: Type[]) => (
     <Panel
       header={
@@ -222,34 +215,6 @@ class AssetDrawer extends React.Component<Props, State> {
       ))}
     </Panel>
   );
-
-  renderEvents = (events: CogniteEvent[]) => {
-    const sortedEvents = events.sort(
-      (a, b) => (b.startTime! as number) - (a.startTime! as number)
-    );
-    return (
-      <Panel header={<span>Events ({sortedEvents.length})</span>} key="events">
-        <List
-          size="small"
-          dataSource={sortedEvents}
-          renderItem={event => (
-            <List.Item onClick={() => this.eventOnClick(event.id)}>
-              <List.Item.Meta
-                title={
-                  <Button type="link">
-                    {moment
-                      .unix((event.startTime! as number) / 1000)
-                      .format('YYYY-MM-DD HH:mm')}
-                  </Button>
-                }
-                description={event.type}
-              />
-            </List.Item>
-          )}
-        />
-      </Panel>
-    );
-  };
 
   onCollapseChange = (change: string | string[]) => {
     trackUsage('AssetPane.VisiblePanes', {
@@ -443,9 +408,10 @@ class AssetDrawer extends React.Component<Props, State> {
         </SpinContainer>
       );
     }
-    const { showeditAsset, showEvent, showAddChild, showAddTypes } = this.state;
+    const { showeditAsset, showAddChild, showAddTypes } = this.state;
 
     const allTypes = this.props.types.items ? this.props.types.items : [];
+    const events = this.props.events.items ? this.props.events.items : [];
 
     const defaultActiveKey = this.state.activeCollapsed
       ? this.state.activeCollapsed
@@ -475,9 +441,6 @@ class AssetDrawer extends React.Component<Props, State> {
             rootAssetId={asset.rootId}
           />
         )}
-        {showEvent != null && (
-          <EventPreview eventId={showEvent} onClose={this.onModalClose} />
-        )}
         <div>
           <h3>{createAssetTitle(asset)}</h3>
           {asset.description && <p>{asset.description}</p>}
@@ -499,7 +462,10 @@ class AssetDrawer extends React.Component<Props, State> {
                 <TimeseriesSection />
               </Panel>
               {this.renderDocuments(asset.id)}
-              {this.renderEvents(this.props.events.items)}
+
+              <Panel header={<span>Event ({events.length})</span>} key="events">
+                <EventsSection />
+              </Panel>
               {this.renderMetadata()}
               {this.state.showEditHierarchy && this.renderEdit(asset)}
             </Collapse>
