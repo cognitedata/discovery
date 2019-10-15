@@ -447,8 +447,6 @@ class AssetDrawer extends React.Component<Props, State> {
 
     const allTypes = this.props.types.items ? this.props.types.items : [];
 
-    const types = asset.types ? asset.types : [];
-
     const defaultActiveKey = this.state.activeCollapsed
       ? this.state.activeCollapsed
       : [];
@@ -500,7 +498,6 @@ class AssetDrawer extends React.Component<Props, State> {
               >
                 <TimeseriesSection />
               </Panel>
-              {this.renderTypes(asset, types)}
               {this.renderDocuments(asset.id)}
               {this.renderEvents(this.props.events.items)}
               {this.renderMetadata()}
