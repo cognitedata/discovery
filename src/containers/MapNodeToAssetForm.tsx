@@ -40,7 +40,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.doSearch = debounce(this.doSearch, 100);
+    this.doSearch = debounce(this.doSearch, 700);
 
     this.state = {
       searchResults: Object.values(props.assets.all).filter(
