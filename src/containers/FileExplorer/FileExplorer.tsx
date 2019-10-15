@@ -183,6 +183,18 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     });
   }
 
+  get pagination() {
+    const { current, searchResults } = this.state;
+    return (
+      <Pagination
+        current={current + 1}
+        pageSize={20}
+        onChange={index => this.setState({ current: index - 1 })}
+        total={searchResults.length}
+      />
+    );
+  }
+
   doSearch = async (query?: string) => {
     const {
       assets: { all: assets },
@@ -385,12 +397,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               </div>
             );
           })}
-        <Pagination
-          current={current + 1}
-          pageSize={20}
-          onChange={index => this.setState({ current: index - 1 })}
-          total={searchResults.length}
-        />
+        {this.pagination}
       </Images>
     );
   };
@@ -457,12 +464,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             },
           ]}
         />
-        <Pagination
-          current={current + 1}
-          pageSize={20}
-          onChange={index => this.setState({ current: index - 1 })}
-          total={searchResults.length}
-        />
+        {this.pagination}
       </div>
     );
   };

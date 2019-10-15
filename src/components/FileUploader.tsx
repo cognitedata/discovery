@@ -209,6 +209,8 @@ class FileUploader extends React.Component<Props, State> {
         }),
       }));
 
+      // This is what is recommended from google when uploading files.
+      // https://github.com/QubitProducts/gcs-browser-upload
       const chunkMultiple = Math.min(
         Math.max(
           2, // 0.5MB min chunks
@@ -243,7 +245,7 @@ class FileUploader extends React.Component<Props, State> {
       try {
         await this.currentUploads[file.uid].start();
       } catch (e) {
-        // catch CORS errors
+        message.error('Unable to upload file to server.');
       }
 
       this.setState(state => ({
@@ -267,7 +269,7 @@ class FileUploader extends React.Component<Props, State> {
         this.state.uploadStatus === STATUS.STARTED
       ) {
         confirm({
-          title: 'Do you want to cancel the job?',
+          title: 'Do you want to cancel the file upload?',
           content: 'If you cancel, the file upload will be cancelled!',
           onOk: () => {
             this.currentUploads[file.uid].cancel();
