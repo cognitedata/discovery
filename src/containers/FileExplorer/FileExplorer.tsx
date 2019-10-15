@@ -22,6 +22,7 @@ import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
 import FilePreview from './FilePreview';
 import { trackSearchUsage, trackUsage } from '../../utils/metrics';
+import FileUploadTab from './FileUploadTab';
 
 const { TabPane } = Tabs;
 
@@ -55,6 +56,7 @@ const StyledTabs = styled(Tabs)`
   }
   && .ant-tabs-tabpane-active {
     height: 100%;
+    overflow: auto;
   }
 `;
 
@@ -101,9 +103,10 @@ export const FileExplorerTabs: { [key in FileExplorerTabsType]: string } = {
   all: 'All',
   images: 'Images',
   documents: 'Documents',
+  upload: 'Upload',
 };
 
-export type FileExplorerTabsType = 'all' | 'images' | 'documents';
+export type FileExplorerTabsType = 'all' | 'images' | 'documents' | 'upload';
 
 type OrigProps = {};
 
@@ -178,6 +181,18 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         URL.revokeObjectURL(val);
       }
     });
+  }
+
+  get pagination() {
+    const { current, searchResults } = this.state;
+    return (
+      <Pagination
+        current={current + 1}
+        pageSize={20}
+        onChange={index => this.setState({ current: index - 1 })}
+        total={searchResults.length}
+      />
+    );
   }
 
   doSearch = async (query?: string) => {
@@ -346,7 +361,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   renderImages = () => {
-    const { current, searchResults, imageUrls } = this.state;
+    const { current, searchResults, imageUrls, fetching } = this.state;
+    if (fetching) {
+      return <Spin />;
+    }
     return (
       <Images>
         {searchResults
@@ -379,19 +397,26 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               </div>
             );
           })}
+        {this.pagination}
       </Images>
     );
   };
 
   renderListResult = () => {
-    const { searchResults, current } = this.state;
+    const { searchResults, current, fetching } = this.state;
     const { all: assets } = this.props.assets;
+    if (fetching) {
+      return <Spin />;
+    }
     return (
       <div className="results">
         <Table
           dataSource={searchResults.slice(current * 20, current * 20 + 20)}
           pagination={false}
-          onRowClick={(item, i) => this.onClickDocument(item, i)}
+          rowKey="id"
+          onRow={(item, i) => ({
+            onClick: () => this.onClickDocument(item, i),
+          })}
           columns={[
             {
               title: 'Name',
@@ -439,19 +464,13 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             },
           ]}
         />
+        {this.pagination}
       </div>
     );
   };
 
   render() {
-    const {
-      tab,
-      searchResults,
-      current,
-      fetching,
-      query,
-      selectedDocument,
-    } = this.state;
+    const { tab, query, selectedDocument } = this.state;
     if (selectedDocument) {
       return (
         <FilePreview
@@ -462,9 +481,25 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         />
       );
     }
-    let list = this.renderListResult();
-    if (tab === 'images') {
-      list = this.renderImages();
+    let list = <p>Invalid Tab</p>;
+
+    switch (tab) {
+      case 'all':
+      case 'documents':
+        list = this.renderListResult();
+        break;
+      case 'images':
+        list = this.renderImages();
+        break;
+      case 'upload':
+        list = (
+          <FileUploadTab
+            onFileSelected={file => this.onClickDocument(file, 0)}
+          />
+        );
+        break;
+      default:
+        list = <p>Invalid Tab</p>;
     }
     return (
       <Wrapper>
@@ -485,21 +520,13 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             });
           }}
         >
-          {['all', 'images', 'documents'].map((key: string) => (
+          {['all', 'images', 'documents', 'upload'].map((key: string) => (
             <TabPane
               forceRender
               tab={FileExplorerTabs[key as FileExplorerTabsType]}
               key={key as FileExplorerTabsType}
             >
-              <FileList>
-                {fetching ? <Spin /> : list}
-                <Pagination
-                  current={current + 1}
-                  pageSize={20}
-                  onChange={index => this.setState({ current: index - 1 })}
-                  total={searchResults.length}
-                />
-              </FileList>
+              <FileList>{list}</FileList>
             </TabPane>
           ))}
         </StyledTabs>
