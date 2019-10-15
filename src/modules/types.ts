@@ -4,7 +4,7 @@ import { Dispatch, AnyAction, Action } from 'redux';
 import { Asset } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { fetchAsset } from './assets';
-import { fetchEvents, createEvent } from './events';
+import { fetchEvents } from './events';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
@@ -47,10 +47,6 @@ export function removeTypeFromAsset(type: Type, asset: Asset) {
       }
     );
 
-    createEvent('removed_type', 'Removed type', [asset.id], {
-      removed: JSON.stringify({ id: type.id, name: type.name }),
-    });
-
     message.info(`Removed ${type.name} from ${asset.name}.`);
 
     dispatch(fetchAsset(asset.id));
@@ -82,10 +78,6 @@ export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
         data: body,
       }
     );
-
-    createEvent('added_type', 'Added type', [asset.id], {
-      added: JSON.stringify({ types: selectedTypes }),
-    });
 
     message.info(`Added ${selectedTypes.length} types to ${asset.name}.`);
     dispatch(fetchAsset(asset.id));
