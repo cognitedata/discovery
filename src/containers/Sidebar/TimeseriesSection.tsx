@@ -18,7 +18,7 @@ import { RootState } from '../../reducers/index';
 import { selectApp, AppState, setTimeseriesId } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 
-const ListItemContent = styled.div`
+export const SidebarPaneListContent = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -136,7 +136,7 @@ class TimeseriesSection extends React.Component<Props, State> {
           }
           renderItem={ts => (
             <List.Item>
-              <ListItemContent>
+              <SidebarPaneListContent>
                 <p
                   className="title"
                   onClick={() => this.timeseriesOnClick(ts.id)}
@@ -147,7 +147,7 @@ class TimeseriesSection extends React.Component<Props, State> {
                 <p className="subtitle">{`${ts.unit}, ${
                   ts.description
                 }, ${moment(ts.createdTime).format('DD-MM-YYYY')}`}</p>
-              </ListItemContent>
+              </SidebarPaneListContent>
               <div>
                 <Popconfirm
                   title="Are you sure？"

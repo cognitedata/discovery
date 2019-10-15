@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { List, Button, Icon, Popconfirm, Pagination } from 'antd';
 import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
-import styled from 'styled-components';
 import { CogniteEvent } from '@cognite/sdk';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -11,29 +10,7 @@ import { selectApp, AppState } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 import EventPreview from '../../components/EventPreview';
 import { selectEventsByAssetId, deleteEvent } from '../../modules/events';
-
-const ListItemContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  width: 0;
-  margin-right: 4px;
-
-  && > p.title {
-    color: #40a9ff;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    cursor: pointer;
-  }
-
-  && > p.subtitle {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    margin-bottom: 0px;
-    overflow: hidden;
-  }
-`;
+import { SidebarPaneListContent } from './TimeseriesSection';
 
 type OrigProps = {};
 
@@ -91,7 +68,7 @@ class EventsSection extends React.Component<Props, State> {
           }
           renderItem={event => (
             <List.Item>
-              <ListItemContent>
+              <SidebarPaneListContent>
                 <p
                   className="title"
                   onClick={() => this.eventOnClick(event.id)}
@@ -102,7 +79,7 @@ class EventsSection extends React.Component<Props, State> {
                     .format('YYYY-MM-DD HH:mm')}
                 </p>
                 <p className="subtitle">{event.description}</p>
-              </ListItemContent>
+              </SidebarPaneListContent>
               <div>
                 <Popconfirm
                   title="Are you sure？"
