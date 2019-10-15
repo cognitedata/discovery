@@ -25,11 +25,17 @@ const Wrapper = styled.div`
     margin-top: 6px;
   }
 
+  && .ant-select-selection__clear {
+    background: none;
+    right: 34px;
+  }
+
   .link-text {
     margin-top: 6px;
     margin-bottom: 2px;
   }
 `;
+
 type Props = {
   assetId?: number;
   asset?: ExtendedAsset;
@@ -53,7 +59,7 @@ class FileUploadTab extends React.Component<Props, State> {
       fetching: false,
       showLinkToAsset: false,
       fileList: [],
-      searchResults: props.asset ? [props.asset] : [],
+      searchResults: [],
     };
   }
 
@@ -63,7 +69,7 @@ class FileUploadTab extends React.Component<Props, State> {
       this.setState({
         includeAssetId: this.props.assetId,
         fetching: false,
-        searchResults: this.props.asset ? [this.props.asset] : [],
+        searchResults: [],
       });
     }
   }
@@ -88,6 +94,7 @@ class FileUploadTab extends React.Component<Props, State> {
     trackSearchUsage('FileUploadTab', 'Asset', {
       query,
     });
+    const { assetId } = this.props;
     if (query.length > 0) {
       this.setState({ fetching: true });
       const results = await sdk.assets.search({
@@ -95,10 +102,53 @@ class FileUploadTab extends React.Component<Props, State> {
         limit: 100,
       });
       this.setState({
-        searchResults: results.slice(0, results.length),
+        searchResults: results
+          .slice(0, results.length)
+          .filter(el => el.id !== assetId),
         fetching: false,
       });
     }
+  };
+
+  renderResults = (menu: React.ReactNode) => {
+    const { fetching, searchResults } = this.state;
+    const { asset: currentAsset } = this.props;
+    let items = fetching ? (
+      <div
+        onMouseDown={e => e.preventDefault()}
+        style={{
+          padding: '4px 8px',
+        }}
+      >
+        <Spin size="small" />
+      </div>
+    ) : (
+      menu
+    );
+    if (searchResults.length === 0) {
+      items = (
+        <div
+          onMouseDown={e => e.preventDefault()}
+          style={{
+            padding: '4px 8px',
+          }}
+        >
+          <span>Try searching for assets</span>
+        </div>
+      );
+    } else if (currentAsset && searchResults[0].id === currentAsset.id) {
+      items = (
+        <div
+          onMouseDown={e => e.preventDefault()}
+          style={{
+            padding: '4px 8px',
+          }}
+        >
+          <span>Try searching for assets</span>
+        </div>
+      );
+    }
+    return items;
   };
 
   render() {
@@ -109,7 +159,30 @@ class FileUploadTab extends React.Component<Props, State> {
       showLinkToAsset,
       fileList,
     } = this.state;
-    const { asset: currentAsset } = this.props;
+    const { asset: currentAsset, assetId: currentAssetId } = this.props;
+
+    const options = searchResults.map(asset => (
+      <Select.Option key={asset.id} value={asset.id}>
+        <span>{asset.name}</span>
+        <span style={{ color: '#ababab', marginLeft: '4px' }}>
+          ({asset.id})
+        </span>
+      </Select.Option>
+    ));
+    if (fetching) {
+      options.push(
+        <Select.Option key="loading" value="loading" disabled>
+          <Spin size="small" />
+        </Select.Option>
+      );
+    }
+    if (options.length === 0) {
+      options.push(
+        <Select.Option key="add" value="add" disabled>
+          <span>Try searching for an asset</span>
+        </Select.Option>
+      );
+    }
 
     return (
       <Wrapper>
@@ -141,82 +214,23 @@ class FileUploadTab extends React.Component<Props, State> {
                   onSearch={this.doSearch}
                   filterOption={false}
                   allowClear
-                  dropdownRender={menu => {
-                    let items = fetching ? (
-                      <div
-                        onMouseDown={e => e.preventDefault()}
-                        style={{
-                          padding: '4px 8px',
-                        }}
-                      >
-                        <Spin size="small" />
-                      </div>
-                    ) : (
-                      menu
-                    );
-                    if (
-                      searchResults.length === 0 ||
-                      (currentAsset && searchResults[0].id === currentAsset.id)
-                    ) {
-                      items = (
-                        <div
-                          onMouseDown={e => e.preventDefault()}
-                          style={{
-                            padding: '4px 8px',
-                          }}
-                        >
-                          <span>Try searching for assets</span>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div>
-                        {currentAsset && (
-                          <>
-                            <div
-                              style={{
-                                padding: '4px 8px',
-                                background: '#dedede',
-                              }}
-                              onMouseDown={e => e.preventDefault()}
-                            >
-                              <span>Current Asset</span>
-                            </div>
-                            <div
-                              className={`ant-select-dropdown-menu-item ${includeAssetId ===
-                                currentAsset.id &&
-                                'ant-select-dropdown-menu-item-active ant-select-dropdown-menu-item-selected'}`}
-                              onMouseDown={() =>
-                                this.setState({
-                                  includeAssetId: currentAsset.id,
-                                })
-                              }
-                            >
-                              <span>
-                                {currentAsset.name} ({currentAsset.id})
-                              </span>
-                            </div>
-                            <div
-                              onMouseDown={e => e.preventDefault()}
-                              style={{
-                                padding: '4px 8px',
-                                background: '#dedede',
-                              }}
-                            >
-                              <span>Search Results</span>
-                            </div>
-                          </>
-                        )}
-                        {items}
-                      </div>
-                    );
-                  }}
                 >
-                  {searchResults.map(asset => (
-                    <Select.Option key={asset.id} value={asset.id}>
-                      {asset.name} ({asset.id})
-                    </Select.Option>
-                  ))}
+                  {currentAsset && (
+                    <Select.OptGroup label="Current Asset" key="current">
+                      <Select.Option
+                        key={currentAssetId}
+                        value={currentAsset.id}
+                      >
+                        <span>{currentAsset.name}</span>
+                        <span style={{ color: '#ababab', marginLeft: '4px' }}>
+                          ({currentAsset.id})
+                        </span>
+                      </Select.Option>
+                    </Select.OptGroup>
+                  )}
+                  <Select.OptGroup label="Search Results" key="results">
+                    {options}
+                  </Select.OptGroup>
                 </Select>
               </div>
             )}
