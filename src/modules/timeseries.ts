@@ -100,11 +100,6 @@ export function removeAssetFromTimeseries(
     });
 
     message.info(`Removed 1 timeseries from asset.`);
-
-    setTimeout(() => {
-      dispatch(fetchTimeseries(assetId));
-      dispatch(fetchEvents(assetId));
-    }, 1000);
   };
 }
 
@@ -146,6 +141,7 @@ export default function timeseries(
       return {
         ...state,
         timeseriesData: {
+          ...state.timeseriesData,
           ...arrayToObjectById(items),
         },
       };
