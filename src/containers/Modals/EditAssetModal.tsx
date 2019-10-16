@@ -47,7 +47,7 @@ class EditAssetModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.doSearch = debounce(this.doSearch, 100);
+    this.doSearch = debounce(this.doSearch, 700);
 
     const { assets, assetId } = props;
     const { parentId, name, description, metadata } = assets[assetId];
