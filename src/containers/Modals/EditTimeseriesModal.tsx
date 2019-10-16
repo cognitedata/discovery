@@ -2,17 +2,18 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, message, Select, Spin, Input } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Asset } from '@cognite/sdk';
+import { Asset, GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import debounce from 'lodash/debounce';
 import styled from 'styled-components';
 import AceEditor from 'react-ace';
-import { ExtendedAsset, editAsset, fetchAsset } from '../../modules/assets';
+import { ExtendedAsset, fetchAsset } from '../../modules/assets';
 import { sdk } from '../../index';
 import { RootState } from '../../reducers/index';
 import { trackSearchUsage } from '../../utils/metrics';
 import 'brace/theme/github';
 
 import 'brace/mode/json';
+import { selectTimeseries, editTimeseries } from '../../modules/timeseries';
 
 const FormDetails = styled.div`
   p {
@@ -21,25 +22,29 @@ const FormDetails = styled.div`
   }
 `;
 
-type Props = {
-  assetId: number;
-  rootAssetId: number;
+type OwnProps = {
+  timeseriesId: number;
   onClose: (e?: any) => void;
-  editAsset: typeof editAsset;
-  fetchAsset: typeof fetchAsset;
-  assets: { [key: number]: ExtendedAsset };
 };
 
+type Props = {
+  fetchAsset: typeof fetchAsset;
+  assets: { [key: number]: ExtendedAsset };
+  timeseries: GetTimeSeriesMetadataDTO;
+  editTimeseries: typeof editTimeseries;
+} & OwnProps;
+
 type State = {
-  selectedParent?: number;
+  selectedAssetId?: number;
   searchResults: Asset[];
   fetching: boolean;
   metadata?: string;
   description?: string;
+  unit?: string;
   name?: string;
 };
 
-class EditAssetModal extends React.Component<Props, State> {
+class EditTimeseriesModal extends React.Component<Props, State> {
   source?: string;
 
   constructor(props: Props) {
@@ -47,11 +52,8 @@ class EditAssetModal extends React.Component<Props, State> {
 
     this.doSearch = debounce(this.doSearch, 700);
 
-    const { assets, assetId } = props;
-    const { parentId, name, description, metadata } = assets[assetId];
-    if (parentId && !assets[parentId]) {
-      this.props.fetchAsset(parentId);
-    }
+    const { timeseries, assets } = props;
+    const { unit, name, description, metadata, assetId } = timeseries;
 
     if (metadata && metadata.COGNITE__SOURCE) {
       this.source = metadata.COGNITE__SOURCE;
@@ -59,55 +61,45 @@ class EditAssetModal extends React.Component<Props, State> {
     }
 
     this.state = {
-      searchResults: parentId && assets[parentId] ? [assets[parentId]] : [],
+      searchResults: assetId && assets[assetId] ? [assets[assetId]] : [],
       fetching: false,
-      selectedParent: props.assets[props.assetId].parentId,
+      selectedAssetId: assetId,
       metadata: metadata ? JSON.stringify(metadata, null, 2) : undefined,
       description,
+      unit,
       name,
     };
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { assets, assetId } = this.props;
-    const { parentId } = assets[assetId];
-    if (parentId && assets[parentId] !== prevProps.assets[parentId]) {
+    const { timeseries, assets } = this.props;
+    const { assetId } = timeseries;
+    if (assetId && assets[assetId] !== prevProps.assets[assetId]) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
-        searchResults: assets[parentId] ? [assets[parentId]] : [],
+        searchResults: assets[assetId] ? [assets[assetId]] : [],
       });
     }
   }
 
-  get isRoot() {
-    const { assets, assetId } = this.props;
-    const { id, rootId } = assets[assetId];
-    return id === rootId;
-  }
-
   doSearch = async (query: string) => {
     if (query.length > 0) {
-      trackSearchUsage('EditAssetModal', 'Asset', { query });
+      trackSearchUsage('EditTimeseriesModal', 'Asset', { query });
       this.setState({ fetching: true });
       const results = await sdk.assets.search({
         search: { name: query },
-        filter: {
-          rootIds: [{ id: this.props.rootAssetId }],
-        },
         limit: 1000,
       });
       this.setState({
-        searchResults: results
-          .slice(0, results.length)
-          .filter(el => el.id !== this.props.assetId),
+        searchResults: results.slice(0, results.length),
         fetching: false,
       });
     }
   };
 
   saveChanges = () => {
-    const { selectedParent, name, description, metadata } = this.state;
-    if ((this.isRoot || selectedParent) && name) {
+    const { selectedAssetId, name, description, metadata, unit } = this.state;
+    if (name) {
       let metadataParsed;
       try {
         metadataParsed = metadata ? JSON.parse(metadata) : undefined;
@@ -115,13 +107,12 @@ class EditAssetModal extends React.Component<Props, State> {
         message.error('Invalid metadata JSON');
         return;
       }
-      this.props.editAsset({
-        id: this.props.assetId,
+      this.props.editTimeseries(this.props.timeseriesId, {
+        id: this.props.timeseriesId,
         update: {
-          // @ts-ignore
-          ...(selectedParent && {
-            parentId: {
-              set: selectedParent,
+          ...(selectedAssetId && {
+            assetId: {
+              set: selectedAssetId,
             },
           }),
           name: {
@@ -130,6 +121,16 @@ class EditAssetModal extends React.Component<Props, State> {
           ...(description && {
             description: {
               set: description,
+            },
+          }),
+          ...(unit && {
+            unit: {
+              set: unit,
+            },
+          }),
+          ...((!unit || unit.length === 0) && {
+            unit: {
+              setNull: true,
             },
           }),
           ...((!description || description.length === 0) && {
@@ -147,51 +148,52 @@ class EditAssetModal extends React.Component<Props, State> {
           }),
         },
       });
-      message.info('Updating asset...');
+      message.info('Updating timeseries...');
       this.props.onClose();
     } else {
-      message.info('A parent ID and name must be valid');
+      message.info('A name must be valid');
     }
   };
 
   render() {
-    const { assets, assetId } = this.props;
+    const { assets } = this.props;
     const {
-      selectedParent,
+      selectedAssetId,
       fetching,
       searchResults,
       name,
       description,
+      unit,
       metadata,
     } = this.state;
-    const { parentId } = assets[assetId];
     return (
       <Modal
         visible
-        title="Edit Asset"
+        title="Edit Timeseries"
         onCancel={this.props.onClose}
         footer={[
           <Button key="submit" type="primary" onClick={this.saveChanges}>
-            Update Asset
+            Update Timeseries
           </Button>,
         ]}
       >
         <FormDetails>
           <p>
-            Current Parent:{' '}
-            {parentId && assets[parentId!] ? assets[parentId!].name : 'N/A'}
+            Current Asset:{' '}
+            {selectedAssetId && assets[selectedAssetId!]
+              ? assets[selectedAssetId!].name
+              : 'N/A'}
           </p>
           <Select
             showSearch
             style={{ width: '100%' }}
             placeholder="Select existing asset"
-            value={selectedParent}
+            value={selectedAssetId}
             notFoundContent={fetching ? <Spin size="small" /> : null}
             onChange={(id: any) =>
-              this.setState({ selectedParent: Number(id) })
+              this.setState({ selectedAssetId: Number(id) })
             }
             onSearch={this.doSearch}
-            disabled={this.isRoot}
             filterOption={false}
           >
             {searchResults.map(asset => {
@@ -214,6 +216,12 @@ class EditAssetModal extends React.Component<Props, State> {
             placeholder="Description"
             onChange={ev => this.setState({ description: ev.target.value })}
           />
+          <p>Unit</p>
+          <Input
+            value={unit}
+            placeholder="Unit"
+            onChange={ev => this.setState({ unit: ev.target.value })}
+          />
           <p>Metadata</p>
           <AceEditor
             mode="json"
@@ -229,15 +237,18 @@ class EditAssetModal extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
-  return { assets: state.assets.all };
+const mapStateToProps = (state: RootState, ownProps: OwnProps) => {
+  return {
+    assets: state.assets.all,
+    timeseries: selectTimeseries(state).timeseriesData[ownProps.timeseriesId],
+  };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      editAsset,
       fetchAsset,
+      editTimeseries,
     },
     dispatch
   );
@@ -245,4 +256,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(EditAssetModal);
+)(EditTimeseriesModal);
