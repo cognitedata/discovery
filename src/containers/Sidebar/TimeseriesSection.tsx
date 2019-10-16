@@ -117,7 +117,7 @@ class TimeseriesSection extends React.Component<Props, State> {
           />
         )}
         <Button type="primary" onClick={this.addTimeseriesClick}>
-          Add
+          Link Timeseries
         </Button>
         <Input
           placeholder="Find the timeseries most relevant to you"
@@ -158,7 +158,7 @@ class TimeseriesSection extends React.Component<Props, State> {
                   }
                 >
                   <Button type="danger">
-                    <Icon type="delete" />
+                    <Icon type="link" /> <span>Unlink</span>
                   </Button>
                 </Popconfirm>
               </div>
