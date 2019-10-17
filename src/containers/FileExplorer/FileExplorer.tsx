@@ -24,6 +24,7 @@ import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 import FileUploadTab from './FileUploadTab';
 import ImageFilesTab from './ImageFilesTab';
 import ListFilesTab from './ListFilesTab';
+import PNIDViewer from './PNIDViewer';
 
 const { TabPane } = Tabs;
 
@@ -65,10 +66,28 @@ export const FileExplorerTabs: { [key in FileExplorerTabsType]: string } = {
   all: 'All',
   images: 'Images',
   documents: 'Documents',
+  pnid: 'P&IDs',
   upload: 'Upload',
 };
 
-export type FileExplorerTabsType = 'all' | 'images' | 'documents' | 'upload';
+export type FileExplorerTabsType =
+  | 'all'
+  | 'images'
+  | 'documents'
+  | 'upload'
+  | 'pnid';
+
+export const FileExplorerMimeTypes: {
+  [key in FileExplorerTabsType]: string[];
+} = {
+  all: [],
+  images: ['image/jpeg', 'image/png'],
+  documents: ['application/pdf', 'pdf', 'PDF'],
+  pnid: [],
+  upload: [],
+};
+
+const RELOAD_SEARCH_TABS = ['all', 'images', 'documents', 'pnid'];
 
 type OrigProps = {};
 
@@ -117,7 +136,8 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (
       prevState.query !== this.state.query ||
       prevState.currentOnly !== this.state.currentOnly ||
-      prevState.tab !== this.state.tab
+      (prevState.tab !== this.state.tab &&
+        RELOAD_SEARCH_TABS.includes(this.state.tab))
     ) {
       this.doSearch(this.state.query);
     }
@@ -138,9 +158,10 @@ class FileExplorerComponent extends React.Component<Props, State> {
     const { tab } = this.state;
     const config: FilesSearchFilter = {
       filter: {
-        ...(tab !== 'all' && {
-          mimeType: tab === 'images' ? 'image/jpeg' : 'application/pdf',
-        }),
+        ...(RELOAD_SEARCH_TABS.includes(tab) &&
+          FileExplorerMimeTypes[tab].length > 0 && {
+            mimeType: FileExplorerMimeTypes[tab][0],
+          }),
         ...(assetId && currentOnly && { assetIds: [assetId] }),
       },
       limit: 1000,
@@ -152,74 +173,39 @@ class FileExplorerComponent extends React.Component<Props, State> {
         search: { name: query },
         ...config,
       });
-      if (tab === 'images') {
-        results = results.concat(
-          await sdk.files.search({
+      const appendResults = [];
+      for (let i = 1; i < FileExplorerMimeTypes[tab].length; i += 1) {
+        appendResults.push(
+          sdk.files.search({
             search: { name: query },
             ...config,
             filter: {
               ...config.filter,
-              mimeType: 'image/png',
+              mimeType: FileExplorerMimeTypes[tab][i],
             },
           })
         );
       }
-      if (tab === 'documents') {
-        results = results.concat(
-          await sdk.files.search({
-            search: { name: query },
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'pdf',
-            },
-          })
-        );
-        results = results.concat(
-          await sdk.files.search({
-            search: { name: query },
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'PDF',
-            },
-          })
-        );
-      }
+      (await Promise.all(appendResults)).forEach(arr => {
+        results = results.concat(arr);
+      });
     } else {
-      this.setState({ fetching: true });
       results = (await sdk.files.list(config)).items;
-      if (tab === 'images') {
-        results = results.concat(
-          (await sdk.files.list({
+      const appendResults = [];
+      for (let i = 1; i < FileExplorerMimeTypes[tab].length; i += 1) {
+        appendResults.push(
+          sdk.files.list({
             ...config,
             filter: {
               ...config.filter,
-              mimeType: 'image/png',
+              mimeType: FileExplorerMimeTypes[tab][i],
             },
-          })).items
+          })
         );
       }
-      if (tab === 'documents') {
-        results = results.concat(
-          (await sdk.files.list({
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'pdf',
-            },
-          })).items
-        );
-        results = results.concat(
-          (await sdk.files.list({
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'PDF',
-            },
-          })).items
-        );
-      }
+      (await Promise.all(appendResults)).forEach(arr => {
+        results = results.concat(arr.items);
+      });
     }
     if (thisQuery === this.currentQuery) {
       trackSearchUsage('FileExplorer', 'File', { query, tab });
@@ -265,6 +251,19 @@ class FileExplorerComponent extends React.Component<Props, State> {
     } = this.state;
     const { assetId } = this.props.app;
     if (selectedDocument) {
+      if (
+        selectedDocument.mimeType &&
+        selectedDocument.mimeType.includes('svg')
+      ) {
+        return (
+          <PNIDViewer
+            selectedDocument={selectedDocument}
+            unselectDocument={() =>
+              this.setState({ selectedDocument: undefined })
+            }
+          />
+        );
+      }
       return (
         <FilePreview
           selectedDocument={selectedDocument}
@@ -283,6 +282,20 @@ class FileExplorerComponent extends React.Component<Props, State> {
           <ListFilesTab
             fetching={fetching}
             searchResults={searchResults}
+            onClickDocument={this.onClickDocument}
+            setPage={this.setPage}
+            current={current}
+          />
+        );
+        break;
+      case 'pnid':
+        list = (
+          <ListFilesTab
+            fetching={fetching}
+            searchResults={searchResults.filter(
+              file =>
+                file.mimeType && file.mimeType.toLowerCase().includes('svg')
+            )}
             onClickDocument={this.onClickDocument}
             setPage={this.setPage}
             current={current}
@@ -340,7 +353,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
             });
           }}
         >
-          {['all', 'images', 'documents', 'upload'].map((key: string) => (
+          {Object.keys(FileExplorerTabs).map((key: string) => (
             <TabPane
               forceRender
               tab={FileExplorerTabs[key as FileExplorerTabsType]}
