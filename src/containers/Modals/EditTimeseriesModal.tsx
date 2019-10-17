@@ -179,7 +179,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
       >
         <FormDetails>
           <p>
-            Current Asset:{' '}
+            Linked Asset:{' '}
             {selectedAssetId && assets[selectedAssetId!]
               ? assets[selectedAssetId!].name
               : 'N/A'}
