@@ -69,7 +69,6 @@ export const setModelAndRevisionAndNode = (
     revisionId,
     nodeId,
   });
-  console.log(modelId, revisionId, nodeId);
   if (!modelId || !revisionId) {
     dispatch({
       type: SET_APP_STATE,
