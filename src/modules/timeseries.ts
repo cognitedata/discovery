@@ -2,7 +2,7 @@ import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
+import { GetTimeSeriesMetadataDTO, TimeSeriesUpdate } from '@cognite/sdk';
 import { fetchEvents } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
@@ -122,6 +122,20 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
       dispatch(fetchTimeseries(assetId));
       dispatch(fetchEvents(assetId));
     }, 1000);
+  };
+}
+
+export function editTimeseries(timeseriesId: number, update: TimeSeriesUpdate) {
+  return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    trackUsage('Timeseries.updateTimeseries', {
+      id: timeseriesId,
+    });
+
+    const updatedTimeseries = await sdk.timeseries.update([update]);
+    dispatch({
+      type: SET_TIMESERIES,
+      payload: { items: updatedTimeseries },
+    });
   };
 }
 

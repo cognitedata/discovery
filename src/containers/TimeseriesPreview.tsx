@@ -1,24 +1,31 @@
 import React from 'react';
-import { Modal } from 'antd';
+import { Modal, Button } from 'antd';
 import { TimeseriesChartMeta } from '@cognite/gearbox';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { selectTimeseries, TimeseriesState } from '../modules/timeseries';
 import { RootState } from '../reducers/index';
 import { selectApp, AppState, setTimeseriesId } from '../modules/app';
+import EditTimeseriesModal from './Modals/EditTimeseriesModal';
 
 type Props = {
   timeseries: TimeseriesState;
   app: AppState;
   setTimeseriesId: typeof setTimeseriesId;
 };
+type State = { editModal: boolean };
 
-class TimeseriesPreview extends React.PureComponent<Props, {}> {
+class TimeseriesPreview extends React.PureComponent<Props, State> {
+  readonly state: Readonly<State> = {
+    editModal: false,
+  };
+
   render() {
     const {
       timeseries: { timeseriesData },
       app: { timeseriesId },
     } = this.props;
+    const { editModal } = this.state;
     let timeseries;
     if (timeseriesId) {
       timeseries = timeseriesData[timeseriesId];
@@ -31,7 +38,23 @@ class TimeseriesPreview extends React.PureComponent<Props, {}> {
         onCancel={() => this.props.setTimeseriesId(undefined)}
         footer={[null, null]}
       >
-        {timeseries && <TimeseriesChartMeta timeseriesId={timeseries.id} />}
+        <>
+          {editModal && timeseriesId && (
+            <EditTimeseriesModal
+              timeseriesId={timeseriesId}
+              onClose={() =>
+                // Needed because the TimeseriesChartMeta does not know if we updated the timeseries or not
+                setTimeout(() => this.setState({ editModal: false }), 700)
+              }
+            />
+          )}
+          <Button onClick={() => this.setState({ editModal: true })}>
+            Edit Timeseries
+          </Button>
+          {timeseries && !editModal && (
+            <TimeseriesChartMeta timeseriesId={timeseries.id} />
+          )}
+        </>
       </Modal>
     );
   }
