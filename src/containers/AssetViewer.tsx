@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, bindActionCreators } from 'redux';
 import Model3D from '../components/Model3D';
-import PNIDViewer from './PNIDViewer';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import {
@@ -30,7 +29,7 @@ import ComponentSelector from '../components/ComponentSelector';
 export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
   threed: '3D',
-  pnid: 'P&ID',
+  pnid: 'DEPRECATED - P&ID',
   vx: 'VX Network Viewer',
   network: 'Force Network Viewer',
   relationship: 'Relationships',
@@ -166,7 +165,14 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderPNID = () => {
-    return <PNIDViewer />;
+    return (
+      <>
+        <h3>Deprecated!</h3>
+        <p>
+          Please use the P&ID section of the <code>File Viewer</code> Component!
+        </p>
+      </>
+    );
   };
 
   renderAssetNetworkVX = () => {

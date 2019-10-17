@@ -99,7 +99,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
                           .map((el: number) =>
                             assets[el] ? assets[el].name : el
                           )
-                          .join(', ') + (item.assetIds.length > 0 ? '...' : '')
+                          .join(', ') + (item.assetIds.length > 10 ? '...' : '')
                       : 'N/A'}
                   </span>
                 ),
