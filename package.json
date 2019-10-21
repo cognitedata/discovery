@@ -2,7 +2,10 @@
   "name": "discovery",
   "description": "App to view, filter and edit CDF data and relationships.",
   "version": "0.1.4",
-  "contributors": [ "David Liu <david.liu@cognite.com>", "Anders Hafreager <anders.hafreager@cognite.com>" ],
+  "contributors": [
+    "David Liu <david.liu@cognite.com>",
+    "Anders Hafreager <anders.hafreager@cognite.com>"
+  ],
   "license": "Apache-2.0",
   "dependencies": {
     "@cognite/3d-viewer": "^6.0.2",
@@ -39,9 +42,11 @@
     "@vx/text": "^0.0.191",
     "@vx/zoom": "^0.0.189",
     "antd": "^3.22.2",
+    "axios": "^0.19.0",
     "babel-eslint": "10.0.2",
     "connected-react-router": "^6.5.2",
     "d3": "^5.9.7",
+    "debug": "^4.1.1",
     "gcs-browser-upload": "^1.0.1",
     "lodash": "^4.17.15",
     "makecancelable": "^1.1.1",
@@ -105,7 +110,12 @@
       "pre-commit": "pretty-quick --staged"
     }
   },
-  "browserslist": [ ">0.2%", "not dead", "not ie <= 11", "not op_mini all" ],
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
   "engines": {
     "npm": ">=4",
     "node": ">=6"
