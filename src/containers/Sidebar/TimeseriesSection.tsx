@@ -86,7 +86,7 @@ class TimeseriesSection extends React.Component<Props, State> {
             ...(assetId && { assetIds: [assetId] }),
           },
           limit: 1000,
-          search: { query },
+          search: { name: query },
         },
       }
     );

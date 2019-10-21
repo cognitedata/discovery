@@ -63,7 +63,7 @@ export function searchTimeseries(query: string, assetId?: number) {
             ...(assetId && { assetIds: [assetId] }),
           },
           limit: 1000,
-          search: { query },
+          search: { name: query },
         },
       }
     );

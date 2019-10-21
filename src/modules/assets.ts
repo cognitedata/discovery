@@ -68,7 +68,7 @@ export function searchForAsset(query: string) {
       {
         data: {
           limit: 1000,
-          ...(query && query.length > 0 && { search: { query } }),
+          ...(query && query.length > 0 && { search: { name: query } }),
         },
       }
     )).data.items;

@@ -292,12 +292,6 @@ class AssetSearch extends Component<Props, State> {
         value: prevState.addingSourceFilter,
       });
     }
-    if (prevState.currentRootOnly !== this.state.currentRootOnly) {
-      trackUsage('GlobalSearch.SearchFilterToggled', {
-        type: 'rootOnly',
-        value: this.state.currentRootOnly,
-      });
-    }
     if (prevState.addingEventFilter !== this.state.addingEventFilter) {
       trackUsage('GlobalSearch.SearchFilterToggled', {
         type: 'eventFilter',
@@ -355,7 +349,7 @@ class AssetSearch extends Component<Props, State> {
       `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
-          search: { query },
+          search: { name: query },
           limit: 100,
         },
       }
@@ -372,7 +366,7 @@ class AssetSearch extends Component<Props, State> {
       `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
-          search: { query },
+          search: { name: query },
           filter: {
             root: true,
           },
@@ -455,7 +449,7 @@ class AssetSearch extends Component<Props, State> {
           {
             data: {
               limit: 100,
-              ...(query && query.length > 0 && { search: { query } }),
+              ...(query && query.length > 0 && { search: { name: query } }),
               filter: {
                 ...(onlyRootAsset && { root: true }),
                 ...(filterMap.source && { source: filterMap.source }),
@@ -578,7 +572,7 @@ class AssetSearch extends Component<Props, State> {
         {
           data: {
             limit: 100,
-            ...(query && query.length > 0 && { search: { query } }),
+            ...(query && query.length > 0 && { search: { name: query } }),
             filter: {
               ...(filterMap.metadata && { metadata: filterMap.metadata }),
               ...(filterMap.locations.length > 0 && {
