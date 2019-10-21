@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Layout, Switch } from 'antd';
+import { Layout, Switch, Icon } from 'antd';
 import { Route } from 'react-router-dom';
 import AssetSearch from '../components/AssetSearch';
 import AssetViewer from './AssetViewer';
@@ -26,6 +26,7 @@ class Main extends React.Component {
       localStorage.getItem('showPNID') != null
         ? stringToBool(localStorage.getItem('showPNID'))
         : true,
+    showBanner: true,
   };
 
   componentDidMount() {
@@ -107,6 +108,7 @@ class Main extends React.Component {
     }
 
     const { match, history, location } = this.props;
+    const { showBanner } = this.state;
     const assetDrawerWidth = 350;
     return (
       <div
@@ -118,21 +120,32 @@ class Main extends React.Component {
           flexDirection: 'column',
         }}
       >
-        <div style={{ background: 'yellow' }}>
-          <p
-            style={{ marginTop: '6px', marginBottom: '6px', marginLeft: '6px' }}
-          >
-            Digital Twin Explorer is now a deprecated application. Please use{' '}
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href="//discovery.cogniteapp.com"
+        {showBanner && (
+          <div style={{ background: 'yellow' }}>
+            <p
+              style={{
+                marginTop: '6px',
+                marginBottom: '6px',
+                marginLeft: '6px',
+              }}
             >
-              Discovery
-            </a>{' '}
-            instead.
-          </p>
-        </div>
+              Digital Twin Explorer is now a deprecated application. Please use{' '}
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                href="//discovery.cogniteapp.com"
+              >
+                Discovery
+              </a>{' '}
+              instead.
+              <Icon
+                type="close-circle"
+                style={{ marginLeft: '16px' }}
+                onClick={() => this.setState({ showBanner: false })}
+              />
+            </p>
+          </div>
+        )}
         <Layout style={{ flex: 1, position: 'relative' }}>
           <Layout>
             <Sider
