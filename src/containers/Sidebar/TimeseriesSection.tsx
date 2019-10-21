@@ -5,20 +5,21 @@ import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import debounce from 'lodash/debounce';
+import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import {
   fetchTimeseries,
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
-  searchTimeseries,
 } from '../../modules/timeseries';
 import AddTimeseries from '../Modals/AddTimeseriesModal';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState, setTimeseriesId } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
+import { sdk } from '../..';
 
-const ListItemContent = styled.div`
+export const SidebarPaneListContent = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -47,7 +48,6 @@ type Props = {
   doFetchTimeseries: typeof fetchTimeseries;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   setTimeseriesId: typeof setTimeseriesId;
-  searchTimeseries: typeof searchTimeseries;
   timeseries: TimeseriesState;
   app: AppState;
 } & OrigProps;
@@ -55,18 +55,50 @@ type Props = {
 type State = {
   showAddTimeseries: boolean;
   timeseriesTablePage: number;
+  currentFilterResults?: number[];
 };
 
 class TimeseriesSection extends React.Component<Props, State> {
+  searchTimeseriesId = 0;
+
   constructor(props: Props) {
     super(props);
 
-    this.doSearch = debounce(this.doSearch, 100);
+    this.searchTimeseries = debounce(this.searchTimeseries, 700);
     this.state = {
       showAddTimeseries: false,
       timeseriesTablePage: 0,
     };
   }
+
+  searchTimeseries = async (query: string) => {
+    const { assetId } = this.props.app;
+    if (!query || query === '') {
+      this.setState({ currentFilterResults: undefined });
+    }
+    this.searchTimeseriesId += 1;
+    const id = this.searchTimeseriesId;
+    const results = await sdk.post(
+      `/api/playground/projects/${sdk.project}/timeseries/search`,
+      {
+        data: {
+          filter: {
+            ...(assetId && { assetIds: [assetId] }),
+          },
+          limit: 1000,
+          search: { query },
+        },
+      }
+    );
+    if (this.searchTimeseriesId === id) {
+      this.setState({
+        currentFilterResults: results.data.items.map(
+          (el: GetTimeSeriesMetadataDTO) => el.id
+        ),
+      });
+      this.searchTimeseriesId = 0;
+    }
+  };
 
   addTimeseriesClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     trackUsage('TimeseriesSection.AddTimeseriesClicked', {
@@ -95,18 +127,21 @@ class TimeseriesSection extends React.Component<Props, State> {
     this.props.setTimeseriesId(timeseriesId);
   };
 
-  doSearch = (query: string) => {
-    const { assetId } = this.props.app;
-    this.props.searchTimeseries(query, assetId);
-  };
-
   render() {
     const {
       timeseries: { timeseriesData },
       app: { assetId },
     } = this.props;
-    const { timeseriesTablePage, showAddTimeseries } = this.state;
-    const timeseriesItems = Object.values(timeseriesData);
+    const {
+      timeseriesTablePage,
+      showAddTimeseries,
+      currentFilterResults,
+    } = this.state;
+    const timeseriesItems = Object.values(timeseriesData).filter(
+      el =>
+        el.assetId === assetId &&
+        (!currentFilterResults || currentFilterResults.includes(el.id))
+    );
     return (
       <>
         {assetId != null && showAddTimeseries && (
@@ -117,11 +152,11 @@ class TimeseriesSection extends React.Component<Props, State> {
           />
         )}
         <Button type="primary" onClick={this.addTimeseriesClick}>
-          Add
+          Link Timeseries
         </Button>
         <Input
           placeholder="Find the timeseries most relevant to you"
-          onChange={ev => this.doSearch(ev.target.value)}
+          onChange={ev => this.searchTimeseries(ev.target.value)}
           style={{ marginTop: '6px', marginBottom: '6px' }}
         />
         <List
@@ -136,7 +171,7 @@ class TimeseriesSection extends React.Component<Props, State> {
           }
           renderItem={ts => (
             <List.Item>
-              <ListItemContent>
+              <SidebarPaneListContent>
                 <p
                   className="title"
                   onClick={() => this.timeseriesOnClick(ts.id)}
@@ -147,7 +182,7 @@ class TimeseriesSection extends React.Component<Props, State> {
                 <p className="subtitle">{`${ts.unit}, ${
                   ts.description
                 }, ${moment(ts.createdTime).format('DD-MM-YYYY')}`}</p>
-              </ListItemContent>
+              </SidebarPaneListContent>
               <div>
                 <Popconfirm
                   title="Are you sure？"
@@ -158,7 +193,7 @@ class TimeseriesSection extends React.Component<Props, State> {
                   }
                 >
                   <Button type="danger">
-                    <Icon type="delete" />
+                    <Icon type="link" /> <span>Unlink</span>
                   </Button>
                 </Popconfirm>
               </div>
@@ -190,7 +225,6 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setTimeseriesId,
-      searchTimeseries,
       doFetchTimeseries: fetchTimeseries,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
     },

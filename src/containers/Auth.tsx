@@ -24,7 +24,16 @@ class Auth extends React.Component<Props, State> {
   };
 
   async componentDidMount() {
-    const status = await sdk.login.status();
+    await this.verifyAuth();
+  }
+
+  async componentDidUpdate() {
+    if (!this.state.auth) {
+      await this.verifyAuth();
+    }
+  }
+
+  verifyAuth = async () => {
     const {
       match: {
         params: { tenant: pathTenant },
@@ -38,27 +47,13 @@ class Auth extends React.Component<Props, State> {
       this.props.setTenant(pathTenant);
     }
 
-    if (!status) {
-      sdk.loginWithOAuth({ project: tenant || pathTenant });
-      await sdk.authenticate();
-    }
+    await sdk.loginWithOAuth({ project: tenant || pathTenant });
+    const status = await sdk.authenticate();
 
     this.setState({
       auth: status !== null,
     });
-  }
-
-  async componentDidUpdate() {
-    if (!this.state.auth) {
-      const status = await sdk.login.status();
-      if (status !== null) {
-        // eslint-disable-next-line react/no-did-update-set-state
-        this.setState({
-          auth: true,
-        });
-      }
-    }
-  }
+  };
 
   render() {
     const { match } = this.props;

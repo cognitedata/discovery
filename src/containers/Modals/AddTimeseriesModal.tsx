@@ -7,6 +7,7 @@ import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
 import { addTimeseriesToAsset } from '../../modules/timeseries';
 import { RootState } from '../../reducers/index';
+import { selectAssets, ExtendedAsset } from '../../modules/assets';
 
 type OrigProps = {
   assetId: string | number;
@@ -15,9 +16,10 @@ type OrigProps = {
 
 type Props = {
   assetId: number;
+  asset: ExtendedAsset;
   timeseries: GetTimeSeriesMetadataDTO[];
   doAddTimeseriesToAsset: typeof addTimeseriesToAsset;
-  onClose: (e: any) => void;
+  onClose: () => void;
 };
 
 type State = {
@@ -38,6 +40,7 @@ class AddTimeseries extends React.Component<Props, State> {
         this.state.selectedTimeseriesIds,
         this.props.assetId
       );
+      this.props.onClose();
     }
   };
 
@@ -49,7 +52,7 @@ class AddTimeseries extends React.Component<Props, State> {
     return (
       <Modal
         visible
-        title="Contextualize timeseries"
+        title={`Link Asset (${this.props.asset.name}) to Timeseries`}
         onCancel={this.props.onClose}
         footer={[
           <Button key="submit" type="primary" onClick={this.addToAsset}>
@@ -59,6 +62,8 @@ class AddTimeseries extends React.Component<Props, State> {
       >
         <TimeseriesSearch
           hideSelected
+          allowStrings
+          styles={{ list: { maxHeight: '400px', overflow: 'auto' } }}
           onTimeserieSelectionChange={this.onTimeserieSelectionChange}
           filterRule={this.timeseriesFilter}
         />
@@ -67,10 +72,11 @@ class AddTimeseries extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (_: RootState, ownProps: OrigProps) => {
+const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
   const { assetId, timeseries } = ownProps;
   return {
     assetId: Number(assetId),
+    asset: selectAssets(state).all[assetId],
     timeseries,
   };
 };

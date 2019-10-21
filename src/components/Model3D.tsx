@@ -348,6 +348,27 @@ class Model3D extends React.Component<Props, State> {
     });
   }
 
+  renderSlider = () => {
+    return (
+      <Slider
+        vertical
+        step={0.1}
+        defaultValue={[495, 510]}
+        range
+        min={495}
+        max={510}
+        style={{
+          position: 'absolute',
+          top: '40px',
+          paddingLeft: 10,
+          paddingTop: 10,
+          height: '50%',
+        }}
+        onChange={this.onSliderChange}
+      />
+    );
+  };
+
   render() {
     if (this.state.forceReload) {
       this.setState({ forceReload: false });
@@ -370,22 +391,6 @@ class Model3D extends React.Component<Props, State> {
           onProgress={this.onProgress}
           onComplete={this.onComplete}
           cache={this.props.cache}
-        />
-        <Slider
-          vertical
-          step={0.1}
-          defaultValue={[495, 510]}
-          range
-          min={495}
-          max={510}
-          style={{
-            position: 'absolute',
-            top: '40px',
-            paddingLeft: 10,
-            paddingTop: 10,
-            height: '50%',
-          }}
-          onChange={this.onSliderChange}
         />
       </>
     );

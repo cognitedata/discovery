@@ -1,17 +1,17 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { List, Button, message, Icon } from 'antd';
+import { Button, message, Icon } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
 import { bindActionCreators, Dispatch } from 'redux';
-import { selectAssets, AssetsState } from '../modules/assets';
-import { selectFiles, FilesState } from '../modules/files';
-import { sleep } from '../utils/utils';
-import { RootState } from '../reducers';
-import { sdk } from '../index';
-import { selectApp, AppState, setAssetId } from '../modules/app';
-import Placeholder from '../components/Placeholder';
-import { trackUsage } from '../utils/metrics';
+import { FilesMetadata } from '@cognite/sdk';
+import { selectAssets, AssetsState } from '../../modules/assets';
+import { selectFiles, FilesState } from '../../modules/files';
+import { sleep } from '../../utils/utils';
+import { RootState } from '../../reducers';
+import { sdk } from '../../index';
+import { selectApp, AppState, setAssetId } from '../../modules/app';
+import { trackUsage } from '../../utils/metrics';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
   (node.textContent || '').replace(/\s/g, '');
@@ -56,6 +56,8 @@ type Props = {
   assets: AssetsState;
   files: FilesState;
   setAssetId: typeof setAssetId;
+  unselectDocument: () => void;
+  selectedDocument: FilesMetadata;
 };
 
 type State = {
@@ -66,12 +68,32 @@ type State = {
 class PNIDViewer extends React.Component<Props, State> {
   svgviewer?: SVGViewer | null = undefined;
 
-  readonly state: Readonly<State> = {
-    currentFiles: [],
-    currentIndex: 0,
-  };
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      currentFiles: [
+        {
+          id: props.selectedDocument.id,
+          fileName: props.selectedDocument.name,
+        },
+      ],
+      currentIndex: 0,
+    };
+  }
 
   componentDidUpdate(prevProps: Props) {
+    if (prevProps.selectedDocument !== this.props.selectedDocument) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({
+        currentFiles: [
+          {
+            id: this.props.selectedDocument.id,
+            fileName: this.props.selectedDocument.name,
+          },
+        ],
+      });
+    }
     if (prevProps.app.assetId !== this.props.app.assetId) {
       setTimeout(async () => {
         if (this.svgviewer) {
@@ -183,6 +205,15 @@ class PNIDViewer extends React.Component<Props, State> {
     const { currentFiles, currentIndex } = this.state;
     return (
       <>
+        <div>
+          <Button
+            onClick={this.props.unselectDocument}
+            style={{ marginBottom: '6px' }}
+          >
+            <Icon type="arrow-left" />
+            BACK
+          </Button>
+        </div>
         <Button.Group style={{ marginBottom: '12px' }}>
           <Button
             size="small"
@@ -210,7 +241,7 @@ class PNIDViewer extends React.Component<Props, State> {
             title={this.currentFile && this.currentFile.fileName}
             description="P&ID"
             handleCancel={() => {
-              this.setState({ currentFiles: [], currentIndex: 0 });
+              this.props.unselectDocument();
             }}
             isCurrentAsset={this.isCurrentAsset}
             // metadataClassesConditions={[
@@ -235,55 +266,11 @@ class PNIDViewer extends React.Component<Props, State> {
     );
   }
 
-  renderFileList() {
-    if (!this.props.app.assetId) {
-      return <Placeholder componentName="P&ID Viewer" />;
-    }
-
-    const filesForThisAsset =
-      this.props.files.byAssetId[this.props.app.assetId!] || [];
-
-    const pNIDFiles = filesForThisAsset.filter(
-      file =>
-        file.name.includes('') &&
-        file.mimeType &&
-        file.mimeType.toLowerCase().includes('svg')
-    );
-
-    return (
-      <List
-        size="small"
-        header={<h3 style={{ marginBottom: 0 }}>P&ID documents</h3>}
-        bordered
-        dataSource={pNIDFiles}
-        renderItem={item => (
-          <List.Item>
-            <Button
-              type="link"
-              onClick={() => {
-                trackUsage('PNIDViewer.viewFile', { id: item.id });
-                this.setState({
-                  currentFiles: [{ id: item.id, fileName: item.name }],
-                  currentIndex: 0,
-                });
-              }}
-            >
-              {item.name}
-            </Button>
-          </List.Item>
-        )}
-      />
-    );
-  }
-
   render() {
     const { currentFile } = this;
 
     return (
-      <ViewerContainer>
-        {currentFile && this.renderSVGViewer()}
-        {!currentFile && this.renderFileList()}
-      </ViewerContainer>
+      <ViewerContainer>{currentFile && this.renderSVGViewer()}</ViewerContainer>
     );
   }
 }

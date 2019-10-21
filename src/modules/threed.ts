@@ -55,7 +55,7 @@ export interface AddRevisionAction extends Action<typeof ADD_REVISIONS> {
       [key: number]: {
         modelId: number;
         revisionId: number;
-      };
+      }[];
     };
   };
 }
@@ -80,15 +80,18 @@ export function fetchRevisions(modelId: number) {
             const { representsAsset } = revision.metadata!;
             if (prev[Number(representsAsset)] === undefined) {
               // eslint-disable-next-line no-param-reassign
-              prev[Number(representsAsset)] = {
-                modelId,
-                revisionId: revision.id,
-              };
+              prev[Number(representsAsset)] = [
+                ...(prev[Number(representsAsset)] || []),
+                {
+                  modelId,
+                  revisionId: revision.id,
+                },
+              ];
             }
           }
           return prev;
         },
-        {} as { [key: number]: { modelId: number; revisionId: number } }
+        {} as { [key: number]: { modelId: number; revisionId: number }[] }
       );
       dispatch({
         type: ADD_REVISIONS,
@@ -191,7 +194,7 @@ export function fetchModels() {
 
 // Reducer
 export interface ThreeDState {
-  representsAsset: { [key: number]: { modelId: number; revisionId: number } };
+  representsAsset: { [key: number]: { modelId: number; revisionId: number }[] };
   models: { [key: string]: ThreeDModel };
   currentNode?: CurrentNode;
   loading: boolean;
@@ -242,22 +245,30 @@ export default function threed(
         },
         representsAsset: {
           ...state.representsAsset,
-          [assetId]: {
-            modelId,
-            revisionId,
-          },
+          [assetId]: [
+            ...(state.representsAsset[assetId] || []),
+            {
+              modelId,
+              revisionId,
+            },
+          ],
         },
       };
     }
     case ADD_REVISIONS: {
       const { modelId, revisions, representsAsset } = action.payload;
-      // TODO, this is a hack!
+      // TODO, replacd with relationships
       const newRepresentMap: {
-        [key: number]: { modelId: number; revisionId: number };
+        [key: number]: { modelId: number; revisionId: number }[];
       } = {
         ...state.representsAsset,
-        ...representsAsset,
       };
+      Object.keys(representsAsset).forEach(assetId => {
+        newRepresentMap[Number(assetId)] = [
+          ...(newRepresentMap[Number(assetId)] || []),
+          ...representsAsset[Number(assetId)],
+        ];
+      });
       return {
         ...state,
         models: {

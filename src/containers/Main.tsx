@@ -227,10 +227,6 @@ class Main extends React.Component<Props, State> {
     }
   };
 
-  hasModelForAsset = (assetId: number) => {
-    return this.props.threed.representsAsset[assetId];
-  };
-
   onAddComponent = () => {
     trackUsage('Main.ComponentedAdded');
     const i =
