@@ -1,37 +1,37 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { Layout, Switch, Button, Icon } from 'antd';
-import { bindActionCreators, Dispatch } from 'redux';
-import styled from 'styled-components';
+import React from "react";
+import { connect } from "react-redux";
+import { Layout, Switch, Button, Icon } from "antd";
+import { bindActionCreators, Dispatch } from "redux";
+import styled from "styled-components";
 import {
   Responsive,
   WidthProvider,
-  Layout as GridLayout,
-} from 'react-grid-layout';
-import { fetchTypes } from '../modules/types';
+  Layout as GridLayout
+} from "react-grid-layout";
+import { fetchTypes } from "../modules/types";
 import {
   selectThreeD,
   ThreeDState,
   fetchRevisions,
-  fetchModels,
-} from '../modules/threed';
-import { selectAssets, AssetsState } from '../modules/assets';
-import { RootState } from '../reducers/index';
+  fetchModels
+} from "../modules/threed";
+import { selectAssets, AssetsState } from "../modules/assets";
+import { RootState } from "../reducers/index";
 import {
   AppState,
   selectApp,
   setAssetId,
   resetAppState,
-  setModelAndRevisionAndNode,
-} from '../modules/app';
-import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
-import Sidebar from './Sidebar';
-import TimeseriesPreview from './TimeseriesPreview';
-import { sdk } from '../index';
-import { trackUsage } from '../utils/metrics';
-import ComponentSelector from '../components/ComponentSelector';
+  setModelAndRevisionAndNode
+} from "../modules/app";
+import AssetViewer, { ViewerType, ViewerTypeMap } from "./AssetViewer";
+import Sidebar from "./Sidebar";
+import TimeseriesPreview from "./TimeseriesPreview";
+import { sdk } from "../index";
+import { trackUsage } from "../utils/metrics";
+import ComponentSelector from "../components/ComponentSelector";
 
-const LAYOUT_LOCAL_STORAGE = 'layout';
+const LAYOUT_LOCAL_STORAGE = "layout";
 
 interface DiscoveryLayout extends GridLayout {
   viewType: ViewerType;
@@ -54,9 +54,11 @@ const StyledHeader = styled(Header)`
   }
 `;
 
-const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
+type LayoutProps = {
   editable: boolean;
-}>`
+};
+
+const CustomGridLayout = styled(ResponsiveReactGridLayout)<LayoutProps>`
   position: relative;
   .react-grid-item {
     padding: 12px;
@@ -65,7 +67,7 @@ const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
 
   .react-resizable-handle {
     z-index: 1001;
-    display: ${props => (props.editable ? 'block' : 'none')};
+    display: ${props => (props.editable ? "block" : "none")};
   }
 `;
 
@@ -157,35 +159,35 @@ class Main extends React.Component<Props, State> {
       localStorage.removeItem(LAYOUT_LOCAL_STORAGE);
     }
 
-    trackUsage('App Started', {
+    trackUsage("App Started", {
       project: sdk.project,
-      reinitializeLayout: layout.length === 0,
+      reinitializeLayout: layout.length === 0
     });
 
     if (layout.length === 0) {
       layout = [
         {
-          i: '0',
+          i: "0",
           x: 0,
           y: 0,
           w: 2,
           h: 31,
-          viewType: 'none',
+          viewType: "none"
         },
         {
-          i: '1',
+          i: "1",
           x: 2,
           y: 0,
           w: 2,
           h: 31,
-          viewType: 'none',
-        },
+          viewType: "none"
+        }
       ];
     }
 
     this.state = {
       editLayout: false,
-      layout,
+      layout
     };
   }
 
@@ -197,7 +199,7 @@ class Main extends React.Component<Props, State> {
     this.props.fetchModels();
 
     setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
+      window.dispatchEvent(new Event("resize"));
     }, 200);
   }
 
@@ -208,8 +210,8 @@ class Main extends React.Component<Props, State> {
   checkAndFixURL = () => {
     const {
       match: {
-        params: { rootAssetId, assetId },
-      },
+        params: { rootAssetId, assetId }
+      }
     } = this.props;
     if (assetId || rootAssetId) {
       const asset = this.props.assets.all[Number(assetId || rootAssetId)];
@@ -228,7 +230,7 @@ class Main extends React.Component<Props, State> {
   };
 
   onAddComponent = () => {
-    trackUsage('Main.ComponentedAdded');
+    trackUsage("Main.ComponentedAdded");
     const i =
       this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
       1;
@@ -244,27 +246,27 @@ class Main extends React.Component<Props, State> {
           y: Infinity, // puts it at the bottom
           w: 2,
           h: 8,
-          viewType: 'none',
-        },
-      ]),
+          viewType: "none"
+        }
+      ])
     }));
   };
 
   changeEdit = (edit = false) => {
-    trackUsage('Main.LayoutEdit', { edit });
+    trackUsage("Main.LayoutEdit", { edit });
     this.setState({
-      editLayout: edit,
+      editLayout: edit
     });
   };
 
   onLayoutChange = (newLayout: DiscoveryLayout[]) => {
     const layout = newLayout.map(el => ({
       ...el,
-      viewType: this.state.layout.find(it => it.i === el.i)!.viewType,
+      viewType: this.state.layout.find(it => it.i === el.i)!.viewType
     }));
     this.setState({ layout });
     // Track usage where the size has changed.
-    trackUsage('Main.LayoutSizeChange', {
+    trackUsage("Main.LayoutSizeChange", {
       layoutChanged: newLayout.filter(el => {
         const orig = this.state.layout.find(it => it.i === el.i)!;
         return (
@@ -273,7 +275,7 @@ class Main extends React.Component<Props, State> {
           orig.w !== el.w ||
           orig.h !== el.h
         );
-      }),
+      })
     });
     localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(layout));
     return true;
@@ -285,7 +287,7 @@ class Main extends React.Component<Props, State> {
     const arrayItem = newArray.find(item => item.i === index);
     if (arrayItem) {
       arrayItem.viewType = type;
-      trackUsage('Main.LayoutTypeChange', { layout: arrayItem, type });
+      trackUsage("Main.LayoutTypeChange", { layout: arrayItem, type });
       this.setState({ layout: newArray }, () => {
         localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(newArray));
       });
@@ -295,16 +297,16 @@ class Main extends React.Component<Props, State> {
   render() {
     const { layout, editLayout } = this.state;
     return (
-      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+      <div className="main-layout" style={{ width: "100%", height: "100vh" }}>
         <TimeseriesPreview />
         <Layout>
           <Layout>
             <Sidebar />
             <Content
               style={{
-                display: 'flex',
-                height: '100vh',
-                flexDirection: 'column',
+                display: "flex",
+                height: "100vh",
+                flexDirection: "column"
               }}
             >
               <StyledHeader>
@@ -315,7 +317,7 @@ class Main extends React.Component<Props, State> {
                   onChange={this.changeEdit}
                 />
                 <a
-                  style={{ float: 'right', color: '#fff' }}
+                  style={{ float: "right", color: "#fff" }}
                   target="_blank"
                   rel="noopener noreferrer"
                   href="https://docs.cognite.com/discovery/blog/releasenotes.html"
@@ -338,7 +340,7 @@ class Main extends React.Component<Props, State> {
                   <div
                     key={el.i}
                     data-grid={el}
-                    style={{ position: 'relative' }}
+                    style={{ position: "relative" }}
                   >
                     {editLayout && (
                       <DraggingView>
@@ -370,14 +372,14 @@ class Main extends React.Component<Props, State> {
                         icon="close-circle"
                         size="small"
                         onClick={() => {
-                          trackUsage('Component Deleted', {
-                            type: layout[i].viewType,
+                          trackUsage("Component Deleted", {
+                            type: layout[i].viewType
                           });
                           this.setState({
                             layout: [
                               ...layout.slice(0, i),
-                              ...layout.slice(i + 1),
-                            ],
+                              ...layout.slice(i + 1)
+                            ]
                           });
                         }}
                       />
@@ -408,7 +410,7 @@ const mapStateToProps = (state: RootState) => {
   return {
     app: selectApp(state),
     threed: selectThreeD(state),
-    assets: selectAssets(state),
+    assets: selectAssets(state)
   };
 };
 
@@ -420,7 +422,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       fetchModels,
       setAssetId,
       setModelAndRevisionAndNode,
-      resetAppState,
+      resetAppState
     },
     dispatch
   );
