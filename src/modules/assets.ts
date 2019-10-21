@@ -64,7 +64,7 @@ export function searchForAsset(query: string) {
     //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
     // );
     const result = (await sdk.post(
-      `/api/playground/projects/${sdk.project}/assets/search`,
+      `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
           limit: 1000,

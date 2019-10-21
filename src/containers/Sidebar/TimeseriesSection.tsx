@@ -79,7 +79,7 @@ class TimeseriesSection extends React.Component<Props, State> {
     this.searchTimeseriesId += 1;
     const id = this.searchTimeseriesId;
     const results = await sdk.post(
-      `/api/playground/projects/${sdk.project}/timeseries/search`,
+      `/api/v1/projects/${sdk.project}/timeseries/search`,
       {
         data: {
           filter: {

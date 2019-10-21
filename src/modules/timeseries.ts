@@ -56,7 +56,7 @@ export function searchTimeseries(query: string, assetId?: number) {
     searchTimeseriesId += 1;
     const id = searchTimeseriesId;
     const results = await sdk.post(
-      `/api/playground/projects/${sdk.project}/timeseries/search`,
+      `/api/v1/projects/${sdk.project}/timeseries/search`,
       {
         data: {
           filter: {
