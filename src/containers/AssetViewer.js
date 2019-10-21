@@ -89,7 +89,7 @@ class AssetViewer extends React.Component {
     const { assetDrawerWidth } = this.props;
 
     return (
-      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+      <div className="main-layout" style={{ width: '100%', height: '100%' }}>
         <div style={{ height: '100%', paddingRight: assetDrawerWidth }}>
           <ViewerContainer>
             {this.props.show3D && this.render3D()}

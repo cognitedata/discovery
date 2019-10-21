@@ -109,13 +109,36 @@ class Main extends React.Component {
     const { match, history, location } = this.props;
     const assetDrawerWidth = 350;
     return (
-      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
-        <Layout>
+      <div
+        className="main-layout"
+        style={{
+          width: '100%',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div style={{ background: 'yellow' }}>
+          <p
+            style={{ marginTop: '6px', marginBottom: '6px', marginLeft: '6px' }}
+          >
+            Digital Twin Explorer is now a deprecated application. Please use{' '}
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="//discovery.cogniteapp.com"
+            >
+              Discovery
+            </a>{' '}
+            instead.
+          </p>
+        </div>
+        <Layout style={{ flex: 1, position: 'relative' }}>
           <Layout>
             <Sider
               style={{
                 overflow: 'auto',
-                height: '100vh',
+                height: '100%',
                 background: 'rgb(255,255,255)',
               }}
               width={250}
@@ -132,7 +155,7 @@ class Main extends React.Component {
                 style={{
                   backgroundColor: 'rgba(0, 0, 0, 0.0)',
                   float: 'right',
-                  position: 'fixed',
+                  position: 'absolute',
                   right: '0',
                   top: '0',
                 }}
