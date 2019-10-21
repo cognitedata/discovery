@@ -287,7 +287,7 @@ export default function app(state = initialState, action: AppAction): AppState {
       return {
         ...state,
         ...(rootAssetId && { rootAssetId: Number(rootAssetId) }),
-        ...(!state.assetId && { assetId: Number(rootAssetId) }),
+        ...(!state.assetId && rootAssetId && { assetId: Number(rootAssetId) }),
         ...mapping,
       };
     }
