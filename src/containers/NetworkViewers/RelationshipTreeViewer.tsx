@@ -6,11 +6,11 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Select, Spin } from 'antd';
 import * as d3 from 'd3';
-import { AppState, selectApp } from '../../modules/app';
+import { AppState, selectApp, setAssetId } from '../../modules/app';
 import { RootState } from '../../reducers/index';
-import BetaWarning from '../../components/BetaWarning';
+import { trackUsage } from '../../utils/metrics';
 import {
-  fetchRelationships,
+  fetchRelationshipsForAssetId,
   RelationshipState,
 } from '../../modules/relationships';
 
@@ -33,6 +33,25 @@ const Wrapper = styled.div`
     top: 12px;
   }
 `;
+
+type FORCE_GRAPH_TYPES =
+  | 'td'
+  | 'bu'
+  | 'lr'
+  | 'rl'
+  | 'radialout'
+  | 'radialin'
+  | 'none';
+
+const ForceViewTypes: { [key in FORCE_GRAPH_TYPES]: string } = {
+  td: 'Top Down',
+  bu: 'Bottom Up',
+  lr: 'Left Right',
+  rl: 'Right Life',
+  radialout: 'Radial Out',
+  radialin: 'Radial In',
+  none: 'None',
+};
 
 const LoadingWrapper = styled.div<{ visible: string }>`
   display: ${props => (props.visible === 'true' ? 'flex' : 'none')};
@@ -64,7 +83,8 @@ type StateProps = {
   relationships: RelationshipState;
 };
 type DispatchProps = {
-  fetchRelationships: typeof fetchRelationships;
+  fetchRelationshipsForAssetId: typeof fetchRelationshipsForAssetId;
+  setAssetId: typeof setAssetId;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -84,7 +104,7 @@ class TreeViewer extends Component<Props, State> {
     super(props);
 
     this.state = {
-      controls: 'bu',
+      controls: 'none',
       loading: false,
       data: { nodes: [], links: [] },
     };
@@ -102,22 +122,30 @@ class TreeViewer extends Component<Props, State> {
       // @ts-ignore
       d3.forceManyBody().strength(-80)
     );
-
-    this.props.fetchRelationships();
+    if (this.props.app.assetId) {
+      this.props.fetchRelationshipsForAssetId(this.props.app.assetId);
+    }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps: Props) {
     const data = this.getData();
     if (
       data.nodes.length !== this.state.data.nodes.length ||
       data.links.length !== this.state.data.links.length
     ) {
+      console.log(data);
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ data, loading: true });
       if (data.nodes.length !== 0) {
         // eslint-disable-next-line react/no-did-update-set-state
         setTimeout(() => this.setState({ loading: false }), 500);
       }
+    }
+    if (
+      this.props.app.assetId &&
+      prevProps.app.assetId !== this.props.app.assetId
+    ) {
+      this.props.fetchRelationshipsForAssetId(this.props.app.assetId);
     }
   }
 
@@ -131,16 +159,18 @@ class TreeViewer extends Component<Props, State> {
       nodes[relationship.source.resourceId as string] = {
         ...relationship.source,
         id: relationship.source.resourceId,
+        color: `rgba(0,0,255,0.5)`,
       };
       nodes[relationship.target.resourceId as string] = {
         ...relationship.target,
         id: relationship.target.resourceId,
+        color: 'rgba(0,0,0,1)',
       };
       if (relationship.source.resourceId !== relationship.target.resourceId) {
         links.push({
           ...relationship,
-          source: nodes[relationship.source.resourceId],
-          target: nodes[relationship.target.resourceId],
+          source: relationship.source.resourceId,
+          target: relationship.target.resourceId,
         });
       }
     });
@@ -155,7 +185,6 @@ class TreeViewer extends Component<Props, State> {
     const { controls, loading } = this.state;
     return (
       <Wrapper>
-        <BetaWarning />
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
           <Spin size="large" />
         </LoadingWrapper>
@@ -173,6 +202,12 @@ class TreeViewer extends Component<Props, State> {
           nodeAutoColorBy="color"
           linkDirectionalParticles={2}
           linkDirectionalParticleWidth={2}
+          onNodeClick={(node: any) => {
+            this.props.setAssetId(Number(node.id), Number(node.id));
+            trackUsage('RelationshipViewer.AssetClicked', {
+              assetId: node.id,
+            });
+          }}
           nodeCanvasObject={(
             node: any,
             ctx: CanvasRenderingContext2D,
@@ -206,13 +241,11 @@ class TreeViewer extends Component<Props, State> {
             value={controls}
             onChange={(val: string) => this.setState({ controls: val })}
           >
-            {['td', 'bu', 'lr', 'rl', 'radialout', 'radialin', 'none'].map(
-              el => (
-                <Select.Option key={el} value={el}>
-                  {el}
-                </Select.Option>
-              )
-            )}
+            {Object.keys(ForceViewTypes).map(el => (
+              <Select.Option key={el} value={el}>
+                {ForceViewTypes[el as FORCE_GRAPH_TYPES]}
+              </Select.Option>
+            ))}
           </Select>
         </div>
       </Wrapper>
@@ -230,7 +263,8 @@ const mapStateToProps = (state: RootState): StateProps => {
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
-      fetchRelationships,
+      fetchRelationshipsForAssetId,
+      setAssetId,
     },
     dispatch
   );
