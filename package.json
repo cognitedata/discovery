@@ -92,23 +92,19 @@
     "eslint-plugin-react": ">=7.16",
     "eslint-plugin-react-redux": "^3.0.1",
     "husky": "^3.0.9",
-    "prettier": ">=1.18",
-    "pretty-quick": "^2.0.0"
+    "prettier": ">=1.18"
   },
   "scripts": {
     "start": "env HTTPS=true react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test --env=jsdom ",
     "eject": "react-app-rewired eject",
-    "format": "prettier --write '**/*.{js,jsx,json,md}'",
-    "format:changed": "pretty-quick",
-    "format:staged": "pretty-quick --staged",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .jsx,.js,.tsx,.ts --fix"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "pretty-quick --staged"
+      "pre-commit": "yarn run lint:fix"
     }
   },
   "browserslist": [

@@ -56,6 +56,8 @@ const defaultState = {
 };
 
 class FileUploader extends React.Component<Props, State> {
+  currentUploads: { [key: string]: any };
+
   public static defaultProps = {
     onUploadSuccess: () => {},
     onUploadFailure: message.error,
@@ -63,8 +65,6 @@ class FileUploader extends React.Component<Props, State> {
     beforeUploadStart: () => {},
     onFileListChange: () => {},
   };
-
-  currentUploads: { [key: string]: any };
 
   constructor(props: Props) {
     super(props);
