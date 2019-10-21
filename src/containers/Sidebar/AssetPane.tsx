@@ -417,6 +417,10 @@ class AssetDrawer extends React.Component<Props, State> {
       ? this.state.activeCollapsed
       : [];
 
+    const currentAssetTimeseriesCount = Object.values(
+      timeseries.timeseriesData
+    ).filter(el => el.assetId && el.assetId === assetId).length;
+
     return (
       <>
         {asset != null && showAddTypes && (
@@ -452,11 +456,7 @@ class AssetDrawer extends React.Component<Props, State> {
               {asset != null && this.renderExternalLinks(asset.id)}
 
               <Panel
-                header={
-                  <span>
-                    Timeseries ({Object.keys(timeseries.timeseriesData).length})
-                  </span>
-                }
+                header={<span>Timeseries ({currentAssetTimeseriesCount})</span>}
                 key="timeseries"
               >
                 <TimeseriesSection />
