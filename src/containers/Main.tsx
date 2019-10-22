@@ -54,9 +54,11 @@ const StyledHeader = styled(Header)`
   }
 `;
 
-const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
+type LayoutProps = {
   editable: boolean;
-}>`
+};
+
+const CustomGridLayout = styled(ResponsiveReactGridLayout)<LayoutProps>`
   position: relative;
   .react-grid-item {
     padding: 12px;
