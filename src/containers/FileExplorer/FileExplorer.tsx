@@ -253,7 +253,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (selectedDocument) {
       if (
         selectedDocument.mimeType &&
-        selectedDocument.mimeType.includes('svg')
+        selectedDocument.mimeType.toLowerCase().includes('svg')
       ) {
         return (
           <PNIDViewer
