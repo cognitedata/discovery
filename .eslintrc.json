@@ -1,16 +1,19 @@
 {
-  "parser":  "@typescript-eslint/parser",
-  "extends": [
-    "@cognite"
-  ],
+  "parser": "@typescript-eslint/parser",
+  "extends": ["@cognite"],
   "rules": {
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-var-requires": "off",
-    "@typescript-eslint/no-unused-vars": ["error", {
-      "vars": "all",
-      "args": "after-used",
-      "ignoreRestSiblings": true
-    }],
-    "react/no-array-index-key": "warn"
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "args": "after-used",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "react/no-array-index-key": "warn",
+    "react/static-property-placement": "off",
+    "react/state-in-constructor": "off"
   }
 }

@@ -4,10 +4,9 @@ podTemplate(
     containers: [
       containerTemplate(
         name: 'node',
-        image: 'node:carbon',
+        image: 'node:10',
         envVars: [
           envVar(key: 'CI', value: 'true'),
-          envVar(key: 'NODE_PATH', value: 'src/'),
         ],
         resourceRequestCpu: '4000m',
         resourceRequestMemory: '4500Mi',

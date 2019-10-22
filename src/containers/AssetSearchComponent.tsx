@@ -259,7 +259,7 @@ class AssetSearch extends Component<Props, State> {
     this.searchForAssetParent = debounce(this.searchForAssetParent, 700);
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
+  componentDidUpdate(_: Props, prevState: State) {
     if (
       prevState.filters.length !== this.state.filters.length ||
       prevState.query.length !== this.state.query.length ||

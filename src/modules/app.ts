@@ -259,7 +259,7 @@ export default function app(state = initialState, action: AppAction): AppState {
   switch (action.type) {
     case SET_APP_STATE:
       // needed to trigger states properly
-      return Object.assign({}, state, action.payload);
+      return { ...state, ...action.payload };
     case CLEAR_APP_STATE:
       return {
         ...state,

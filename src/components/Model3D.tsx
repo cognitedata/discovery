@@ -52,11 +52,7 @@ type State = {
 };
 
 class Model3D extends React.Component<Props, State> {
-  static defaultProps = {
-    assetMappings: { byNodeId: {}, byAssetId: {} },
-    nodeId: undefined,
-    cache: undefined,
-  };
+  viewer?: Cognite3DViewer = undefined;
 
   hasWarnedAboutNode: { [key: string]: boolean } = {};
 
@@ -66,7 +62,11 @@ class Model3D extends React.Component<Props, State> {
 
   model?: Cognite3DModel = undefined;
 
-  viewer?: Cognite3DViewer = undefined;
+  public static defaultProps = {
+    assetMappings: { byNodeId: {}, byAssetId: {} },
+    nodeId: undefined,
+    cache: undefined,
+  };
 
   componentDidMount() {
     if (this.props.nodeId) {

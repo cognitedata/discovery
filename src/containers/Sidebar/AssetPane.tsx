@@ -448,28 +448,26 @@ class AssetDrawer extends React.Component<Props, State> {
         <div>
           <h3>{createAssetTitle(asset)}</h3>
           {asset.description && <p>{asset.description}</p>}
-          {
-            <Collapse
-              onChange={this.onCollapseChange}
-              defaultActiveKey={defaultActiveKey}
+          <Collapse
+            onChange={this.onCollapseChange}
+            defaultActiveKey={defaultActiveKey}
+          >
+            {asset != null && this.renderExternalLinks(asset.id)}
+
+            <Panel
+              header={<span>Timeseries ({currentAssetTimeseriesCount})</span>}
+              key="timeseries"
             >
-              {asset != null && this.renderExternalLinks(asset.id)}
+              <TimeseriesSection />
+            </Panel>
+            {this.renderDocuments(asset.id)}
 
-              <Panel
-                header={<span>Timeseries ({currentAssetTimeseriesCount})</span>}
-                key="timeseries"
-              >
-                <TimeseriesSection />
-              </Panel>
-              {this.renderDocuments(asset.id)}
-
-              <Panel header={<span>Event ({events.length})</span>} key="events">
-                <EventsSection />
-              </Panel>
-              {this.renderMetadata()}
-              {this.state.showEditHierarchy && this.renderEdit(asset)}
-            </Collapse>
-          }
+            <Panel header={<span>Event ({events.length})</span>} key="events">
+              <EventsSection />
+            </Panel>
+            {this.renderMetadata()}
+            {this.state.showEditHierarchy && this.renderEdit(asset)}
+          </Collapse>
           <EditHieraryToggle>
             <Switch
               disabled={this.state.disableEditHierarchy}
