@@ -2827,13 +2827,6 @@ axios@^0.19.0:
     follow-redirects "1.5.10"
     is-buffer "^2.0.2"
 
-axios@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-0.9.1.tgz#95608b16447ee29b033589854c3fc7ee2c06bf6e"
-  integrity sha1-lWCLFkR+4psDNYmFTD/H7iwGv24=
-  dependencies:
-    follow-redirects "0.0.7"
-
 axobject-query@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/axobject-query/-/axobject-query-2.0.2.tgz#ea187abe5b9002b377f925d8bf7d1c561adf38f9"
@@ -5491,10 +5484,10 @@ es5-ext@^0.10.35, es5-ext@^0.10.50, es5-ext@^0.10.51:
     es6-symbol "~3.1.1"
     next-tick "^1.0.0"
 
-es6-error@^2.1.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/es6-error/-/es6-error-2.1.1.tgz#91384301ec5ed1c9a7247d1128247216f03547cd"
-  integrity sha1-kThDAexe0cmnJH0RKCRyFvA1R80=
+es6-error@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/es6-error/-/es6-error-4.1.1.tgz#9e3af407459deed47e9a91f9b885a84eb05c561d"
+  integrity sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==
 
 es6-iterator@2.0.3, es6-iterator@~2.0.3:
   version "2.0.3"
@@ -5505,12 +5498,7 @@ es6-iterator@2.0.3, es6-iterator@~2.0.3:
     es5-ext "^0.10.35"
     es6-symbol "^3.1.1"
 
-es6-promise@^3.1.2:
-  version "3.3.1"
-  resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-3.3.1.tgz#a08cdde84ccdbf34d027a1451bc91d4bcd28a613"
-  integrity sha1-oIzd6EzNvzTQJ6FFG8kdS80ophM=
-
-es6-promise@^4.0.3:
+es6-promise@^4.0.3, es6-promise@^4.2.8:
   version "4.2.8"
   resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.8.tgz#4eb21594c972bc40553d276e510539143db53e0a"
   integrity sha512-HJDGx5daxeIvxdBxvG2cb9g4tEvwIk3i8+nhX0yGrYmZUzbkdg8QbDevheDB8gd0//uPj4c1EQua8Q+MViT0/w==
@@ -6298,14 +6286,6 @@ flush-write-stream@^1.0.0:
     inherits "^2.0.3"
     readable-stream "^2.3.6"
 
-follow-redirects@0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-0.0.7.tgz#34b90bab2a911aa347571da90f22bd36ecd8a919"
-  integrity sha1-NLkLqyqRGqNHVx2pDyK9NuzYqRk=
-  dependencies:
-    debug "^2.2.0"
-    stream-consume "^0.1.0"
-
 follow-redirects@1.5.10:
   version "1.5.10"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.5.10.tgz#7b7a9f9aea2fdff36786a94ff643ed07f4ff5e2a"
@@ -6512,16 +6492,25 @@ gauge@~2.7.3:
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
 
-gcs-browser-upload@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/gcs-browser-upload/-/gcs-browser-upload-1.0.1.tgz#cbde1cabcca1e7aeb718fa15ec0821014e224574"
-  integrity sha512-NVQImQW800FnY5yzbdP+cBkUq+DeeFksWeaUbF6tRYGh9fj2sV2uNehdQvClRVrJvJJtpDjloO7QemMRXjbxyg==
+gcs-browser-upload@cognitedata/gcs-browser-upload:
+  version "1.0.2"
+  resolved "https://codeload.github.com/cognitedata/gcs-browser-upload/tar.gz/8301b82b877b0795c7cacf4e0aa1e8ee608d72cb"
   dependencies:
-    axios "^0.9.1"
-    debug "^2.2.0"
-    es6-error "^2.1.0"
-    es6-promise "^3.1.2"
-    spark-md5 "^2.0.2"
+    "@cognite/eslint-config" "1.4.2"
+    axios "^0.19.0"
+    debug "^4.1.1"
+    es6-error "^4.1.1"
+    es6-promise "^4.2.8"
+    eslint-config-airbnb ">=18.0"
+    eslint-config-prettier ">=6"
+    eslint-plugin-import ">=2.18"
+    eslint-plugin-jest ">=22.19"
+    eslint-plugin-jsx-a11y ">=6.2"
+    eslint-plugin-prettier ">=3.1"
+    eslint-plugin-react ">=7.16"
+    eslint-plugin-react-hooks ">=1.7"
+    prettier ">=1.18"
+    spark-md5 "^3.0.0"
 
 get-caller-file@^1.0.1:
   version "1.0.3"
@@ -12923,10 +12912,10 @@ source-map@~0.1.31:
   dependencies:
     amdefine ">=0.0.4"
 
-spark-md5@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/spark-md5/-/spark-md5-2.0.2.tgz#37b763847763ae7e7acef2ca5233d01e649a78b7"
-  integrity sha1-N7djhHdjrn56zvLKUjPQHmSaeLc=
+spark-md5@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/spark-md5/-/spark-md5-3.0.0.tgz#3722227c54e2faf24b1dc6d933cc144e6f71bfef"
+  integrity sha1-NyIifFTi+vJLHcbZM8wUTm9xv+8=
 
 spdx-correct@^3.0.0:
   version "3.1.0"
@@ -13051,11 +13040,6 @@ stream-browserify@^2.0.1:
   dependencies:
     inherits "~2.0.1"
     readable-stream "^2.0.2"
-
-stream-consume@^0.1.0:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/stream-consume/-/stream-consume-0.1.1.tgz#d3bdb598c2bd0ae82b8cac7ac50b1107a7996c48"
-  integrity sha512-tNa3hzgkjEP7XbCkbRXe1jpg+ievoa0O4SCFlMOYEscGSS4JJsckGL8swUyAa/ApGU3Ae4t6Honor4HhL+tRyg==
 
 stream-each@^1.1.0:
   version "1.2.3"
