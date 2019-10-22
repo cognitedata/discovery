@@ -245,7 +245,6 @@ class FileUploader extends React.Component<Props, State> {
       try {
         await this.currentUploads[file.uid].start();
       } catch (e) {
-        console.error(e);
         message.error('Unable to upload file to server.');
       }
 
