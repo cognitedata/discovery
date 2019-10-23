@@ -139,6 +139,9 @@ class TreeViewer extends Component<Props, State> {
     if (asset && asset.id !== rootAssetId && asset.parentId) {
       this.props.loadParentRecurse(asset.parentId, rootAssetId!);
     }
+    if (asset && asset.id) {
+      this.props.loadAssetChildren(asset.id);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -477,13 +480,14 @@ class TreeViewer extends Component<Props, State> {
                             return (
                               <Group top={top} left={left} key={key}>
                                 {node.depth === 0 && (
-                                  <circle
+                                  <rect
+                                    height={innerNodeHeight}
+                                    width={innerNodeWidth}
+                                    y={-innerNodeHeight / 2}
+                                    x={-innerNodeWidth / 2}
                                     r={12}
                                     fill="url('#lg')"
                                     onClick={() => {
-                                      // eslint-disable-next-line no-param-reassign
-                                      node.data.isExpanded = !node.data
-                                        .isExpanded;
                                       trackUsage('AssetVXViewer.AssetClicked', {
                                         assetId: node.data.node.id,
                                       });
