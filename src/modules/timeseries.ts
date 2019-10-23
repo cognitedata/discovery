@@ -25,9 +25,15 @@ interface RemoveAssetAction
 type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
 
 // Functions
-export function fetchTimeseries(assetId: number) {
+export function fetchTimeseries(ids: number[]) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseries', {
+    const results = await sdk.timeseries.retrieve(ids.map(el => ({ id: el })));
+    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+  };
+}
+export function fetchTimeseriesForAssetId(assetId: number) {
+  return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
       assetId,
     });
     const results = await sdk.timeseries.list({
@@ -37,7 +43,6 @@ export function fetchTimeseries(assetId: number) {
     dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
   };
 }
-// Functions
 export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
   return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
     const results = await sdk.timeseries.retrieve([{ id: timeseriesId }]);
@@ -46,10 +51,9 @@ export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
   };
 }
 let searchTimeseriesId = 0;
-// Functions
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseries', {
+    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
       assetId,
       query,
     });
@@ -119,7 +123,7 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
     message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
 
     setTimeout(() => {
-      dispatch(fetchTimeseries(assetId));
+      dispatch(fetchTimeseriesForAssetId(assetId));
       dispatch(fetchEvents(assetId));
     }, 1000);
   };

@@ -8,16 +8,22 @@ import { sdk } from '../index';
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
 
 export interface RelationshipResource {
-  resource: 'timeseries' | 'threeD' | 'threeDRevision' | 'asset';
+  resource: 'timeSeries' | 'threeD' | 'threeDRevision' | 'asset';
   resourceId: string;
 }
+
+export type RelationshipType =
+  | 'flowsTo'
+  | 'belongsTo'
+  | 'isParentOf'
+  | 'implements';
 export interface Relationship {
   source: RelationshipResource;
   target: RelationshipResource;
   confidence: number;
   dataSet: string;
   externalId: string;
-  relationshipType: 'flowsTo' | 'belongsTo' | 'isParentOf' | 'implements';
+  relationshipType: RelationshipType;
 }
 
 interface FetchRelationshipsAction extends Action<typeof GET_RELATIONSHIPS> {

@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import debounce from 'lodash/debounce';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import {
-  fetchTimeseries,
+  fetchTimeseriesForAssetId,
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
@@ -45,7 +45,7 @@ export const SidebarPaneListContent = styled.div`
 type OrigProps = {};
 
 type Props = {
-  doFetchTimeseries: typeof fetchTimeseries;
+  doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   setTimeseriesId: typeof setTimeseriesId;
   timeseries: TimeseriesState;
@@ -225,7 +225,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setTimeseriesId,
-      doFetchTimeseries: fetchTimeseries,
+      doFetchTimeseries: fetchTimeseriesForAssetId,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
     },
     dispatch
