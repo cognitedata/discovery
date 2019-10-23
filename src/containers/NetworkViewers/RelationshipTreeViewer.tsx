@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Select, Spin } from 'antd';
 import * as d3 from 'd3';
+import Placeholder from 'components/Placeholder';
 import {
   AppState,
   selectApp,
@@ -418,8 +419,10 @@ class TreeViewer extends Component<Props, State> {
   };
 
   render() {
-    const { data } = this.state;
-    const { controls, loading } = this.state;
+    const { controls, loading, data } = this.state;
+    if (!this.props.app.assetId) {
+      return <Placeholder componentName="Relationship Viewer" />;
+    }
     return (
       <Wrapper>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
