@@ -128,14 +128,27 @@ export const setAssetId = (
   });
   const {
     assetMappings: { byAssetId },
-    app: { tenant },
+    threed: { representsAsset },
+    app: { tenant, revisionId, modelId },
   } = getState();
+  let newModelId;
+  let newRevisionId;
+  const currentModelSelected =
+    representsAsset[rootAssetId] &&
+    representsAsset[rootAssetId].find(
+      el => el.revisionId === revisionId && el.modelId === modelId
+    ) !== undefined;
+
+  if (currentModelSelected) {
+    newModelId = modelId;
+    newRevisionId = revisionId;
+  }
   const assetMapping = byAssetId[assetId];
   dispatch({
     type: SET_APP_STATE,
     payload: {
-      revisionId: assetMapping ? assetMapping.nodeId : undefined,
-      modelId: assetMapping ? assetMapping.modelId : undefined,
+      revisionId: newRevisionId,
+      modelId: newModelId,
       nodeId: assetMapping ? assetMapping.nodeId : undefined,
       assetId,
       rootAssetId,
