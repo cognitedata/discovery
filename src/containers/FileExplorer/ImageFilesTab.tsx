@@ -115,6 +115,9 @@ class ImageFilesTab extends React.Component<Props, State> {
             `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
             {
               responseType: 'arraybuffer',
+              headers: {
+                Accept: '*/*',
+              },
             }
           );
           if (response.status === 200) {
