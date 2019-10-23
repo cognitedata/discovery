@@ -20,7 +20,7 @@ import {
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
-  fetchTimeseries,
+  fetchTimeseriesForAssetId,
 } from '../../modules/timeseries';
 import {
   selectTypes,
@@ -92,7 +92,7 @@ type OrigProps = {};
 
 type Props = {
   doFetchEvents: typeof fetchEvents;
-  doFetchTimeseries: typeof fetchTimeseries;
+  doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
   doRemoveTypeFromAsset: typeof removeTypeFromAsset;
@@ -504,7 +504,7 @@ const mapStateToProps = (state: RootState) => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      doFetchTimeseries: fetchTimeseries,
+      doFetchTimeseries: fetchTimeseriesForAssetId,
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,

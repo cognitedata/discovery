@@ -7,8 +7,23 @@ import { sdk } from '../index';
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
 
+export interface RelationshipResource {
+  resource: 'timeSeries' | 'threeD' | 'threeDRevision' | 'asset';
+  resourceId: string;
+}
+
+export type RelationshipType =
+  | 'flowsTo'
+  | 'belongsTo'
+  | 'isParentOf'
+  | 'implements';
 export interface Relationship {
-  [key: string]: any;
+  source: RelationshipResource;
+  target: RelationshipResource;
+  confidence: number;
+  dataSet: string;
+  externalId: string;
+  relationshipType: RelationshipType;
 }
 
 interface FetchRelationshipsAction extends Action<typeof GET_RELATIONSHIPS> {
@@ -39,23 +54,40 @@ export function fetchRelationships() {
     }
   };
 }
-export function fetchRelationshipsForId(id: number) {
+export function fetchRelationshipsForAssetId(id: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
       const { project } = sdk;
-      const response = await sdk.post(
-        `https://api.cognitedata.com/api/playground/projects/${project}/relationships`,
-        {
-          data: {
-            items: [{ externalId: id }],
-          },
-        }
-      );
 
-      if (response.status === 200) {
+      const [resultFrom, resultTo] = await Promise.all([
+        sdk.post(
+          `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
+          {
+            data: {
+              filter: {
+                sourceResource: 'asset',
+                sourceResourceId: `${id}`,
+              },
+            },
+          }
+        ),
+        sdk.post(
+          `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
+          {
+            data: {
+              filter: {
+                targetResource: 'asset',
+                targetResourceId: `${id}`,
+              },
+            },
+          }
+        ),
+      ]);
+
+      if (resultFrom.status === 200 && resultTo.status === 200) {
         dispatch({
           type: GET_RELATIONSHIPS,
-          payload: { items: response.data.items },
+          payload: { items: resultFrom.data.items.concat(resultTo.data.items) },
         });
       } else {
         throw new Error('Unable to fetch relationships for given asset');
