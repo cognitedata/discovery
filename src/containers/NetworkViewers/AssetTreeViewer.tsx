@@ -88,10 +88,12 @@ class TreeViewer extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
+    const data = this.getData();
+
     this.state = {
       controls: 'bu',
-      loading: true,
-      data: { nodes: [], links: [] },
+      loading: !props.app.assetId,
+      data,
     };
   }
 
@@ -115,6 +117,9 @@ class TreeViewer extends Component<Props, State> {
 
     if (asset && asset.id !== rootAssetId && asset.parentId) {
       this.props.loadParentRecurse(asset.parentId, rootAssetId!);
+    }
+    if (asset && asset.id) {
+      this.props.loadAssetChildren(asset.id);
     }
   }
 
