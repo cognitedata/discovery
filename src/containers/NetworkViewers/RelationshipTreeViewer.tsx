@@ -10,6 +10,8 @@ import { AppState, selectApp, setAssetId } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import { trackUsage } from '../../utils/metrics';
 import {
+  RelationshipResource,
+  Relationship,
   fetchRelationshipsForAssetId,
   RelationshipState,
 } from '../../modules/relationships';
@@ -133,7 +135,6 @@ class TreeViewer extends Component<Props, State> {
       data.nodes.length !== this.state.data.nodes.length ||
       data.links.length !== this.state.data.links.length
     ) {
-      console.log(data);
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ data, loading: true });
       if (data.nodes.length !== 0) {
@@ -149,22 +150,62 @@ class TreeViewer extends Component<Props, State> {
     }
   }
 
+  chooseNodeColor = (node: RelationshipResource) => {
+    const { assetId } = this.props.app;
+    switch (node.resource) {
+      case 'asset': {
+        if (Number(node.resourceId) === assetId) {
+          return 'rgba(0,0,0,0.5)';
+        }
+        return 'rgba(0,0,255,0.5)';
+      }
+      case 'threeD':
+      case 'threeDRevision':
+        return 'rgba(0,255,0,0.5)';
+      case 'timeseries':
+      default:
+        return 'rgba(255,0,0,0.5)';
+    }
+  };
+
+  buildLabel = (node: RelationshipResource) => {
+    return `${node.resource}:${node.resourceId}`;
+  };
+
+  chooseRelationshipColor = (relationship: Relationship) => {
+    const { assetId } = this.props.app;
+    switch (relationship.relationshipType) {
+      case 'isParentOf': {
+        if (Number(relationship.target.resourceId) === assetId) {
+          return 'rgba(0,255,255,0.5)';
+        }
+        return 'rgba(0,0,255,0.5)';
+      }
+      case 'belongsTo':
+        return 'rgba(255,0,0,0.5)';
+      case 'flowsTo':
+      case 'implements':
+      default:
+        return 'rgba(0,255,0,0.5)';
+    }
+  };
+
   getData = () => {
     const {
       relationships: { items },
     } = this.props;
     const nodes: { [key: string]: any } = {};
     const links: any[] = [];
-    items.forEach((relationship: any) => {
-      nodes[relationship.source.resourceId as string] = {
+    items.forEach((relationship: Relationship) => {
+      nodes[relationship.source.resourceId] = {
         ...relationship.source,
         id: relationship.source.resourceId,
-        color: `rgba(0,0,255,0.5)`,
+        color: this.chooseNodeColor(relationship.source),
       };
-      nodes[relationship.target.resourceId as string] = {
+      nodes[relationship.target.resourceId] = {
         ...relationship.target,
         id: relationship.target.resourceId,
-        color: 'rgba(0,0,0,1)',
+        color: this.chooseNodeColor(relationship.target),
       };
       if (relationship.source.resourceId !== relationship.target.resourceId) {
         links.push({
@@ -209,16 +250,20 @@ class TreeViewer extends Component<Props, State> {
             });
           }}
           nodeCanvasObject={(
-            node: any,
+            node: RelationshipResource & {
+              color: string;
+              x: number;
+              y: number;
+            },
             ctx: CanvasRenderingContext2D,
             globalScale: number
           ) => {
-            const label = `${node.resourceId} - ${node.resource}`;
+            const label = this.buildLabel(node);
             const fontSize = 16 / globalScale;
             ctx.font = `${fontSize}px Sans-Serif`;
             const textWidth = ctx.measureText(label).width;
             const [bgwidth, bgheight] = [textWidth, fontSize].map(
-              n => n + fontSize * 0.2
+              n => n + fontSize * 0.7
             ); // some padding
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.fillRect(

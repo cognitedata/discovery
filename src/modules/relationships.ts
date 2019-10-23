@@ -7,8 +7,17 @@ import { sdk } from '../index';
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
 
+export interface RelationshipResource {
+  resource: 'timeseries' | 'threeD' | 'threeDRevision' | 'asset';
+  resourceId: string;
+}
 export interface Relationship {
-  [key: string]: any;
+  source: RelationshipResource;
+  target: RelationshipResource;
+  confidence: number;
+  dataSet: string;
+  externalId: string;
+  relationshipType: 'flowsTo' | 'belongsTo' | 'isParentOf' | 'implements';
 }
 
 interface FetchRelationshipsAction extends Action<typeof GET_RELATIONSHIPS> {
