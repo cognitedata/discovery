@@ -266,7 +266,6 @@ class TreeViewer extends Component<Props, State> {
       }
       case 'timeSeries': {
         const timeseries = timeseriesData[Number(node.resourceId)];
-        console.log(timeseries);
         if (timeseries) {
           return timeseries.name || `${timeseries.id}`;
         }
@@ -432,7 +431,7 @@ class TreeViewer extends Component<Props, State> {
           dagMode={controls === 'none' ? null : controls}
           dagLevelDistance={300}
           backgroundColor={BGCOLOR}
-          linkColor={this.chooseRelationshipColor}
+          linkColor={(link: Relationship) => this.chooseRelationshipColor(link)}
           nodeRelSize={1}
           nodeId="id"
           nodeVal={(node: any) => 100 / (node.level + 1)}
