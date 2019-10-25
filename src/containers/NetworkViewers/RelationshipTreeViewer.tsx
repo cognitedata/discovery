@@ -312,7 +312,7 @@ class TreeViewer extends Component<Props, State> {
         if (Number(relationship.target.resourceId) === assetId) {
           return 'rgba(0,255,255,0.5)';
         }
-        return 'rgba(0,0,255,0.5)';
+        return 'rgba(0,0,255,0.9)';
       }
       case 'belongsTo':
         return 'rgba(255,0,0,0.5)';
@@ -343,6 +343,7 @@ class TreeViewer extends Component<Props, State> {
       if (relationship.source.resourceId !== relationship.target.resourceId) {
         links.push({
           ...relationship,
+          linkWidth: 3,
           source: relationship.source.resourceId,
           target: relationship.target.resourceId,
         });
