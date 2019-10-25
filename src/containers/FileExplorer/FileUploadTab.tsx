@@ -110,47 +110,6 @@ class FileUploadTab extends React.Component<Props, State> {
     }
   };
 
-  renderResults = (menu: React.ReactNode) => {
-    const { fetching, searchResults } = this.state;
-    const { asset: currentAsset } = this.props;
-    let items = fetching ? (
-      <div
-        onMouseDown={e => e.preventDefault()}
-        style={{
-          padding: '4px 8px',
-        }}
-      >
-        <Spin size="small" />
-      </div>
-    ) : (
-      menu
-    );
-    if (searchResults.length === 0) {
-      items = (
-        <div
-          onMouseDown={e => e.preventDefault()}
-          style={{
-            padding: '4px 8px',
-          }}
-        >
-          <span>Try searching for assets</span>
-        </div>
-      );
-    } else if (currentAsset && searchResults[0].id === currentAsset.id) {
-      items = (
-        <div
-          onMouseDown={e => e.preventDefault()}
-          style={{
-            padding: '4px 8px',
-          }}
-        >
-          <span>Try searching for assets</span>
-        </div>
-      );
-    }
-    return items;
-  };
-
   render() {
     const {
       includeAssetId,
