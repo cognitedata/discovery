@@ -54,9 +54,11 @@ const StyledHeader = styled(Header)`
   }
 `;
 
-const CustomGridLayout = styled(ResponsiveReactGridLayout)<{
+type LayoutProps = {
   editable: boolean;
-}>`
+};
+
+const CustomGridLayout = styled(ResponsiveReactGridLayout)<LayoutProps>`
   position: relative;
   .react-grid-item {
     padding: 12px;
@@ -225,10 +227,6 @@ class Main extends React.Component<Props, State> {
     } else {
       this.props.resetAppState();
     }
-  };
-
-  hasModelForAsset = (assetId: number) => {
-    return this.props.threed.representsAsset[assetId];
   };
 
   onAddComponent = () => {

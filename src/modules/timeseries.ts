@@ -2,12 +2,13 @@ import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
-import { fetchEvents, createEvent } from './events';
+import { GetTimeSeriesMetadataDTO, TimeSeriesUpdate } from '@cognite/sdk';
+import { fetchEvents } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
 import { trackUsage } from '../utils/metrics';
+import { setTimeseriesId } from './app';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -24,9 +25,15 @@ interface RemoveAssetAction
 type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
 
 // Functions
-export function fetchTimeseries(assetId: number) {
+export function fetchTimeseries(ids: number[]) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseries', {
+    const results = await sdk.timeseries.retrieve(ids.map(el => ({ id: el })));
+    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+  };
+}
+export function fetchTimeseriesForAssetId(assetId: number) {
+  return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
       assetId,
     });
     const results = await sdk.timeseries.list({
@@ -36,29 +43,40 @@ export function fetchTimeseries(assetId: number) {
     dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
   };
 }
-let searchTimeseriesRID = 0;
-// Functions
+export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
+  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
+    const results = await sdk.timeseries.retrieve([{ id: timeseriesId }]);
+    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
+    dispatch(setTimeseriesId(timeseriesId, redirect));
+  };
+}
+let searchTimeseriesId = 0;
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseries', {
+    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
       assetId,
       query,
     });
-    searchTimeseriesRID += 1;
-    const id = searchTimeseriesRID;
-    const results = await sdk.timeseries.search({
-      filter: {
-        ...(assetId && { assetIds: [assetId] }),
-      },
-      limit: 1000,
-      search: { query },
-    });
-    if (searchTimeseriesRID === id) {
+    searchTimeseriesId += 1;
+    const id = searchTimeseriesId;
+    const results = await sdk.post(
+      `/api/v1/projects/${sdk.project}/timeseries/search`,
+      {
+        data: {
+          filter: {
+            ...(assetId && { assetIds: [assetId] }),
+          },
+          limit: 1000,
+          search: { name: query },
+        },
+      }
+    );
+    if (searchTimeseriesId === id) {
       dispatch({
         type: SET_TIMESERIES,
-        payload: { items: results },
+        payload: { items: results.data.items },
       });
-      searchTimeseriesRID = 0;
+      searchTimeseriesId = 0;
     }
   };
 }
@@ -80,22 +98,12 @@ export function removeAssetFromTimeseries(
         },
       },
     ]);
-
-    createEvent('removed_timeseries', 'Removed timeseries', [assetId], {
-      removed: timeseriesId,
-    });
-
     dispatch({
       type: REMOVE_ASSET_FROM_TIMESERIES,
       payload: { timeseriesId },
     });
 
     message.info(`Removed 1 timeseries from asset.`);
-
-    setTimeout(() => {
-      dispatch(fetchTimeseries(assetId));
-      dispatch(fetchEvents(assetId));
-    }, 1000);
   };
 }
 
@@ -112,17 +120,26 @@ export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
     }));
     await sdk.timeseries.update(changes);
 
-    // Create event for this mapping
-    createEvent('attached_timeseries', 'Attached timeseries', [assetId], {
-      added: JSON.stringify(timeseriesIds),
-    });
-
     message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
 
     setTimeout(() => {
-      dispatch(fetchTimeseries(assetId));
+      dispatch(fetchTimeseriesForAssetId(assetId));
       dispatch(fetchEvents(assetId));
     }, 1000);
+  };
+}
+
+export function editTimeseries(timeseriesId: number, update: TimeSeriesUpdate) {
+  return async (dispatch: Dispatch<SetTimeseriesAction>) => {
+    trackUsage('Timeseries.updateTimeseries', {
+      id: timeseriesId,
+    });
+
+    const updatedTimeseries = await sdk.timeseries.update([update]);
+    dispatch({
+      type: SET_TIMESERIES,
+      payload: { items: updatedTimeseries },
+    });
   };
 }
 
@@ -142,6 +159,7 @@ export default function timeseries(
       return {
         ...state,
         timeseriesData: {
+          ...state.timeseriesData,
           ...arrayToObjectById(items),
         },
       };

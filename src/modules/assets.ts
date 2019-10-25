@@ -3,6 +3,7 @@ import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
+import { push } from 'connected-react-router';
 import { arrayToObjectById } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
@@ -24,7 +25,7 @@ export interface ExtendedAsset extends Asset {
   metadata?: { [key: string]: string };
 }
 
-interface AddAssetAction extends Action<typeof ADD_ASSETS> {
+export interface AddAssetAction extends Action<typeof ADD_ASSETS> {
   payload: { items: { [key: string]: ExtendedAsset } };
 }
 interface UpdateAction extends Action<typeof UPDATE_ASSET> {
@@ -62,13 +63,18 @@ export function searchForAsset(query: string) {
     // const requestResult = await sdk.rawGet(
     //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
     // );
-    const result = await sdk.assets.search({
-      search: { name: query },
-      limit: 1000,
-    });
+    const result = (await sdk.post(
+      `/api/v1/projects/${sdk.project}/assets/search`,
+      {
+        data: {
+          limit: 1000,
+          ...(query && query.length > 0 && { search: { name: query } }),
+        },
+      }
+    )).data.items;
 
     if (result) {
-      const assetResults = result.map(asset => ({
+      const assetResults = result.map((asset: Asset) => ({
         id: asset.id,
         name: asset.name,
         rootId: asset.rootId,
@@ -80,7 +86,7 @@ export function searchForAsset(query: string) {
         dispatch({
           type: ADD_ASSETS,
           payload: arrayToObjectById(
-            result.map(asset => slimAssetObject(asset))
+            result.map((asset: Asset) => slimAssetObject(asset))
           ),
         });
         dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
@@ -93,8 +99,11 @@ type RequestedAssetIds = { [key: string]: boolean };
 
 const requestedAssetIds: RequestedAssetIds = {};
 
-export function fetchAsset(assetId: number) {
-  return async (dispatch: Dispatch) => {
+export function fetchAsset(assetId: number, redirect = false) {
+  return async (
+    dispatch: ThunkDispatch<any, any, AnyAction>,
+    getState: () => RootState
+  ) => {
     // Skip if we did it before
     if (requestedAssetIds[assetId]) {
       return;
@@ -110,6 +119,14 @@ export function fetchAsset(assetId: number) {
         );
 
         dispatch({ type: ADD_ASSETS, payload: { items } });
+        if (redirect) {
+          const {
+            app: { tenant },
+          } = getState();
+          dispatch(
+            push(`/${tenant}/asset/${items[assetId].rootId}/${assetId}`)
+          );
+        }
       }
     } catch (ex) {
       message.error(`Could not fetch asset.`);
@@ -250,7 +267,6 @@ export function createNewAsset(
           ...newAsset,
           metadata: {
             ...newAsset.metadata,
-            COGNITE__GENERATED: 'true',
             COGNITE__SOURCE: 'discovery',
           },
         },

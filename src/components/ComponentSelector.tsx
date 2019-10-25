@@ -5,7 +5,7 @@ import { ViewerTypeMap, ViewerType } from '../containers/AssetViewer';
 export const ViewerTypeCategory: { [key in ViewerType]: string } = {
   none: 'None',
   threed: '3D',
-  pnid: 'Files',
+  pnid: 'Deprecated',
   vx: 'Asset',
   network: 'Asset',
   relationship: 'Beta',

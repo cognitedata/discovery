@@ -173,10 +173,10 @@ class AssetSearch extends React.Component<Props, State> {
 
   onEventTypeChange = (change: string) => {
     const { eventFilter } = this.state;
-    const newFilter: EventFilter = Object.assign(
-      { type: 'event' },
-      eventFilter
-    );
+    const newFilter: EventFilter = {
+      type: 'event',
+      ...eventFilter,
+    };
 
     if (change === 'none') {
       newFilter.eventType = undefined;
@@ -191,10 +191,10 @@ class AssetSearch extends React.Component<Props, State> {
 
   onRangeChange = (change: RangePickerValue) => {
     const { eventFilter } = this.state;
-    const newFilter: EventFilter = Object.assign(
-      { type: 'event' },
-      eventFilter
-    );
+    const newFilter: EventFilter = {
+      type: 'event',
+      ...eventFilter,
+    };
 
     if (
       change.length < 2 ||

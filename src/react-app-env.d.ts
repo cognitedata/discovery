@@ -8,3 +8,4 @@ declare module '*.svg' {
 }
 
 declare module 'react-pdf-js-infinite';
+declare module 'gcs-browser-upload';

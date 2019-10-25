@@ -1,11 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Tabs, Pagination, Spin, Input, Table } from 'antd';
+import { Tabs, Input, Checkbox } from 'antd';
 import { FilesMetadata, FilesSearchFilter } from '@cognite/sdk';
 import styled from 'styled-components';
 import debounce from 'lodash/debounce';
-import moment from 'moment';
 import {
   selectThreeD,
   ThreeDState,
@@ -22,6 +21,10 @@ import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
 import FilePreview from './FilePreview';
 import { trackSearchUsage, trackUsage } from '../../utils/metrics';
+import FileUploadTab from './FileUploadTab';
+import ImageFilesTab from './ImageFilesTab';
+import ListFilesTab from './ListFilesTab';
+import PNIDViewer from './PNIDViewer';
 
 const { TabPane } = Tabs;
 
@@ -55,45 +58,7 @@ const StyledTabs = styled(Tabs)`
   }
   && .ant-tabs-tabpane-active {
     height: 100%;
-  }
-`;
-
-const Images = styled.div`
-  display: flex;
-  height: 100%;
-  width: 100%;
-  flex-wrap: wrap;
-  overflow: auto;
-  margin: -12px;
-  margin-bottom: 12px;
-
-  && > .item {
-    margin: 12px;
-    padding: 6px;
-    background: #fff;
-    flex: 1 250px;
-    transition: 0.3s all;
-  }
-
-  && > .item:hover {
-    background: #dfdfdf;
-  }
-
-  && > .item img {
-    width: 100%;
-    height: auto;
-  }
-
-  && > .item .image {
-    width: 100%;
-    height: 200px;
-    margin-bottom: 12px;
-    overflow: hidden;
-    background-size: cover;
-    background-position: center;
-  }
-  && > .item p {
-    margin-bottom: 0;
+    overflow: auto;
   }
 `;
 
@@ -101,9 +66,28 @@ export const FileExplorerTabs: { [key in FileExplorerTabsType]: string } = {
   all: 'All',
   images: 'Images',
   documents: 'Documents',
+  pnid: 'P&IDs',
+  upload: 'Upload',
 };
 
-export type FileExplorerTabsType = 'all' | 'images' | 'documents';
+export type FileExplorerTabsType =
+  | 'all'
+  | 'images'
+  | 'documents'
+  | 'upload'
+  | 'pnid';
+
+export const FileExplorerMimeTypes: {
+  [key in FileExplorerTabsType]: string[];
+} = {
+  all: [],
+  images: ['image/jpeg', 'image/png'],
+  documents: ['application/pdf', 'pdf', 'PDF'],
+  pnid: [],
+  upload: [],
+};
+
+const RELOAD_SEARCH_TABS = ['all', 'images', 'documents', 'pnid'];
 
 type OrigProps = {};
 
@@ -120,20 +104,20 @@ type State = {
   tab: FileExplorerTabsType;
   current: number;
   fetching: boolean;
+  currentOnly: boolean;
   query: string;
   searchResults: FilesMetadata[];
-  imageUrls: { [id: number]: string | false };
   selectedDocument?: FilesMetadataWithDownload;
 };
 
-class MapModelToAssetForm extends React.Component<Props, State> {
+class FileExplorerComponent extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     query: '',
     tab: 'all',
     fetching: false,
+    currentOnly: true,
     current: 0,
     searchResults: [],
-    imageUrls: {},
   };
 
   currentQuery: number = 0;
@@ -141,7 +125,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.doSearch = debounce(this.doSearch, 100);
+    this.doSearch = debounce(this.doSearch, 700);
   }
 
   componentDidMount() {
@@ -151,7 +135,9 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props, prevState: State) {
     if (
       prevState.query !== this.state.query ||
-      prevState.tab !== this.state.tab
+      prevState.currentOnly !== this.state.currentOnly ||
+      (prevState.tab !== this.state.tab &&
+        RELOAD_SEARCH_TABS.includes(this.state.tab))
     ) {
       this.doSearch(this.state.query);
     }
@@ -159,25 +145,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     if (prevProps.app.assetId !== this.props.app.assetId) {
       this.doSearch(this.state.query);
     }
-
-    if (
-      this.state.tab === 'images' &&
-      (prevState.current !== this.state.current ||
-        (this.state.searchResults.length > 0 &&
-          prevState.searchResults.length !== this.state.searchResults.length))
-    ) {
-      this.fetchImageUrls();
-    }
-  }
-
-  componentWillUnmount() {
-    const { imageUrls } = this.state;
-    Object.keys(imageUrls).forEach((key: string) => {
-      const val = imageUrls[Number(key)];
-      if (val) {
-        URL.revokeObjectURL(val);
-      }
-    });
   }
 
   doSearch = async (query?: string) => {
@@ -185,15 +152,17 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       assets: { all: assets },
       app: { assetId },
     } = this.props;
+    const { currentOnly } = this.state;
     this.currentQuery = this.currentQuery + 1;
     const thisQuery = this.currentQuery;
     const { tab } = this.state;
     const config: FilesSearchFilter = {
       filter: {
-        ...(tab !== 'all' && {
-          mimeType: tab === 'images' ? 'image/jpeg' : 'application/pdf',
-        }),
-        ...(assetId && { assetIds: [assetId] }),
+        ...(RELOAD_SEARCH_TABS.includes(tab) &&
+          FileExplorerMimeTypes[tab].length > 0 && {
+            mimeType: FileExplorerMimeTypes[tab][0],
+          }),
+        ...(assetId && currentOnly && { assetIds: [assetId] }),
       },
       limit: 1000,
     };
@@ -204,74 +173,39 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         search: { name: query },
         ...config,
       });
-      if (tab === 'images') {
-        results = results.concat(
-          await sdk.files.search({
+      const appendResults = [];
+      for (let i = 1; i < FileExplorerMimeTypes[tab].length; i += 1) {
+        appendResults.push(
+          sdk.files.search({
             search: { name: query },
             ...config,
             filter: {
               ...config.filter,
-              mimeType: 'image/png',
+              mimeType: FileExplorerMimeTypes[tab][i],
             },
           })
         );
       }
-      if (tab === 'documents') {
-        results = results.concat(
-          await sdk.files.search({
-            search: { name: query },
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'pdf',
-            },
-          })
-        );
-        results = results.concat(
-          await sdk.files.search({
-            search: { name: query },
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'PDF',
-            },
-          })
-        );
-      }
+      (await Promise.all(appendResults)).forEach(arr => {
+        results = results.concat(arr);
+      });
     } else {
-      this.setState({ fetching: true });
       results = (await sdk.files.list(config)).items;
-      if (tab === 'images') {
-        results = results.concat(
-          (await sdk.files.list({
+      const appendResults = [];
+      for (let i = 1; i < FileExplorerMimeTypes[tab].length; i += 1) {
+        appendResults.push(
+          sdk.files.list({
             ...config,
             filter: {
               ...config.filter,
-              mimeType: 'image/png',
+              mimeType: FileExplorerMimeTypes[tab][i],
             },
-          })).items
+          })
         );
       }
-      if (tab === 'documents') {
-        results = results.concat(
-          (await sdk.files.list({
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'pdf',
-            },
-          })).items
-        );
-        results = results.concat(
-          (await sdk.files.list({
-            ...config,
-            filter: {
-              ...config.filter,
-              mimeType: 'PDF',
-            },
-          })).items
-        );
-      }
+      (await Promise.all(appendResults)).forEach(arr => {
+        results = results.concat(arr.items);
+      });
     }
     if (thisQuery === this.currentQuery) {
       trackSearchUsage('FileExplorer', 'File', { query, tab });
@@ -293,49 +227,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     this.props.fetchAssets(Array.from(extraAssets));
   };
 
-  fetchImageUrls = async () => {
-    const { searchResults, current, imageUrls } = this.state;
-
-    searchResults
-      .slice(current * 20, current * 20 + 20)
-      .forEach(async result => {
-        try {
-          if (imageUrls[result.id]) {
-            return;
-          }
-          const response = await sdk.get(
-            `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
-            {
-              responseType: 'arraybuffer',
-            }
-          );
-          if (response.status === 200) {
-            const arrayBufferView = new Uint8Array(response.data);
-            const blob = new Blob([arrayBufferView], {
-              type: response.headers['content-type'],
-            });
-            this.setState(state => ({
-              ...state,
-              imageUrls: {
-                ...state.imageUrls,
-                [result.id]: URL.createObjectURL(blob),
-              },
-            }));
-          } else {
-            throw new Error('Unable to load file');
-          }
-        } catch (e) {
-          this.setState(state => ({
-            ...state,
-            imageUrls: {
-              ...state.imageUrls,
-              [result.id]: false,
-            },
-          }));
-        }
-      });
-  };
-
   onClickDocument = (documentId: FilesMetadata, index: number) => {
     const { current, tab } = this.state;
     this.setState({ selectedDocument: documentId });
@@ -345,114 +236,34 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     });
   };
 
-  renderImages = () => {
-    const { current, searchResults, imageUrls } = this.state;
-    return (
-      <Images>
-        {searchResults
-          .slice(current * 20, current * 20 + 20)
-          .map((image, i) => {
-            let imagePlaceholder;
-            if (imageUrls[image.id] === undefined) {
-              imagePlaceholder = <Spin />;
-            } else if (imageUrls[image.id] === false) {
-              imagePlaceholder = <p>Unable to load image.</p>;
-            }
-            return (
-              <div
-                className="item"
-                role="button"
-                tabIndex={i}
-                onKeyDown={() => this.setState({ selectedDocument: image })}
-                onClick={() => this.onClickDocument(image, i)}
-              >
-                <div
-                  className="image"
-                  style={{ backgroundImage: `url(${imageUrls[image.id]})` }}
-                >
-                  {imagePlaceholder}
-                </div>
-                <p>{image.name}</p>
-                <p>
-                  Created At: {moment(image.createdTime).format('DD/MM/YYYY')}
-                </p>
-              </div>
-            );
-          })}
-      </Images>
-    );
-  };
-
-  renderListResult = () => {
-    const { searchResults, current } = this.state;
-    const { all: assets } = this.props.assets;
-    return (
-      <div className="results">
-        <Table
-          dataSource={searchResults.slice(current * 20, current * 20 + 20)}
-          pagination={false}
-          onRowClick={(item, i) => this.onClickDocument(item, i)}
-          columns={[
-            {
-              title: 'Name',
-              key: 'name',
-              dataIndex: 'name',
-              render: (name: string) => (
-                <span
-                  style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'unset',
-                    whiteSpace: 'nowrap',
-                    display: 'block',
-                    maxWidth: '600px',
-                  }}
-                >
-                  {name}
-                </span>
-              ),
-            },
-            { title: 'Type', key: 'type', dataIndex: 'mimeType' },
-            {
-              title: 'Created Time',
-              key: 'ctime',
-              render: item => (
-                <span>{moment(item.createdTime).format('DD/MM/YYYY')}</span>
-              ),
-            },
-            {
-              title: 'Linked Assets',
-              key: 'asset',
-              width: '400px',
-              render: (item: FilesMetadata) => (
-                <span>
-                  {item.assetIds
-                    ? item.assetIds
-                        .slice(0, 10)
-                        .map((el: number) =>
-                          assets[el] ? assets[el].name : el
-                        )
-                        .join(', ') + (item.assetIds.length > 0 ? '...' : '')
-                    : 'N/A'}
-                </span>
-              ),
-            },
-          ]}
-        />
-      </div>
-    );
+  setPage = (page: number) => {
+    this.setState({ current: page });
   };
 
   render() {
     const {
       tab,
+      query,
+      selectedDocument,
       searchResults,
       current,
       fetching,
-      query,
-      selectedDocument,
     } = this.state;
+    const { assetId } = this.props.app;
     if (selectedDocument) {
+      if (
+        selectedDocument.mimeType &&
+        selectedDocument.mimeType.toLowerCase().includes('svg')
+      ) {
+        return (
+          <PNIDViewer
+            selectedDocument={selectedDocument}
+            unselectDocument={() =>
+              this.setState({ selectedDocument: undefined })
+            }
+          />
+        );
+      }
       return (
         <FilePreview
           selectedDocument={selectedDocument}
@@ -462,17 +273,74 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         />
       );
     }
-    let list = this.renderListResult();
-    if (tab === 'images') {
-      list = this.renderImages();
+    let list = <p>Invalid Tab</p>;
+
+    switch (tab) {
+      case 'all':
+      case 'documents':
+        list = (
+          <ListFilesTab
+            fetching={fetching}
+            searchResults={searchResults}
+            onClickDocument={this.onClickDocument}
+            setPage={this.setPage}
+            current={current}
+          />
+        );
+        break;
+      case 'pnid':
+        list = (
+          <ListFilesTab
+            fetching={fetching}
+            searchResults={searchResults.filter(
+              file =>
+                file.mimeType && file.mimeType.toLowerCase().includes('svg')
+            )}
+            onClickDocument={this.onClickDocument}
+            setPage={this.setPage}
+            current={current}
+          />
+        );
+        break;
+      case 'images':
+        list = (
+          <ImageFilesTab
+            fetching={fetching}
+            searchResults={searchResults}
+            setPage={this.setPage}
+            current={current}
+            onClickDocument={this.onClickDocument}
+          />
+        );
+        break;
+      case 'upload':
+        list = (
+          <FileUploadTab
+            onFileSelected={file => this.onClickDocument(file, 0)}
+          />
+        );
+        break;
+      default:
+        list = <p>Invalid Tab</p>;
     }
     return (
       <Wrapper>
-        <Input.Search
-          placeholder="Filter"
-          onChange={ev => this.setState({ query: ev.target.value })}
-          value={query}
-        />
+        <div className="search-row">
+          <Input.Search
+            placeholder="Filter"
+            onChange={ev => this.setState({ query: ev.target.value })}
+            value={query}
+          />
+
+          <Checkbox
+            style={{ marginTop: '6px', marginBottom: '6px' }}
+            checked={this.state.currentOnly && assetId !== undefined}
+            onChange={ev => this.setState({ currentOnly: ev.target.checked })}
+            disabled={assetId === undefined}
+          >
+            Only Documents Linked to Current Asset
+          </Checkbox>
+        </div>
         <StyledTabs
           activeKey={tab}
           tabPosition="left"
@@ -485,21 +353,13 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             });
           }}
         >
-          {['all', 'images', 'documents'].map((key: string) => (
+          {Object.keys(FileExplorerTabs).map((key: string) => (
             <TabPane
               forceRender
               tab={FileExplorerTabs[key as FileExplorerTabsType]}
               key={key as FileExplorerTabsType}
             >
-              <FileList>
-                {fetching ? <Spin /> : list}
-                <Pagination
-                  current={current + 1}
-                  pageSize={20}
-                  onChange={index => this.setState({ current: index - 1 })}
-                  total={searchResults.length}
-                />
-              </FileList>
+              <FileList>{list}</FileList>
             </TabPane>
           ))}
         </StyledTabs>
@@ -527,4 +387,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(MapModelToAssetForm);
+)(FileExplorerComponent);

@@ -5,6 +5,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
 import { trackUsage } from '../utils/metrics';
+import { fetchAsset, AddAssetAction, ADD_ASSETS } from './assets';
 import {
   UPDATE_REVISON,
   UpdateRevisionAction,
@@ -34,11 +35,25 @@ type AppAction =
   | ClearAppStateAction
   | UpdateRevisionAction
   | AddRevisionAction
-  | AddNodeAssetMappingAction;
+  | AddNodeAssetMappingAction
+  | AddAssetAction;
+
+const findBestRootAssetforModelAndRevision = (
+  representsAsset: { [key: number]: { modelId: number; revisionId: number }[] },
+  modelId: number,
+  revisionId: number
+) =>
+  Object.keys(representsAsset).find(
+    (assetId: string) =>
+      representsAsset[Number(assetId)] &&
+      representsAsset[Number(assetId)].find(
+        el => el.revisionId === revisionId && el.modelId === modelId
+      )
+  );
 
 export const setModelAndRevisionAndNode = (
-  modelId: number,
-  revisionId: number,
+  modelId?: number,
+  revisionId?: number,
   nodeId?: number,
   redirect = true
 ) => async (
@@ -54,19 +69,32 @@ export const setModelAndRevisionAndNode = (
     revisionId,
     nodeId,
   });
+  if (!modelId || !revisionId) {
+    dispatch({
+      type: SET_APP_STATE,
+      payload: {
+        modelId,
+        revisionId,
+        nodeId,
+      },
+    });
+    return;
+  }
   const {
     threed: { representsAsset },
     assetMappings: { byNodeId },
     app: { tenant },
   } = getState();
-  const rootAssetId = Object.keys(representsAsset).find(
-    (assetId: string) =>
-      representsAsset[Number(assetId)].revisionId === revisionId &&
-      representsAsset[Number(assetId)].modelId === modelId
+  const newRootAssetId = findBestRootAssetforModelAndRevision(
+    representsAsset,
+    modelId,
+    revisionId
   );
-  let currentAssetId;
+  let currentAssetId: number | undefined;
   if (nodeId) {
-    currentAssetId = byNodeId[nodeId];
+    currentAssetId = byNodeId[nodeId] ? byNodeId[nodeId].assetId : undefined;
+  } else {
+    currentAssetId = newRootAssetId ? Number(newRootAssetId) : undefined;
   }
   dispatch({
     type: SET_APP_STATE,
@@ -74,11 +102,8 @@ export const setModelAndRevisionAndNode = (
       modelId,
       revisionId,
       nodeId,
-      assetId:
-        nodeId && rootAssetId && currentAssetId
-          ? currentAssetId.assetId
-          : undefined,
-      rootAssetId: rootAssetId ? Number(rootAssetId) : undefined,
+      assetId: currentAssetId,
+      rootAssetId: newRootAssetId ? Number(newRootAssetId) : undefined,
     },
   });
   if (redirect) {
@@ -102,18 +127,29 @@ export const setAssetId = (
     assetId,
   });
   const {
-    threed: { representsAsset },
     assetMappings: { byAssetId },
-    app: { tenant },
+    threed: { representsAsset },
+    app: { tenant, revisionId, modelId },
   } = getState();
-  const modelMapping = representsAsset[rootAssetId];
+  let newModelId;
+  let newRevisionId;
+  const currentModelSelected =
+    representsAsset[rootAssetId] &&
+    representsAsset[rootAssetId].find(
+      el => el.revisionId === revisionId && el.modelId === modelId
+    ) !== undefined;
+
+  if (currentModelSelected) {
+    newModelId = modelId;
+    newRevisionId = revisionId;
+  }
   const assetMapping = byAssetId[assetId];
   dispatch({
     type: SET_APP_STATE,
     payload: {
-      modelId: modelMapping ? modelMapping.modelId : undefined,
-      revisionId: modelMapping ? modelMapping.revisionId : undefined,
-      nodeId: modelMapping && assetMapping ? assetMapping.nodeId : undefined,
+      revisionId: newRevisionId,
+      modelId: newModelId,
+      nodeId: assetMapping ? assetMapping.nodeId : undefined,
       assetId,
       rootAssetId,
     },
@@ -123,7 +159,10 @@ export const setAssetId = (
   }
 };
 
-export const setTimeseriesId = (timeseriesId?: number) => async (
+export const setTimeseriesId = (
+  timeseriesId?: number,
+  redirect = false
+) => async (
   dispatch: ThunkDispatch<
     any,
     any,
@@ -144,10 +183,10 @@ export const setTimeseriesId = (timeseriesId?: number) => async (
     return;
   }
   const {
-    threed: { representsAsset },
     assetMappings: { byAssetId },
     assets: { all },
     timeseries: { timeseriesData },
+    app: { tenant },
   } = getState();
   const timeseries = timeseriesData[timeseriesId];
   if (!timeseries) {
@@ -156,28 +195,34 @@ export const setTimeseriesId = (timeseriesId?: number) => async (
   }
   let assetId;
   let rootAssetId;
-  let modelMapping;
   let assetMapping;
 
   if (timeseries.assetId) {
     // eslint-disable-next-line prefer-destructuring
     assetId = timeseries.assetId;
-    rootAssetId = all[assetId].rootId;
-    modelMapping = representsAsset[rootAssetId];
-    assetMapping = byAssetId[assetId];
+    if (all[assetId]) {
+      rootAssetId = all[assetId].rootId;
+      assetMapping = byAssetId[assetId];
+    } else {
+      dispatch(fetchAsset(assetId, true));
+    }
   }
 
   dispatch({
     type: SET_APP_STATE,
     payload: {
-      modelId: modelMapping ? modelMapping.modelId : undefined,
-      revisionId: modelMapping ? modelMapping.revisionId : undefined,
-      nodeId: modelMapping && assetMapping ? assetMapping.nodeId : undefined,
+      modelId: assetMapping ? assetMapping.modelId : undefined,
+      revisionId: assetMapping ? assetMapping.revisionId : undefined,
+      nodeId: assetMapping ? assetMapping.nodeId : undefined,
       assetId,
       timeseriesId,
       rootAssetId,
     },
   });
+
+  if (redirect && rootAssetId) {
+    dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
+  }
 };
 
 export const setTenant = (tenant: string, redirect = false) => async (
@@ -227,7 +272,7 @@ export default function app(state = initialState, action: AppAction): AppState {
   switch (action.type) {
     case SET_APP_STATE:
       // needed to trigger states properly
-      return Object.assign({}, state, action.payload);
+      return { ...state, ...action.payload };
     case CLEAR_APP_STATE:
       return {
         ...state,
@@ -243,10 +288,10 @@ export default function app(state = initialState, action: AppAction): AppState {
       let rootAssetId;
       let mapping;
       if (state.modelId && state.revisionId) {
-        rootAssetId = Object.keys(representsAsset).find(
-          (assetId: string) =>
-            representsAsset[Number(assetId)].revisionId === state.revisionId &&
-            representsAsset[Number(assetId)].modelId === state.modelId
+        rootAssetId = findBestRootAssetforModelAndRevision(
+          representsAsset,
+          state.modelId,
+          state.revisionId
         );
       }
       if (state.rootAssetId) {
@@ -255,6 +300,7 @@ export default function app(state = initialState, action: AppAction): AppState {
       return {
         ...state,
         ...(rootAssetId && { rootAssetId: Number(rootAssetId) }),
+        ...(!state.assetId && rootAssetId && { assetId: Number(rootAssetId) }),
         ...mapping,
       };
     }
@@ -282,6 +328,18 @@ export default function app(state = initialState, action: AppAction): AppState {
           revisionId,
           ...(state.assetId && { nodeId: mapping.nodeId }),
           ...(state.nodeId && { assetId: mapping.assetId }),
+        };
+      }
+      return state;
+    }
+    case ADD_ASSETS: {
+      const { items } = action.payload;
+      const { assetId } = state;
+      const asset = assetId ? items[assetId] : undefined;
+      if (asset) {
+        return {
+          ...state,
+          rootAssetId: asset.rootId,
         };
       }
       return state;
