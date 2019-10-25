@@ -171,7 +171,7 @@ class ThreeDViewerComponent extends Component<Props, State> {
         })}
         columns={[
           {
-            title: 'Name',
+            title: '3D Model Names',
             key: 'name',
             render: item => {
               const model = models[item.modelId];

@@ -170,18 +170,18 @@ class TreeViewer extends Component<Props, State> {
   }
 
   componentDidMount() {
-    // add collision force
-    this.forceGraphRef.current!.d3Force(
-      'collision',
-      // @ts-ignore
-      d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
-    );
-    this.forceGraphRef.current!.d3Force(
-      'charge',
-      // @ts-ignore
-      d3.forceManyBody().strength(-80)
-    );
     if (this.props.app.assetId) {
+      // add collision force
+      this.forceGraphRef.current!.d3Force(
+        'collision',
+        // @ts-ignore
+        d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
+      );
+      this.forceGraphRef.current!.d3Force(
+        'charge',
+        // @ts-ignore
+        d3.forceManyBody().strength(-80)
+      );
       this.props.fetchRelationshipsForAssetId(this.props.app.assetId);
     }
   }
@@ -205,6 +205,17 @@ class TreeViewer extends Component<Props, State> {
       prevProps.app.assetId !== this.props.app.assetId
     ) {
       this.props.fetchRelationshipsForAssetId(this.props.app.assetId);
+      // add collision force
+      this.forceGraphRef.current!.d3Force(
+        'collision',
+        // @ts-ignore
+        d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
+      );
+      this.forceGraphRef.current!.d3Force(
+        'charge',
+        // @ts-ignore
+        d3.forceManyBody().strength(-80)
+      );
     }
   }
 
@@ -301,7 +312,7 @@ class TreeViewer extends Component<Props, State> {
         if (Number(relationship.target.resourceId) === assetId) {
           return 'rgba(0,255,255,0.5)';
         }
-        return 'rgba(0,0,255,0.5)';
+        return 'rgba(0,0,255,0.9)';
       }
       case 'belongsTo':
         return 'rgba(255,0,0,0.5)';
@@ -332,6 +343,7 @@ class TreeViewer extends Component<Props, State> {
       if (relationship.source.resourceId !== relationship.target.resourceId) {
         links.push({
           ...relationship,
+          linkWidth: 3,
           source: relationship.source.resourceId,
           target: relationship.target.resourceId,
         });
