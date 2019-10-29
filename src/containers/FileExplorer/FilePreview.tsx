@@ -152,20 +152,27 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     try {
       trackUsage('FilePreview.DetectAsset', { fileId });
       const response = await sdk.post(
-        `/api/playground/projects/${sdk.project}/context/string-matcher/extract`,
+        `/api/playground/projects/${sdk.project}/context/entity_extraction/extract`,
         {
           data: {
-            pdf_file_id: fileId,
+            fileId: fileId,
           },
         }
       );
-      const names = response.data.reduce(
-        (prev: { page: number; name: string }[], data: string[], i: number) => {
-          data.forEach(name => prev.push({ page: i + 1, name }));
-          return prev;
-        },
-        [] as { page: number; name: string }[]
-      );
+
+      const names: {page: number, name: string}[] = [];
+      response.data.items.forEach( (match: {entity: string, pages: number[]}) => {
+        const name = match.entity;
+        match.pages.forEach(page => {
+          names.push({page, name});
+        })
+      })
+
+      names.sort( (a,b) => {
+        if (a.page !== b.page) return a.page-b.page;
+        return a.name.localeCompare(b.name);
+      });
+
       this.setState({ assetResults: names });
     } catch (e) {
       message.error('Unable to process document, please try again');
@@ -195,7 +202,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <SpinWrapper>
           <Spin
             indicator={<img src={LoaderBPSvg} alt="" />}
-            tip="Loading...."
+            tip="Extracting assets...."
           />
         </SpinWrapper>
       );
