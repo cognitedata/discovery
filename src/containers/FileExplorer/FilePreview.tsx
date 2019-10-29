@@ -155,21 +155,23 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         `/api/playground/projects/${sdk.project}/context/entity_extraction/extract`,
         {
           data: {
-            fileId: fileId,
+            fileId,
           },
         }
       );
 
-      const names: {page: number, name: string}[] = [];
-      response.data.items.forEach( (match: {entity: string, pages: number[]}) => {
-        const name = match.entity;
-        match.pages.forEach(page => {
-          names.push({page, name});
-        })
-      })
+      const names: { page: number; name: string }[] = [];
+      response.data.items.forEach(
+        (match: { entity: string; pages: number[] }) => {
+          const name = match.entity;
+          match.pages.forEach(page => {
+            names.push({ page, name });
+          });
+        }
+      );
 
-      names.sort( (a,b) => {
-        if (a.page !== b.page) return a.page-b.page;
+      names.sort((a, b) => {
+        if (a.page !== b.page) return a.page - b.page;
         return a.name.localeCompare(b.name);
       });
 
@@ -202,7 +204,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <SpinWrapper>
           <Spin
             indicator={<img src={LoaderBPSvg} alt="" />}
-            tip="Extracting assets...."
+            tip="Extracting assets..."
           />
         </SpinWrapper>
       );
