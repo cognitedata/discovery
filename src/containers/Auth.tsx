@@ -2,16 +2,24 @@ import React from 'react';
 import { Route, Switch } from 'react-router-dom';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import queryString from 'query-string';
+import { replace } from 'connected-react-router';
 import Main from './Main';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
-import { selectApp, setTenant, AppState } from '../modules/app';
+import { selectApp, setTenant, AppState, setCdfEnv } from '../modules/app';
 import { RootState } from '../reducers/index';
+
+export const getCdfEnvFromUrl = () =>
+  queryString.parse(window.location.search).env as string;
 
 type Props = {
   app: AppState;
   match: { params: { tenant: string }; path: string };
+  history: any;
+  setCdfEnv: typeof setCdfEnv;
   setTenant: typeof setTenant;
+  replace: typeof replace;
 };
 
 type State = {
@@ -35,12 +43,26 @@ class Auth extends React.Component<Props, State> {
 
   verifyAuth = async () => {
     const {
+      app: { cdfEnv, tenant },
+    } = this.props;
+    const fromUrlCdfEnv = getCdfEnvFromUrl();
+    if (!cdfEnv && fromUrlCdfEnv) {
+      this.props.setCdfEnv(fromUrlCdfEnv);
+    }
+    if (cdfEnv && !fromUrlCdfEnv) {
+      if (tenant) {
+        this.props.replace({
+          pathname: this.props.history.location.pathname,
+          search: `?env=${cdfEnv}`,
+        });
+      } else {
+        this.props.setCdfEnv(undefined);
+      }
+    }
+    const {
       match: {
         params: { tenant: pathTenant },
       },
-    } = this.props;
-    const {
-      app: { tenant },
     } = this.props;
 
     if (!tenant && pathTenant) {
@@ -100,6 +122,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setTenant,
+      setCdfEnv,
+      replace,
     },
     dispatch
   );

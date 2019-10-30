@@ -192,8 +192,6 @@ class Main extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.doFetchTypes();
-
     this.checkAndFixURL();
 
     this.props.fetchModels();
@@ -278,6 +276,11 @@ class Main extends React.Component<Props, State> {
       }),
     });
     localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(layout));
+
+    // Fix weird layout issue
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 200);
     return true;
   };
 
