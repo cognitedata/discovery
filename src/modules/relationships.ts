@@ -142,6 +142,7 @@ export function fetchRelationshipsForAssetId(
 ) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
+      // Hack because it whines about relationships being defined in upper scope. David, HELP!
       const {
         relationships: relationships_,
       } = await doFetchRelationshipsForAssetId(id, depth, maxDepth);
