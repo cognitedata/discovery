@@ -135,10 +135,7 @@ async function doFetchRelationshipsForAssetId(
   return { relationships, requestCount: newRequestCount };
 }
 
-export function fetchRelationshipsForAssetId(
-  id: number,
-  maxDepth: number = 1
-) {
+export function fetchRelationshipsForAssetId(id: number, maxDepth: number = 1) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
       // Hack because it whines about relationships being defined in upper scope. David, HELP!
