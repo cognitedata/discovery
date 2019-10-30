@@ -3,8 +3,8 @@ import { connect } from 'react-redux';
 import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
-import { setTenant } from '../modules/app';
-import { sdk } from '../index';
+import { sdk } from 'index';
+import { setTenant, setCdfEnv } from '../modules/app';
 
 const Wrapper = styled.div`
   display: flex;
@@ -21,24 +21,28 @@ const TenantSelectorContainer = styled.div`
 
 type Props = {
   doSetTenant: typeof setTenant;
+  doSetCdfEnv: typeof setCdfEnv;
 };
 
-const Login = ({ doSetTenant }: Props) => (
+const Login = ({ doSetTenant, doSetCdfEnv }: Props) => (
   <Wrapper>
     <TenantSelectorContainer>
       <TenantSelector
         title="Discovery"
         onTenantSelected={(tenant, advancedOptions) => {
           const cdfEnv = advancedOptions
-            ? advancedOptions['CDF Environment']
+            ? (advancedOptions['CDF Environment (i.e. Greenfield)'] as string)
             : undefined;
-          sdk.setBaseUrl(`https://${cdfEnv || 'api'}.cognitedata.com`);
+          if (cdfEnv) {
+            sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
+          }
+          doSetCdfEnv(cdfEnv);
           doSetTenant(tenant, true);
         }}
         header="Cognite Data Fusion project name"
         validateTenant={(tenant, advancedOptions) => {
           const cdfEnv = advancedOptions
-            ? advancedOptions['CDF Environment']
+            ? advancedOptions['CDF Environment (i.e. Greenfield)']
             : null;
           const clusterParam = cdfEnv ? `&cluster=${cdfEnv}` : '';
           return fetch(
@@ -48,7 +52,7 @@ const Login = ({ doSetTenant }: Props) => (
         loginText="Authenticate"
         placeholder="Project name"
         unknownMessage="The name you entered is not a valid project in Cognite Data Fusion"
-        advancedOptions={{ 'CDF Environment': '' }}
+        advancedOptions={{ 'CDF Environment (i.e. Greenfield)': '' }}
       />
     </TenantSelectorContainer>
   </Wrapper>
@@ -62,6 +66,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       doSetTenant: setTenant,
+      doSetCdfEnv: setCdfEnv,
+      doSet: setTenant,
     },
     dispatch
   );
