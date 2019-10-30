@@ -124,7 +124,9 @@ export function fetchAsset(assetId: number, redirect = false) {
             app: { tenant },
           } = getState();
           dispatch(
-            push(`/${tenant}/asset/${items[assetId].rootId}/${assetId}`)
+            push(
+              `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.search}`
+            )
           );
         }
       }

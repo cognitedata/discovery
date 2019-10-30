@@ -109,7 +109,11 @@ export const setModelAndRevisionAndNode = (
     },
   });
   if (redirect) {
-    dispatch(push(`/${tenant}/models/${modelId}/${revisionId}/${nodeId}`));
+    dispatch(
+      push(
+        `/${tenant}/models/${modelId}/${revisionId}/${nodeId}${window.location.search}`
+      )
+    );
   }
 };
 
@@ -157,7 +161,11 @@ export const setAssetId = (
     },
   });
   if (redirect) {
-    dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
+    dispatch(
+      push(
+        `/${tenant}/asset/${rootAssetId}/${assetId}${window.location.search}`
+      )
+    );
   }
 };
 
@@ -223,7 +231,11 @@ export const setTimeseriesId = (
   });
 
   if (redirect && rootAssetId) {
-    dispatch(push(`/${tenant}/asset/${rootAssetId}/${assetId}`));
+    dispatch(
+      push(
+        `/${tenant}/asset/${rootAssetId}/${assetId}${window.location.search}`
+      )
+    );
   }
 };
 
@@ -237,7 +249,7 @@ export const setTenant = (tenant: string, redirect = false) => async (
     },
   });
   if (redirect) {
-    dispatch(push(`/${tenant}`));
+    dispatch(push(`/${tenant}${window.location.search}`));
   }
 };
 export const setCdfEnv = (env?: string) => async (
@@ -268,7 +280,7 @@ export const resetAppState = () => async (
   dispatch({
     type: CLEAR_APP_STATE,
   });
-  dispatch(push(`/${tenant}`));
+  dispatch(push(`/${tenant}${window.location.search}`));
 };
 
 // Reducer
