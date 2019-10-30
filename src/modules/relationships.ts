@@ -57,8 +57,8 @@ export function fetchRelationships() {
 
 async function doFetchRelationshipsForAssetId(
   id: number,
-  depth: number,
   maxDepth: number,
+  depth: number = 0,
   requestCount: number = 0
 ) {
   const { project } = sdk;
@@ -110,8 +110,8 @@ async function doFetchRelationshipsForAssetId(
       uniqueIds.map(assetId =>
         doFetchRelationshipsForAssetId(
           assetId,
-          depth + 1,
           maxDepth,
+          depth + 1,
           requestCount
         )
       )
@@ -137,7 +137,6 @@ async function doFetchRelationshipsForAssetId(
 
 export function fetchRelationshipsForAssetId(
   id: number,
-  depth: number = 0,
   maxDepth: number = 1
 ) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
@@ -145,7 +144,7 @@ export function fetchRelationshipsForAssetId(
       // Hack because it whines about relationships being defined in upper scope. David, HELP!
       const {
         relationships: relationships_,
-      } = await doFetchRelationshipsForAssetId(id, depth, maxDepth);
+      } = await doFetchRelationshipsForAssetId(id, maxDepth);
 
       dispatch({
         type: GET_RELATIONSHIPS,
