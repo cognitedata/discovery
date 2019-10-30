@@ -120,13 +120,12 @@ async function doFetchRelationshipsForAssetId(
     // newRelationships is now an array of arrays (each result from the ids above). Merge into one array
     newRelationships = newRelationships.reduce((prev: any, current: any) => {
       // For each asset id we fetched relationships, add those to the list and count the number of requests
-      current.forEach((data: { relationships: any; requestCount: number }) => {
-        prev.push(data.relationships);
-        newRequestCount += data.requestCount;
+      current.relationships.forEach((relationship: any) => {
+        prev.push(relationship);
       });
+      newRequestCount += current.requestCount;
       return prev;
     }, []);
-
     relationships = Array.from(
       new Set([...relationships, ...newRelationships])
     );
@@ -137,7 +136,7 @@ async function doFetchRelationshipsForAssetId(
 
 export function fetchRelationshipsForAssetId(id: number, maxDepth: number = 1) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    try {
+    // try {
       // Hack because it whines about relationships being defined in upper scope. David, HELP!
       const {
         relationships: relationships_,
@@ -147,9 +146,9 @@ export function fetchRelationshipsForAssetId(id: number, maxDepth: number = 1) {
         type: GET_RELATIONSHIPS,
         payload: { items: relationships_ },
       });
-    } catch (ex) {
-      message.error('unable to retrieve relationship data');
-    }
+    // } catch (ex) {
+    //   message.error('unable to retrieve relationship data');
+    // }
   };
 }
 
