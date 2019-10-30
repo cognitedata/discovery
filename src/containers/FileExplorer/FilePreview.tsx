@@ -20,6 +20,18 @@ import { trackUsage } from '../../utils/metrics';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
+function saveData(blob: Blob, fileName: string) {
+  const a = document.createElement('a');
+  document.body.appendChild(a);
+  a.style.display = 'none';
+
+  const url = window.URL.createObjectURL(blob);
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -145,6 +157,21 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     this.setState({
       filePreviewUrl: url.downloadUrl,
     });
+  };
+
+  downloadfile = async () => {
+    const { selectedDocument } = this.props;
+    const [url] = await sdk.files.getDownloadUrls([
+      { id: selectedDocument.id },
+    ]);
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url.downloadUrl);
+    xhr.responseType = 'blob';
+
+    xhr.onload = () => {
+      saveData(xhr.response, selectedDocument.name); // saveAs is a part of FileSaver.js
+    };
+    xhr.send();
   };
 
   detectAssetClicked = async (fileId: number) => {
@@ -279,6 +306,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         <Button onClick={() => message.info('Coming soon...')}>
           Add Metadata
         </Button>
+        <Button onClick={() => this.downloadfile()}>Download File</Button>
         {this.type === 'documents' && (
           <>
             <Divider />
