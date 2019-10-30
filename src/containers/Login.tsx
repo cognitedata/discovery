@@ -33,7 +33,6 @@ const Login = ({ doSetTenant, doSetCdfEnv }: Props) => (
           const cdfEnv = advancedOptions
             ? (advancedOptions['CDF Environment (i.e. Greenfield)'] as string)
             : undefined;
-          console.log(cdfEnv);
           if (cdfEnv) {
             sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
           }
