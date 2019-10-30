@@ -142,11 +142,9 @@ export function fetchRelationshipsForAssetId(
 ) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
-      const { relationships: relationships_ } = await doFetchRelationshipsForAssetId(
-        id,
-        depth,
-        maxDepth
-      );
+      const {
+        relationships: relationships_,
+      } = await doFetchRelationshipsForAssetId(id, depth, maxDepth);
 
       dispatch({
         type: GET_RELATIONSHIPS,
