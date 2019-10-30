@@ -6,6 +6,7 @@ import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
 import { trackUsage } from '../utils/metrics';
 import { fetchAsset, AddAssetAction, ADD_ASSETS } from './assets';
+import { sdk } from '../index';
 import {
   UPDATE_REVISON,
   UpdateRevisionAction,
@@ -21,6 +22,7 @@ export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
     tenant?: string;
     modelId?: number;
+    cdfEnv?: string;
     revisionId?: number;
     nodeId?: number;
     assetId?: number;
@@ -238,6 +240,19 @@ export const setTenant = (tenant: string, redirect = false) => async (
     dispatch(push(`/${tenant}`));
   }
 };
+export const setCdfEnv = (env?: string) => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
+) => {
+  if (env) {
+    sdk.setBaseUrl(`https://${env}.cognitedata.com`);
+  }
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      cdfEnv: env,
+    },
+  });
+};
 
 export const resetAppState = () => async (
   dispatch: ThunkDispatch<
@@ -265,6 +280,7 @@ export interface AppState {
   nodeId?: number;
   assetId?: number;
   rootAssetId?: number;
+  cdfEnv?: string;
 }
 const initialState: AppState = {};
 
