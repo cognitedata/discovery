@@ -1,10 +1,21 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Divider, message, Spin, Table, Icon, Pagination } from 'antd';
+import {
+  Button,
+  message,
+  Spin,
+  Table,
+  Icon,
+  Pagination,
+  Tabs,
+  Divider,
+} from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
+import debounce from 'lodash/debounce';
+import { Asset, FilesMetadata } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -17,8 +28,11 @@ import {
 } from './FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
+import AssetSelect from '../../components/AssetSelect';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
+const { TabPane } = Tabs;
 
 function saveData(blob: Blob, fileName: string) {
   const a = document.createElement('a');
@@ -89,8 +103,18 @@ const StyledPDFViewer = styled(Document)`
   }
 `;
 
+const ButtonRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  && > * {
+    margin-right: 12px;
+    margin-top: 6px;
+  }
+`;
+
 type OrigProps = {
   selectedDocument: FilesMetadataWithDownload;
+  selectDocument: (file: FilesMetadata) => void;
   unselectDocument: () => void;
 };
 
@@ -105,19 +129,24 @@ type State = {
   filePreviewUrl?: string;
   detectingAsset: boolean;
   assetResults?: { page: number; name: string }[];
-
+  convertingToSvg?: string;
+  selectedAssetId?: number;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
 class MapModelToAssetForm extends React.Component<Props, State> {
-  state: Readonly<State> = {
-    detectingAsset: false,
-    pdfState: {
-      numPages: 0,
-      page: 1,
-      isError: false,
-    },
-  };
+  constructor(props: Props) {
+    super(props);
+    this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
+    this.state = {
+      detectingAsset: false,
+      pdfState: {
+        numPages: 0,
+        page: 1,
+        isError: false,
+      },
+    };
+  }
 
   componentDidMount() {
     this.componentDidUpdate();
@@ -159,17 +188,26 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     });
   };
 
-  downloadfile = async () => {
+  onDownloadClicked = async () => {
     const { selectedDocument } = this.props;
     const [url] = await sdk.files.getDownloadUrls([
       { id: selectedDocument.id },
     ]);
+    this.downloadFile(url.downloadUrl);
+  };
+
+  downloadFile = async (url: string, callback?: (response: any) => void) => {
+    const { selectedDocument } = this.props;
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', url.downloadUrl);
+    xhr.open('GET', url);
     xhr.responseType = 'blob';
 
     xhr.onload = () => {
-      saveData(xhr.response, selectedDocument.name); // saveAs is a part of FileSaver.js
+      if (callback) {
+        callback(xhr.response);
+      } else {
+        saveData(xhr.response, selectedDocument.name); // saveAs is a part of FileSaver.js
+      }
     };
     xhr.send();
   };
@@ -205,6 +243,116 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       this.setState({ assetResults: names });
     } catch (e) {
       message.error('Unable to process document, please try again');
+      this.setState({ assetResults: undefined, detectingAsset: false });
+    }
+  };
+
+  convertToPnIDClicked = async (
+    fileId: number,
+    selectedRootAssetId: number
+  ) => {
+    const { selectedDocument } = this.props;
+    let names: string[] = [];
+    this.setState({ convertingToSvg: 'Loading Assets' });
+    let results = await Promise.all(
+      [...Array(20).keys()].map(index =>
+        sdk.assets.list({
+          filter: { rootIds: [{ id: selectedRootAssetId }] },
+          limit: 1000,
+          // @ts-ignore
+          partition: `${index + 1}/20`,
+        })
+      )
+    );
+    names = names.concat(
+      results.reduce(
+        (prev, el) =>
+          prev.append(el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))),
+        []
+      )
+    );
+    const cursor = results[0].nextCursor;
+    while (cursor) {
+      // eslint-disable-next-line no-await-in-loop
+      results = await Promise.all(
+        [...Array(20).keys()].map(index =>
+          sdk.assets.list({
+            filter: { rootIds: [{ id: selectedRootAssetId }] },
+            limit: 1000,
+            cursor,
+            // @ts-ignore
+            partition: `${index + 1}/20`,
+          })
+        )
+      );
+      names = names.concat(
+        results.reduce(
+          (prev, el) =>
+            prev.append(
+              el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))
+            ),
+          []
+        )
+      );
+    }
+    this.setState({ convertingToSvg: 'Processing File' });
+
+    try {
+      trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
+      const newJob = await sdk.post(
+        `/api/playground/projects/${sdk.project}/context/pnid/parse`,
+        {
+          data: {
+            fileId,
+            entities: names,
+          },
+        }
+      );
+      if (newJob.status !== 200) {
+        message.error('Unable to process file to interactive P&ID');
+      } else {
+        const interval = setInterval(async () => {
+          const status = await sdk.get(
+            `/api/playground/projects/${sdk.project}/context/pnid/${newJob.data.jobId}`
+          );
+          if (status.status !== 200) {
+            clearInterval(interval);
+            message.error('Unable to process file to interactive P&ID');
+          } else if (status.data.status === 'Completed') {
+            clearInterval(interval);
+            this.setState({ convertingToSvg: 'Uploading Interactive P&ID' });
+            this.downloadFile(status.data.svgUrl, async data => {
+              const newFile = await sdk.files.upload(
+                {
+                  name: `Processed-${selectedDocument.name}.svg`,
+                  mimeType: 'image/svg+xml',
+                  metadata: {
+                    orginal_file_id: `${fileId}`,
+                  },
+                },
+                data
+              );
+              sdk.files.update([
+                {
+                  id: fileId,
+                  update: {
+                    metadata: {
+                      set: {
+                        ...selectedDocument.metadata,
+                        processedFileId: `${newFile.id}`,
+                      },
+                    },
+                  },
+                },
+              ]);
+              this.setState({ convertingToSvg: undefined });
+              this.props.selectDocument(newFile);
+            });
+          }
+        }, 1000);
+      }
+    } catch (e) {
+      message.error('Unable to convert to P&ID, please try again');
       this.setState({ assetResults: undefined, detectingAsset: false });
     }
   };
@@ -276,6 +424,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   renderDefaultContentView = () => {
     const { selectedDocument } = this.props;
+    const { convertingToSvg, selectedAssetId } = this.state;
     const {
       name,
       source,
@@ -286,39 +435,66 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     } = selectedDocument;
     return (
       <>
-        <p>Name: {name}</p>
-        <p>Source: {source}</p>
-        <p>Type: {mimeType}</p>
-        <p>ID: {id}</p>
-        <p>Created Date: {moment(createdTime).format('DD/MM/YYYY')}</p>
-        <pre>{JSON.stringify(metadata, null, 2)}</pre>
-
-        <Divider />
-        <Button onClick={() => message.info('Coming soon...')}>
-          Link to Asset
-        </Button>
-        <br />
-        <br />
-        <Button onClick={() => message.info('Coming soon...')}>
-          Add Labels
-        </Button>
-        <Button onClick={() => message.info('Coming soon...')}>Add Type</Button>
-        <Button onClick={() => message.info('Coming soon...')}>
-          Add Metadata
-        </Button>
-        <Button onClick={() => this.downloadfile()}>Download File</Button>
-        {this.type === 'documents' && (
-          <>
-            <Divider />
-            <Button
-              size="large"
-              type="primary"
-              onClick={() => this.detectAssetClicked(id)}
-            >
-              Detect Assets In Document
-            </Button>
-          </>
-        )}
+        <h1>Name: {name}</h1>
+        <ButtonRow>
+          <Button onClick={() => message.info('Coming soon...')}>
+            Link to Asset
+          </Button>
+          <br />
+          <br />
+          <Button onClick={() => message.info('Coming soon...')}>
+            Add Labels
+          </Button>
+          <Button onClick={() => message.info('Coming soon...')}>
+            Add Type
+          </Button>
+          <Button onClick={() => message.info('Coming soon...')}>
+            Add Metadata
+          </Button>
+          <Button onClick={this.onDownloadClicked}>Download File</Button>
+        </ButtonRow>
+        <Tabs defaultActiveKey="1">
+          <TabPane tab="Information" key="1">
+            <p>Source: {source}</p>
+            <p>Type: {mimeType}</p>
+            <p>ID: {id}</p>
+            <p>Created Date: {moment(createdTime).format('DD/MM/YYYY')}</p>
+            <pre>{JSON.stringify(metadata, null, 2)}</pre>
+          </TabPane>
+          {this.type === 'documents' && (
+            <TabPane tab="Utilities" key="2">
+              <h2>Detect Assets In Document</h2>
+              <p>Find mentioned Assets in your document.</p>
+              <Button
+                size="large"
+                type="primary"
+                onClick={() => this.detectAssetClicked(id)}
+              >
+                Detect Assets
+              </Button>
+              <Divider />
+              <h2>Convert to Interactive P&ID</h2>
+              <p>
+                Navigate the asset hierarchy via clicking on the P&ID diagram.
+              </p>
+              <AssetSelect
+                rootOnly
+                onAssetSelected={selectedId =>
+                  this.setState({ selectedAssetId: selectedId })
+                }
+              />
+              <Button
+                size="large"
+                type="primary"
+                disabled={!selectedAssetId}
+                onClick={() => this.convertToPnIDClicked(id, selectedAssetId!)}
+                loading={!!convertingToSvg}
+              >
+                Convert to Clickable P&ID
+              </Button>
+            </TabPane>
+          )}
+        </Tabs>
       </>
     );
   };

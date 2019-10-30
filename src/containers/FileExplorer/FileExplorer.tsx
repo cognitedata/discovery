@@ -227,9 +227,9 @@ class FileExplorerComponent extends React.Component<Props, State> {
     this.props.fetchAssets(Array.from(extraAssets));
   };
 
-  onClickDocument = (documentId: FilesMetadata, index: number) => {
+  onClickDocument = (document: FilesMetadata, index: number) => {
     const { current, tab } = this.state;
-    this.setState({ selectedDocument: documentId });
+    this.setState({ selectedDocument: document });
     trackUsage('FileExplorer.SelectItem', {
       index: current * 20 + index,
       tab,
@@ -269,6 +269,9 @@ class FileExplorerComponent extends React.Component<Props, State> {
           selectedDocument={selectedDocument}
           unselectDocument={() =>
             this.setState({ selectedDocument: undefined })
+          }
+          selectDocument={(document: FilesMetadata) =>
+            this.setState({ selectedDocument: document })
           }
         />
       );
