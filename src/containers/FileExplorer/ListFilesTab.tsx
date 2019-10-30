@@ -4,6 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Pagination, Spin, Table } from 'antd';
 import { FilesMetadata } from '@cognite/sdk';
 import moment from 'moment';
+import styled from 'styled-components';
 import { selectThreeD, setRevisionRepresentAsset } from '../../modules/threed';
 import {
   selectAssets,
@@ -13,6 +14,17 @@ import {
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
+
+const Wrapper = styled.div`
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 400px;
+  }
+`;
 
 type OrigProps = {};
 
@@ -51,12 +63,12 @@ class FileExplorerComponent extends React.Component<Props, State> {
     }
     return (
       <>
-        <div className="results">
+        <Wrapper>
           <Table
             dataSource={searchResults.slice(current * 20, current * 20 + 20)}
             pagination={false}
             rowKey="id"
-            onRow={(item, i) => ({
+            onRow={(item: FilesMetadata, i: number) => ({
               onClick: () => this.props.onClickDocument(item, i),
             })}
             columns={[
@@ -72,7 +84,6 @@ class FileExplorerComponent extends React.Component<Props, State> {
                       wordBreak: 'unset',
                       whiteSpace: 'nowrap',
                       display: 'block',
-                      maxWidth: '600px',
                     }}
                   >
                     {name}
@@ -83,7 +94,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
               {
                 title: 'Created Time',
                 key: 'ctime',
-                render: item => (
+                render: (item: FilesMetadata) => (
                   <span>{moment(item.createdTime).format('DD/MM/YYYY')}</span>
                 ),
               },
@@ -106,7 +117,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
               },
             ]}
           />
-        </div>
+        </Wrapper>
         {this.pagination}
       </>
     );
