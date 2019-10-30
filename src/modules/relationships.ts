@@ -54,44 +54,104 @@ export function fetchRelationships() {
     }
   };
 }
-export function fetchRelationshipsForAssetId(id: number) {
+
+async function doFetchRelationshipsForAssetId(
+  id: number,
+  depth: number,
+  maxDepth: number,
+  requestCount: number = 0
+) {
+  const { project } = sdk;
+  let relationships: any[] = []; // eslint-disable-line no-shadow
+  if (requestCount > 50) {
+    // Stop if we have to fetch more than 50 assets
+    return { relationships, requestCount };
+  }
+
+  const [resultFrom, resultTo] = await Promise.all([
+    sdk.post(
+      `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
+      {
+        data: {
+          filter: {
+            sourceResource: 'asset',
+            sourceResourceId: `${id}`,
+          },
+        },
+      }
+    ),
+    sdk.post(
+      `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
+      {
+        data: {
+          filter: {
+            targetResource: 'asset',
+            targetResourceId: `${id}`,
+          },
+        },
+      }
+    ),
+  ]);
+
+  if (resultFrom.status !== 200 || resultTo.status !== 200) {
+    throw new Error('Unable to fetch relationships for given asset');
+  }
+
+  relationships = resultFrom.data.items.concat(resultTo.data.items);
+
+  let newRequestCount = requestCount;
+  if (depth < maxDepth) {
+    const ids: number[] = relationships.map(
+      (relationship: any) => relationship.source.resourceId
+    );
+    const uniqueIds: number[] = Array.from(new Set(ids));
+
+    let newRelationships = await Promise.all(
+      uniqueIds.map(assetId =>
+        doFetchRelationshipsForAssetId(
+          assetId,
+          depth + 1,
+          maxDepth,
+          requestCount
+        )
+      )
+    );
+
+    // newRelationships is now an array of arrays (each result from the ids above). Merge into one array
+    newRelationships = newRelationships.reduce((prev: any, current: any) => {
+      // For each asset id we fetched relationships, add those to the list and count the number of requests
+      current.forEach((data: { relationships: any; requestCount: number }) => {
+        prev.push(data.relationships);
+        newRequestCount += data.requestCount;
+      });
+      return prev;
+    }, []);
+
+    relationships = Array.from(
+      new Set([...relationships, ...newRelationships])
+    );
+  }
+
+  return { relationships, requestCount: newRequestCount };
+}
+
+export function fetchRelationshipsForAssetId(
+  id: number,
+  depth: number = 0,
+  maxDepth: number = 1
+) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
-      const { project } = sdk;
+      const { relationships: relationships_ } = await doFetchRelationshipsForAssetId(
+        id,
+        depth,
+        maxDepth
+      );
 
-      const [resultFrom, resultTo] = await Promise.all([
-        sdk.post(
-          `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
-          {
-            data: {
-              filter: {
-                sourceResource: 'asset',
-                sourceResourceId: `${id}`,
-              },
-            },
-          }
-        ),
-        sdk.post(
-          `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
-          {
-            data: {
-              filter: {
-                targetResource: 'asset',
-                targetResourceId: `${id}`,
-              },
-            },
-          }
-        ),
-      ]);
-
-      if (resultFrom.status === 200 && resultTo.status === 200) {
-        dispatch({
-          type: GET_RELATIONSHIPS,
-          payload: { items: resultFrom.data.items.concat(resultTo.data.items) },
-        });
-      } else {
-        throw new Error('Unable to fetch relationships for given asset');
-      }
+      dispatch({
+        type: GET_RELATIONSHIPS,
+        payload: { items: relationships_ },
+      });
     } catch (ex) {
       message.error('unable to retrieve relationship data');
     }
