@@ -24,7 +24,6 @@ import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 import FileUploadTab from './FileUploadTab';
 import ImageFilesTab from './ImageFilesTab';
 import ListFilesTab from './ListFilesTab';
-import PNIDViewer from './PNIDViewer';
 
 const { TabPane } = Tabs;
 
@@ -66,7 +65,7 @@ export const FileExplorerTabs: { [key in FileExplorerTabsType]: string } = {
   all: 'All',
   images: 'Images',
   documents: 'Documents',
-  pnid: 'P&IDs',
+  pnid: 'Interactive P&IDs',
   upload: 'Upload',
 };
 
@@ -83,7 +82,7 @@ export const FileExplorerMimeTypes: {
   all: [],
   images: ['image/jpeg', 'image/png'],
   documents: ['application/pdf', 'pdf', 'PDF'],
-  pnid: [],
+  pnid: ['application/svg+xml', 'image/svg+xml', 'svg', 'SVG'],
   upload: [],
 };
 
@@ -107,7 +106,7 @@ type State = {
   currentOnly: boolean;
   query: string;
   searchResults: FilesMetadata[];
-  selectedDocument?: FilesMetadataWithDownload;
+  selectedDocuments: FilesMetadataWithDownload[];
 };
 
 class FileExplorerComponent extends React.Component<Props, State> {
@@ -118,6 +117,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
     currentOnly: true,
     current: 0,
     searchResults: [],
+    selectedDocuments: [],
   };
 
   currentQuery: number = 0;
@@ -145,6 +145,11 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (prevProps.app.assetId !== this.props.app.assetId) {
       this.doSearch(this.state.query);
     }
+  }
+
+  get currentDocument() {
+    const { selectedDocuments } = this.state;
+    return selectedDocuments.length > 0 ? selectedDocuments[0] : undefined;
   }
 
   doSearch = async (query?: string) => {
@@ -210,6 +215,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (thisQuery === this.currentQuery) {
       trackSearchUsage('FileExplorer', 'File', { query, tab });
       this.setState({
+        current: 0,
         searchResults: results.slice(0, results.length),
         fetching: false,
       });
@@ -227,12 +233,38 @@ class FileExplorerComponent extends React.Component<Props, State> {
     this.props.fetchAssets(Array.from(extraAssets));
   };
 
-  onClickDocument = (documentId: FilesMetadata, index: number) => {
+  onClickDocument = (document: FilesMetadata, index: number) => {
     const { current, tab } = this.state;
-    this.setState({ selectedDocument: documentId });
+    this.setCurrentDocument(document);
     trackUsage('FileExplorer.SelectItem', {
       index: current * 20 + index,
       tab,
+    });
+  };
+
+  onDeleteDocumentClicked = async (fileId: number) => {
+    const { selectedDocuments } = this.state;
+    trackUsage('FilePreview.Delete', { fileId });
+    await sdk.files.delete([{ id: fileId }]);
+    this.doSearch(this.state.query);
+    this.setState({
+      selectedDocuments: selectedDocuments.filter(
+        document => document.id !== fileId
+      ),
+    });
+  };
+
+  setCurrentDocument = async (file: FilesMetadataWithDownload) => {
+    const { selectedDocuments } = this.state;
+    this.setState({
+      selectedDocuments: [file, ...selectedDocuments],
+    });
+  };
+
+  backToPreviousDocument = async () => {
+    const { selectedDocuments } = this.state;
+    this.setState({
+      selectedDocuments: selectedDocuments.slice(1),
     });
   };
 
@@ -241,35 +273,16 @@ class FileExplorerComponent extends React.Component<Props, State> {
   };
 
   render() {
-    const {
-      tab,
-      query,
-      selectedDocument,
-      searchResults,
-      current,
-      fetching,
-    } = this.state;
+    const { tab, query, searchResults, current, fetching } = this.state;
     const { assetId } = this.props.app;
-    if (selectedDocument) {
-      if (
-        selectedDocument.mimeType &&
-        selectedDocument.mimeType.toLowerCase().includes('svg')
-      ) {
-        return (
-          <PNIDViewer
-            selectedDocument={selectedDocument}
-            unselectDocument={() =>
-              this.setState({ selectedDocument: undefined })
-            }
-          />
-        );
-      }
+    const { currentDocument } = this;
+    if (currentDocument) {
       return (
         <FilePreview
-          selectedDocument={selectedDocument}
-          unselectDocument={() =>
-            this.setState({ selectedDocument: undefined })
-          }
+          selectedDocument={currentDocument}
+          deleteFile={this.onDeleteDocumentClicked}
+          unselectDocument={this.backToPreviousDocument}
+          selectDocument={this.setCurrentDocument}
         />
       );
     }

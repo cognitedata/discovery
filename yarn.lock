@@ -1030,10 +1030,10 @@
   resolved "https://registry.yarnpkg.com/@cognite/react-auth/-/react-auth-2.2.4.tgz#19797cc1814febbb2db09dcbf9d5e0890cf93e47"
   integrity sha512-eD47ukzg6rHVE+k5mQ6B5rxBosSsncKuTChq122XmQVYlo9l6p+Zapm+K356T7IIdVQYg6RUlACkYkqc6hE0SQ==
 
-"@cognite/sdk@2.7.1":
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/@cognite/sdk/-/sdk-2.7.1.tgz#07374edaa36b8c580db884cebba7db1034fc6371"
-  integrity sha512-jydhTU6H0w2nSLUIUrjadd00VinCECjvRgRJVb8aB/5+J/u7DGN8C89z438YyT/9tpnczV3+2HgTzyvdovy1Rw==
+"@cognite/sdk@^2.7.2":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@cognite/sdk/-/sdk-2.7.2.tgz#be4370a2267b0c949e644ddd363900e7c6084e11"
+  integrity sha512-xcBXCiUB+wuK0VO7HBetW3ZcEWED3lHTlp+8nKNIymV4Rjn2gC2ZzsYXpZcG9+/tBATOIP5HS8v8mYPQrfBEcA==
   dependencies:
     cross-fetch "^3.0.4"
     lodash "^4.17.11"
@@ -4925,7 +4925,7 @@ debug@^4.0.1, debug@^4.1.0, debug@^4.1.1:
     ms "^2.1.1"
 
 debug@ngokevin/debug#noTimestamp:
-  version "2.6.9"
+  version "2.2.0"
   resolved "https://codeload.github.com/ngokevin/debug/tar.gz/ef5f8e66d49ce8bc64c6f282c15f8b7164409e3a"
 
 decamelize@^1.2.0:
