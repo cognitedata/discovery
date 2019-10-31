@@ -66,7 +66,7 @@ export const FileExplorerTabs: { [key in FileExplorerTabsType]: string } = {
   all: 'All',
   images: 'Images',
   documents: 'Documents',
-  pnid: 'P&IDs',
+  pnid: 'Interactive P&IDs',
   upload: 'Upload',
 };
 
@@ -83,7 +83,7 @@ export const FileExplorerMimeTypes: {
   all: [],
   images: ['image/jpeg', 'image/png'],
   documents: ['application/pdf', 'pdf', 'PDF'],
-  pnid: [],
+  pnid: ['application/svg+xml', 'image/svg+xml', 'svg', 'SVG'],
   upload: [],
 };
 
