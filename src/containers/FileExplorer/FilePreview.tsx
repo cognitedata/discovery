@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, message, Spin, Table, Icon, Pagination, Tabs } from 'antd';
+import { Button, Icon, Pagination, Tabs } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -12,7 +12,6 @@ import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState, setAssetId } from '../../modules/app';
 import { sdk } from '../../index';
-import LoaderBPSvg from '../../assets/loader-bp.svg';
 import {
   FilesMetadataWithDownload,
   FileExplorerTabsType,
@@ -20,6 +19,7 @@ import {
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
 import PNIDViewer from './PNIDViewer';
+import FilePreviewDocumentTab from './FilePreviewDocumentTab';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -76,22 +76,6 @@ const ItemPreview = styled.div<ItemPreviewProps>`
   }
   .preview img {
     width: 100%;
-  }
-`;
-
-const SpinWrapper = styled.div`
-  flex: 1;
-  display: flex;
-  height: 100%;
-
-  && > * {
-    align-self: center;
-    margin: 0 auto;
-  }
-
-  && img {
-    width: 36px;
-    height: 36px;
   }
 `;
 
@@ -156,11 +140,7 @@ type Props = {
 
 type State = {
   filePreviewUrl?: string;
-  detectingAsset: boolean;
   hideSidebar: boolean;
-  assetResults?: { page: number; name: string }[];
-  convertingToSvg?: string;
-  selectedAssetId?: number;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
@@ -169,7 +149,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
-      detectingAsset: false,
       hideSidebar: false,
       pdfState: {
         numPages: 0,
@@ -246,108 +225,9 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     return blob;
   };
 
-  detectAssetClicked = async (fileId: number) => {
-    this.setState({ detectingAsset: true });
-    try {
-      trackUsage('FilePreview.DetectAsset', { fileId });
-      const response = await sdk.post(
-        `/api/playground/projects/${sdk.project}/context/entity_extraction/extract`,
-        {
-          data: {
-            fileId,
-          },
-        }
-      );
-
-      const names: { page: number; name: string }[] = [];
-      response.data.items.forEach(
-        (match: { entity: string; pages: number[] }) => {
-          const name = match.entity;
-          match.pages.forEach(page => {
-            names.push({ page, name });
-          });
-        }
-      );
-
-      names.sort((a, b) => {
-        if (a.page !== b.page) return a.page - b.page;
-        return a.name.localeCompare(b.name);
-      });
-
-      this.setState({ assetResults: names });
-    } catch (e) {
-      message.error('Unable to process document, please try again');
-      this.setState({ assetResults: undefined, detectingAsset: false });
-    }
-  };
-
-  onAssetSelected = async (asset: { page: number; name: string }) => {
-    trackUsage('FilePreview.DetectAsset.AssetSelected', { asset });
-    const [result] = await sdk.assets.search({
-      search: { name: asset.name },
-    });
-    this.props.setAssetId(result.rootId, result.id);
-    this.setState(state => ({
-      ...state,
-      pdfState: {
-        ...state.pdfState,
-        page: asset.page,
-      },
-    }));
-  };
-
-  renderDocumentAssetDetection = () => {
-    const { assetResults, pdfState } = this.state;
-    if (!assetResults) {
-      return (
-        <SpinWrapper>
-          <Spin
-            indicator={<img src={LoaderBPSvg} alt="" />}
-            tip="Extracting assets..."
-          />
-        </SpinWrapper>
-      );
-    }
-    return (
-      <Wrapper>
-        <div>
-          <Button
-            onClick={() =>
-              this.setState({ detectingAsset: false, assetResults: undefined })
-            }
-          >
-            <Icon type="arrow-left" />
-            Back To File Information
-          </Button>
-        </div>
-        <div style={{ flex: 1, marginTop: '12px' }}>
-          <Table
-            onRowClick={this.onAssetSelected}
-            pagination={false}
-            rowClassName={item =>
-              item.page === pdfState.page ? 'current' : ''
-            }
-            columns={[
-              {
-                key: 'name',
-                title: 'Asset Name',
-                dataIndex: 'name',
-              },
-              {
-                key: 'page',
-                title: 'Page in Document',
-                dataIndex: 'page',
-              },
-            ]}
-            dataSource={assetResults}
-          />
-        </div>
-      </Wrapper>
-    );
-  };
-
   renderDefaultContentView = () => {
     const { selectedDocument } = this.props;
+    const { pdfState } = this.state;
     const {
       name,
       source,
@@ -373,15 +253,18 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           </TabPane>
           {this.type === 'documents' && (
             <TabPane tab="Utilities" key="2">
-              <h2>Detect Assets In Document</h2>
-              <p>Find mentioned Assets in your document.</p>
-              <Button
-                size="large"
-                type="primary"
-                onClick={() => this.detectAssetClicked(id)}
-              >
-                Detect Assets
-              </Button>
+              <FilePreviewDocumentTab
+                selectedDocument={selectedDocument}
+                downloadFile={this.downloadFile}
+                selectDocument={this.props.selectDocument}
+                unselectDocument={this.props.unselectDocument}
+                deleteFile={this.props.deleteFile}
+                isPnIDParsingAllowed={pdfState.numPages === 1}
+                currentPage={pdfState.page}
+                setPage={page =>
+                  this.setState({ pdfState: { ...pdfState, page } })
+                }
+              />
             </TabPane>
           )}
         </Tabs>
@@ -426,10 +309,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                   },
                 });
               }}
-              onLoadError={() => {
+              onLoadError={async () => {
                 trackUsage('FilePreview.PDFLoadingFailed', {
                   fileId: this.props.selectedDocument.id,
                 });
+                await this.fetchFileUrl();
                 this.setState({
                   pdfState: {
                     numPages: 0,
@@ -487,7 +371,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   render() {
-    const { detectingAsset, hideSidebar } = this.state;
+    const { hideSidebar } = this.state;
 
     return (
       <Wrapper>
@@ -512,9 +396,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             >
               <Icon type={hideSidebar ? 'caret-left' : 'caret-right'} />
             </HideButton>
-            {detectingAsset
-              ? this.renderDocumentAssetDetection()
-              : this.renderDefaultContentView()}
+            {this.renderDefaultContentView()}
           </div>
         </ItemPreview>
       </Wrapper>
