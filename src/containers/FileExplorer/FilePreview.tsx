@@ -30,6 +30,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
 import AssetSelect from '../../components/AssetSelect';
 import { GCSUploader } from '../../components/FileUploader';
+import PNIDViewer from './PNIDViewer';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -57,19 +58,28 @@ const Wrapper = styled.div`
   }
 `;
 
-const ItemPreview = styled.div`
+type ItemPreviewProps = {
+  hideSidebar: string;
+};
+const ItemPreview = styled.div<ItemPreviewProps>`
   display: flex;
   flex: 1;
   margin-top: 12px;
   overflow: hidden;
   .content {
-    flex: 2;
+    border-left: 4px solid #dedede;
+    padding-left: 12px;
+    flex: ${props => (props.hideSidebar === 'true' ? '0' : '1 300px')};
+    min-width: ${props => (props.hideSidebar === 'true' ? '0px' : '400px')};
     overflow: auto;
+    position: relative;
+    overflow: visible;
+    width: 0;
+    transition: 0.4s all;
   }
   .preview {
-    flex: 1 400px;
+    flex: 3;
     margin-right: 12px;
-    min-width: 400px;
     background-repeat: no-repeat;
     background-size: contain;
     display: flex;
@@ -104,6 +114,34 @@ const StyledPDFViewer = styled(Document)`
   }
 `;
 
+const HideButton = styled(Button)`
+  && {
+    background: #dedede;
+    border: none;
+    position: absolute;
+    left: -21px;
+    width: 18px !important;
+    padding: 0;
+    height: 60px;
+    top: 12px;
+    display: flex;
+    border-radius: 0px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    align-items: center;
+  }
+
+  &&:hover,
+  &&:active,
+  &&:focus {
+    background: #dedede !important;
+  }
+
+  && > * {
+    margin: 0 auto;
+  }
+`;
+
 const ButtonRow = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -130,6 +168,7 @@ type Props = {
 type State = {
   filePreviewUrl?: string;
   detectingAsset: boolean;
+  hideSidebar: boolean;
   assetResults?: { page: number; name: string }[];
   convertingToSvg?: string;
   selectedAssetId?: number;
@@ -142,6 +181,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
       detectingAsset: false,
+      hideSidebar: false,
       pdfState: {
         numPages: 0,
         page: 1,
@@ -170,6 +210,9 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
     if (mimeType.toLowerCase().indexOf('pdf') !== -1) {
       return 'documents';
+    }
+    if (mimeType.toLowerCase().indexOf('svg') !== -1) {
+      return 'pnid';
     }
     if (
       mimeType.toLowerCase().indexOf('png') !== -1 ||
@@ -588,8 +631,31 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     );
   };
 
+  renderImage = () => {
+    const { filePreviewUrl } = this.state;
+    return (
+      <div
+        className="preview"
+        style={{ backgroundImage: `url(${filePreviewUrl})` }}
+      >
+        {!filePreviewUrl && <p>Loading...</p>}
+      </div>
+    );
+  };
+
+  renderPnID = () => {
+    return (
+      <div className="preview">
+        <PNIDViewer
+          selectedDocument={this.props.selectedDocument}
+          unselectDocument={this.props.unselectDocument}
+        />
+      </div>
+    );
+  };
+
   render() {
-    const { filePreviewUrl, detectingAsset } = this.state;
+    const { detectingAsset, hideSidebar } = this.state;
 
     return (
       <Wrapper>
@@ -599,17 +665,21 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             BACK
           </Button>
         </div>
-        <ItemPreview>
-          {this.type === 'images' && (
-            <div
-              className="preview"
-              style={{ backgroundImage: `url(${filePreviewUrl})` }}
-            >
-              {!filePreviewUrl && <p>Loading...</p>}
-            </div>
-          )}
+        <ItemPreview hideSidebar={hideSidebar ? 'true' : 'false'}>
+          {this.type === 'images' && this.renderImage()}
           {this.type === 'documents' && this.renderPDF()}
+          {this.type === 'pnid' && this.renderPnID()}
           <div className="content">
+            <HideButton
+              onClick={() =>
+                this.setState(state => ({
+                  ...state,
+                  hideSidebar: !state.hideSidebar,
+                }))
+              }
+            >
+              <Icon type={hideSidebar ? 'caret-left' : 'caret-right'} />
+            </HideButton>
             {detectingAsset
               ? this.renderDocumentAssetDetection()
               : this.renderDefaultContentView()}
