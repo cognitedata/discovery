@@ -4925,7 +4925,7 @@ debug@^4.0.1, debug@^4.1.0, debug@^4.1.1:
     ms "^2.1.1"
 
 debug@ngokevin/debug#noTimestamp:
-  version "2.2.0"
+  version "2.6.9"
   resolved "https://codeload.github.com/ngokevin/debug/tar.gz/ef5f8e66d49ce8bc64c6f282c15f8b7164409e3a"
 
 decamelize@^1.2.0:
