@@ -1,21 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import {
-  Button,
-  message,
-  Spin,
-  Table,
-  Icon,
-  Pagination,
-  Tabs,
-  Divider,
-} from 'antd';
+import { Button, message, Spin, Table, Icon, Pagination, Tabs } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
-import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
+import { FilesMetadata } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -28,8 +19,6 @@ import {
 } from './FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
-import AssetSelect from '../../components/AssetSelect';
-import { GCSUploader } from '../../components/FileUploader';
 import PNIDViewer from './PNIDViewer';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -292,139 +281,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
   };
 
-  convertToPnIDClicked = async (
-    fileId: number,
-    selectedRootAssetId: number
-  ) => {
-    const { selectedDocument } = this.props;
-    let names: string[] = [];
-    const countRequest = await sdk.get(
-      `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${selectedRootAssetId}]`
-    );
-    const { count } = countRequest.data;
-    this.setState({ convertingToSvg: `Loading Assets (0%)` });
-    let results = await Promise.all(
-      [...Array(20).keys()].map(index =>
-        sdk.assets.list({
-          filter: { rootIds: [{ id: selectedRootAssetId }] },
-          limit: 1000,
-          // @ts-ignore
-          partition: `${index + 1}/20`,
-        })
-      )
-    );
-    names = names.concat(
-      results.reduce(
-        (prev, el) =>
-          prev.concat(el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))),
-        []
-      )
-    );
-    this.setState({
-      convertingToSvg: `Loading Assets (${Math.ceil(
-        (names.length / count) * 100
-      )}%)`,
-    });
-    const cursor = results[0].nextCursor;
-    while (cursor) {
-      // eslint-disable-next-line no-await-in-loop
-      results = await Promise.all(
-        [...Array(20).keys()].map(index =>
-          sdk.assets.list({
-            filter: { rootIds: [{ id: selectedRootAssetId }] },
-            limit: 1000,
-            cursor,
-            // @ts-ignore
-            partition: `${index + 1}/20`,
-          })
-        )
-      );
-      names = names.concat(
-        results.reduce(
-          (prev, el) =>
-            prev.concat(
-              el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))
-            ),
-          []
-        )
-      );
-      this.setState({
-        convertingToSvg: `Loading Assets (${Math.ceil(
-          (names.length / count) * 100
-        )}%)`,
-      });
-    }
-    this.setState({ convertingToSvg: 'Processing File' });
-
-    try {
-      trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
-      const newJob = await sdk.post(
-        `/api/playground/projects/${sdk.project}/context/pnid/parse`,
-        {
-          data: {
-            fileId,
-            entities: names,
-          },
-        }
-      );
-      if (newJob.status !== 200) {
-        message.error('Unable to process file to interactive P&ID');
-      } else {
-        const interval = setInterval(async () => {
-          const status = await sdk.get(
-            `/api/playground/projects/${sdk.project}/context/pnid/${newJob.data.jobId}`
-          );
-          if (status.status !== 200) {
-            clearInterval(interval);
-            message.error('Unable to process file to interactive P&ID');
-          } else if (status.data.status === 'Failed') {
-            clearInterval(interval);
-            message.error('Failed to process file to interactive P&ID');
-          } else if (status.data.status === 'Completed') {
-            clearInterval(interval);
-            this.setState({ convertingToSvg: 'Uploading Interactive P&ID' });
-            const data = await this.downloadFile(status.data.svgUrl);
-            // @ts-ignore
-            const newFile = await sdk.files.upload({
-              name: `Processed-${selectedDocument.name}.svg`,
-              mimeType: 'image/svg+xml',
-              assetIds: selectedDocument.assetIds,
-              metadata: {
-                original_file_id: `${fileId}`,
-              },
-            });
-
-            const uploader = await GCSUploader(
-              data,
-              (newFile as UploadFileMetadataResponse).uploadUrl!
-            );
-            sdk.files.update([
-              {
-                id: fileId,
-                update: {
-                  metadata: {
-                    set: {
-                      ...selectedDocument.metadata,
-                      processed_pnid_file_id: `${newFile.id}`,
-                    },
-                  },
-                },
-              },
-            ]);
-            await uploader.start();
-            setTimeout(() => {
-              this.setState({ convertingToSvg: undefined });
-              this.props.selectDocument(newFile);
-            }, 1000);
-          }
-        }, 1000);
-      }
-    } catch (e) {
-      message.error('Unable to convert to P&ID, please try again');
-      this.setState({ assetResults: undefined, detectingAsset: false });
-    }
-  };
-
   onAssetSelected = async (asset: { page: number; name: string }) => {
     trackUsage('FilePreview.DetectAsset.AssetSelected', { asset });
     const [result] = await sdk.assets.search({
@@ -492,7 +348,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   renderDefaultContentView = () => {
     const { selectedDocument } = this.props;
-    const { convertingToSvg, selectedAssetId, pdfState } = this.state;
     const {
       name,
       source,
@@ -526,29 +381,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                 onClick={() => this.detectAssetClicked(id)}
               >
                 Detect Assets
-              </Button>
-              <Divider />
-              <h2>Convert to Interactive P&ID</h2>
-              <p>
-                Navigate the asset hierarchy via clicking on the P&ID diagram.
-                This is only possible for PDFs with 1 page.
-              </p>
-              <AssetSelect
-                rootOnly
-                onAssetSelected={selectedId =>
-                  this.setState({ selectedAssetId: selectedId })
-                }
-              />
-              <br />
-              <br />
-              <Button
-                size="large"
-                type="primary"
-                disabled={!selectedAssetId && pdfState.numPages === 1}
-                onClick={() => this.convertToPnIDClicked(id, selectedAssetId!)}
-                loading={!!convertingToSvg}
-              >
-                {convertingToSvg || 'Convert to Clickable P&ID'}
               </Button>
             </TabPane>
           )}

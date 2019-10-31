@@ -8,30 +8,6 @@ import styled from 'styled-components';
 import { UploadFile } from 'antd/lib/upload/interface';
 import { sdk } from '../index';
 
-export const GCSUploader = (
-  file: Blob | UploadFile,
-  uploadUrl: string,
-  callback: (info: any) => void = () => {}
-) => {
-  // This is what is recommended from google when uploading files.
-  // https://github.com/QubitProducts/gcs-browser-upload
-  const chunkMultiple = Math.min(
-    Math.max(
-      2, // 0.5MB min chunks
-      Math.ceil((file.size / 20) * 262144) // will divide into 20 segments
-    ),
-    200 // 50 MB max
-  );
-
-  return new UploadGCS({
-    id: 'discovery-upload',
-    url: uploadUrl,
-    file,
-    chunkSize: 262144 * chunkMultiple,
-    onChunkUpload: callback,
-  });
-};
-
 const ButtonRow = styled.div`
   display: flex;
   margin-top: 20px;
@@ -233,10 +209,22 @@ class FileUploader extends React.Component<Props, State> {
         }),
       }));
 
-      this.currentUploads[file.uid] = await GCSUploader(
+      // This is what is recommended from google when uploading files.
+      // https://github.com/QubitProducts/gcs-browser-upload
+      const chunkMultiple = Math.min(
+        Math.max(
+          2, // 0.5MB min chunks
+          Math.ceil((file.size / 20) * 262144) // will divide into 20 segments
+        ),
+        200 // 50 MB max
+      );
+
+      this.currentUploads[file.uid] = new UploadGCS({
+        id: 'discovery-upload',
+        url: uploadUrl,
         file,
-        uploadUrl,
-        (info: any) => {
+        chunkSize: 262144 * chunkMultiple,
+        onChunkUpload: (info: any) => {
           file.response = info;
           file.percent = (info.uploadedBytes / info.totalBytes) * 100;
 
@@ -249,8 +237,8 @@ class FileUploader extends React.Component<Props, State> {
               return el;
             }),
           }));
-        }
-      );
+        },
+      });
 
       this.setState({ uploadStatus: STATUS.STARTED });
 
