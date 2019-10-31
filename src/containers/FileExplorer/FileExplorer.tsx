@@ -210,6 +210,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (thisQuery === this.currentQuery) {
       trackSearchUsage('FileExplorer', 'File', { query, tab });
       this.setState({
+        current: 0,
         searchResults: results.slice(0, results.length),
         fetching: false,
       });

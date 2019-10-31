@@ -253,7 +253,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   ) => {
     const { selectedDocument } = this.props;
     let names: string[] = [];
-    this.setState({ convertingToSvg: 'Loading Assets' });
+    const countRequest = await sdk.get(
+      `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${selectedRootAssetId}]`
+    );
+    const { count } = countRequest.data;
+    this.setState({ convertingToSvg: `Loading Assets (0%)` });
     let results = await Promise.all(
       [...Array(20).keys()].map(index =>
         sdk.assets.list({
@@ -267,10 +271,15 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     names = names.concat(
       results.reduce(
         (prev, el) =>
-          prev.append(el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))),
+          prev.concat(el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))),
         []
       )
     );
+    this.setState({
+      convertingToSvg: `Loading Assets (${Math.ceil(
+        (names.length / count) * 100
+      )}%)`,
+    });
     const cursor = results[0].nextCursor;
     while (cursor) {
       // eslint-disable-next-line no-await-in-loop
@@ -288,12 +297,17 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       names = names.concat(
         results.reduce(
           (prev, el) =>
-            prev.append(
+            prev.concat(
               el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))
             ),
           []
         )
       );
+      this.setState({
+        convertingToSvg: `Loading Assets (${Math.ceil(
+          (names.length / count) * 100
+        )}%)`,
+      });
     }
     this.setState({ convertingToSvg: 'Processing File' });
 
@@ -326,8 +340,9 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                 {
                   name: `Processed-${selectedDocument.name}.svg`,
                   mimeType: 'image/svg+xml',
+                  assetIds: selectedDocument.assetIds,
                   metadata: {
-                    orginal_file_id: `${fileId}`,
+                    original_file_id: `${fileId}`,
                   },
                 },
                 data
@@ -339,7 +354,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                     metadata: {
                       set: {
                         ...selectedDocument.metadata,
-                        processedFileId: `${newFile.id}`,
+                        processed_pnid_file_id: `${newFile.id}`,
                       },
                     },
                   },
@@ -424,7 +439,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   renderDefaultContentView = () => {
     const { selectedDocument } = this.props;
-    const { convertingToSvg, selectedAssetId } = this.state;
+    const { convertingToSvg, selectedAssetId, pdfState } = this.state;
     const {
       name,
       source,
@@ -476,6 +491,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               <h2>Convert to Interactive P&ID</h2>
               <p>
                 Navigate the asset hierarchy via clicking on the P&ID diagram.
+                This is only possible for PDFs with 1 page.
               </p>
               <AssetSelect
                 rootOnly
@@ -483,14 +499,16 @@ class MapModelToAssetForm extends React.Component<Props, State> {
                   this.setState({ selectedAssetId: selectedId })
                 }
               />
+              <br />
+              <br />
               <Button
                 size="large"
                 type="primary"
-                disabled={!selectedAssetId}
+                disabled={!selectedAssetId && pdfState.numPages === 1}
                 onClick={() => this.convertToPnIDClicked(id, selectedAssetId!)}
                 loading={!!convertingToSvg}
               >
-                Convert to Clickable P&ID
+                {convertingToSvg || 'Convert to Clickable P&ID'}
               </Button>
             </TabPane>
           )}

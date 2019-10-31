@@ -38,45 +38,40 @@ class AssetSelect extends Component<Props, State> {
     const { rootOnly } = this.props;
     this.searchId += 1;
     const searchIndex = this.searchId;
-    if (query.length > 0) {
-      this.setState({ fetching: true });
-      const [rootSearchResults, searchResults] = await Promise.all([
-        sdk.post(`/api/playground/projects/${sdk.project}/assets/search`, {
-          data: {
-            search: { query },
-            filter: {
-              root: true,
-            },
-            limit: 100,
+    this.setState({ fetching: true });
+    const [rootSearchResults, searchResults] = await Promise.all([
+      sdk.post(`/api/playground/projects/${sdk.project}/assets/search`, {
+        data: {
+          search: { ...(query.length > 0 && { query }) },
+          filter: {
+            root: true,
           },
-        }),
+          limit: 100,
+        },
+      }),
+      ...(!rootOnly
+        ? [
+            sdk.post(`/api/playground/projects/${sdk.project}/assets/search`, {
+              data: {
+                search: { ...(query.length > 0 && { query }) },
+                limit: 100,
+              },
+            }),
+          ]
+        : []),
+    ]);
+    if (searchIndex === this.searchId) {
+      this.setState({
         ...(!rootOnly
-          ? [
-              sdk.post(
-                `/api/playground/projects/${sdk.project}/assets/search`,
-                {
-                  data: {
-                    search: { query },
-                    limit: 100,
-                  },
-                }
+          ? {
+              searchResults: searchResults.data.items.filter(
+                (el: CogniteAsset) => el.rootId !== el.id
               ),
-            ]
-          : []),
-      ]);
-      if (searchIndex === this.searchId) {
-        this.setState({
-          ...(!rootOnly
-            ? {
-                searchResults: searchResults.data.items.filter(
-                  (el: CogniteAsset) => el.rootId !== el.id
-                ),
-              }
-            : { searchResults: [] }),
-          rootSearchResults: rootSearchResults.data.items,
-          fetching: false,
-        });
-      }
+            }
+          : { searchResults: [] }),
+        rootSearchResults: rootSearchResults.data.items,
+        fetching: false,
+      });
     }
   };
 
