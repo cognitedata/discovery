@@ -115,68 +115,56 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     fileId: number,
     selectedRootAssetId: number
   ) => {
+    trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
     const { selectedDocument } = this.props;
     let names: string[] = [];
     const countRequest = await sdk.get(
       `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${selectedRootAssetId}]`
     );
     const { count } = countRequest.data;
+    let currentCount = 0;
     this.setState({ convertingToSvg: `Loading Assets (0%)` });
-    let results = await Promise.all(
-      [...Array(20).keys()].map(index =>
-        sdk.assets.list({
+    const results = await Promise.all(
+      [...Array(20).keys()].map(async index => {
+        let items: string[] = [];
+        let response = await sdk.assets.list({
           filter: { rootIds: [{ id: selectedRootAssetId }] },
           limit: 1000,
           // @ts-ignore
           partition: `${index + 1}/20`,
-        })
-      )
-    );
-    names = names.concat(
-      results.reduce(
-        (prev, el) =>
-          prev.concat(el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))),
-        []
-      )
-    );
-    this.setState({
-      convertingToSvg: `Loading Assets (${Math.ceil(
-        (names.length / count) * 100
-      )}%)`,
-    });
-    const cursor = results[0].nextCursor;
-    while (cursor) {
-      // eslint-disable-next-line no-await-in-loop
-      results = await Promise.all(
-        [...Array(20).keys()].map(index =>
-          sdk.assets.list({
+        });
+        items = items.concat(response.items.map((el: Asset) => el.name));
+        currentCount += response.items.length;
+        this.setState({
+          convertingToSvg: `Loading Assets (${Math.ceil(
+            (currentCount / count) * 100
+          )}%)`,
+        });
+        while (response.nextCursor) {
+          // eslint-disable-next-line no-await-in-loop
+          response = await sdk.assets.list({
             filter: { rootIds: [{ id: selectedRootAssetId }] },
             limit: 1000,
-            cursor,
+            cursor: response.nextCursor,
             // @ts-ignore
             partition: `${index + 1}/20`,
-          })
-        )
-      );
-      names = names.concat(
-        results.reduce(
-          (prev, el) =>
-            prev.concat(
-              el.items.map((a: Asset) => a.name.replace(/\s+/g, '-'))
-            ),
-          []
-        )
-      );
-      this.setState({
-        convertingToSvg: `Loading Assets (${Math.ceil(
-          (names.length / count) * 100
-        )}%)`,
-      });
-    }
+          });
+          items = items.concat(response.items.map((el: Asset) => el.name));
+          currentCount += response.items.length;
+          this.setState({
+            convertingToSvg: `Loading Assets (${Math.ceil(
+              (currentCount / count) * 100
+            )}%)`,
+          });
+        }
+        return items;
+      })
+    );
+    names = names.concat(results.reduce((prev, el) => prev.concat(el), []));
+
     this.setState({ convertingToSvg: 'Processing File' });
 
     try {
-      trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
       const newJob = await sdk.post(
         `/api/playground/projects/${sdk.project}/context/pnid/parse`,
         {
