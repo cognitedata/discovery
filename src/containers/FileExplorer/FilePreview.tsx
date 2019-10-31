@@ -68,6 +68,7 @@ const ItemPreview = styled.div<ItemPreviewProps>`
   }
   .preview {
     flex: 3;
+    overflow: hidden;
     margin-right: 12px;
     background-repeat: no-repeat;
     background-size: contain;
