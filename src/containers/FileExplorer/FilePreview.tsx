@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
+<<<<<<< HEAD
 import {
   Button,
   message,
@@ -11,11 +12,18 @@ import {
   Tabs,
   Divider,
 } from 'antd';
+=======
+import { Button, message, Spin, Table, Icon, Pagination, Tabs } from 'antd';
+>>>>>>> dl/file_redesign
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
+<<<<<<< HEAD
 import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
+=======
+import { FilesMetadata } from '@cognite/sdk';
+>>>>>>> dl/file_redesign
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -28,8 +36,11 @@ import {
 } from './FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
+<<<<<<< HEAD
 import AssetSelect from '../../components/AssetSelect';
 import { GCSUploader } from '../../components/FileUploader';
+=======
+>>>>>>> dl/file_redesign
 import PNIDViewer from './PNIDViewer';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -527,6 +538,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               >
                 Detect Assets
               </Button>
+<<<<<<< HEAD
               <Divider />
               <h2>Convert to Interactive P&ID</h2>
               <p>
@@ -550,6 +562,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               >
                 {convertingToSvg || 'Convert to Clickable P&ID'}
               </Button>
+=======
+>>>>>>> dl/file_redesign
             </TabPane>
           )}
         </Tabs>
