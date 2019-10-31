@@ -13,9 +13,6 @@ import { RootState } from '../reducers/index';
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
 
-export const getApiKeyFromUrl = () =>
-  queryString.parse(window.location.search).apikey as string;
-
 type Props = {
   app: AppState;
   match: { params: { tenant: string }; path: string };
@@ -49,7 +46,6 @@ class Auth extends React.Component<Props, State> {
       app: { cdfEnv, tenant },
     } = this.props;
     const fromUrlCdfEnv = getCdfEnvFromUrl();
-    const fromUrlApiKey = getApiKeyFromUrl();
     if (!cdfEnv && fromUrlCdfEnv) {
       this.props.setCdfEnv(fromUrlCdfEnv);
     }
@@ -57,9 +53,7 @@ class Auth extends React.Component<Props, State> {
       if (tenant) {
         this.props.replace({
           pathname: this.props.history.location.pathname,
-          search: `?env=${cdfEnv}${
-            fromUrlApiKey ? `&apikey=${fromUrlApiKey}` : ''
-          }`,
+          search: `?env=${cdfEnv}`,
         });
       } else {
         this.props.setCdfEnv(undefined);
@@ -75,18 +69,8 @@ class Auth extends React.Component<Props, State> {
       this.props.setTenant(pathTenant);
     }
 
-    let status;
-
-    if (fromUrlApiKey) {
-      await sdk.loginWithApiKey({
-        project: tenant || pathTenant,
-        apiKey: fromUrlApiKey,
-      });
-      status = true;
-    } else {
-      await sdk.loginWithOAuth({ project: tenant || pathTenant });
-      status = await sdk.authenticate();
-    }
+    await sdk.loginWithOAuth({ project: tenant || pathTenant });
+    const status = await sdk.authenticate();
 
     this.setState({
       auth: status !== null,
