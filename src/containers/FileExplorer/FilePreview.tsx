@@ -15,7 +15,7 @@ import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
-import { Asset, FilesMetadata } from '@cognite/sdk';
+import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
@@ -29,6 +29,7 @@ import {
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
 import AssetSelect from '../../components/AssetSelect';
+import { GCSUploader } from '../../components/FileUploader';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -115,6 +116,7 @@ const ButtonRow = styled.div`
 type OrigProps = {
   selectedDocument: FilesMetadataWithDownload;
   selectDocument: (file: FilesMetadata) => void;
+  deleteFile: (fileId: number) => void;
   unselectDocument: () => void;
 };
 
@@ -190,26 +192,26 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   onDownloadClicked = async () => {
     const { selectedDocument } = this.props;
+    trackUsage('FilePreview.DownloadFile', { filedId: selectedDocument.id });
     const [url] = await sdk.files.getDownloadUrls([
       { id: selectedDocument.id },
     ]);
-    this.downloadFile(url.downloadUrl);
+    const blob = await this.downloadFile(url.downloadUrl);
+    saveData(blob, selectedDocument.name); // saveAs is a part of FileSaver.js
   };
 
-  downloadFile = async (url: string, callback?: (response: any) => void) => {
+  onDeleteClicked = async () => {
     const { selectedDocument } = this.props;
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.responseType = 'blob';
+    this.props.deleteFile(selectedDocument.id);
+  };
 
-    xhr.onload = () => {
-      if (callback) {
-        callback(xhr.response);
-      } else {
-        saveData(xhr.response, selectedDocument.name); // saveAs is a part of FileSaver.js
-      }
-    };
-    xhr.send();
+  downloadFile = async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Network response was not ok.');
+    }
+    const blob = await response.blob();
+    return blob;
   };
 
   detectAssetClicked = async (fileId: number) => {
@@ -338,34 +340,39 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           } else if (status.data.status === 'Completed') {
             clearInterval(interval);
             this.setState({ convertingToSvg: 'Uploading Interactive P&ID' });
-            this.downloadFile(status.data.svgUrl, async data => {
-              const newFile = await sdk.files.upload(
-                {
-                  name: `Processed-${selectedDocument.name}.svg`,
-                  mimeType: 'image/svg+xml',
-                  assetIds: selectedDocument.assetIds,
+            const data = await this.downloadFile(status.data.svgUrl);
+            // @ts-ignore
+            const newFile = await sdk.files.upload({
+              name: `Processed-${selectedDocument.name}.svg`,
+              mimeType: 'image/svg+xml',
+              assetIds: selectedDocument.assetIds,
+              metadata: {
+                original_file_id: `${fileId}`,
+              },
+            });
+
+            const uploader = await GCSUploader(
+              data,
+              (newFile as UploadFileMetadataResponse).uploadUrl!
+            );
+            sdk.files.update([
+              {
+                id: fileId,
+                update: {
                   metadata: {
-                    original_file_id: `${fileId}`,
-                  },
-                },
-                data
-              );
-              sdk.files.update([
-                {
-                  id: fileId,
-                  update: {
-                    metadata: {
-                      set: {
-                        ...selectedDocument.metadata,
-                        processed_pnid_file_id: `${newFile.id}`,
-                      },
+                    set: {
+                      ...selectedDocument.metadata,
+                      processed_pnid_file_id: `${newFile.id}`,
                     },
                   },
                 },
-              ]);
+              },
+            ]);
+            await uploader.start();
+            setTimeout(() => {
               this.setState({ convertingToSvg: undefined });
               this.props.selectDocument(newFile);
-            });
+            }, 1000);
           }
         }, 1000);
       }
@@ -455,21 +462,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       <>
         <h1>Name: {name}</h1>
         <ButtonRow>
-          <Button onClick={() => message.info('Coming soon...')}>
-            Link to Asset
-          </Button>
-          <br />
-          <br />
-          <Button onClick={() => message.info('Coming soon...')}>
-            Add Labels
-          </Button>
-          <Button onClick={() => message.info('Coming soon...')}>
-            Add Type
-          </Button>
-          <Button onClick={() => message.info('Coming soon...')}>
-            Add Metadata
-          </Button>
           <Button onClick={this.onDownloadClicked}>Download File</Button>
+          <Button onClick={this.onDeleteClicked}>Delete File</Button>
         </ButtonRow>
         <Tabs defaultActiveKey="1">
           <TabPane tab="Information" key="1">

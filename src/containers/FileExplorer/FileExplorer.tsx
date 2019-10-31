@@ -237,6 +237,19 @@ class FileExplorerComponent extends React.Component<Props, State> {
     });
   };
 
+  onDeleteDocumentClicked = async (fileId: number) => {
+    const { selectedDocument } = this.state;
+    trackUsage('FilePreview.Delete', { fileId });
+    await sdk.files.delete([{ id: fileId }]);
+    this.doSearch(this.state.query);
+    this.setState({
+      selectedDocument:
+        selectedDocument && selectedDocument.id === fileId
+          ? undefined
+          : selectedDocument,
+    });
+  };
+
   setPage = (page: number) => {
     this.setState({ current: page });
   };
@@ -268,6 +281,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
       return (
         <FilePreview
           selectedDocument={selectedDocument}
+          deleteFile={this.onDeleteDocumentClicked}
           unselectDocument={() =>
             this.setState({ selectedDocument: undefined })
           }
