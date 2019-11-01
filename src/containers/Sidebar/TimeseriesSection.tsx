@@ -78,21 +78,16 @@ class TimeseriesSection extends React.Component<Props, State> {
     }
     this.searchTimeseriesId += 1;
     const id = this.searchTimeseriesId;
-    const results = await sdk.post(
-      `/api/playground/projects/${sdk.project}/timeseries/search`,
-      {
-        data: {
-          filter: {
-            ...(assetId && { assetIds: [assetId] }),
-          },
-          limit: 1000,
-          search: { query },
-        },
-      }
-    );
+    const results = await sdk.timeseries.search({
+      filter: {
+        ...(assetId && { assetIds: [assetId] }),
+      },
+      limit: 1000,
+      search: { query },
+    });
     if (this.searchTimeseriesId === id) {
       this.setState({
-        currentFilterResults: results.data.items.map(
+        currentFilterResults: results.map(
           (el: GetTimeSeriesMetadataDTO) => el.id
         ),
       });
