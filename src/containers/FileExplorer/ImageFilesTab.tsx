@@ -112,7 +112,7 @@ class ImageFilesTab extends React.Component<Props, State> {
             return;
           }
           const response = await sdk.get(
-            `https://api.cognitedata.com/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
+            `/api/playground/projects/${sdk.project}/files/icon?id=${result.id}`,
             {
               responseType: 'arraybuffer',
               headers: {
