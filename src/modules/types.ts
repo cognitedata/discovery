@@ -41,7 +41,7 @@ export function removeTypeFromAsset(type: Type, asset: Asset) {
 
     const { project } = sdk;
     await sdk.post(
-      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`,
+      `/api/0.6/projects/${project}/assets/${asset.id}/update`,
       {
         data: body,
       }
@@ -73,7 +73,7 @@ export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
 
     const { project } = sdk;
     await sdk.post(
-      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/${asset.id}/update`,
+      `/api/0.6/projects/${project}/assets/${asset.id}/update`,
       {
         data: body,
       }
@@ -91,7 +91,7 @@ export function fetchTypes() {
 
     const { project } = sdk;
     const result = await sdk.get(
-      `https://api.cognitedata.com/api/0.6/projects/${project}/assets/types`
+      `/api/0.6/projects/${project}/assets/types`
     );
 
     if (result) {

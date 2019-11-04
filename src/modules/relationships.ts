@@ -60,28 +60,22 @@ export function fetchRelationshipsForAssetId(id: number) {
       const { project } = sdk;
 
       const [resultFrom, resultTo] = await Promise.all([
-        sdk.post(
-          `/api/playground/projects/${project}/relationships/list`,
-          {
-            data: {
-              filter: {
-                sourceResource: 'asset',
-                sourceResourceId: `${id}`,
-              },
+        sdk.post(`/api/playground/projects/${project}/relationships/list`, {
+          data: {
+            filter: {
+              sourceResource: 'asset',
+              sourceResourceId: `${id}`,
             },
-          }
-        ),
-        sdk.post(
-          `/api/playground/projects/${project}/relationships/list`,
-          {
-            data: {
-              filter: {
-                targetResource: 'asset',
-                targetResourceId: `${id}`,
-              },
+          },
+        }),
+        sdk.post(`/api/playground/projects/${project}/relationships/list`, {
+          data: {
+            filter: {
+              targetResource: 'asset',
+              targetResourceId: `${id}`,
             },
-          }
-        ),
+          },
+        }),
       ]);
 
       if (resultFrom.status === 200 && resultTo.status === 200) {
