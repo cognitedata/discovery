@@ -38,7 +38,7 @@ export function fetchRelationships() {
     const { project } = sdk;
     try {
       const response = await sdk.get(
-        `https://api.cognitedata.com/api/playground/projects/${project}/relationships`
+        `/api/playground/projects/${project}/relationships`
       );
 
       if (response.status === 200) {
@@ -61,7 +61,7 @@ export function fetchRelationshipsForAssetId(id: number) {
 
       const [resultFrom, resultTo] = await Promise.all([
         sdk.post(
-          `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
+          `/api/playground/projects/${project}/relationships/list`,
           {
             data: {
               filter: {
@@ -72,7 +72,7 @@ export function fetchRelationshipsForAssetId(id: number) {
           }
         ),
         sdk.post(
-          `https://api.cognitedata.com/api/playground/projects/${project}/relationships/list`,
+          `/api/playground/projects/${project}/relationships/list`,
           {
             data: {
               filter: {
