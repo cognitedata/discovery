@@ -40,7 +40,7 @@ class AssetSelect extends Component<Props, State> {
     const searchIndex = this.searchId;
     this.setState({ fetching: true });
     const [rootSearchResults, searchResults] = await Promise.all([
-      sdk.post(`/api/playground/projects/${sdk.project}/assets/search`, {
+      sdk.post(`/api/v1/projects/${sdk.project}/assets/search`, {
         data: {
           search: { ...(query.length > 0 && { query }) },
           filter: {
@@ -51,7 +51,7 @@ class AssetSelect extends Component<Props, State> {
       }),
       ...(!rootOnly
         ? [
-            sdk.post(`/api/playground/projects/${sdk.project}/assets/search`, {
+            sdk.post(`/api/v1/projects/${sdk.project}/assets/search`, {
               data: {
                 search: { ...(query.length > 0 && { query }) },
                 limit: 100,
