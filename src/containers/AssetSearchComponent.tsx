@@ -942,6 +942,7 @@ class AssetSearch extends Component<Props, State> {
       allFilters.push(
         <BetterTag
           closable
+          key="query"
           onClose={() =>
             this.setState({
               query: '',
@@ -979,6 +980,8 @@ class AssetSearch extends Component<Props, State> {
         return (
           <BetterTag
             closable
+            // eslint-disable-next-line react/no-array-index-key
+            key={`${filter.type}-${i}`}
             onClose={() =>
               this.setState({
                 filters: [...filters.slice(0, i), ...filters.slice(i + 1)],
@@ -994,6 +997,7 @@ class AssetSearch extends Component<Props, State> {
       allFilters.push(
         <BetterTag
           closable
+          key="root"
           onClose={() =>
             this.setState({
               onlyRootAsset: false,
