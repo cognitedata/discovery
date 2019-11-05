@@ -328,7 +328,7 @@ class AssetSearch extends Component<Props, State> {
       query,
     });
     const results = await sdk.post(
-      `/api/playground/projects/${sdk.project}/assets/search`,
+      `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
           search: { query },
@@ -345,7 +345,7 @@ class AssetSearch extends Component<Props, State> {
       query,
     });
     const results = await sdk.post(
-      `/api/playground/projects/${sdk.project}/assets/search`,
+      `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
           search: { query },
@@ -427,7 +427,7 @@ class AssetSearch extends Component<Props, State> {
 
       if (query || filterMap.events.length === 0) {
         results = (await sdk.post(
-          `/api/playground/projects/${sdk.project}/assets/search`,
+          `/api/v1/projects/${sdk.project}/assets/search`,
           {
             data: {
               limit: 100,
@@ -550,7 +550,7 @@ class AssetSearch extends Component<Props, State> {
       let results: GetTimeSeriesMetadataDTO[] = [];
 
       results = (await sdk.post(
-        `/api/playground/projects/${sdk.project}/timeseries/search`,
+        `/api/v1/projects/${sdk.project}/timeseries/search`,
         {
           data: {
             limit: 100,
