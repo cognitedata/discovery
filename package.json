@@ -12,7 +12,7 @@
     "@cognite/gearbox": "^1.9.0",
     "@cognite/griff-react": "^0.5.0-rc.54",
     "@cognite/react-auth": "^2.2.3",
-    "@cognite/sdk": "^2.7.2",
+    "@cognite/sdk": "2.10.0",
     "@emotion/core": "^10.0.9",
     "@emotion/styled": "^10.0.9",
     "@types/d3": "^5.7.2",

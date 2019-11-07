@@ -1030,10 +1030,10 @@
   resolved "https://registry.yarnpkg.com/@cognite/react-auth/-/react-auth-2.2.4.tgz#19797cc1814febbb2db09dcbf9d5e0890cf93e47"
   integrity sha512-eD47ukzg6rHVE+k5mQ6B5rxBosSsncKuTChq122XmQVYlo9l6p+Zapm+K356T7IIdVQYg6RUlACkYkqc6hE0SQ==
 
-"@cognite/sdk@^2.7.2":
-  version "2.7.2"
-  resolved "https://registry.yarnpkg.com/@cognite/sdk/-/sdk-2.7.2.tgz#be4370a2267b0c949e644ddd363900e7c6084e11"
-  integrity sha512-xcBXCiUB+wuK0VO7HBetW3ZcEWED3lHTlp+8nKNIymV4Rjn2gC2ZzsYXpZcG9+/tBATOIP5HS8v8mYPQrfBEcA==
+"@cognite/sdk@2.10.0":
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/@cognite/sdk/-/sdk-2.10.0.tgz#f5cd6cad9651f14786f6c7040f31eee95ced33d2"
+  integrity sha512-ig9pREV2KfaBnIDGakdkW5Qb38iwVLf3JQMvxoah1/PTXzwCN7OUB5E7eC9n1ZPaXLkJKWfNSYGHlLFDM9l3qA==
   dependencies:
     cross-fetch "^3.0.4"
     lodash "^4.17.11"
@@ -4932,6 +4932,20 @@ debug@^3.0.0, debug@^3.1.0, debug@^3.1.1, debug@^3.2.5, debug@^3.2.6:
   dependencies:
     ms "^2.1.1"
 
+<<<<<<< HEAD
+=======
+debug@^4.0.1, debug@^4.1.0, debug@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.1.1.tgz#3b72260255109c6b589cee050f1d516139664791"
+  integrity sha512-pYAIzeRo8J6KPEaJ0VWOh5Pzkbw/RetuzehGM7QRRX5he4fPHx2rdKMB256ehJCkX+XRQm16eZLqLNS8RSZXZw==
+  dependencies:
+    ms "^2.1.1"
+
+debug@ngokevin/debug#noTimestamp:
+  version "2.2.0"
+  resolved "https://codeload.github.com/ngokevin/debug/tar.gz/ef5f8e66d49ce8bc64c6f282c15f8b7164409e3a"
+
+>>>>>>> TMP working solution
 decamelize@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/decamelize/-/decamelize-1.2.0.tgz#f6534d15148269b20352e7bee26f501f9a191290"
