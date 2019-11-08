@@ -47,10 +47,12 @@ const Wrapper = styled.div`
   height: 100%;
   width: 100%;
   && > div > div,
-  && > div canvas,
   && > div {
     height: 100%;
     overflow: hidden;
+  }
+
+  && canvas {
   }
 
   && .selector {
@@ -171,6 +173,8 @@ class TreeViewer extends Component<Props, State> {
   forceGraphRef: React.RefObject<
     ForceGraph.ForceGraphInstance
   > = React.createRef();
+
+  wrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   constructor(props: Props) {
     super(props);
@@ -481,11 +485,17 @@ class TreeViewer extends Component<Props, State> {
       return <Placeholder componentName="Relationship Viewer" />;
     }
     return (
-      <Wrapper>
+      <Wrapper ref={this.wrapperRef}>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
           <Spin size="large" />
         </LoadingWrapper>
         <ForceGraph2D
+          width={
+            this.wrapperRef.current ? this.wrapperRef.current.clientWidth : '0'
+          }
+          height={
+            this.wrapperRef.current ? this.wrapperRef.current.clientHeight : '0'
+          }
           ref={this.forceGraphRef}
           graphData={data}
           dagMode={controls === 'none' ? null : controls}
