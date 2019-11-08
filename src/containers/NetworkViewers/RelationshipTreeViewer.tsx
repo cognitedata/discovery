@@ -47,10 +47,12 @@ const Wrapper = styled.div`
   height: 100%;
   width: 100%;
   && > div > div,
-  && > div canvas,
   && > div {
     height: 100%;
     overflow: hidden;
+  }
+
+  && canvas {
   }
 
   && .selector {
