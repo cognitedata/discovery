@@ -4,9 +4,10 @@ import ForceGraph from 'force-graph';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
-import { Select, Spin } from 'antd';
+import { Select, Spin, message } from 'antd';
 import * as d3 from 'd3';
 import Placeholder from 'components/Placeholder';
+import { IdEither } from '@cognite/sdk';
 import {
   AppState,
   selectApp,
@@ -15,13 +16,20 @@ import {
 } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import { trackUsage } from '../../utils/metrics';
-import { fetchAssets, selectAssets, AssetsState } from '../../modules/assets';
+import {
+  fetchAssets,
+  selectAssets,
+  AssetsState,
+  selectCurrentAsset,
+  ExtendedAsset,
+} from '../../modules/assets';
 import {
   fetchTimeseries,
   selectTimeseries,
   TimeseriesState,
 } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
+
 import {
   RelationshipResource,
   Relationship,
@@ -29,6 +37,9 @@ import {
   RelationshipState,
 } from '../../modules/relationships';
 
+const isNumeric = (value: string) => {
+  return /^\d+$/.test(value);
+};
 const BGCOLOR = '#101020';
 
 const Wrapper = styled.div`
@@ -36,6 +47,7 @@ const Wrapper = styled.div`
   height: 100%;
   width: 100%;
   && > div > div,
+  && > div canvas,
   && > div {
     height: 100%;
     overflow: hidden;
@@ -135,6 +147,7 @@ type StateProps = {
   app: AppState;
   relationships: RelationshipState;
   assets: AssetsState;
+  asset: ExtendedAsset | undefined;
   timeseries: TimeseriesState;
   threed: ThreeDState;
 };
@@ -169,7 +182,7 @@ class TreeViewer extends Component<Props, State> {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     if (this.props.app.assetId) {
       // add collision force
       this.forceGraphRef.current!.d3Force(
@@ -182,11 +195,16 @@ class TreeViewer extends Component<Props, State> {
         // @ts-ignore
         d3.forceManyBody().strength(-80)
       );
-      this.props.fetchRelationshipsForAssetId(this.props.app.assetId);
+
+      if (this.props.asset) {
+        this.props.fetchRelationshipsForAssetId(this.props.asset);
+      } else {
+        this.props.fetchAssets([{ id: this.props.app.assetId }]);
+      }
     }
   }
 
-  componentDidUpdate(prevProps: Props) {
+  async componentDidUpdate(prevProps: Props) {
     const data = this.getData();
     if (
       data.nodes.length !== this.state.data.nodes.length ||
@@ -197,37 +215,53 @@ class TreeViewer extends Component<Props, State> {
       if (data.nodes.length !== 0) {
         this.loadMissingResources(data.nodes);
         // eslint-disable-next-line react/no-did-update-set-state
-        setTimeout(() => this.setState({ loading: false }), 500);
+        setTimeout(() => {
+          this.setState({ loading: false });
+          // add collision force
+          this.forceGraphRef.current!.d3Force(
+            'collision',
+            // @ts-ignore
+            d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
+          );
+          this.forceGraphRef.current!.d3Force(
+            'charge',
+            // @ts-ignore
+            d3.forceManyBody().strength(-80)
+          );
+        }, 500);
       }
+    }
+    if (prevProps.asset === undefined && this.props.asset) {
+      this.props.fetchRelationshipsForAssetId(this.props.asset);
+    }
+    if (
+      prevProps.asset &&
+      this.props.asset &&
+      prevProps.asset.id !== this.props.asset.id
+    ) {
+      this.props.fetchRelationshipsForAssetId(this.props.asset);
     }
     if (
       this.props.app.assetId &&
       prevProps.app.assetId !== this.props.app.assetId
     ) {
-      this.props.fetchRelationshipsForAssetId(this.props.app.assetId);
-      // add collision force
-      this.forceGraphRef.current!.d3Force(
-        'collision',
-        // @ts-ignore
-        d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
-      );
-      this.forceGraphRef.current!.d3Force(
-        'charge',
-        // @ts-ignore
-        d3.forceManyBody().strength(-80)
-      );
+      this.props.fetchAssets([{ id: this.props.app.assetId }]);
     }
   }
 
   loadMissingResources = (nodes: any[]) => {
     const ids = nodes.reduce(
       (
-        prev: { timeseries: number[]; assets: number[]; models: number[] },
+        prev: { timeseries: IdEither[]; assets: IdEither[]; models: number[] },
         node
       ) => {
         switch (node.resource) {
           case 'asset': {
-            prev.assets.push(Number(node.resourceId));
+            if (isNumeric(node.resourceId)) {
+              prev.assets.push({ id: Number(node.resourceId) });
+            } else {
+              prev.assets.push({ externalId: node.resourceId });
+            }
             break;
           }
           case 'threeDRevision':
@@ -237,14 +271,18 @@ class TreeViewer extends Component<Props, State> {
             break;
           }
           case 'timeSeries': {
-            prev.timeseries.push(Number(node.resourceId));
+            if (isNumeric(node.resourceId)) {
+              prev.timeseries.push({ id: Number(node.resourceId) });
+            } else {
+              prev.timeseries.push({ externalId: node.resourceId });
+            }
           }
         }
         return prev;
       },
       { timeseries: [], assets: [], models: [] } as {
-        timeseries: number[];
-        assets: number[];
+        timeseries: IdEither[];
+        assets: IdEither[];
         models: number[];
       }
     );
@@ -258,13 +296,14 @@ class TreeViewer extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { all },
+      assets: { all, externalIdMap },
       threed: { models },
       timeseries: { timeseriesData },
     } = this.props;
     switch (node.resource) {
       case 'asset': {
-        const asset = all[Number(node.resourceId)];
+        const asset =
+          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
         return asset ? asset.name : 'Loading...';
       }
       case 'threeDRevision':
@@ -298,7 +337,7 @@ class TreeViewer extends Component<Props, State> {
       }
       case 'threeD':
       case 'threeDRevision':
-        return 'rgba(0,255,0,0.5)';
+        return 'rgba(0,122,0,0.9)';
       case 'timeSeries':
       default:
         return 'rgba(255,0,0,0.5)';
@@ -306,10 +345,16 @@ class TreeViewer extends Component<Props, State> {
   };
 
   chooseRelationshipColor = (relationship: Relationship) => {
-    const { assetId } = this.props.app;
+    const {
+      app: { assetId },
+      asset,
+    } = this.props;
     switch (relationship.relationshipType) {
       case 'isParentOf': {
-        if (Number(relationship.target.resourceId) === assetId) {
+        if (
+          (asset && relationship.target.resourceId === asset.externalId) ||
+          Number(relationship.target.resourceId) === assetId
+        ) {
           return 'rgba(0,255,255,0.5)';
         }
         return 'rgba(0,0,255,0.9)';
@@ -319,7 +364,7 @@ class TreeViewer extends Component<Props, State> {
       case 'flowsTo':
       case 'implements':
       default:
-        return 'rgba(0,255,0,0.5)';
+        return 'rgba(0,122,0,0.9)';
     }
   };
 
@@ -444,7 +489,7 @@ class TreeViewer extends Component<Props, State> {
           ref={this.forceGraphRef}
           graphData={data}
           dagMode={controls === 'none' ? null : controls}
-          dagLevelDistance={300}
+          dagLevelDistance={100}
           backgroundColor={BGCOLOR}
           linkColor={(link: Relationship) => this.chooseRelationshipColor(link)}
           nodeRelSize={1}
@@ -457,13 +502,21 @@ class TreeViewer extends Component<Props, State> {
           onNodeClick={(node: RelationshipResource) => {
             switch (node.resource) {
               case 'asset': {
-                this.props.setAssetId(
-                  Number(node.resourceId),
-                  Number(node.resourceId)
-                );
-                trackUsage('RelationshipViewer.AssetClicked', {
-                  assetId: node.resourceId,
-                });
+                const {
+                  assets: { all, externalIdMap },
+                } = this.props;
+                const asset =
+                  all[
+                    externalIdMap[node.resourceId] || Number(node.resourceId)
+                  ];
+                if (asset) {
+                  this.props.setAssetId(asset.rootId, asset.id);
+                  trackUsage('RelationshipViewer.AssetClicked', {
+                    assetId: node.resourceId,
+                  });
+                } else {
+                  message.error('Asset not yet loaded.');
+                }
                 return;
               }
               case 'timeSeries': {
@@ -529,6 +582,7 @@ const mapStateToProps = (state: RootState): StateProps => {
     relationships: state.relationships,
     app: selectApp(state),
     assets: selectAssets(state),
+    asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
   };
