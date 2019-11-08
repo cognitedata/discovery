@@ -52,9 +52,6 @@ const Wrapper = styled.div`
     overflow: hidden;
   }
 
-  && canvas {
-  }
-
   && .selector {
     position: absolute;
     right: 12px;
