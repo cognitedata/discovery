@@ -107,6 +107,9 @@
       "pre-commit": "yarn run lint:fix"
     }
   },
+  "resolutions": {
+    "debug@ngokevin/debug#noTimestamp": "4.1.1"
+  },
   "browserslist": [
     ">0.2%",
     "not dead",
