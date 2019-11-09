@@ -16,6 +16,7 @@ import styled from 'styled-components';
 import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
+import { AssetTree, AssetBreadcrumb } from '@cognite/gearbox';
 import {
   selectTimeseries,
   removeAssetFromTimeseries,
@@ -116,6 +117,7 @@ type State = {
   activeCollapsed?: any[];
   showEditHierarchy: boolean;
   disableEditHierarchy: boolean;
+  childrenCount: number;
   documentsTablePage: number;
 };
 
@@ -125,6 +127,7 @@ class AssetDrawer extends React.Component<Props, State> {
     showeditAsset: false,
     showEditHierarchy: false,
     disableEditHierarchy: true,
+    childrenCount: 0,
     documentsTablePage: 0,
     showAddTypes: false,
   };
@@ -134,6 +137,7 @@ class AssetDrawer extends React.Component<Props, State> {
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      this.fetchCount();
     }
     this.resetState();
   }
@@ -148,6 +152,7 @@ class AssetDrawer extends React.Component<Props, State> {
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      this.fetchCount();
       this.resetState();
     }
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
@@ -161,6 +166,16 @@ class AssetDrawer extends React.Component<Props, State> {
     }
     return undefined;
   }
+
+  fetchCount = async () => {
+    const countRequest = await sdk.get(
+      `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${this
+        .props.app.assetId!}]`
+    );
+    this.setState({
+      childrenCount: countRequest.data.count,
+    });
+  };
 
   addTypeClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     const { asset } = this.state;
@@ -382,6 +397,7 @@ class AssetDrawer extends React.Component<Props, State> {
       timeseries,
     } = this.props;
     const { assetId, modelId } = this.props.app;
+    const { childrenCount } = this.state;
     if (!assetId && !modelId) {
       return (
         <>
@@ -446,12 +462,30 @@ class AssetDrawer extends React.Component<Props, State> {
           />
         )}
         <div>
+          <AssetBreadcrumb
+            assetId={asset.id}
+            onBreadcrumbClick={selectedAsset =>
+              this.props.setAssetId(selectedAsset.rootId, selectedAsset.id)
+            }
+          />
           <h3>{createAssetTitle(asset)}</h3>
           {asset.description && <p>{asset.description}</p>}
           <Collapse
             onChange={this.onCollapseChange}
             defaultActiveKey={defaultActiveKey}
           >
+            <Panel header={<span>Children</span>} key="tree">
+              <p>{childrenCount} Total Children</p>
+              <AssetTree
+                parentAssetId={asset.id}
+                showLoading
+                onSelect={({ node }) => {
+                  if (node) {
+                    this.props.setAssetId(node.rootId, node.id);
+                  }
+                }}
+              />
+            </Panel>
             {asset != null && this.renderExternalLinks(asset.id)}
 
             <Panel
