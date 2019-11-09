@@ -4925,7 +4925,7 @@ debug@^4.0.1, debug@^4.1.0, debug@^4.1.1:
     ms "^2.1.1"
 
 debug@ngokevin/debug#noTimestamp:
-  version "2.6.9"
+  version "2.2.0"
   resolved "https://codeload.github.com/ngokevin/debug/tar.gz/ef5f8e66d49ce8bc64c6f282c15f8b7164409e3a"
 
 decamelize@^1.2.0:
@@ -11712,10 +11712,10 @@ react-error-overlay@^6.0.3:
   resolved "https://registry.yarnpkg.com/react-error-overlay/-/react-error-overlay-6.0.3.tgz#c378c4b0a21e88b2e159a3e62b2f531fd63bf60d"
   integrity sha512-bOUvMWFQVk5oz8Ded9Xb7WVdEi3QGLC8tH7HmYP0Fdp4Bn3qw0tRFmr5TW6mvahzvmrK4a6bqWGfCevBflP+Xw==
 
-react-force-graph@^1.24.1:
-  version "1.27.0"
-  resolved "https://registry.yarnpkg.com/react-force-graph/-/react-force-graph-1.27.0.tgz#6f872d818b1fe3730422e8a8af86c3b5d0dedff3"
-  integrity sha512-CRkK2iZCRSKyoF1qLxZY39hjyjooJGp91W0JCYlvCHjxJu5qbIJzoZRjshY4YisxVtad3WWVjF312Ue+oGXMbw==
+react-force-graph@^1.27.1:
+  version "1.27.1"
+  resolved "https://registry.yarnpkg.com/react-force-graph/-/react-force-graph-1.27.1.tgz#1b659d856e6d3829859d8b049a5c97ffb496cb1d"
+  integrity sha512-uXODlNge6e4461NCcloTvEixJCUqrk5v/dU7eYDzVkdzUNJiNAnQPYjACWhe46dwb7SODGTFff5OrcG/lmirrA==
   dependencies:
     "3d-force-graph" "^1.56.2"
     "3d-force-graph-vr" "^1.29.1"

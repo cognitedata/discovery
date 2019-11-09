@@ -3,6 +3,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
+import { ExtendedAsset } from './assets';
 
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
@@ -54,17 +55,22 @@ export function fetchRelationships() {
     }
   };
 }
-export function fetchRelationshipsForAssetId(id: number) {
+export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
     try {
       const { project } = sdk;
 
-      const [resultFrom, resultTo] = await Promise.all([
+      const [
+        resultFrom,
+        resultTo,
+        resultFromExt,
+        resultToExt,
+      ] = await Promise.all([
         sdk.post(`/api/playground/projects/${project}/relationships/list`, {
           data: {
             filter: {
               sourceResource: 'asset',
-              sourceResourceId: `${id}`,
+              sourceResourceId: `${asset.id}`,
             },
           },
         }),
@@ -72,16 +78,48 @@ export function fetchRelationshipsForAssetId(id: number) {
           data: {
             filter: {
               targetResource: 'asset',
-              targetResourceId: `${id}`,
+              targetResourceId: `${asset.id}`,
             },
           },
         }),
+        ...(asset.externalId
+          ? [
+              sdk.post(
+                `/api/playground/projects/${project}/relationships/list`,
+                {
+                  data: {
+                    filter: {
+                      sourceResource: 'asset',
+                      sourceResourceId: `${asset.externalId}`,
+                    },
+                  },
+                }
+              ),
+              sdk.post(
+                `/api/playground/projects/${project}/relationships/list`,
+                {
+                  data: {
+                    filter: {
+                      targetResource: 'asset',
+                      targetResourceId: `${asset.externalId}`,
+                    },
+                  },
+                }
+              ),
+            ]
+          : []),
       ]);
 
       if (resultFrom.status === 200 && resultTo.status === 200) {
+        let items = resultFrom.data.items.concat(resultTo.data.items);
+        if (asset.externalId) {
+          items = items
+            .concat(resultFromExt.data.items)
+            .concat(resultToExt.data.items);
+        }
         dispatch({
           type: GET_RELATIONSHIPS,
-          payload: { items: resultFrom.data.items.concat(resultTo.data.items) },
+          payload: { items },
         });
       } else {
         throw new Error('Unable to fetch relationships for given asset');

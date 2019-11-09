@@ -120,7 +120,7 @@ class AssetSearch extends React.Component<Props, State> {
       const missingAssetIds = assetIds.filter(
         assetId => this.props.assets.all[assetId] === undefined
       );
-      this.props.doFetchAssets(missingAssetIds);
+      this.props.doFetchAssets(missingAssetIds.map(el => ({ id: el })));
     }
 
     if (

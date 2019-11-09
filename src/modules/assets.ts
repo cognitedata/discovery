@@ -1,7 +1,7 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
-import { Asset, ExternalAssetItem, AssetChange } from '@cognite/sdk';
+import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
 import { arrayToObjectById } from '../utils/utils';
@@ -224,18 +224,14 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
   };
 }
 
-export function fetchAssets(assetIds: number[]) {
+export function fetchAssets(assetIds: IdEither[]) {
   return async (dispatch: Dispatch) => {
     if (assetIds.length === 0) {
       return;
     }
 
     try {
-      const results = await sdk.assets.retrieve(
-        assetIds.map(id => ({
-          id,
-        }))
-      );
+      const results = await sdk.assets.retrieve(assetIds);
 
       if (results) {
         const items = arrayToObjectById(
@@ -348,9 +344,10 @@ export function deleteAsset(assetId: number) {
 export interface AssetsState {
   all: { [key: string]: ExtendedAsset };
   current: ExtendedAsset[];
+  externalIdMap: { [key: string]: number };
 }
 
-const initialState: AssetsState = { current: [], all: {} };
+const initialState: AssetsState = { current: [], all: {}, externalIdMap: {} };
 
 export default function assets(
   state = initialState,
@@ -369,6 +366,19 @@ export default function assets(
       return {
         ...state,
         all,
+        externalIdMap: {
+          ...state.externalIdMap,
+          ...Object.values(action.payload.items).reduce(
+            (prev, el) => {
+              if (el.externalId) {
+                // eslint-disable-next-line no-param-reassign
+                prev[el.externalId] = el.id;
+              }
+              return prev;
+            },
+            {} as { [key: string]: number }
+          ),
+        },
       };
     }
     case UPDATE_ASSET: {
@@ -395,6 +405,7 @@ export default function assets(
 
 const slimAssetObject = (asset: Asset): ExtendedAsset => ({
   id: asset.id,
+  externalId: asset.externalId,
   name: asset.name,
   rootId: asset.rootId,
   description: asset.description,
