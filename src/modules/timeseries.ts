@@ -2,7 +2,11 @@ import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { GetTimeSeriesMetadataDTO, TimeSeriesUpdate } from '@cognite/sdk';
+import {
+  GetTimeSeriesMetadataDTO,
+  TimeSeriesUpdate,
+  IdEither,
+} from '@cognite/sdk';
 import { fetchEvents } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
@@ -25,9 +29,9 @@ interface RemoveAssetAction
 type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
 
 // Functions
-export function fetchTimeseries(ids: number[]) {
+export function fetchTimeseries(ids: IdEither[]) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    const results = await sdk.timeseries.retrieve(ids.map(el => ({ id: el })));
+    const results = await sdk.timeseries.retrieve(ids);
     dispatch({ type: SET_TIMESERIES, payload: { items: results } });
   };
 }
@@ -59,22 +63,17 @@ export function searchTimeseries(query: string, assetId?: number) {
     });
     searchTimeseriesId += 1;
     const id = searchTimeseriesId;
-    const results = await sdk.post(
-      `/api/v1/projects/${sdk.project}/timeseries/search`,
-      {
-        data: {
-          filter: {
-            ...(assetId && { assetIds: [assetId] }),
-          },
-          limit: 1000,
-          search: { name: query },
-        },
-      }
-    );
+    const results = await sdk.timeseries.search({
+      filter: {
+        ...(assetId && { assetIds: [assetId] }),
+      },
+      limit: 1000,
+      search: { query },
+    });
     if (searchTimeseriesId === id) {
       dispatch({
         type: SET_TIMESERIES,
-        payload: { items: results.data.items },
+        payload: { items: results },
       });
       searchTimeseriesId = 0;
     }

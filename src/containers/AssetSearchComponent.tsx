@@ -292,24 +292,6 @@ class AssetSearch extends Component<Props, State> {
         value: prevState.addingSourceFilter,
       });
     }
-    if (prevState.addingEventFilter !== this.state.addingEventFilter) {
-      trackUsage('GlobalSearch.SearchFilterToggled', {
-        type: 'eventFilter',
-        value: this.state.addingEventFilter,
-      });
-    }
-    if (prevState.addingLocationFilter !== this.state.addingLocationFilter) {
-      trackUsage('GlobalSearch.SearchFilterToggled', {
-        type: 'locationFilter',
-        value: this.state.addingLocationFilter,
-      });
-    }
-    if (prevState.addingSourceFilter !== this.state.addingSourceFilter) {
-      trackUsage('GlobalSearch.SearchFilterToggled', {
-        type: 'sourceFilter',
-        value: this.state.addingSourceFilter,
-      });
-    }
   }
 
   onSearchFieldFocus = () => {
@@ -349,7 +331,7 @@ class AssetSearch extends Component<Props, State> {
       `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
-          search: { name: query },
+          search: { query },
           limit: 100,
         },
       }
@@ -366,7 +348,7 @@ class AssetSearch extends Component<Props, State> {
       `/api/v1/projects/${sdk.project}/assets/search`,
       {
         data: {
-          search: { name: query },
+          search: { query },
           filter: {
             root: true,
           },
@@ -449,7 +431,7 @@ class AssetSearch extends Component<Props, State> {
           {
             data: {
               limit: 100,
-              ...(query && query.length > 0 && { search: { name: query } }),
+              ...(query && query.length > 0 && { search: { query } }),
               filter: {
                 ...(onlyRootAsset && { root: true }),
                 ...(filterMap.source && { source: filterMap.source }),
@@ -572,7 +554,7 @@ class AssetSearch extends Component<Props, State> {
         {
           data: {
             limit: 100,
-            ...(query && query.length > 0 && { search: { name: query } }),
+            ...(query && query.length > 0 && { search: { query } }),
             filter: {
               ...(filterMap.metadata && { metadata: filterMap.metadata }),
               ...(filterMap.locations.length > 0 && {
@@ -960,6 +942,7 @@ class AssetSearch extends Component<Props, State> {
       allFilters.push(
         <BetterTag
           closable
+          key="query"
           onClose={() =>
             this.setState({
               query: '',
@@ -997,6 +980,8 @@ class AssetSearch extends Component<Props, State> {
         return (
           <BetterTag
             closable
+            // eslint-disable-next-line react/no-array-index-key
+            key={`${filter.type}-${i}`}
             onClose={() =>
               this.setState({
                 filters: [...filters.slice(0, i), ...filters.slice(i + 1)],
@@ -1012,6 +997,7 @@ class AssetSearch extends Component<Props, State> {
       allFilters.push(
         <BetterTag
           closable
+          key="root"
           onClose={() =>
             this.setState({
               onlyRootAsset: false,

@@ -45,7 +45,7 @@ type State = {
   selectedPane: string;
 };
 
-class Main extends React.Component<Props, State> {
+class Sidebar extends React.Component<Props, State> {
   state = {
     selectedPane: 'asset',
   };
@@ -134,4 +134,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(Main);
+)(Sidebar);

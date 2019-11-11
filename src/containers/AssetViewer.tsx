@@ -95,9 +95,6 @@ export class AssetViewer extends React.Component<Props, State> {
     if (prevProps.type !== this.props.type) {
       trackUsage('AssetViewer.ComponentMounted', { type: this.props.type });
     }
-    if (prevProps.type !== this.props.type) {
-      trackUsage('AssetViewer.ComponentMounted', { type: this.props.type });
-    }
   }
 
   get asset() {
