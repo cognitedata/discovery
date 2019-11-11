@@ -205,15 +205,6 @@ class PNIDViewer extends React.Component<Props, State> {
     const { currentFiles, currentIndex } = this.state;
     return (
       <>
-        <div>
-          <Button
-            onClick={this.props.unselectDocument}
-            style={{ marginBottom: '6px' }}
-          >
-            <Icon type="arrow-left" />
-            BACK
-          </Button>
-        </div>
         <Button.Group style={{ marginBottom: '12px' }}>
           <Button
             size="small"
