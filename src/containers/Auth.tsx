@@ -2,16 +2,27 @@ import React from 'react';
 import { Route, Switch } from 'react-router-dom';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import queryString from 'query-string';
+import { replace } from 'connected-react-router';
 import Main from './Main';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
-import { selectApp, setTenant, AppState } from '../modules/app';
+import { selectApp, setTenant, AppState, setCdfEnv } from '../modules/app';
 import { RootState } from '../reducers/index';
+
+export const getCdfEnvFromUrl = () =>
+  queryString.parse(window.location.search).env as string;
+
+export const getApiKeyFromUrl = () =>
+  queryString.parse(window.location.search).apikey as string;
 
 type Props = {
   app: AppState;
   match: { params: { tenant: string }; path: string };
+  history: any;
+  setCdfEnv: typeof setCdfEnv;
   setTenant: typeof setTenant;
+  replace: typeof replace;
 };
 
 type State = {
@@ -35,20 +46,47 @@ class Auth extends React.Component<Props, State> {
 
   verifyAuth = async () => {
     const {
+      app: { cdfEnv, tenant },
+    } = this.props;
+    const fromUrlCdfEnv = getCdfEnvFromUrl();
+    const fromUrlApiKey = getApiKeyFromUrl();
+    if (!cdfEnv && fromUrlCdfEnv) {
+      this.props.setCdfEnv(fromUrlCdfEnv);
+    }
+    if (cdfEnv && !fromUrlCdfEnv) {
+      if (tenant) {
+        this.props.replace({
+          pathname: this.props.history.location.pathname,
+          search: `?env=${cdfEnv}${
+            fromUrlApiKey ? `&apikey=${fromUrlApiKey}` : ''
+          }`,
+        });
+      } else {
+        this.props.setCdfEnv(undefined);
+      }
+    }
+    const {
       match: {
         params: { tenant: pathTenant },
       },
-    } = this.props;
-    const {
-      app: { tenant },
     } = this.props;
 
     if (!tenant && pathTenant) {
       this.props.setTenant(pathTenant);
     }
 
-    await sdk.loginWithOAuth({ project: tenant || pathTenant });
-    const status = await sdk.authenticate();
+    let status;
+
+    if (fromUrlApiKey) {
+      await sdk.loginWithApiKey({
+        project: tenant || pathTenant,
+        apiKey: fromUrlApiKey,
+      });
+      status = true;
+    } else {
+      await sdk.loginWithOAuth({ project: tenant || pathTenant });
+      status = await sdk.authenticate();
+    }
 
     this.setState({
       auth: status !== null,
@@ -100,6 +138,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setTenant,
+      setCdfEnv,
+      replace,
     },
     dispatch
   );
