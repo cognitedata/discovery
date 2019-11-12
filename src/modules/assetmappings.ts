@@ -6,6 +6,7 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { DELETE_ASSETS, DeleteAssetAction } from './assets';
 import { trackUsage } from '../utils/metrics';
+import { checkForAccessPermission } from '../utils/utils';
 
 // Constants
 export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
@@ -75,40 +76,48 @@ type CurrentFetchingObject = {
 };
 const currentFetching: CurrentFetchingObject = { asset: {}, node: {} };
 
-export function fetchMappingsFromAssetId(
+export const fetchMappingsFromAssetId = (
   modelId: number,
   revisionId: number,
   assetId: number
-) {
-  return async (dispatch: Dispatch) => {
-    if (currentFetching.asset[assetId]) {
-      // Currently fetching this
+) => async (dispatch: Dispatch, getState: () => RootState) => {
+  if (
+    !checkForAccessPermission(
+      getState().app.groups,
+      'threedAcl',
+      'UPDATE',
+      true
+    )
+  ) {
+    return;
+  }
+  if (currentFetching.asset[assetId]) {
+    // Currently fetching this
+    return;
+  }
+  currentFetching.asset[assetId] = true;
+  try {
+    const result = await sdk.assetMappings3D.list(modelId, revisionId, {
+      assetId,
+    });
+
+    const mappings: AssetMapping3D[] = result.items;
+    if (mappings.length === 0) {
       return;
     }
-    currentFetching.asset[assetId] = true;
-    try {
-      const result = await sdk.assetMappings3D.list(modelId, revisionId, {
-        assetId,
-      });
 
-      const mappings: AssetMapping3D[] = result.items;
-      if (mappings.length === 0) {
-        return;
-      }
+    // Choose largest mapping
+    mappings.sort((a, b) => a.subtreeSize! - b.subtreeSize!);
+    dispatch({
+      type: ADD_ASSET_MAPPINGS,
+      payload: { mapping: mappings[0], modelId, revisionId },
+    });
+  } catch (ex) {
+    // Could not fetch
+  }
 
-      // Choose largest mapping
-      mappings.sort((a, b) => a.subtreeSize! - b.subtreeSize!);
-      dispatch({
-        type: ADD_ASSET_MAPPINGS,
-        payload: { mapping: mappings[0], modelId, revisionId },
-      });
-    } catch (ex) {
-      // Could not fetch
-    }
-
-    currentFetching.asset[assetId] = false;
-  };
-}
+  currentFetching.asset[assetId] = false;
+};
 
 export function fetchMappingsFromNodeId(
   modelId: number,

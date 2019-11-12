@@ -2,6 +2,7 @@ import { Action } from 'redux';
 import { push, CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
+import { SingleCogniteCapability } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { AddNodeAssetMappingAction, ADD_ASSET_MAPPINGS } from './assetmappings';
 import { trackUsage } from '../utils/metrics';
@@ -28,6 +29,7 @@ export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
     assetId?: number;
     rootAssetId?: number;
     timeseriesId?: number;
+    groups?: { [key: string]: string[] };
   };
 }
 interface ClearAppStateAction extends Action<typeof CLEAR_APP_STATE> {}
@@ -239,6 +241,47 @@ export const setTimeseriesId = (
   }
 };
 
+export const fetchUserGroups = () => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
+) => {
+  const response = await sdk.groups.list();
+
+  const groups = response.reduce(
+    (prev, current) => {
+      const a = {
+        ...prev,
+      };
+      const { capabilities } = current;
+      if (capabilities) {
+        capabilities.forEach((capability: SingleCogniteCapability) => {
+          Object.keys(capability).forEach(key => {
+            if (a[key]) {
+              // @ts-ignore
+              capability[key].actions.forEach(el => {
+                if (a[key].indexOf(el) === -1) {
+                  a[key].push(el);
+                }
+              });
+            } else {
+              // @ts-ignore
+              a[key] = capability[key].actions;
+            }
+          });
+        });
+      }
+      return a;
+    },
+    {} as { [key: string]: string[] }
+  );
+
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      groups,
+    },
+  });
+};
+
 export const setTenant = (tenant: string, redirect = false) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
@@ -293,8 +336,9 @@ export interface AppState {
   assetId?: number;
   rootAssetId?: number;
   cdfEnv?: string;
+  groups: { [key: string]: string[] };
 }
-const initialState: AppState = {};
+const initialState: AppState = { groups: {} };
 
 export default function app(state = initialState, action: AppAction): AppState {
   switch (action.type) {

@@ -4,7 +4,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { Revision3D, Model3D } from '@cognite/sdk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
-import { arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
 
@@ -114,6 +114,16 @@ export function setRevisionRepresentAsset(
     dispatch: Dispatch<UpdateRevisionAction>,
     getState: () => RootState
   ) => {
+    if (
+      !checkForAccessPermission(
+        getState().app.groups,
+        'threedAcl',
+        'UPDATE',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('3D.setRevisionRepresentAsset', {
       assetId,
       revisionId,

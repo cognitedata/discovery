@@ -7,7 +7,13 @@ import { replace } from 'connected-react-router';
 import Main from './Main';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
-import { selectApp, setTenant, AppState, setCdfEnv } from '../modules/app';
+import {
+  selectApp,
+  setTenant,
+  AppState,
+  setCdfEnv,
+  fetchUserGroups,
+} from '../modules/app';
 import { RootState } from '../reducers/index';
 
 export const getCdfEnvFromUrl = () =>
@@ -22,6 +28,7 @@ type Props = {
   history: any;
   setCdfEnv: typeof setCdfEnv;
   setTenant: typeof setTenant;
+  fetchUserGroups: typeof fetchUserGroups;
   replace: typeof replace;
 };
 
@@ -88,6 +95,8 @@ class Auth extends React.Component<Props, State> {
       status = await sdk.authenticate();
     }
 
+    this.props.fetchUserGroups();
+
     this.setState({
       auth: status !== null,
     });
@@ -139,6 +148,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       setTenant,
       setCdfEnv,
+      fetchUserGroups,
       replace,
     },
     dispatch

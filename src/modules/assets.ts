@@ -4,7 +4,7 @@ import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
-import { arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
 import { RootState } from '../reducers';
@@ -246,7 +246,7 @@ export function fetchAssets(assetIds: IdEither[]) {
   };
 }
 
-export function createNewAsset(
+export const createNewAsset = (
   newAsset: ExternalAssetItem,
   mappingInfo?: {
     modelId?: number;
@@ -254,52 +254,71 @@ export function createNewAsset(
     nodeId?: number;
   },
   callback?: (asset: Asset) => void
-) {
-  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
-    trackUsage('Assets.createNewAsset', {
-      mappedTo3D: !!mappingInfo,
-    });
-    try {
-      const results = await sdk.assets.create([
-        {
-          ...newAsset,
-          metadata: {
-            ...newAsset.metadata,
-            COGNITE__SOURCE: 'discovery',
-          },
+) => async (
+  dispatch: ThunkDispatch<any, any, AnyAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
+  ) {
+    return;
+  }
+  trackUsage('Assets.createNewAsset', {
+    mappedTo3D: !!mappingInfo,
+  });
+  try {
+    const results = await sdk.assets.create([
+      {
+        ...newAsset,
+        metadata: {
+          ...newAsset.metadata,
+          COGNITE__SOURCE: 'discovery',
         },
-      ]);
-      if (results) {
-        const items = arrayToObjectById(
-          results.map(asset => slimAssetObject(asset))
-        );
+      },
+    ]);
+    if (results) {
+      const items = arrayToObjectById(
+        results.map(asset => slimAssetObject(asset))
+      );
 
-        const assetId = results[0].id;
+      const assetId = results[0].id;
 
-        if (mappingInfo) {
-          const { modelId, revisionId, nodeId } = mappingInfo;
-          if (modelId && revisionId && nodeId) {
-            dispatch(
-              createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
-            );
-          } else if (modelId && revisionId) {
-            dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
-          }
+      if (mappingInfo) {
+        const { modelId, revisionId, nodeId } = mappingInfo;
+        if (modelId && revisionId && nodeId) {
+          dispatch(
+            createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
+          );
+        } else if (modelId && revisionId) {
+          dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
         }
-        if (callback) {
-          callback(results[0]);
-        }
-
-        dispatch({ type: ADD_ASSETS, payload: { items } });
       }
-    } catch (ex) {
-      message.error(`Could not add assets.`);
+      if (callback) {
+        callback(results[0]);
+      }
+
+      dispatch({ type: ADD_ASSETS, payload: { items } });
     }
-  };
-}
+  } catch (ex) {
+    message.error(`Could not add assets.`);
+  }
+};
 
 export function editAsset(asset: AssetChange) {
-  return async (dispatch: Dispatch<UpdateAction>) => {
+  return async (
+    dispatch: Dispatch<UpdateAction>,
+    getState: () => RootState
+  ) => {
+    if (
+      !checkForAccessPermission(
+        getState().app.groups,
+        'assetsAcl',
+        'READ',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('Assets.editAsset', {
       assetd: asset.update.externalId,
     });
@@ -321,24 +340,30 @@ export function editAsset(asset: AssetChange) {
   };
 }
 
-export function deleteAsset(assetId: number) {
-  return async (dispatch: Dispatch<DeleteAssetAction>) => {
-    trackUsage('Assets.deleteAsset', {
-      assetId,
+export const deleteAsset = (assetId: number) => async (
+  dispatch: Dispatch<DeleteAssetAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
+  ) {
+    return;
+  }
+  trackUsage('Assets.deleteAsset', {
+    assetId,
+  });
+  try {
+    const results = await sdk.assets.delete([{ id: assetId }], {
+      recursive: true,
     });
-    try {
-      const results = await sdk.assets.delete([{ id: assetId }], {
-        recursive: true,
-      });
 
-      if (results) {
-        dispatch({ type: DELETE_ASSETS, payload: { assetId } });
-      }
-    } catch (ex) {
-      message.error(`Could not delete asset with children.`);
+    if (results) {
+      dispatch({ type: DELETE_ASSETS, payload: { assetId } });
     }
-  };
-}
+  } catch (ex) {
+    message.error(`Could not delete asset with children.`);
+  }
+};
 
 // Reducer
 export interface AssetsState {

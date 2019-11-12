@@ -4,6 +4,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { ExtendedAsset } from './assets';
+import { checkForAccessPermission } from '../utils/utils';
 
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
@@ -56,7 +57,16 @@ export function fetchRelationships() {
   };
 }
 export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, AnyAction>,
+    getState: () => RootState
+  ) => {
+    const { groups } = getState().app;
+
+    if (!checkForAccessPermission(groups, 'relationshipAcl', 'READ', true)) {
+      return;
+    }
+
     try {
       const { project } = sdk;
 
