@@ -187,6 +187,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       );
       if (newJob.status !== 200) {
         message.error('Unable to process file to interactive P&ID');
+        this.setState({ convertingToSvg: undefined });
       } else {
         const interval = setInterval(async () => {
           const status = await sdk.get(
@@ -195,9 +196,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           if (status.status !== 200) {
             clearInterval(interval);
             message.error('Unable to process file to interactive P&ID');
+            this.setState({ convertingToSvg: undefined });
           } else if (status.data.status === 'Failed') {
             clearInterval(interval);
             message.error('Failed to process file to interactive P&ID');
+            this.setState({ convertingToSvg: undefined });
           } else if (status.data.status === 'Completed') {
             clearInterval(interval);
             this.setState({ convertingToSvg: 'Uploading Interactive P&ID' });
