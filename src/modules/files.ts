@@ -3,6 +3,7 @@ import { Dispatch, Action } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
+import { checkForAccessPermission } from '../utils/utils';
 
 // Constants
 export const ADD_FILES = 'files/SET_FILES';
@@ -16,16 +17,22 @@ interface AddFilesAction extends Action<typeof ADD_FILES> {
 
 type FilesAction = AddFilesAction;
 
-export function fetchFiles(assetId: number) {
-  return async (dispatch: Dispatch) => {
-    const result = await sdk.files.list({
-      filter: { assetIds: [assetId] },
-      limit: 1000,
-    });
-    const items = result.items.filter(file => file.uploaded === true);
-    dispatch({ type: ADD_FILES, payload: { assetId, items } });
-  };
-}
+export const fetchFiles = (assetId: number) => async (
+  dispatch: Dispatch,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(getState().app.groups, 'filesAcl', 'READ', true)
+  ) {
+    return;
+  }
+  const result = await sdk.files.list({
+    filter: { assetIds: [assetId] },
+    limit: 1000,
+  });
+  const items = result.items.filter(file => file.uploaded === true);
+  dispatch({ type: ADD_FILES, payload: { assetId, items } });
+};
 
 // Reducer
 export interface FilesState {
