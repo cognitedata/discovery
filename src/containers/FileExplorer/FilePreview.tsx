@@ -145,7 +145,7 @@ type State = {
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
-class MapModelToAssetForm extends React.Component<Props, State> {
+class FilePreview extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
@@ -160,14 +160,13 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.componentDidUpdate();
+    if (this.type === 'images' || this.type === 'documents') {
+      this.fetchFileUrl();
+    }
   }
 
-  componentDidUpdate() {
-    if (
-      (this.type === 'images' || this.type === 'documents') &&
-      !this.state.filePreviewUrl
-    ) {
+  componentDidUpdate(prevProps: Props) {
+    if (this.props.selectedDocument.id !== prevProps.selectedDocument.id) {
       this.fetchFileUrl();
     }
   }
@@ -193,13 +192,20 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   }
 
   fetchFileUrl = async () => {
-    const { selectedDocument } = this.props;
-    const [url] = await sdk.files.getDownloadUrls([
-      { id: selectedDocument.id },
-    ]);
-    this.setState({
-      filePreviewUrl: url.downloadUrl,
-    });
+    this.setState(
+      {
+        filePreviewUrl: undefined,
+      },
+      async () => {
+        const { selectedDocument } = this.props;
+        const [url] = await sdk.files.getDownloadUrls([
+          { id: selectedDocument.id },
+        ]);
+        this.setState({
+          filePreviewUrl: url.downloadUrl,
+        });
+      }
+    );
   };
 
   onDownloadClicked = async () => {
@@ -422,4 +428,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(MapModelToAssetForm);
+)(FilePreview);
