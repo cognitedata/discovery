@@ -1,4 +1,4 @@
-import { Asset } from '@cognite/sdk';
+import { Asset, InternalId } from '@cognite/sdk';
 import { message } from 'antd';
 
 export function sleep(timeout: number) {
@@ -49,3 +49,5 @@ export const checkForAccessPermission = (
   }
   return true;
 };
+
+export const isInternalId = (p: any): p is InternalId => !!p.id;
