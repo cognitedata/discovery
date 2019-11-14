@@ -230,7 +230,9 @@ class FileExplorerComponent extends React.Component<Props, State> {
       new Set<number>()
     );
 
-    this.props.fetchAssets(Array.from(extraAssets).map(el => ({ id: el })));
+    if (extraAssets.size > 0) {
+      this.props.fetchAssets(Array.from(extraAssets).map(el => ({ id: el })));
+    }
   };
 
   onClickDocument = (document: FilesMetadata, index: number) => {
