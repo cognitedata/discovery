@@ -114,10 +114,10 @@ type State = {
   showeditAsset: boolean;
   showEvent?: number;
   asset?: ExtendedAsset;
+  children: number[];
   activeCollapsed?: any[];
   showEditHierarchy: boolean;
   disableEditHierarchy: boolean;
-  childrenCount: number;
   documentsTablePage: number;
 };
 
@@ -127,8 +127,8 @@ class AssetDrawer extends React.Component<Props, State> {
     showeditAsset: false,
     showEditHierarchy: false,
     disableEditHierarchy: true,
-    childrenCount: 0,
     documentsTablePage: 0,
+    children: [],
     showAddTypes: false,
   };
 
@@ -137,7 +137,7 @@ class AssetDrawer extends React.Component<Props, State> {
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
-      this.fetchCount();
+      this.fetchChildren();
     }
     this.resetState();
   }
@@ -152,7 +152,7 @@ class AssetDrawer extends React.Component<Props, State> {
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
-      this.fetchCount();
+      this.fetchChildren();
       this.resetState();
     }
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
@@ -167,13 +167,16 @@ class AssetDrawer extends React.Component<Props, State> {
     return undefined;
   }
 
-  fetchCount = async () => {
-    const countRequest = await sdk.get(
-      `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${this
-        .props.app.assetId!}]`
-    );
-    this.setState({
-      childrenCount: countRequest.data.count,
+  fetchChildren = async () => {
+    this.setState({ children: [] }, async () => {
+      if (this.props.app.assetId) {
+        const children = await sdk.assets
+          .list({ filter: { parentIds: [this.props.app.assetId] } })
+          .autoPagingToArray({ limit: Infinity });
+        this.setState({
+          children: children.map(el => el.id),
+        });
+      }
     });
   };
 
@@ -397,7 +400,7 @@ class AssetDrawer extends React.Component<Props, State> {
       timeseries,
     } = this.props;
     const { assetId, modelId } = this.props.app;
-    const { childrenCount } = this.state;
+    const { children } = this.state;
     if (!assetId && !modelId) {
       return (
         <>
@@ -475,9 +478,8 @@ class AssetDrawer extends React.Component<Props, State> {
             defaultActiveKey={defaultActiveKey}
           >
             <Panel header={<span>Children</span>} key="tree">
-              <p>{childrenCount} Total Children</p>
               <AssetTree
-                parentAssetId={asset.id}
+                assetIds={children}
                 showLoading
                 onSelect={({ node }) => {
                   if (node) {
