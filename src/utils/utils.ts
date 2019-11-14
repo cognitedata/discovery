@@ -39,11 +39,13 @@ export const checkForAccessPermission = (
   type: string,
   showMessage = false
 ) => {
-  if (!groups[key] || !groups[key].includes(type)) {
-    if (showMessage) {
-      message.error(`You are missing access ${key}:${type}`);
+  if (groups.groupsAcl) {
+    if (!groups[key] || !groups[key].includes(type)) {
+      if (showMessage) {
+        message.error(`You are missing access ${key}:${type}`);
+      }
+      return false;
     }
-    return false;
   }
   return true;
 };
