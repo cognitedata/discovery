@@ -63,7 +63,7 @@ export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
   ) => {
     const { groups } = getState().app;
 
-    if (!checkForAccessPermission(groups, 'relationshipAcl', 'READ', true)) {
+    if (!checkForAccessPermission(groups, 'relationshipsAcl', 'READ', true)) {
       return;
     }
 

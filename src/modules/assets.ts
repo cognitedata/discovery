@@ -4,7 +4,11 @@ import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
-import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
+import {
+  arrayToObjectById,
+  checkForAccessPermission,
+  isInternalId,
+} from '../utils/utils';
 // eslint-disable-next-line import/no-cycle
 import { Type } from './types';
 import { RootState } from '../reducers';
@@ -224,8 +228,8 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
   };
 }
 
-export function fetchAssets(assetIds: IdEither[]) {
-  return async (dispatch: Dispatch) => {
+export function fetchAssets(assetIds: IdEither[], isRetry = false) {
+  return async (dispatch: ThunkDispatch<AnyAction, any, any>) => {
     if (assetIds.length === 0) {
       return;
     }
@@ -241,7 +245,42 @@ export function fetchAssets(assetIds: IdEither[]) {
         dispatch({ type: ADD_ASSETS, payload: { items } });
       }
     } catch (ex) {
-      message.error(`Could not fetch assets.`);
+      if (isRetry) {
+        message.error(`Could not fetch assets.`);
+      } else {
+        const failed: IdEither[] = ex.errors.reduce(
+          (prev: IdEither[], error: { missing?: IdEither[] }) =>
+            prev.concat(error.missing || []),
+          [] as IdEither[]
+        );
+        dispatch(
+          fetchAssets(
+            assetIds.filter(
+              (el: any) =>
+                !failed.find((fail: any) => {
+                  if (isInternalId(el)) {
+                    return fail.id === el.id;
+                  }
+                  return fail.externalId === el.externalId;
+                })
+            ),
+            true
+          )
+        );
+        dispatch(
+          fetchAssets(
+            failed
+              .map(el => {
+                if (isInternalId(el)) {
+                  return { externalId: `${el.id}` };
+                }
+                return undefined;
+              })
+              .filter(el => !!el) as IdEither[],
+            true
+          )
+        );
+      }
     }
   };
 }
