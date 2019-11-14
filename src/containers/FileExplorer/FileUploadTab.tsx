@@ -16,6 +16,8 @@ import { RootState } from '../../reducers';
 import FileUploader from '../../components/FileUploader';
 import { trackSearchUsage } from '../../utils/metrics';
 import { sdk } from '../../index';
+import { checkForAccessPermission } from '../../utils/utils';
+import { selectApp, AppState } from '../../modules/app';
 
 const Wrapper = styled.div`
   .wrapper {
@@ -39,11 +41,13 @@ const Wrapper = styled.div`
 type Props = {
   assetId?: number;
   asset?: ExtendedAsset;
+  app: AppState;
   onFileSelected: (file: UploadFileMetadataResponse) => void;
 };
 
 type State = {
   includeAssetId: number | undefined;
+  hasPermission: boolean;
   fetching: boolean;
   showLinkToAsset: boolean;
   fileList: UploadFileMetadataResponse[];
@@ -57,6 +61,11 @@ class FileUploadTab extends React.Component<Props, State> {
     this.state = {
       includeAssetId: props.assetId,
       fetching: false,
+      hasPermission: checkForAccessPermission(
+        props.app.groups,
+        'filesAcl',
+        'WRITE'
+      ),
       showLinkToAsset: false,
       fileList: [],
       searchResults: [],
@@ -117,8 +126,15 @@ class FileUploadTab extends React.Component<Props, State> {
       searchResults,
       showLinkToAsset,
       fileList,
+      hasPermission,
     } = this.state;
     const { asset: currentAsset, assetId: currentAssetId } = this.props;
+
+    if (!hasPermission) {
+      return (
+        <p>Your current account is missing permissions to upload files.</p>
+      );
+    }
 
     const options = searchResults.map(asset => (
       <Select.Option key={asset.id} value={asset.id}>
@@ -214,6 +230,7 @@ const mapStateToProps = (state: RootState) => {
   return {
     assetId: state.app.assetId,
     asset: selectCurrentAsset(state),
+    app: selectApp(state),
   };
 };
 

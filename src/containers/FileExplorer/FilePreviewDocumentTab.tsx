@@ -15,6 +15,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { trackUsage } from '../../utils/metrics';
 import AssetSelect from '../../components/AssetSelect';
 import { GCSUploader } from '../../components/FileUploader';
+import { checkForAccessPermission } from '../../utils/utils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -115,6 +116,16 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     fileId: number,
     selectedRootAssetId: number
   ) => {
+    if (
+      !checkForAccessPermission(
+        this.props.app.groups,
+        'filesAcl',
+        'WRITE',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
     const { selectedDocument } = this.props;
     let names: string[] = [];

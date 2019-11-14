@@ -10,7 +10,7 @@ import {
 import { fetchEvents } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
-import { arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
 import { trackUsage } from '../utils/metrics';
 import { setTimeseriesId } from './app';
 
@@ -80,67 +80,106 @@ export function searchTimeseries(query: string, assetId?: number) {
   };
 }
 
-export function removeAssetFromTimeseries(
+export const removeAssetFromTimeseries = (
   timeseriesId: number,
   assetId: number
-) {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    trackUsage('Timeseries.removeAssetFromTimeseries', {
-      assetId,
-      timeseriesId,
-    });
-    await sdk.timeseries.update([
-      {
-        id: timeseriesId,
-        update: {
-          assetId: { setNull: true },
-        },
-      },
-    ]);
-    dispatch({
-      type: REMOVE_ASSET_FROM_TIMESERIES,
-      payload: { timeseriesId },
-    });
-
-    message.info(`Removed 1 timeseries from asset.`);
-  };
-}
-
-export function addTimeseriesToAsset(timeseriesIds: number[], assetId: number) {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    trackUsage('Timeseries.addTimeseriesToAsset', {
-      assetId,
-      timeseriesIds,
-    });
-
-    const changes = timeseriesIds.map(id => ({
-      id,
-      update: { assetId: { set: assetId } },
-    }));
-    await sdk.timeseries.update(changes);
-
-    message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
-
-    setTimeout(() => {
-      dispatch(fetchTimeseriesForAssetId(assetId));
-      dispatch(fetchEvents(assetId));
-    }, 1000);
-  };
-}
-
-export function editTimeseries(timeseriesId: number, update: TimeSeriesUpdate) {
-  return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.updateTimeseries', {
+) => async (
+  dispatch: ThunkDispatch<any, void, AnyAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(
+      getState().app.groups,
+      'timeSeriesAcl',
+      'WRITE',
+      true
+    )
+  ) {
+    return;
+  }
+  trackUsage('Timeseries.removeAssetFromTimeseries', {
+    assetId,
+    timeseriesId,
+  });
+  await sdk.timeseries.update([
+    {
       id: timeseriesId,
-    });
+      update: {
+        assetId: { setNull: true },
+      },
+    },
+  ]);
+  dispatch({
+    type: REMOVE_ASSET_FROM_TIMESERIES,
+    payload: { timeseriesId },
+  });
 
-    const updatedTimeseries = await sdk.timeseries.update([update]);
-    dispatch({
-      type: SET_TIMESERIES,
-      payload: { items: updatedTimeseries },
-    });
-  };
-}
+  message.info(`Removed 1 timeseries from asset.`);
+};
+
+export const addTimeseriesToAsset = (
+  timeseriesIds: number[],
+  assetId: number
+) => async (
+  dispatch: ThunkDispatch<any, void, AnyAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(
+      getState().app.groups,
+      'timeSeriesAcl',
+      'WRITE',
+      true
+    )
+  ) {
+    return;
+  }
+  trackUsage('Timeseries.addTimeseriesToAsset', {
+    assetId,
+    timeseriesIds,
+  });
+
+  const changes = timeseriesIds.map(id => ({
+    id,
+    update: { assetId: { set: assetId } },
+  }));
+  await sdk.timeseries.update(changes);
+
+  message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
+
+  setTimeout(() => {
+    dispatch(fetchTimeseriesForAssetId(assetId));
+    dispatch(fetchEvents(assetId));
+  }, 1000);
+};
+
+export const editTimeseries = (
+  timeseriesId: number,
+  update: TimeSeriesUpdate
+) => async (
+  dispatch: Dispatch<SetTimeseriesAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(
+      getState().app.groups,
+      'timeSeriesAcl',
+      'WRITE',
+      true
+    )
+  ) {
+    return;
+  }
+  trackUsage('Timeseries.updateTimeseries', {
+    id: timeseriesId,
+  });
+
+  const updatedTimeseries = await sdk.timeseries.update([update]);
+  dispatch({
+    type: SET_TIMESERIES,
+    payload: { items: updatedTimeseries },
+  });
+};
 
 // Reducer
 export interface TimeseriesState {
