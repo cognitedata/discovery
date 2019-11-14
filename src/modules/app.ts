@@ -244,42 +244,56 @@ export const setTimeseriesId = (
 export const fetchUserGroups = () => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
-  const response = await sdk.groups.list();
+  try {
+    const response = await sdk.groups.list();
 
-  const groups = response.reduce(
-    (prev, current) => {
-      const a = {
-        ...prev,
-      };
-      const { capabilities } = current;
-      if (capabilities) {
-        capabilities.forEach((capability: SingleCogniteCapability) => {
-          Object.keys(capability).forEach(key => {
-            if (a[key]) {
-              // @ts-ignore
-              capability[key].actions.forEach(el => {
-                if (a[key].indexOf(el) === -1) {
-                  a[key].push(el);
-                }
-              });
-            } else {
-              // @ts-ignore
-              a[key] = capability[key].actions;
-            }
+    const groups = response.reduce(
+      (prev, current) => {
+        const a = {
+          ...prev,
+        };
+        // @ts-ignore
+        const { capabilities, permissions } = current;
+        if (permissions) {
+          a.assetsAcl = (a.assetsAcl || []).concat(permissions.accessTypes);
+          a.filesAcl = (a.filesAcl || []).concat(permissions.accessTypes);
+          a.timeseriesAcl = (a.timeseriesAcl || []).concat(
+            permissions.accessTypes
+          );
+        }
+        if (capabilities) {
+          capabilities.forEach((capability: SingleCogniteCapability) => {
+            Object.keys(capability).forEach(key => {
+              if (a[key]) {
+                // @ts-ignore
+                capability[key].actions.forEach(el => {
+                  if (a[key].indexOf(el) === -1) {
+                    a[key].push(el);
+                  }
+                });
+              } else {
+                // @ts-ignore
+                a[key] = capability[key].actions;
+              }
+            });
           });
-        });
-      }
-      return a;
-    },
-    {} as { [key: string]: string[] }
-  );
+        }
+        return a;
+      },
+      { groupsAcl: ['LIST'] } as { [key: string]: string[] }
+    );
 
-  dispatch({
-    type: SET_APP_STATE,
-    payload: {
-      groups,
-    },
-  });
+    dispatch({
+      type: SET_APP_STATE,
+      payload: {
+        groups,
+      },
+    });
+  } catch (e) {
+    message.error(
+      'Unable to load user permissions (missing permission groupsAcl:LIST)'
+    );
+  }
 };
 
 export const setTenant = (tenant: string, redirect = false) => async (
