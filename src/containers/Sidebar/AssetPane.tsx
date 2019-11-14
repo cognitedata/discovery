@@ -114,7 +114,6 @@ type State = {
   showeditAsset: boolean;
   showEvent?: number;
   asset?: ExtendedAsset;
-  children: number[];
   activeCollapsed?: any[];
   showEditHierarchy: boolean;
   disableEditHierarchy: boolean;
@@ -128,7 +127,6 @@ class AssetDrawer extends React.Component<Props, State> {
     showEditHierarchy: false,
     disableEditHierarchy: true,
     documentsTablePage: 0,
-    children: [],
     showAddTypes: false,
   };
 
@@ -137,7 +135,6 @@ class AssetDrawer extends React.Component<Props, State> {
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
-      this.fetchChildren();
     }
     this.resetState();
   }
@@ -152,7 +149,6 @@ class AssetDrawer extends React.Component<Props, State> {
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
-      this.fetchChildren();
       this.resetState();
     }
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
@@ -166,19 +162,6 @@ class AssetDrawer extends React.Component<Props, State> {
     }
     return undefined;
   }
-
-  fetchChildren = async () => {
-    this.setState({ children: [] }, async () => {
-      if (this.props.app.assetId) {
-        const children = await sdk.assets
-          .list({ filter: { parentIds: [this.props.app.assetId] } })
-          .autoPagingToArray({ limit: Infinity });
-        this.setState({
-          children: children.map(el => el.id),
-        });
-      }
-    });
-  };
 
   addTypeClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     const { asset } = this.state;
@@ -400,7 +383,6 @@ class AssetDrawer extends React.Component<Props, State> {
       timeseries,
     } = this.props;
     const { assetId, modelId } = this.props.app;
-    const { children } = this.state;
     if (!assetId && !modelId) {
       return (
         <>
@@ -479,7 +461,8 @@ class AssetDrawer extends React.Component<Props, State> {
           >
             <Panel header={<span>Children</span>} key="tree">
               <AssetTree
-                assetIds={children}
+                assetIds={[asset.id]}
+                defaultExpandedKeys={[asset.id]}
                 showLoading
                 onSelect={({ node }) => {
                   if (node) {
