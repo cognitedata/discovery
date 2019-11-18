@@ -993,10 +993,10 @@
     "@typescript-eslint/parser" "^2.4"
     typescript "^3.6"
 
-"@cognite/gearbox@^1.3.2":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-1.6.0.tgz#840c7c1bb3187acaa19336d2e14cccceb038c3d8"
-  integrity sha512-yEDBuN7kBVh0MjnJyNGMwRhB2P57GZC6K+r+y0K/JIqOTWZPZfh93S9vqz11We/Wy2ndJU5J53I318TQljjeIQ==
+"@cognite/gearbox@^1.9.0":
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/@cognite/gearbox/-/gearbox-1.9.0.tgz#d37ebd9d416eb35c01c5c4d7d010219daa27e05f"
+  integrity sha512-f+jUmmDbAbxxVrfISS2pA+OTAxIVrrbgGWsz6IZB7lbWsJnCdnlzjDM/Uwk/uyb9WkMOSo4QiCcsFLmEK6ZUSg==
   dependencies:
     d3 "^5.9.2"
     file-saver "^2.0.2"
