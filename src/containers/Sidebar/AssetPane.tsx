@@ -459,7 +459,7 @@ class AssetDrawer extends React.Component<Props, State> {
             onChange={this.onCollapseChange}
             defaultActiveKey={defaultActiveKey}
           >
-            <Panel header={<span>Children</span>} key="tree">
+            <Panel header={<span>Hierarchy Tree</span>} key="tree">
               <AssetTree
                 assetIds={[asset.id]}
                 defaultExpandedKeys={[asset.id]}
