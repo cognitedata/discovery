@@ -16,6 +16,7 @@ import styled from 'styled-components';
 import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
+import { AssetTree, AssetBreadcrumb } from '@cognite/gearbox';
 import {
   selectTimeseries,
   removeAssetFromTimeseries,
@@ -446,12 +447,30 @@ class AssetDrawer extends React.Component<Props, State> {
           />
         )}
         <div>
+          <AssetBreadcrumb
+            assetId={asset.id}
+            onBreadcrumbClick={selectedAsset =>
+              this.props.setAssetId(selectedAsset.rootId, selectedAsset.id)
+            }
+          />
           <h3>{createAssetTitle(asset)}</h3>
           {asset.description && <p>{asset.description}</p>}
           <Collapse
             onChange={this.onCollapseChange}
             defaultActiveKey={defaultActiveKey}
           >
+            <Panel header={<span>Hierarchy Tree</span>} key="tree">
+              <AssetTree
+                assetIds={[asset.id]}
+                defaultExpandedKeys={[asset.id]}
+                showLoading
+                onSelect={({ node }) => {
+                  if (node) {
+                    this.props.setAssetId(node.rootId, node.id);
+                  }
+                }}
+              />
+            </Panel>
             {asset != null && this.renderExternalLinks(asset.id)}
 
             <Panel
