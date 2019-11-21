@@ -123,7 +123,7 @@ const SelectedAssetViewer = styled.div`
     height: auto;
     padding: 8px;
     min-width: 200px;
-    max-width: 300px;
+    max-width: 400px;
   }
   h3 {
     color: #fff;

@@ -47,8 +47,12 @@ class EventsSection extends React.Component<Props, State> {
   render() {
     const {
       app: { assetId },
-      types: { assetTypes, items },
+      types: { assetTypes, items, error },
     } = this.props;
+
+    if (error) {
+      return <p>Opps, we were not able to fetch typing information.</p>;
+    }
 
     if (!assetId || !assetTypes[assetId]) {
       return <Spin />;

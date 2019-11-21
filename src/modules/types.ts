@@ -7,6 +7,7 @@ import { AssetTypeInfo } from './assets';
 
 // Constants
 export const RETRIEVE_TYPE = 'types/RETRIEVE_TYPE';
+export const RETRIEVE_TYPE_FAILED = 'types/RETRIEVE_TYPE_FAILED';
 export const RETRIEVE_TYPE_FOR_ASSET = 'types/RETRIEVE_TYPE_FOR_ASSET';
 
 export interface Type {
@@ -38,8 +39,12 @@ interface FetchTypeForAssetAction
 interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
   payload: { types: Type[] };
 }
+interface FetchTypeFailedAction extends Action<typeof RETRIEVE_TYPE_FAILED> {}
 
-type TypeAction = FetchTypeForAssetAction | FetchTypeAction;
+type TypeAction =
+  | FetchTypeForAssetAction
+  | FetchTypeAction
+  | FetchTypeFailedAction;
 
 // Functions
 export function fetchTypeForAsset(assetId: number) {
@@ -47,37 +52,43 @@ export function fetchTypeForAsset(assetId: number) {
     dispatch: ThunkDispatch<any, void, AnyAction>,
     getState: () => RootState
   ) => {
-    const {
-      types: { items },
-      app: { groups },
-    } = getState();
-    if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
-      return;
-    }
-    const { project } = sdk;
-    const response = await sdk.post(
-      `/api/playground/projects/${project}/assets/byids`,
-      {
-        data: {
-          items: [{ id: assetId }],
-        },
+    try {
+      const {
+        types: { items },
+        app: { groups },
+      } = getState();
+      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+        throw new Error('Missing ACL for types');
       }
-    );
-
-    if (response.status === 200 && response.data.items.length === 1) {
-      const missingTypes = response.data.items[0].types.filter(
-        (el: any) => items[el.type.id] === undefined
+      const { project } = sdk;
+      const response = await sdk.post(
+        `/api/playground/projects/${project}/assets/byids`,
+        {
+          data: {
+            items: [{ id: assetId }],
+          },
+        }
       );
-      if (missingTypes.length > 0) {
-        dispatch(fetchTypeByIds(missingTypes.map((el: any) => el.type.id)));
-      }
 
+      if (response.status === 200 && response.data.items.length === 1) {
+        const missingTypes = response.data.items[0].types.filter(
+          (el: any) => items[el.type.id] === undefined
+        );
+        if (missingTypes.length > 0) {
+          dispatch(fetchTypeByIds(missingTypes.map((el: any) => el.type.id)));
+        }
+
+        dispatch({
+          type: RETRIEVE_TYPE_FOR_ASSET,
+          payload: {
+            assetId,
+            type: response.data.items[0].types,
+          },
+        });
+      }
+    } catch (e) {
       dispatch({
-        type: RETRIEVE_TYPE_FOR_ASSET,
-        payload: {
-          assetId,
-          type: response.data.items[0].types,
-        },
+        type: RETRIEVE_TYPE_FAILED,
       });
     }
   };
@@ -85,63 +96,80 @@ export function fetchTypeForAsset(assetId: number) {
 
 export function fetchTypes() {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchTypeAction>,
+    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>,
     getState: () => RootState
   ) => {
-    const { groups } = getState().app;
-    if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
-      return;
-    }
-    const { project } = sdk;
-    const response = await sdk.post(
-      `/api/playground/projects/${project}/types/list`,
-      {
-        data: {},
+    try {
+      const {
+        app: { groups },
+      } = getState();
+      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+        throw new Error('Missing ACL for types');
       }
-    );
+      const { project } = sdk;
+      const response = await sdk.post(
+        `/api/playground/projects/${project}/types/list`,
+        {
+          data: {},
+        }
+      );
 
-    dispatch({
-      type: RETRIEVE_TYPE,
-      payload: {
-        types: response.data.items as Type[],
-      },
-    });
+      dispatch({
+        type: RETRIEVE_TYPE,
+        payload: {
+          types: response.data.items as Type[],
+        },
+      });
+    } catch (e) {
+      dispatch({
+        type: RETRIEVE_TYPE_FAILED,
+      });
+    }
   };
 }
 export function fetchTypeByIds(typeIds: number[]) {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchTypeAction>,
+    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>,
     getState: () => RootState
   ) => {
-    const { groups } = getState().app;
-    if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
-      return;
-    }
-    const { project } = sdk;
-    const response = await sdk.post(
-      `/api/playground/projects/${project}/types/byids`,
-      {
-        data: {
-          items: typeIds.map(id => ({ id })),
-        },
+    try {
+      const {
+        app: { groups },
+      } = getState();
+      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+        throw new Error('Missing ACL for types');
       }
-    );
+      const { project } = sdk;
+      const response = await sdk.post(
+        `/api/playground/projects/${project}/types/byids`,
+        {
+          data: {
+            items: typeIds.map(id => ({ id })),
+          },
+        }
+      );
 
-    dispatch({
-      type: RETRIEVE_TYPE,
-      payload: {
-        types: response.data.items as Type[],
-      },
-    });
+      dispatch({
+        type: RETRIEVE_TYPE,
+        payload: {
+          types: response.data.items as Type[],
+        },
+      });
+    } catch (e) {
+      dispatch({
+        type: RETRIEVE_TYPE_FAILED,
+      });
+    }
   };
 }
 
 // Reducer
 export interface TypesState {
+  error: boolean;
   items: Type[];
   assetTypes: { [key: number]: AssetTypeInfo[] };
 }
-const initialState: TypesState = { assetTypes: {}, items: [] };
+const initialState: TypesState = { assetTypes: {}, items: [], error: false };
 
 export default function typesReducer(
   state = initialState,
@@ -160,6 +188,12 @@ export default function typesReducer(
       return {
         ...state,
         assetTypes: { ...state.assetTypes, [assetId]: type },
+      };
+    }
+    case RETRIEVE_TYPE_FAILED: {
+      return {
+        ...state,
+        error: true,
       };
     }
 
