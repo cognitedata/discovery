@@ -5,11 +5,11 @@ import {
   Spin,
   Collapse,
   Button,
-  Icon,
   Popconfirm,
   Switch,
   Pagination,
   Descriptions,
+  Tag,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -23,12 +23,7 @@ import {
   TimeseriesState,
   fetchTimeseriesForAssetId,
 } from '../../modules/timeseries';
-import {
-  selectTypes,
-  removeTypeFromAsset,
-  Type,
-  TypesState,
-} from '../../modules/types';
+import { selectTypes, TypesState } from '../../modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
@@ -56,6 +51,7 @@ import MapNodeToAssetForm from '../MapNodeToAssetForm';
 import TimeseriesSection from './TimeseriesSection';
 import { trackUsage } from '../../utils/metrics';
 import EventsSection from './EventsSection';
+import TypeSection from './TypeSection';
 
 const { Panel } = Collapse;
 
@@ -73,12 +69,6 @@ const SpinContainer = styled.div`
   justify-content: center;
 `;
 
-const HeaderWithButton = styled.div`
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-`;
 const MetadataPanel = styled(Panel)`
   display: flex;
   max-height: 500px;
@@ -96,7 +86,6 @@ type Props = {
   doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
-  doRemoveTypeFromAsset: typeof removeTypeFromAsset;
   deleteAsset: typeof deleteAsset;
   setAssetId: typeof setAssetId;
   timeseries: TimeseriesState;
@@ -186,36 +175,6 @@ class AssetDrawer extends React.Component<Props, State> {
       showAddTypes: false,
     });
   };
-
-  renderTypes = (asset: ExtendedAsset, types: Type[]) => (
-    <Panel
-      header={
-        <HeaderWithButton>
-          <span>Types ({types.length})</span>
-          <Button type="primary" onClick={this.addTypeClick}>
-            Add
-          </Button>
-        </HeaderWithButton>
-      }
-      key="types"
-    >
-      {types.map(type => (
-        <HeaderWithButton key={`ts_${type.id}`}>
-          {type.name}
-          <Popconfirm
-            title="Are you sure？"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={() => this.props.doRemoveTypeFromAsset(type, asset)}
-          >
-            <Button type="danger">
-              <Icon type="delete" />
-            </Button>
-          </Popconfirm>
-        </HeaderWithButton>
-      ))}
-    </Panel>
-  );
 
   onCollapseChange = (change: string | string[]) => {
     trackUsage('AssetPane.VisiblePanes', {
@@ -471,8 +430,16 @@ class AssetDrawer extends React.Component<Props, State> {
                 }}
               />
             </Panel>
-            {asset != null && this.renderExternalLinks(asset.id)}
-
+            <Panel
+              header={
+                <span>
+                  Types <Tag color="#FFBB00">Beta</Tag>
+                </span>
+              }
+              key="types"
+            >
+              <TypeSection />
+            </Panel>
             <Panel
               header={<span>Timeseries ({currentAssetTimeseriesCount})</span>}
               key="timeseries"
@@ -485,6 +452,7 @@ class AssetDrawer extends React.Component<Props, State> {
               <EventsSection />
             </Panel>
             {this.renderMetadata()}
+            {this.renderExternalLinks(asset.id)}
             {this.state.showEditHierarchy && this.renderEdit(asset)}
           </Collapse>
           <EditHieraryToggle>
@@ -527,7 +495,6 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,
-      doRemoveTypeFromAsset: removeTypeFromAsset,
       deleteAssetNodeMapping,
       doFetchAsset: fetchAsset,
       setAssetId,

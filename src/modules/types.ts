@@ -1,114 +1,144 @@
-import { createAction } from 'redux-actions';
-import { message } from 'antd';
-import { Dispatch, AnyAction, Action } from 'redux';
-import { Asset } from '@cognite/sdk';
+import { Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { fetchAsset } from './assets';
-import { fetchEvents } from './events';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
+import { arrayToObjectById } from '../utils/utils';
 
 // Constants
-export const SET_TYPES = 'types/SET_TYPES';
+export const RETRIEVE_TYPE = 'types/RETRIEVE_TYPE';
+export const RETRIEVE_TYPE_FOR_ASSET = 'types/RETRIEVE_TYPE_FOR_ASSET';
 
 export interface Type {
-  id: number;
   name: string;
   description: string;
-  fields: {
+  properties: [
+    {
+      propertyId: string;
+      name: string;
+      description: string;
+      type: string;
+    }
+  ];
+  parentType: {
     id: number;
-    name: string;
-    description: string;
-    valueType: string;
-  }[];
+    version: number;
+  };
+  id: number;
+  externalId?: number;
+  version: number;
+  createdTime: number;
+  lastUpdatedTime: number;
 }
 
-interface SetAction extends Action<typeof SET_TYPES> {
-  payload: { items: Type[] };
+interface FetchTypeForAssetAction
+  extends Action<typeof RETRIEVE_TYPE_FOR_ASSET> {
+  payload: { assetId: number; type: any[] };
+}
+interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
+  payload: { types: Type[] };
 }
 
-type TypeAction = SetAction;
+type TypeAction = FetchTypeForAssetAction | FetchTypeAction;
 
 // Functions
-export function removeTypeFromAsset(type: Type, asset: Asset) {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    const body = {
-      id: asset.id,
-      types: {
-        remove: [type.id],
-      },
-    };
-
+export function fetchTypeForAsset(assetId: number) {
+  return async (
+    dispatch: ThunkDispatch<any, void, AnyAction>,
+    getState: () => RootState
+  ) => {
     const { project } = sdk;
-    await sdk.post(`/api/0.6/projects/${project}/assets/${asset.id}/update`, {
-      data: body,
-    });
+    const { items } = getState().types;
+    const response = await sdk.post(
+      `/api/playground/projects/${project}/assets/byids`,
+      {
+        data: {
+          items: [{ id: assetId }],
+        },
+      }
+    );
 
-    message.info(`Removed ${type.name} from ${asset.name}.`);
+    if (response.status === 200 && response.data.items.length === 1) {
+      const missingTypes = response.data.items[0].types.filter(
+        (el: any) => items[el.type.id] === undefined
+      );
+      if (missingTypes.length > 0) {
+        dispatch(fetchTypeByIds(missingTypes.map((el: any) => el.type.id)));
+      }
 
-    dispatch(fetchAsset(asset.id));
-    dispatch(fetchEvents(asset.id));
-  };
-}
-export function addTypesToAsset(selectedTypes: Type[], asset: Asset) {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    // We here assume that we have the two fields confidence and source on all types
-    const formattedTypes = selectedTypes.map((type: Type) => ({
-      id: type.id,
-      fields: type.fields.map(field => ({
-        id: field.id,
-        value: field.name === 'confidence' ? 1.0 : 'expert',
-      })),
-    }));
-
-    const body = {
-      id: asset.id,
-      types: {
-        add: formattedTypes,
-      },
-    };
-
-    const { project } = sdk;
-    await sdk.post(`/api/0.6/projects/${project}/assets/${asset.id}/update`, {
-      data: body,
-    });
-
-    message.info(`Added ${selectedTypes.length} types to ${asset.name}.`);
-    dispatch(fetchAsset(asset.id));
-    dispatch(fetchEvents(asset.id));
+      dispatch({
+        type: RETRIEVE_TYPE_FOR_ASSET,
+        payload: {
+          assetId,
+          type: response.data.items[0].types,
+        },
+      });
+    }
   };
 }
 
 export function fetchTypes() {
-  return async (dispatch: Dispatch) => {
-    // Skip if we did it before
-
+  return async (dispatch: ThunkDispatch<any, void, FetchTypeAction>) => {
     const { project } = sdk;
-    const result = await sdk.get(`/api/0.6/projects/${project}/assets/types`);
+    const response = await sdk.post(
+      `/api/playground/projects/${project}/types/list`,
+      {
+        data: {},
+      }
+    );
 
-    if (result) {
-      const { items }: { items: Type[] } = result.data.data;
-      dispatch({ type: SET_TYPES, payload: { items } });
-    }
+    dispatch({
+      type: RETRIEVE_TYPE,
+      payload: {
+        types: response.data.items as Type[],
+      },
+    });
+  };
+}
+export function fetchTypeByIds(typeIds: number[]) {
+  return async (dispatch: ThunkDispatch<any, void, FetchTypeAction>) => {
+    const { project } = sdk;
+    const response = await sdk.post(
+      `/api/playground/projects/${project}/types/byids`,
+      {
+        data: {
+          items: typeIds.map(id => ({ id })),
+        },
+      }
+    );
+
+    dispatch({
+      type: RETRIEVE_TYPE,
+      payload: {
+        types: response.data.items as Type[],
+      },
+    });
   };
 }
 
 // Reducer
 export interface TypesState {
-  items?: Type[];
+  items: Type[];
+  assetTypes: { [key: number]: any };
 }
-const initialState: TypesState = {};
+const initialState: TypesState = { assetTypes: {}, items: [] };
 
-export default function types(
+export default function typesReducer(
   state = initialState,
   action: TypeAction
 ): TypesState {
   switch (action.type) {
-    case SET_TYPES: {
-      const { items } = action.payload;
+    case RETRIEVE_TYPE: {
+      const { types } = action.payload;
       return {
         ...state,
-        items,
+        items: { ...state.items, ...arrayToObjectById(types) },
+      };
+    }
+    case RETRIEVE_TYPE_FOR_ASSET: {
+      const { type, assetId } = action.payload;
+      return {
+        ...state,
+        assetTypes: { ...state.assetTypes, [assetId]: type },
       };
     }
 
@@ -117,12 +147,5 @@ export default function types(
   }
 }
 
-// Action creators
-const setTypes = createAction(SET_TYPES);
-
-export const actions = {
-  setTypes,
-};
-
 // Selectors
-export const selectTypes = (state: RootState) => state.types || { items: [] };
+export const selectTypes = (state: RootState) => state.types;
