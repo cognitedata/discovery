@@ -29,7 +29,7 @@ export const BetaTag = ({ style }: { style?: React.CSSProperties }) => (
   </Tag>
 );
 export const BetaBadge = ({ children }: { children?: React.ReactNode }) => (
-  <div style={{ marginRight: '16px', display: 'inline-flex' }}>
+  <span style={{ marginRight: '16px', display: 'inline-flex' }}>
     <Badge
       color="#FFBB00"
       count={
@@ -49,7 +49,7 @@ export const BetaBadge = ({ children }: { children?: React.ReactNode }) => (
     >
       {children}
     </Badge>
-  </div>
+  </span>
 );
 
 export default BetaWarning;
