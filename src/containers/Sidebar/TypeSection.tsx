@@ -27,17 +27,20 @@ class EventsSection extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    if (this.props.app.assetId) {
-      this.props.fetchTypeForAsset(this.props.app.assetId);
+    const { assetId } = this.props.app;
+    if (assetId && !this.props.types.assetTypes[assetId]) {
+      this.props.fetchTypeForAsset(assetId);
     }
   }
 
   componentDidUpdate(prevProps: Props) {
+    const { assetId } = this.props.app;
     if (
-      this.props.app.assetId &&
-      this.props.app.assetId !== prevProps.app.assetId
+      assetId &&
+      assetId !== prevProps.app.assetId &&
+      !this.props.types.assetTypes[assetId]
     ) {
-      this.props.fetchTypeForAsset(this.props.app.assetId);
+      this.props.fetchTypeForAsset(assetId);
     }
   }
 
@@ -77,6 +80,7 @@ class EventsSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
+    asset: selectApp(state),
     app: selectApp(state),
     types: selectTypes(state),
   };

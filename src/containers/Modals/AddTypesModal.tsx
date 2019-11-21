@@ -40,7 +40,7 @@ class AddTypes extends React.Component<Props, State> {
   };
 
   render() {
-    const existingTypeIds = this.props.asset.types.map(type => type.id);
+    const existingTypeIds = this.props.asset.types.map(type => type.type.id);
     const nonUsedTypes = this.props.types.filter(
       type => existingTypeIds.indexOf(type.id) === -1
     );

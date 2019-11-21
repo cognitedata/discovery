@@ -2,7 +2,8 @@ import { Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
-import { arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
+import { AssetTypeInfo } from './assets';
 
 // Constants
 export const RETRIEVE_TYPE = 'types/RETRIEVE_TYPE';
@@ -32,7 +33,7 @@ export interface Type {
 
 interface FetchTypeForAssetAction
   extends Action<typeof RETRIEVE_TYPE_FOR_ASSET> {
-  payload: { assetId: number; type: any[] };
+  payload: { assetId: number; type: AssetTypeInfo[] };
 }
 interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
   payload: { types: Type[] };
@@ -46,8 +47,14 @@ export function fetchTypeForAsset(assetId: number) {
     dispatch: ThunkDispatch<any, void, AnyAction>,
     getState: () => RootState
   ) => {
+    const {
+      types: { items },
+      app: { groups },
+    } = getState();
+    if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      return;
+    }
     const { project } = sdk;
-    const { items } = getState().types;
     const response = await sdk.post(
       `/api/playground/projects/${project}/assets/byids`,
       {
@@ -77,7 +84,14 @@ export function fetchTypeForAsset(assetId: number) {
 }
 
 export function fetchTypes() {
-  return async (dispatch: ThunkDispatch<any, void, FetchTypeAction>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, FetchTypeAction>,
+    getState: () => RootState
+  ) => {
+    const { groups } = getState().app;
+    if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      return;
+    }
     const { project } = sdk;
     const response = await sdk.post(
       `/api/playground/projects/${project}/types/list`,
@@ -95,7 +109,14 @@ export function fetchTypes() {
   };
 }
 export function fetchTypeByIds(typeIds: number[]) {
-  return async (dispatch: ThunkDispatch<any, void, FetchTypeAction>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, FetchTypeAction>,
+    getState: () => RootState
+  ) => {
+    const { groups } = getState().app;
+    if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      return;
+    }
     const { project } = sdk;
     const response = await sdk.post(
       `/api/playground/projects/${project}/types/byids`,
@@ -118,7 +139,7 @@ export function fetchTypeByIds(typeIds: number[]) {
 // Reducer
 export interface TypesState {
   items: Type[];
-  assetTypes: { [key: number]: any };
+  assetTypes: { [key: number]: AssetTypeInfo[] };
 }
 const initialState: TypesState = { assetTypes: {}, items: [] };
 

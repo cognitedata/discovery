@@ -9,6 +9,7 @@ import * as d3 from 'd3';
 import Placeholder from 'components/Placeholder';
 import { IdEither } from '@cognite/sdk';
 import { withResizeDetector } from 'react-resize-detector';
+import TypeBadge from 'containers/TypeBadge';
 import {
   AppState,
   selectApp,
@@ -122,7 +123,7 @@ const SelectedAssetViewer = styled.div`
     height: auto;
     padding: 8px;
     min-width: 200px;
-    max-width: 400px;
+    max-width: 300px;
   }
   h3 {
     color: #fff;
@@ -630,6 +631,7 @@ class TreeViewer extends Component<Props, State> {
         />
         <h3>Name: {asset.name}</h3>
         {asset.description && <p>{asset.description}</p>}
+        <TypeBadge assetId={asset.id} />
         <div className="buttons">
           <Button
             onClick={() => {

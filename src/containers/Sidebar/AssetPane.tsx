@@ -9,7 +9,6 @@ import {
   Switch,
   Pagination,
   Descriptions,
-  Tag,
 } from 'antd';
 
 import styled from 'styled-components';
@@ -17,13 +16,18 @@ import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
 import { AssetTree, AssetBreadcrumb } from '@cognite/gearbox';
+import TypeBadge from 'containers/TypeBadge';
 import {
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
   fetchTimeseriesForAssetId,
 } from '../../modules/timeseries';
-import { selectTypes, TypesState } from '../../modules/types';
+import {
+  selectTypes,
+  TypesState,
+  fetchTypeForAsset,
+} from '../../modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
@@ -52,6 +56,7 @@ import TimeseriesSection from './TimeseriesSection';
 import { trackUsage } from '../../utils/metrics';
 import EventsSection from './EventsSection';
 import TypeSection from './TypeSection';
+import { BetaTag } from '../../components/BetaWarning';
 
 const { Panel } = Collapse;
 
@@ -79,9 +84,21 @@ const MetadataPanel = styled(Panel)`
   }
 `;
 
+const AssetOverview = styled.div`
+  margin-bottom: 16px;
+  h3,
+  p {
+    margin-bottom: 0px;
+  }
+  p {
+    margin-top: 8px;
+  }
+`;
+
 type OrigProps = {};
 
 type Props = {
+  doFetchTypeForAsset: typeof fetchTypeForAsset;
   doFetchEvents: typeof fetchEvents;
   doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
@@ -120,10 +137,16 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   componentDidMount() {
-    const { doFetchTimeseries, doFetchEvents, app } = this.props;
+    const {
+      doFetchTimeseries,
+      doFetchEvents,
+      doFetchTypeForAsset,
+      app,
+    } = this.props;
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      doFetchTypeForAsset(app.assetId);
     }
     this.resetState();
   }
@@ -132,12 +155,14 @@ class AssetDrawer extends React.Component<Props, State> {
     const {
       doFetchTimeseries,
       doFetchEvents,
+      doFetchTypeForAsset,
       app,
       assets: { all },
     } = this.props;
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      doFetchTypeForAsset(app.assetId);
       this.resetState();
     }
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
@@ -181,6 +206,13 @@ class AssetDrawer extends React.Component<Props, State> {
       change,
     });
     this.setState({ activeCollapsed: change as string[] });
+  };
+
+  renderTypeInformation = () => {
+    if (this.asset) {
+      return <TypeBadge assetId={this.asset.id} />;
+    }
+    return null;
   };
 
   resetState = () => {
@@ -406,14 +438,17 @@ class AssetDrawer extends React.Component<Props, State> {
           />
         )}
         <div>
-          <AssetBreadcrumb
-            assetId={asset.id}
-            onBreadcrumbClick={selectedAsset =>
-              this.props.setAssetId(selectedAsset.rootId, selectedAsset.id)
-            }
-          />
-          <h3>{createAssetTitle(asset)}</h3>
-          {asset.description && <p>{asset.description}</p>}
+          <AssetOverview>
+            <AssetBreadcrumb
+              assetId={asset.id}
+              onBreadcrumbClick={selectedAsset =>
+                this.props.setAssetId(selectedAsset.rootId, selectedAsset.id)
+              }
+            />
+            <h3>{createAssetTitle(asset)}</h3>
+            {asset.description && <p>{asset.description}</p>}
+            {this.renderTypeInformation()}
+          </AssetOverview>
           <Collapse
             onChange={this.onCollapseChange}
             defaultActiveKey={defaultActiveKey}
@@ -433,7 +468,7 @@ class AssetDrawer extends React.Component<Props, State> {
             <Panel
               header={
                 <span>
-                  Types <Tag color="#FFBB00">Beta</Tag>
+                  Types <BetaTag />
                 </span>
               }
               key="types"
@@ -492,6 +527,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       doFetchTimeseries: fetchTimeseriesForAssetId,
+      doFetchTypeForAsset: fetchTypeForAsset,
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,

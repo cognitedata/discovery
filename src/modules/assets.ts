@@ -9,8 +9,6 @@ import {
   checkForAccessPermission,
   isInternalId,
 } from '../utils/utils';
-// eslint-disable-next-line import/no-cycle
-import { Type } from './types';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
@@ -23,9 +21,18 @@ export const ADD_ASSETS = 'assets/ADD_ASSETS';
 export const UPDATE_ASSET = 'assets/UPDATE_ASSET';
 export const DELETE_ASSETS = 'assets/DELETE_ASSETS';
 
+export interface AssetTypeInfo {
+  type: {
+    id: number;
+    version: number;
+    externalId: string;
+  };
+  object: any;
+}
+
 export interface ExtendedAsset extends Asset {
   rootId: number;
-  types: Type[];
+  types: AssetTypeInfo[];
   metadata?: { [key: string]: string };
 }
 

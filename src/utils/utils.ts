@@ -44,6 +44,8 @@ export const checkForAccessPermission = (
       if (showMessage) {
         message.error(`You are missing access ${key}:${type}`);
       }
+      // eslint-disable-next-line no-console
+      console.error(`You are missing access ${key}:${type}`);
       return false;
     }
   }
