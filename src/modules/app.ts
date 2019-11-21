@@ -290,7 +290,8 @@ export const fetchUserGroups = () => async (
       },
     });
   } catch (e) {
-    message.error(
+    // eslint-disable-next-line no-console
+    console.error(
       'Unable to load user permissions (missing permission groupsAcl:LIST)'
     );
   }
