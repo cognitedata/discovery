@@ -1,10 +1,10 @@
-import { AnyAction, Action } from 'redux';
+import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { ExtendedAsset } from './assets';
-import { checkForAccessPermission } from '../utils/utils';
+import { checkForAccessPermission, arrayToObjectById } from '../utils/utils';
 
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
@@ -29,36 +29,36 @@ export interface Relationship {
 }
 
 interface FetchRelationshipsAction extends Action<typeof GET_RELATIONSHIPS> {
-  payload: { items: Relationship[] };
+  payload: { items: Relationship[]; assetId: string };
 }
 
 type RelationshipActions = FetchRelationshipsAction;
 
 // Functions
-export function fetchRelationships() {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    const { project } = sdk;
-    try {
-      const response = await sdk.get(
-        `/api/playground/projects/${project}/relationships`
-      );
+// export function fetchRelationships() {
+//   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+//     const { project } = sdk;
+//     try {
+//       const response = await sdk.get(
+//         `/api/playground/projects/${project}/relationships`
+//       );
 
-      if (response.status === 200) {
-        dispatch({
-          type: GET_RELATIONSHIPS,
-          payload: { items: response.data.items },
-        });
-      } else {
-        throw new Error('Unable to fetch relationships');
-      }
-    } catch (ex) {
-      message.error('unable to retrieve relationship data');
-    }
-  };
-}
+//       if (response.status === 200) {
+//         dispatch({
+//           type: GET_RELATIONSHIPS,
+//           payload: { items: response.data.items },
+//         });
+//       } else {
+//         throw new Error('Unable to fetch relationships');
+//       }
+//     } catch (ex) {
+//       message.error('unable to retrieve relationship data');
+//     }
+//   };
+// }
 export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
   return async (
-    dispatch: ThunkDispatch<any, void, AnyAction>,
+    dispatch: ThunkDispatch<any, void, FetchRelationshipsAction>,
     getState: () => RootState
   ) => {
     const { groups } = getState().app;
@@ -129,7 +129,7 @@ export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
         }
         dispatch({
           type: GET_RELATIONSHIPS,
-          payload: { items },
+          payload: { items, assetId: `${asset.id}` },
         });
       } else {
         throw new Error('Unable to fetch relationships for given asset');
@@ -142,10 +142,12 @@ export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
 
 // Reducer
 export interface RelationshipState {
-  items: Relationship[];
+  items: { [key: string]: Relationship };
+  assetRelationshipMap: { [key: string]: string[] };
 }
 const initialState: RelationshipState = {
-  items: [],
+  items: {},
+  assetRelationshipMap: {},
 };
 
 export default function relationships(
@@ -154,10 +156,17 @@ export default function relationships(
 ): RelationshipState {
   switch (action.type) {
     case GET_RELATIONSHIPS: {
-      const { items } = action.payload;
+      const { items, assetId } = action.payload;
       return {
         ...state,
-        items,
+        items: {
+          ...state.items,
+          ...arrayToObjectById(items.map(el => ({ ...el, id: el.externalId }))),
+        },
+        assetRelationshipMap: {
+          ...state.assetRelationshipMap,
+          [assetId]: items.map(el => el.externalId),
+        },
       };
     }
 
