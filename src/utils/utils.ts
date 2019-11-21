@@ -6,7 +6,7 @@ export function sleep(timeout: number) {
 }
 
 interface Generic {
-  id: number;
+  id: number | string;
 }
 
 export function arrayToObjectById<T extends Generic>(
