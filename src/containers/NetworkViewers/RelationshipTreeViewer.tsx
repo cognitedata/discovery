@@ -4,10 +4,11 @@ import ForceGraph from 'force-graph';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
-import { Select, Spin, message } from 'antd';
+import { Select, Spin, message, Button, Icon } from 'antd';
 import * as d3 from 'd3';
 import Placeholder from 'components/Placeholder';
 import { IdEither } from '@cognite/sdk';
+import { withResizeDetector } from 'react-resize-detector';
 import {
   AppState,
   selectApp,
@@ -40,6 +41,19 @@ import {
 const isNumeric = (value: string) => {
   return /^\d+$/.test(value);
 };
+
+const doesIntersect = (
+  point: { x: number; y: number },
+  node: { x: number; y: number; w: number; h: number }
+) => {
+  return (
+    point.x >= node.x &&
+    point.x <= node.x + node.w &&
+    point.y >= node.y &&
+    point.y <= node.y + node.h
+  );
+};
+
 const BGCOLOR = '#101020';
 
 const Wrapper = styled.div`
@@ -98,6 +112,25 @@ const Legend = styled.div`
   }
 `;
 
+const SelectedAssetViewer = styled.div`
+  &&&& {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background-color: #000;
+    color: #fff;
+    height: auto;
+    padding: 8px;
+    min-width: 200px;
+  }
+  h3 {
+    color: #fff;
+  }
+  .buttons button {
+    display: block;
+  }
+`;
+
 type FORCE_GRAPH_TYPES =
   | 'td'
   | 'bu'
@@ -139,9 +172,8 @@ const LoadingWrapper = styled.div<{ visible: string }>`
   }
 `;
 
-type OwnProps = {
-  topShowing: boolean;
-};
+type OwnProps = {};
+
 type StateProps = {
   app: AppState;
   relationships: RelationshipState;
@@ -163,7 +195,9 @@ type Props = StateProps & DispatchProps & OwnProps;
 type State = {
   controls: string;
   loading: boolean;
+  showLegend: boolean;
   data: { nodes: any[]; links: any[] };
+  selectedAsset?: RelationshipResource;
 };
 
 class TreeViewer extends Component<Props, State> {
@@ -173,11 +207,14 @@ class TreeViewer extends Component<Props, State> {
 
   wrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
 
+  nodes: { [key: string]: { x: number; y: number; w: number; h: number } } = {};
+
   constructor(props: Props) {
     super(props);
 
     this.state = {
       controls: 'none',
+      showLegend: false,
       loading: false,
       data: { nodes: [], links: [] },
     };
@@ -217,6 +254,7 @@ class TreeViewer extends Component<Props, State> {
         this.loadMissingResources(data.nodes);
         // eslint-disable-next-line react/no-did-update-set-state
         setTimeout(() => {
+          this.nodes = {};
           this.setState({ loading: false });
           // add collision force
           this.forceGraphRef.current!.d3Force(
@@ -401,7 +439,54 @@ class TreeViewer extends Component<Props, State> {
     };
   };
 
+  onNodeClicked = (node: RelationshipResource) => {
+    switch (node.resource) {
+      case 'asset': {
+        const {
+          assets: { all, externalIdMap },
+        } = this.props;
+        const asset =
+          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+        if (asset) {
+          this.setState({ selectedAsset: node });
+        } else {
+          message.error('Asset not yet loaded.');
+        }
+        return;
+      }
+      case 'timeSeries': {
+        this.props.setTimeseriesId(Number(node.resourceId));
+        trackUsage('RelationshipViewer.TimeseriesClicked', {
+          assetId: node.resourceId,
+        });
+      }
+    }
+  };
+
+  onLoadMoreSelected = (node: RelationshipResource, navigateAway = true) => {
+    switch (node.resource) {
+      case 'asset': {
+        const {
+          assets: { all, externalIdMap },
+        } = this.props;
+        const asset =
+          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+        if (asset) {
+          if (navigateAway) {
+            this.props.setAssetId(asset.rootId, asset.id);
+          }
+          trackUsage('RelationshipViewer.AssetClicked', {
+            assetId: node.resourceId,
+          });
+        } else {
+          message.error('Asset not yet loaded.');
+        }
+      }
+    }
+  };
+
   renderLegend = () => {
+    const { showLegend } = this.state;
     const nodes: { [key: string]: RelationshipResource } = {
       'Current Asset': {
         resource: 'asset',
@@ -447,32 +532,67 @@ class TreeViewer extends Component<Props, State> {
     };
     return (
       <Legend>
-        <h3>Legend</h3>
-        <p>
-          <strong>Nodes</strong>
-        </p>
-        {Object.keys(nodes).map(label => (
-          <div key={label} className="node">
-            <p style={{ color: this.chooseNodeColor(nodes[label]) }}>{label}</p>
-          </div>
-        ))}
-        <p>
-          <strong>Relationships</strong>
-        </p>
-        {Object.keys(relationships).map(label => (
-          <div key={label} className="relationship">
-            <div
-              className="line"
-              style={{
-                backgroundColor: this.chooseRelationshipColor(
-                  relationships[label]
-                ),
-              }}
-            />
-            <p>{label}</p>
-          </div>
-        ))}
+        <h3>
+          Legend{' '}
+          <Icon
+            type={showLegend ? 'caret-up' : 'caret-down'}
+            twoToneColor="white"
+            onClick={() => this.setState({ showLegend: !showLegend })}
+          />
+        </h3>
+        {showLegend && (
+          <>
+            <p>
+              <strong>Nodes</strong>
+            </p>
+            {Object.keys(nodes).map(label => (
+              <div key={label} className="node">
+                <p style={{ color: this.chooseNodeColor(nodes[label]) }}>
+                  {label}
+                </p>
+              </div>
+            ))}
+            <p>
+              <strong>Relationships</strong>
+            </p>
+            {Object.keys(relationships).map(label => (
+              <div key={label} className="relationship">
+                <div
+                  className="line"
+                  style={{
+                    backgroundColor: this.chooseRelationshipColor(
+                      relationships[label]
+                    ),
+                  }}
+                />
+                <p>{label}</p>
+              </div>
+            ))}
+          </>
+        )}
       </Legend>
+    );
+  };
+
+  renderSelectedAsset = () => {
+    const { selectedAsset } = this.state;
+    const { all, externalIdMap } = this.props.assets;
+    if (!selectedAsset || selectedAsset.resource !== 'asset') {
+      return null;
+    }
+    const asset =
+      all[
+        externalIdMap[selectedAsset.resourceId] ||
+          Number(selectedAsset.resourceId)
+      ];
+    return (
+      <SelectedAssetViewer>
+        <h3>Name: {asset.name}</h3>
+        <div className="buttons">
+          <Button>Load Relationships</Button>
+          <Button>Go To Asset</Button>
+        </div>
+      </SelectedAssetViewer>
     );
   };
 
@@ -487,11 +607,33 @@ class TreeViewer extends Component<Props, State> {
           <Spin size="large" />
         </LoadingWrapper>
         <ForceGraph2D
+          onBackgroundClick={(event: any) => {
+            const nodeId = Object.keys(this.nodes).find(id =>
+              doesIntersect(
+                { x: event.offsetX, y: event.offsetY },
+                this.nodes[id]
+              )
+            );
+            console.log(nodeId, this.nodes, {
+              x: event.offsetX,
+              y: event.offsetY,
+            });
+            if (nodeId !== undefined) {
+              const node: any = data.nodes.find(el => el.id === nodeId);
+              if (node) {
+                this.onNodeClicked(node);
+              }
+            }
+          }}
           width={
-            this.wrapperRef.current ? this.wrapperRef.current.clientWidth : '0'
+            this.wrapperRef && this.wrapperRef.current
+              ? this.wrapperRef.current.clientWidth
+              : 0
           }
           height={
-            this.wrapperRef.current ? this.wrapperRef.current.clientHeight : '0'
+            this.wrapperRef && this.wrapperRef.current
+              ? this.wrapperRef.current.clientHeight
+              : 0
           }
           ref={this.forceGraphRef}
           graphData={data}
@@ -506,34 +648,6 @@ class TreeViewer extends Component<Props, State> {
           nodeAutoColorBy="color"
           linkDirectionalParticles={2}
           linkDirectionalParticleWidth={2}
-          onNodeClick={(node: RelationshipResource) => {
-            switch (node.resource) {
-              case 'asset': {
-                const {
-                  assets: { all, externalIdMap },
-                } = this.props;
-                const asset =
-                  all[
-                    externalIdMap[node.resourceId] || Number(node.resourceId)
-                  ];
-                if (asset) {
-                  this.props.setAssetId(asset.rootId, asset.id);
-                  trackUsage('RelationshipViewer.AssetClicked', {
-                    assetId: node.resourceId,
-                  });
-                } else {
-                  message.error('Asset not yet loaded.');
-                }
-                return;
-              }
-              case 'timeSeries': {
-                this.props.setTimeseriesId(Number(node.resourceId));
-                trackUsage('RelationshipViewer.TimeseriesClicked', {
-                  assetId: node.resourceId,
-                });
-              }
-            }
-          }}
           nodeCanvasObject={(
             node: RelationshipResource & {
               color: string;
@@ -561,6 +675,22 @@ class TreeViewer extends Component<Props, State> {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = node.color;
             ctx.fillText(label, node.x, node.y);
+
+            // update mapping
+            const pointA = ctx.getTransform().transformPoint({
+              x: node.x - bgwidth / 2,
+              y: node.y - bgheight / 2,
+            });
+            const pointB = ctx.getTransform().transformPoint({
+              x: node.x + bgwidth / 2,
+              y: node.y + bgheight / 2,
+            });
+            this.nodes[node.resourceId] = {
+              x: pointA.x,
+              y: pointA.y,
+              w: pointB.x - pointA.x,
+              h: pointB.y - pointA.y,
+            };
           }}
           d3VelocityDecay={0.3}
         />
@@ -579,6 +709,7 @@ class TreeViewer extends Component<Props, State> {
           </Select>
         </div>
         {this.renderLegend()}
+        {this.renderSelectedAsset()}
       </Wrapper>
     );
   }
@@ -607,7 +738,9 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     dispatch
   );
 
-export default connect<StateProps, DispatchProps, OwnProps, RootState>(
-  mapStateToProps,
-  mapDispatchToProps
-)(TreeViewer);
+export default withResizeDetector(
+  connect<StateProps, DispatchProps, OwnProps, RootState>(
+    mapStateToProps,
+    mapDispatchToProps
+  )(TreeViewer)
+);

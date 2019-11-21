@@ -134,7 +134,7 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderRelationshipsViewer = () => {
-    return <RelationshipTreeViewer topShowing={false} />;
+    return <RelationshipTreeViewer />;
   };
 
   renderFileExplorer = () => {
