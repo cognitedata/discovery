@@ -14,6 +14,7 @@ import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
 import { setRevisionRepresentAsset } from './threed';
 import { trackUsage } from '../utils/metrics';
+import { fetchTypeForAssets } from './types';
 
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
@@ -248,6 +249,8 @@ export function fetchAssets(assetIds: IdEither[], isRetry = false) {
         const items = arrayToObjectById(
           results.map(asset => slimAssetObject(asset))
         );
+
+        dispatch(fetchTypeForAssets(results.map(el => el.id)));
 
         dispatch({ type: ADD_ASSETS, payload: { items } });
       }

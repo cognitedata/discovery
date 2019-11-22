@@ -26,7 +26,7 @@ import {
 import {
   selectTypes,
   TypesState,
-  fetchTypeForAsset,
+  fetchTypeForAssets,
 } from '../../modules/types';
 import {
   fetchEvents,
@@ -98,7 +98,7 @@ const AssetOverview = styled.div`
 type OrigProps = {};
 
 type Props = {
-  doFetchTypeForAsset: typeof fetchTypeForAsset;
+  doFetchTypeForAssets: typeof fetchTypeForAssets;
   doFetchEvents: typeof fetchEvents;
   doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
@@ -140,13 +140,13 @@ class AssetDrawer extends React.Component<Props, State> {
     const {
       doFetchTimeseries,
       doFetchEvents,
-      doFetchTypeForAsset,
+      doFetchTypeForAssets,
       app,
     } = this.props;
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
-      doFetchTypeForAsset(app.assetId);
+      doFetchTypeForAssets([app.assetId]);
     }
     this.resetState();
   }
@@ -155,14 +155,14 @@ class AssetDrawer extends React.Component<Props, State> {
     const {
       doFetchTimeseries,
       doFetchEvents,
-      doFetchTypeForAsset,
+      doFetchTypeForAssets,
       app,
       assets: { all },
     } = this.props;
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
-      doFetchTypeForAsset(app.assetId);
+      doFetchTypeForAssets([app.assetId]);
       this.resetState();
     }
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
@@ -527,7 +527,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       doFetchTimeseries: fetchTimeseriesForAssetId,
-      doFetchTypeForAsset: fetchTypeForAsset,
+      doFetchTypeForAssets: fetchTypeForAssets,
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,
