@@ -709,6 +709,7 @@ class TreeViewer extends Component<Props, State> {
           nodeVal={(node: any) => 100 / (node.level + 1)}
           nodeLabel="name"
           nodeAutoColorBy="color"
+          warmupTicks={200}
           linkDirectionalParticles={2}
           linkDirectionalParticleWidth={2}
           nodeCanvasObject={(
