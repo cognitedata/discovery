@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, Select } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
-import { addTypesToAsset, Type } from '../../modules/types';
+import { Type } from '../../modules/types';
 import { ExtendedAsset } from '../../modules/assets';
 
 const { Option } = Select;
@@ -12,7 +12,6 @@ type Props = {
   assetId: number;
   types: Type[];
   onClose: (e: any) => void;
-  doAddTypesToAsset: typeof addTypesToAsset;
 };
 
 type State = {};
@@ -23,7 +22,7 @@ class AddTypes extends React.Component<Props, State> {
   selectedTypes: Type[] = [];
 
   addToAsset = () => {
-    this.props.doAddTypesToAsset(this.selectedTypes, this.props.asset);
+    // noop
   };
 
   typesChanged = (change: string[]) => {
@@ -41,7 +40,7 @@ class AddTypes extends React.Component<Props, State> {
   };
 
   render() {
-    const existingTypeIds = this.props.asset.types.map(type => type.id);
+    const existingTypeIds = this.props.asset.types.map(type => type.type.id);
     const nonUsedTypes = this.props.types.filter(
       type => existingTypeIds.indexOf(type.id) === -1
     );
@@ -80,12 +79,7 @@ const mapStateToProps = () => {
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators(
-    {
-      doAddTypesToAsset: addTypesToAsset,
-    },
-    dispatch
-  );
+  bindActionCreators({}, dispatch);
 
 export default connect(
   mapStateToProps,
