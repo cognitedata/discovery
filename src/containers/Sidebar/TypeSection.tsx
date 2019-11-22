@@ -5,7 +5,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import {
-  fetchTypeForAsset,
+  fetchTypeForAssets,
   selectTypes,
   TypesState,
 } from '../../modules/types';
@@ -15,7 +15,7 @@ type OrigProps = {};
 type Props = {
   app: AppState;
   types: TypesState;
-  fetchTypeForAsset: typeof fetchTypeForAsset;
+  fetchTypeForAssets: typeof fetchTypeForAssets;
 } & OrigProps;
 
 type State = {};
@@ -29,7 +29,7 @@ class EventsSection extends React.Component<Props, State> {
   componentDidMount() {
     const { assetId } = this.props.app;
     if (assetId && !this.props.types.assetTypes[assetId]) {
-      this.props.fetchTypeForAsset(assetId);
+      this.props.fetchTypeForAssets([assetId]);
     }
   }
 
@@ -40,7 +40,7 @@ class EventsSection extends React.Component<Props, State> {
       assetId !== prevProps.app.assetId &&
       !this.props.types.assetTypes[assetId]
     ) {
-      this.props.fetchTypeForAsset(assetId);
+      this.props.fetchTypeForAssets([assetId]);
     }
   }
 
@@ -90,7 +90,7 @@ const mapStateToProps = (state: RootState) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ fetchTypeForAsset }, dispatch);
+  bindActionCreators({ fetchTypeForAssets }, dispatch);
 export default connect(
   mapStateToProps,
   mapDispatchToProps

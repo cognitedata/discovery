@@ -3,12 +3,12 @@ import { ThunkDispatch } from 'redux-thunk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
-import { AssetTypeInfo } from './assets';
+import { AssetTypeInfo, ExtendedAsset } from './assets';
 
 // Constants
 export const RETRIEVE_TYPE = 'types/RETRIEVE_TYPE';
 export const RETRIEVE_TYPE_FAILED = 'types/RETRIEVE_TYPE_FAILED';
-export const RETRIEVE_TYPE_FOR_ASSET = 'types/RETRIEVE_TYPE_FOR_ASSET';
+export const RETRIEVE_TYPE_FOR_ASSETS = 'types/RETRIEVE_TYPE_FOR_ASSETS';
 
 export interface Type {
   name: string;
@@ -32,9 +32,9 @@ export interface Type {
   lastUpdatedTime: number;
 }
 
-interface FetchTypeForAssetAction
-  extends Action<typeof RETRIEVE_TYPE_FOR_ASSET> {
-  payload: { assetId: number; type: AssetTypeInfo[] };
+interface FetchTypeForAssetsAction
+  extends Action<typeof RETRIEVE_TYPE_FOR_ASSETS> {
+  payload: { assetTypes: { [key: number]: AssetTypeInfo[] } };
 }
 interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
   payload: { types: Type[] };
@@ -42,12 +42,12 @@ interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
 interface FetchTypeFailedAction extends Action<typeof RETRIEVE_TYPE_FAILED> {}
 
 type TypeAction =
-  | FetchTypeForAssetAction
+  | FetchTypeForAssetsAction
   | FetchTypeAction
   | FetchTypeFailedAction;
 
 // Functions
-export function fetchTypeForAsset(assetId: number) {
+export function fetchTypeForAssets(assetIds: number[]) {
   return async (
     dispatch: ThunkDispatch<any, void, AnyAction>,
     getState: () => RootState
@@ -65,24 +65,36 @@ export function fetchTypeForAsset(assetId: number) {
         `/api/playground/projects/${project}/assets/byids`,
         {
           data: {
-            items: [{ id: assetId }],
+            items: assetIds.map(id => ({ id })),
           },
         }
       );
 
-      if (response.status === 200 && response.data.items.length === 1) {
-        const missingTypes = response.data.items[0].types.filter(
-          (el: any) => items[el.type.id] === undefined
+      if (response.status === 200 && response.data.items.length > 0) {
+        const missingTypes: Set<number> = response.data.items.reduce(
+          (prev: Set<number>, asset: ExtendedAsset) => {
+            asset.types
+              .filter(el => items[el.type.id] === undefined)
+              .forEach(el => {
+                prev.add(el.type.id);
+              });
+            return prev;
+          },
+          new Set()
         );
-        if (missingTypes.length > 0) {
-          dispatch(fetchTypeByIds(missingTypes.map((el: any) => el.type.id)));
+        if (missingTypes.size > 0) {
+          dispatch(fetchTypeByIds(Array.from(missingTypes)));
         }
 
         dispatch({
-          type: RETRIEVE_TYPE_FOR_ASSET,
+          type: RETRIEVE_TYPE_FOR_ASSETS,
           payload: {
-            assetId,
-            type: response.data.items[0].types,
+            assetTypes: response.data.items.reduce(
+              (prev: { [key: number]: AssetTypeInfo[] }, el: ExtendedAsset) => {
+                return { ...prev, [el.id]: el.types };
+              },
+              {}
+            ),
           },
         });
       }
@@ -183,11 +195,11 @@ export default function typesReducer(
         items: { ...state.items, ...arrayToObjectById(types) },
       };
     }
-    case RETRIEVE_TYPE_FOR_ASSET: {
-      const { type, assetId } = action.payload;
+    case RETRIEVE_TYPE_FOR_ASSETS: {
+      const { assetTypes } = action.payload;
       return {
         ...state,
-        assetTypes: { ...state.assetTypes, [assetId]: type },
+        assetTypes: { ...state.assetTypes, ...assetTypes },
       };
     }
     case RETRIEVE_TYPE_FAILED: {
