@@ -226,7 +226,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
     super(props);
 
     this.state = {
-      controls: 'none',
+      controls: 'lr',
       visibleAssetIds: [],
       showLegend: false,
       loading: false,
@@ -894,6 +894,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
           nodeVal={(node: any) => 100 / (node.level + 1)}
           nodeLabel="name"
           nodeAutoColorBy="color"
+          warmupTicks={200}
           linkDirectionalParticles={2}
           linkWidth={2}
           onNodeClick={this.onNodeClicked}
