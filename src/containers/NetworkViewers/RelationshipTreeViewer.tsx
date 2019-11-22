@@ -217,7 +217,7 @@ class TreeViewer extends Component<Props, State> {
     super(props);
 
     this.state = {
-      controls: 'none',
+      controls: 'lr',
       visibleAssetIds: [],
       showLegend: false,
       loading: false,
