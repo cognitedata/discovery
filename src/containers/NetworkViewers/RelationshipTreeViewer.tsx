@@ -524,6 +524,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
   getData = () => {
     const {
       relationships: { items, assetRelationshipMap },
+      assets: { externalIdMap },
     } = this.props;
     const { visibleAssetIds, query } = this.state;
     const nodes: { [key: string]: any } = {};
@@ -560,10 +561,25 @@ class RelationshipTreeViewer extends Component<Props, State> {
     Array.from(relationshipIds)
       .map(id => items[id])
       .forEach((relationship: Relationship) => {
+        const sourcePassFilter = nodeFilters.some(filter =>
+          filter(relationship.source)
+        );
+        const targetPassFilter = nodeFilters.some(filter =>
+          filter(relationship.target)
+        );
         if (
           (nodeFilters.length === 0 ||
-            (nodeFilters.some(filter => filter(relationship.source)) &&
-              nodeFilters.some(filter => filter(relationship.target)))) &&
+            (sourcePassFilter && targetPassFilter) ||
+            (sourcePassFilter &&
+              visibleAssetIds.includes(
+                externalIdMap[relationship.target.resourceId] ||
+                  Number(relationship.target.resourceId)
+              )) ||
+            (targetPassFilter &&
+              visibleAssetIds.includes(
+                externalIdMap[relationship.source.resourceId] ||
+                  Number(relationship.source.resourceId)
+              ))) &&
           (linkFilters.length === 0 ||
             linkFilters.some(filter => filter(relationship)))
         ) {
@@ -831,7 +847,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
     return (
       <Select
-        mode="tags"
+        mode="multiple"
         style={{ width: '100%' }}
         placeholder="Filter"
         onChange={(value: string[]) => this.setState({ query: value })}
@@ -875,7 +891,8 @@ class RelationshipTreeViewer extends Component<Props, State> {
           nodeLabel="name"
           nodeAutoColorBy="color"
           linkDirectionalParticles={2}
-          linkDirectionalParticleWidth={2}
+          linkWidth={2}
+          linkDirectionalParticleWidth={3}
           nodeCanvasObject={(
             node: RelationshipResource & {
               color: string;
