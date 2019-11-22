@@ -259,6 +259,10 @@ class RelationshipTreeViewer extends Component<Props, State> {
   }
 
   async componentDidUpdate(prevProps: Props) {
+    if (prevProps.app.rootAssetId !== this.props.app.rootAssetId) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ visibleAssetIds: [] });
+    }
     const data = this.getData();
     if (
       data.nodes.length !== this.state.data.nodes.length ||
@@ -892,6 +896,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
           nodeAutoColorBy="color"
           linkDirectionalParticles={2}
           linkWidth={2}
+          onNodeClick={this.onNodeClicked}
           linkDirectionalParticleWidth={3}
           nodeCanvasObject={(
             node: RelationshipResource & {
