@@ -73,11 +73,13 @@ export function fetchTypeForAssets(assetIds: number[]) {
       if (response.status === 200 && response.data.items.length > 0) {
         const missingTypes: Set<number> = response.data.items.reduce(
           (prev: Set<number>, asset: ExtendedAsset) => {
-            asset.types
-              .filter(el => items[el.type.id] === undefined)
-              .forEach(el => {
-                prev.add(el.type.id);
-              });
+            if (asset.types) {
+              asset.types
+                .filter(el => items[el.type.id] === undefined)
+                .forEach(el => {
+                  prev.add(el.type.id);
+                });
+            }
             return prev;
           },
           new Set()
