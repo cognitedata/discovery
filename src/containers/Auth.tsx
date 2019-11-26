@@ -17,10 +17,10 @@ import {
 import { RootState } from '../reducers/index';
 
 export const getCdfEnvFromUrl = () =>
-  queryString.parse(window.location.search).env as string;
+  queryString.parse(window.location.hash).env as string;
 
 export const getApiKeyFromUrl = () =>
-  queryString.parse(window.location.search).apikey as string;
+  queryString.parse(window.location.hash).apikey as string;
 
 type Props = {
   app: AppState;
