@@ -2,7 +2,6 @@
 
 import {
   CogniteClient,
-  BoundingBox3D,
   EventSearch,
   EventPatch,
   DateRange,
@@ -28,13 +27,6 @@ import {
   FilterQuery,
   EventFilter,
 } from '@cognite/sdk';
-// Copyright 2019 Cognite AS
-/* eslint-disable max-classes-per-file */
-
-import {
-  CursorAndAsyncIterator,
-  makeAutoPaginationMethods,
-} from '@cognite/sdk/dist/src/autoPagination';
 
 export enum ManualVerificationState {
   UNHANDLED = 'unhandled',
@@ -53,7 +45,7 @@ export interface BoundingBox2D {
   height: number;
 }
 
-export type SinglePatchBoudningBox2D = SetField<BoundingBox2D> | RemoveField;
+export type SinglePatchBoundingBox2D = SetField<BoundingBox2D> | RemoveField;
 
 export interface ExternalDetection {
   externalId?: CogniteExternalId;
@@ -63,7 +55,7 @@ export interface ExternalDetection {
   description?: string;
   metadata?: Metadata;
   assetIds?: CogniteInternalId[];
-  box?: BoundingBox3D;
+  box?: BoundingBox2D;
   fileExternalId?: string;
   manuallyVerified?: ManualVerificationState;
 }
@@ -95,6 +87,10 @@ export interface DetectionFilter {
    * Filter detections with an externalId starting with this value
    */
   externalIdPrefix?: string;
+  /**
+   * Filter based on file id
+   */
+  fileId?: string;
 }
 
 export interface DetectionFilterRequest extends FilterQuery {
@@ -110,7 +106,7 @@ export interface DetectionPatch {
     metadata?: ObjectPatch;
     assetIds?: ArrayPatchLong;
     label?: SinglePatchString;
-    box?: SinglePatchBoudningBox2D;
+    box?: SinglePatchBoundingBox2D;
     fileExternalId?: SinglePatchString;
     manualVerificationState?: SinglePatchManualVerificationState;
   };
@@ -134,7 +130,7 @@ export class DetectionsAPI {
 
   mapper: DetectionMapper;
 
-  public constructor(sdk: CogniteClient) {
+  constructor(sdk: CogniteClient) {
     this.sdk = sdk;
     this.mapper = new DetectionMapper(sdk);
   }
@@ -149,18 +145,14 @@ export class DetectionsAPI {
 
   public list = (
     scope?: DetectionFilterRequest
-  ): CursorAndAsyncIterator<CogniteDetection> => {
+  ): Promise<ListResponse<CogniteDetection[]>> => {
     const eventScope: EventFilterRequest = {
       ...scope,
       filter: scope && this.mapper.mapFilter(scope.filter),
     };
     const eventPromise = this.sdk.events.list(eventScope);
     const detectionPromise = eventPromise.then(this.mapper.mapListResponse);
-    const autoPagiation = makeAutoPaginationMethods(detectionPromise);
-    return {
-      ...detectionPromise,
-      ...autoPagiation,
-    };
+    return detectionPromise;
   };
 
   public retrieve = async (items: IdEither[]): Promise<CogniteDetection[]> => {
@@ -184,7 +176,7 @@ export class DetectionsAPI {
       .then(this.mapper.mapEventsToDetections);
   };
 
-  public delete = this.sdk.events.delete;
+  public delete = (ids: IdEither[]) => this.sdk.events.delete(ids);
 }
 
 interface EventPatchHack {
@@ -228,33 +220,38 @@ class DetectionMapper {
     return `${this.prefix}_${snakeCaseField}`;
   }
 
-  async mapListResponse(
+  mapListResponse = (
     eventResponse: ListResponse<CogniteEvent[]>
-  ): Promise<ListResponse<CogniteDetection[]>> {
+  ): ListResponse<CogniteDetection[]> => {
     return {
       items: this.mapEventsToDetections(eventResponse.items),
       next:
         eventResponse.next &&
         (() => eventResponse.next!().then(this.mapListResponse)),
     };
-  }
+  };
 
-  mapFilter(detectionFilter: DetectionFilter): EventFilter {
+  mapFilter = (detectionFilter: DetectionFilter): EventFilter => {
     return {
       startTime: detectionFilter.startTime,
       endTime: detectionFilter.endTime,
       createdTime: detectionFilter.endTime,
       lastUpdatedTime: detectionFilter.lastUpdatedTime,
-      metadata: detectionFilter.metadata,
+      metadata: {
+        ...detectionFilter.metadata,
+        ...(detectionFilter.fileId && {
+          [this.key('file_external_id')]: detectionFilter.fileId,
+        }),
+      },
       assetIds: detectionFilter.assetIds,
       rootAssetIds: detectionFilter.rootAssetIds,
       subtype: detectionFilter.label,
       externalIdPrefix: detectionFilter.externalIdPrefix,
       type: this.EVENT_TYPE,
     };
-  }
+  };
 
-  validateMetadataInput(metadata: Metadata) {
+  validateMetadataInput = (metadata: Metadata) => {
     if (metadata) {
       const invalidField: string[] = [];
       this.metadataKeys.forEach(field => {
@@ -266,13 +263,13 @@ class DetectionMapper {
         );
       }
     }
-  }
+  };
 
-  mapDetectionsToEvents(items: ExternalDetection[]): ExternalEvent[] {
+  mapDetectionsToEvents = (items: ExternalDetection[]): ExternalEvent[] => {
     return items.map(this.mapDetectionToEvent);
-  }
+  };
 
-  mapDetectionToEvent(detection: ExternalDetection): ExternalEvent {
+  mapDetectionToEvent = (detection: ExternalDetection): ExternalEvent => {
     if (detection.metadata) {
       this.validateMetadataInput(detection.metadata);
     }
@@ -280,8 +277,8 @@ class DetectionMapper {
     if (detection.box) {
       metadatamapped[this.key('box')] = JSON.stringify(detection.box);
     }
-    if (detection.externalId) {
-      metadatamapped[this.key('file_external_id')] = detection.externalId;
+    if (detection.fileExternalId) {
+      metadatamapped[this.key('file_external_id')] = detection.fileExternalId;
     }
     if (detection.manuallyVerified) {
       metadatamapped[this.key('manually_verified')] =
@@ -299,13 +296,13 @@ class DetectionMapper {
       metadata,
       assetIds: detection.assetIds,
     };
-  }
+  };
 
-  mapEventsToDetections(items: CogniteEvent[]): CogniteDetection[] {
+  mapEventsToDetections = (items: CogniteEvent[]): CogniteDetection[] => {
     return items.map(this.mapEventToDetection);
-  }
+  };
 
-  mapEventToDetection(event: CogniteEvent): CogniteDetection {
+  mapEventToDetection = (event: CogniteEvent): CogniteDetection => {
     const detection: CogniteDetection = {
       id: event.id,
       externalId: event.externalId,
@@ -319,7 +316,9 @@ class DetectionMapper {
         event.metadata && event.metadata[this.key('file_external_id')],
       manuallyVerified:
         event.metadata &&
-        <ManualVerificationState>event.metadata[this.key('manually_verified')],
+        (event.metadata[
+          this.key('manually_verified')
+        ] as ManualVerificationState),
       createdTime: event.createdTime,
       lastUpdatedTime: event.lastUpdatedTime,
     };
@@ -332,7 +331,7 @@ class DetectionMapper {
       });
     }
     return detection;
-  }
+  };
 
   metadataMergeInto = (a: Metadata, b?: Metadata): Metadata | undefined => {
     if (b) {
@@ -347,9 +346,9 @@ class DetectionMapper {
     return a;
   };
 
-  async mapUpdateToEvent(change: DetectionChange): Promise<EventChange> {
-    const internalId: number | undefined = (<DetectionChangeById>change).id;
-    const { externalId } = <DetectionChangeByExternalId>change;
+  mapUpdateToEvent = async (change: DetectionChange): Promise<EventChange> => {
+    const internalId: number | undefined = (change as DetectionChangeById).id;
+    const { externalId } = change as DetectionChangeByExternalId;
 
     const eventPatch: EventPatch = {
       update: {
@@ -360,7 +359,7 @@ class DetectionMapper {
         externalId: change.update.externalId,
       },
     };
-    (<EventPatchHack>eventPatch).update.subType = change.update.label;
+    (eventPatch as EventPatchHack).update.subType = change.update.label;
     if (change.update.metadata) {
       Object.assign(eventPatch.update.metadata, change.update.metadata);
       const mapper = await this.getMetadataMapper(
@@ -389,7 +388,7 @@ class DetectionMapper {
     return internalId
       ? { id: internalId, ...eventPatch }
       : { externalId, ...eventPatch };
-  }
+  };
 
   oldMetadataRequired = (detectionChange: DetectionChange) => {
     return !(
@@ -402,29 +401,29 @@ class DetectionMapper {
   manualVerificationPatchToStringPatch = (
     patch?: SinglePatchManualVerificationState
   ): undefined | SinglePatchString => {
-    if (!patch || (<RemoveField>patch).setNull !== undefined) {
-      return <SinglePatchString>patch;
+    if (!patch || (patch as RemoveField).setNull !== undefined) {
+      return patch as SinglePatchString;
     }
-    return { set: (<SetField<ManualVerificationState>>patch).set };
+    return { set: (patch as SetField<ManualVerificationState>).set };
   };
 
   boundingBoxPatchToStringPatch = (
-    patch?: SinglePatchBoudningBox2D
+    patch?: SinglePatchBoundingBox2D
   ): undefined | SinglePatchString => {
-    if (!patch || (<RemoveField>patch).setNull !== undefined) {
-      return <SinglePatchString>patch;
+    if (!patch || (patch as RemoveField).setNull !== undefined) {
+      return patch as SinglePatchString;
     }
-    return { set: JSON.stringify((<SetField<BoundingBox2D>>patch).set) };
+    return { set: JSON.stringify((patch as SetField<BoundingBox2D>).set) };
   };
 
   isSetPatch = (objectPatch: ObjectPatch): objectPatch is ObjectSetPatch => {
     return (objectPatch as any).set !== undefined;
   };
 
-  async getMetadataMapper(
+  getMetadataMapper = async (
     metadataUpdate: ObjectPatch | undefined,
     oldMetadataRetriever: () => Promise<Metadata | undefined>
-  ) {
+  ) => {
     if (metadataUpdate && this.isSetPatch(metadataUpdate)) {
       this.validateMetadataInput(metadataUpdate.set);
       return new MetadataSetPatchMapper(
@@ -433,7 +432,7 @@ class DetectionMapper {
       );
     }
     return new MetadataChangePatchMapper(metadataUpdate);
-  }
+  };
 }
 
 interface MetadataPatchMapper {
@@ -458,10 +457,10 @@ class MetadataSetPatchMapper implements MetadataPatchMapper {
     this.oldMetadata = oldMetadata;
   }
 
-  add(
+  add = (
     field: string,
     getter: () => undefined | SinglePatchString
-  ): MetadataPatchMapper {
+  ): MetadataPatchMapper => {
     const stringPatch = getter();
     if (!stringPatch) {
       if (this.oldMetadata) {
@@ -471,7 +470,7 @@ class MetadataSetPatchMapper implements MetadataPatchMapper {
       this.patch.set[field] = stringPatch.set;
     }
     return this;
-  }
+  };
 
   get() {
     return this.patch;

@@ -4,18 +4,18 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, message, Spin, Table, Icon, Divider } from 'antd';
 import styled from 'styled-components';
 import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
-import { sdk } from '../../index';
-import LoaderBPSvg from '../../assets/loader-bp.svg';
-import { FilesMetadataWithDownload } from './FileExplorer';
+import { selectThreeD, ThreeDState } from '../../../modules/threed';
+import { selectAssets, AssetsState } from '../../../modules/assets';
+import { RootState } from '../../../reducers/index';
+import { selectApp, AppState, setAssetId } from '../../../modules/app';
+import { sdk } from '../../../index';
+import LoaderBPSvg from '../../../assets/loader-bp.svg';
+import { FilesMetadataWithDownload } from '../FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../utils/metrics';
-import AssetSelect from '../../components/AssetSelect';
-import { GCSUploader } from '../../components/FileUploader';
-import { checkForAccessPermission } from '../../utils/utils';
+import { trackUsage } from '../../../utils/metrics';
+import AssetSelect from '../../../components/AssetSelect';
+import { GCSUploader } from '../../../components/FileUploader';
+import { checkForAccessPermission } from '../../../utils/utils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -329,8 +329,8 @@ class MapModelToAssetForm extends React.Component<Props, State> {
         </p>
         <AssetSelect
           rootOnly
-          onAssetSelected={selectedId =>
-            this.setState({ selectedAssetId: selectedId })
+          onAssetSelected={selectedIds =>
+            this.setState({ selectedAssetId: selectedIds[0] })
           }
         />
         <br />

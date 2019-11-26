@@ -7,19 +7,20 @@ import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
-import { sdk } from '../../index';
+import { selectThreeD, ThreeDState } from '../../../modules/threed';
+import { selectAssets, AssetsState } from '../../../modules/assets';
+import { RootState } from '../../../reducers/index';
+import { selectApp, AppState, setAssetId } from '../../../modules/app';
+import { sdk } from '../../../index';
 import {
   FilesMetadataWithDownload,
   FileExplorerTabsType,
-} from './FileExplorer';
+} from '../FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../utils/metrics';
-import PNIDViewer from './PNIDViewer';
+import { trackUsage } from '../../../utils/metrics';
+import PNIDViewer from '../PNIDViewer';
 import FilePreviewDocumentTab from './FilePreviewDocumentTab';
+import ImageAnnotator from './ImageAnnotator';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -76,7 +77,11 @@ const ItemPreview = styled.div<ItemPreviewProps>`
     flex-direction: column;
   }
   .preview img {
+    height: 100%;
     width: 100%;
+  }
+  .preview .react-transform-component {
+    height: 100%;
   }
 `;
 
@@ -232,7 +237,7 @@ class FilePreview extends React.Component<Props, State> {
     return blob;
   };
 
-  renderDefaultContentView = () => {
+  renderFileDetailsPane = () => {
     const { selectedDocument } = this.props;
     const { pdfState } = this.state;
     const {
@@ -355,15 +360,15 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   renderImage = () => {
-    const { filePreviewUrl } = this.state;
-    return (
-      <div
-        className="preview"
-        style={{ backgroundImage: `url(${filePreviewUrl})` }}
-      >
-        {!filePreviewUrl && <p>Loading...</p>}
-      </div>
-    );
+    if (this.state.filePreviewUrl) {
+      return (
+        <ImageAnnotator
+          file={this.props.selectedDocument}
+          filePreviewUrl={this.state.filePreviewUrl!}
+        />
+      );
+    }
+    return null;
   };
 
   renderPnID = () => {
@@ -403,7 +408,7 @@ class FilePreview extends React.Component<Props, State> {
             >
               <Icon type={hideSidebar ? 'caret-left' : 'caret-right'} />
             </HideButton>
-            {this.renderDefaultContentView()}
+            {this.renderFileDetailsPane()}
           </div>
         </ItemPreview>
       </Wrapper>

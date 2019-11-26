@@ -168,6 +168,7 @@ class ImageFilesTab extends React.Component<Props, State> {
               return (
                 <div
                   className="item"
+                  key={image.id}
                   role="button"
                   tabIndex={i}
                   onKeyDown={() => this.props.onClickDocument(image, i)}
