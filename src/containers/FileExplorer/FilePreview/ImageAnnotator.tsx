@@ -116,7 +116,7 @@ type Props = {
   assets: AssetsState;
 } & OrigProps;
 
-type Annotation = {
+type AnnotationItem = {
   geometry?: {
     x: number;
     y: number;
@@ -124,12 +124,13 @@ type Annotation = {
     type: 'RECTANGLE';
     height: number;
   };
+  id: number;
   data: ExternalDetection;
 };
 
 type State = {
   detections: CogniteDetection[];
-  annotation: Annotation;
+  annotation: AnnotationItem;
   disableZooming: boolean;
   scale: number;
 };
@@ -142,6 +143,7 @@ class ImagePreview extends React.Component<Props, State> {
     this.state = {
       detections: [],
       annotation: {
+        id: Math.random(),
         data: {
           fileExternalId: this.props.file.externalId || `${this.props.file.id}`,
         },
@@ -200,11 +202,11 @@ class ImagePreview extends React.Component<Props, State> {
     this.props.fetchAssets(Array.from(assetIds).map(id => ({ id })));
   };
 
-  onChange = (annotation: Annotation) => {
+  onChange = (annotation: AnnotationItem) => {
     this.setState({ annotation });
   };
 
-  onSubmit = async (annotation: Annotation) => {
+  onSubmit = async (annotation: AnnotationItem) => {
     const { all } = this.props.assets;
     const { detections } = this.state;
     if (annotation.data) {
@@ -239,6 +241,7 @@ class ImagePreview extends React.Component<Props, State> {
   clearAnnotation = () => {
     this.setState({
       annotation: {
+        id: Math.random(),
         data: {
           fileExternalId: this.props.file.externalId || `${this.props.file.id}`,
         },
@@ -246,17 +249,12 @@ class ImagePreview extends React.Component<Props, State> {
     });
   };
 
-  renderSelector = ({
-    key,
-    annotation,
-  }: {
-    key: string;
-    annotation: Annotation;
-  }) => {
+  renderSelector = ({ annotation }: { annotation: AnnotationItem }) => {
     const { geometry } = annotation;
     if (geometry) {
       return (
         <Rectangle
+          key={annotation.id}
           style={{
             position: 'absolute',
             left: `${geometry.x}%`,
@@ -264,7 +262,6 @@ class ImagePreview extends React.Component<Props, State> {
             height: `${geometry.height}%`,
             width: `${geometry.width}%`,
           }}
-          key={key}
         />
       );
     }
@@ -276,7 +273,7 @@ class ImagePreview extends React.Component<Props, State> {
     onChange,
     onSubmit,
   }: {
-    annotation: Annotation;
+    annotation: AnnotationItem;
     onChange: typeof ImagePreview.prototype.onChange;
     onSubmit: typeof ImagePreview.prototype.onSubmit;
   }) => {
@@ -347,13 +344,14 @@ class ImagePreview extends React.Component<Props, State> {
     );
   };
 
-  renderContent = ({ annotation }: { annotation: Annotation }) => {
+  renderContent = ({ annotation }: { annotation: AnnotationItem }) => {
     const { all } = this.props.assets;
     const { geometry } = annotation;
     if (!geometry) return null;
 
     return (
       <ContentOverlay
+        key={annotation.id}
         style={{
           position: 'absolute',
           left: `${geometry.x}%`,
@@ -440,6 +438,7 @@ class ImagePreview extends React.Component<Props, State> {
                           width: el.box!.width,
                           height: el.box!.height,
                         },
+                        id: el.id,
                         data: el,
                       }))}
                     value={annotation}

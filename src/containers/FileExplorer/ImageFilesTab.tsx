@@ -68,6 +68,10 @@ class ImageFilesTab extends React.Component<Props, State> {
     imageUrls: {},
   };
 
+  componentDidMount() {
+    this.fetchImageUrls();
+  }
+
   componentDidUpdate(prevProps: Props) {
     if (
       prevProps.current !== this.props.current ||
