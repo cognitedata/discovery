@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import Annotation from 'react-image-annotation';
-import { Button, Input, Tag, Icon } from 'antd';
+import { Button, Input, Tag } from 'antd';
 import styled, { keyframes } from 'styled-components';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
@@ -21,7 +21,6 @@ import {
 } from '../../../utils/detectionApi';
 import { sdk } from '../../../index';
 import AssetSelect from '../../../components/AssetSelect';
-import { BetaTag } from '../../../components/BetaWarning';
 
 const fadeInScale = keyframes`
   from {
@@ -334,7 +333,7 @@ class ImagePreview extends React.Component<Props, State> {
         <div className="button-row">
           <Button
             type="primary"
-            icon="tag"
+            icon="plus"
             onClick={() => onSubmit(annotation)}
           >
             Add Detection
@@ -402,17 +401,10 @@ class ImagePreview extends React.Component<Props, State> {
             }) => (
               <>
                 <Buttons>
-                  <Button
-                    onClick={this.changeEditStatus}
-                    style={{ display: 'flex', alignItems: 'center' }}
-                  >
-                    <Icon type="tag" style={{ paddingTop: '2px' }} />
-                    <BetaTag />
-                    <span>
-                      {disableZooming
-                        ? 'Done Adding Annotation'
-                        : 'Add Annotation'}
-                    </span>
+                  <Button icon="form" onClick={this.changeEditStatus}>
+                    {disableZooming
+                      ? 'Done Adding Annotation'
+                      : 'Add Annotation'}
                   </Button>
                   <div className="spacer" />
                   <Button

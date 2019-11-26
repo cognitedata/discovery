@@ -519,7 +519,9 @@ const mapStateToProps = (state: RootState) => {
         },
     types: selectTypes(state),
     files: state.app.assetId
-      ? selectFiles(state).byAssetId[state.app.assetId]
+      ? (selectFiles(state).byAssetId[state.app.assetId] || [])
+          .map(id => selectFiles(state).files[id])
+          .filter(el => !!el)
       : [],
   };
 };
