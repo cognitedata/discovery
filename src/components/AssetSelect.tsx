@@ -8,6 +8,7 @@ type Props = {
   onAssetSelected: (ids: number[]) => void;
   rootOnly: boolean;
   multiple: boolean;
+  selectedAssetIds?: number[];
 };
 type State = {
   fetching: boolean;
@@ -16,13 +17,6 @@ type State = {
   selectedIds: number[];
 };
 class AssetSelect extends Component<Props, State> {
-  readonly state: Readonly<State> = {
-    fetching: false,
-    searchResults: [],
-    rootSearchResults: [],
-    selectedIds: [],
-  };
-
   searchId = 0;
 
   public static defaultProps = {
@@ -32,8 +26,29 @@ class AssetSelect extends Component<Props, State> {
     rootOnly: false,
   };
 
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      fetching: false,
+      searchResults: [],
+      rootSearchResults: [],
+      selectedIds: props.selectedAssetIds || [],
+    };
+  }
+
   componentDidMount() {
     this.doSearch('');
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (
+      this.props.selectedAssetIds &&
+      prevProps.selectedAssetIds !== this.props.selectedAssetIds
+    ) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ selectedIds: this.props.selectedAssetIds });
+    }
   }
 
   doSearch = async (query: string) => {

@@ -1,26 +1,25 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Icon, Pagination, Tabs } from 'antd';
+import { Button, Icon, Pagination, Tabs, Spin } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../../modules/threed';
-import { selectAssets, AssetsState } from '../../../modules/assets';
-import { RootState } from '../../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../../modules/app';
-import { sdk } from '../../../index';
-import {
-  FilesMetadataWithDownload,
-  FileExplorerTabsType,
-} from '../FileExplorer';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../../utils/metrics';
+import EditFileModal from 'containers/Modals/EditFileModal';
+import { selectThreeD, ThreeDState } from 'modules/threed';
+import { selectAssets, AssetsState } from 'modules/assets';
+import { RootState } from 'reducers/index';
+import { selectApp, AppState, setAssetId } from 'modules/app';
+import { sdk } from 'index';
+import { trackUsage } from 'utils/metrics';
+import { FileExplorerTabsType } from '../FileExplorer';
 import PNIDViewer from '../PNIDViewer';
 import FilePreviewDocumentTab from './FilePreviewDocumentTab';
 import ImageAnnotator from './ImageAnnotator';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { selectFiles, fetchFile } from '../../../modules/files';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -132,7 +131,7 @@ const ButtonRow = styled.div`
 `;
 
 type OrigProps = {
-  selectedDocument: FilesMetadataWithDownload;
+  fileId: number;
   selectDocument: (file: FilesMetadata) => void;
   deleteFile: (fileId: number) => void;
   unselectDocument: () => void;
@@ -143,11 +142,14 @@ type Props = {
   assets: AssetsState;
   threed: ThreeDState;
   setAssetId: typeof setAssetId;
+  fetchFile: typeof fetchFile;
+  selectedFile?: FilesMetadata;
 } & OrigProps;
 
 type State = {
   filePreviewUrl?: string;
   hideSidebar: boolean;
+  editFileVisible: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
@@ -156,6 +158,7 @@ class FilePreview extends React.Component<Props, State> {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
+      editFileVisible: false,
       hideSidebar: false,
       pdfState: {
         numPages: 0,
@@ -166,19 +169,23 @@ class FilePreview extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    if (this.type === 'images' || this.type === 'documents') {
-      this.fetchFileUrl();
+    if (!this.props.selectedFile) {
+      this.props.fetchFile(this.props.fileId);
     }
+    this.fetchFileUrl();
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (this.props.selectedDocument.id !== prevProps.selectedDocument.id) {
+    if (!this.props.selectedFile) {
+      this.props.fetchFile(this.props.fileId);
+    }
+    if (this.props.fileId !== prevProps.fileId) {
       this.fetchFileUrl();
     }
   }
 
   get type(): FileExplorerTabsType {
-    const { mimeType } = this.props.selectedDocument;
+    const { mimeType } = this.props.selectedFile!;
     if (!mimeType) {
       return 'all';
     }
@@ -203,10 +210,8 @@ class FilePreview extends React.Component<Props, State> {
         filePreviewUrl: undefined,
       },
       async () => {
-        const { selectedDocument } = this.props;
-        const [url] = await sdk.files.getDownloadUrls([
-          { id: selectedDocument.id },
-        ]);
+        const { fileId } = this.props;
+        const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
         this.setState({
           filePreviewUrl: url.downloadUrl,
         });
@@ -215,18 +220,20 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   onDownloadClicked = async () => {
-    const { selectedDocument } = this.props;
-    trackUsage('FilePreview.DownloadFile', { filedId: selectedDocument.id });
-    const [url] = await sdk.files.getDownloadUrls([
-      { id: selectedDocument.id },
-    ]);
+    const { fileId, selectedFile } = this.props;
+    trackUsage('FilePreview.DownloadFile', { filedId: fileId });
+    const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
     const blob = await this.downloadFile(url.downloadUrl);
-    saveData(blob, selectedDocument.name); // saveAs is a part of FileSaver.js
+    saveData(blob, selectedFile!.name); // saveAs is a part of FileSaver.js
   };
 
   onDeleteClicked = async () => {
-    const { selectedDocument } = this.props;
-    this.props.deleteFile(selectedDocument.id);
+    const { fileId } = this.props;
+    this.props.deleteFile(fileId);
+  };
+
+  onEditClicked = async () => {
+    this.setState({ editFileVisible: true });
   };
 
   downloadFile = async (url: string) => {
@@ -239,22 +246,30 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   renderFileDetailsPane = () => {
-    const { selectedDocument } = this.props;
-    const { pdfState } = this.state;
-    const {
-      name,
-      source,
-      mimeType,
-      createdTime,
-      metadata,
-      id,
-    } = selectedDocument;
+    const { selectedFile } = this.props;
+    if (!selectedFile) {
+      return <Spin />;
+    }
+    const { pdfState, editFileVisible } = this.state;
+    const { name, source, mimeType, createdTime, metadata, id } = selectedFile;
     return (
       <>
+        {editFileVisible && (
+          <EditFileModal
+            file={selectedFile}
+            onClose={() => this.setState({ editFileVisible: false })}
+          />
+        )}
         <h1>Name: {name}</h1>
         <ButtonRow>
           <Button onClick={this.onDownloadClicked}>Download File</Button>
-          <Button onClick={this.onDeleteClicked}>Delete File</Button>
+          <Button onClick={this.onEditClicked}>Edit File</Button>
+          <Button
+            type="danger"
+            ghost
+            icon="delete"
+            onClick={this.onDeleteClicked}
+          />
         </ButtonRow>
         <Tabs defaultActiveKey="1">
           <TabPane tab="Information" key="1">
@@ -267,7 +282,7 @@ class FilePreview extends React.Component<Props, State> {
           {this.type === 'documents' && (
             <TabPane tab="Utilities" key="2">
               <FilePreviewDocumentTab
-                selectedDocument={selectedDocument}
+                selectedDocument={selectedFile}
                 downloadFile={this.downloadFile}
                 selectDocument={this.props.selectDocument}
                 unselectDocument={this.props.unselectDocument}
@@ -324,7 +339,7 @@ class FilePreview extends React.Component<Props, State> {
               }}
               onLoadError={async () => {
                 trackUsage('FilePreview.PDFLoadingFailed', {
-                  fileId: this.props.selectedDocument.id,
+                  fileId: this.props.fileId,
                 });
                 await this.fetchFileUrl();
                 this.setState({
@@ -364,7 +379,7 @@ class FilePreview extends React.Component<Props, State> {
     if (this.state.filePreviewUrl) {
       return (
         <ImageAnnotator
-          file={this.props.selectedDocument}
+          file={this.props.selectedFile!}
           filePreviewUrl={this.state.filePreviewUrl!}
         />
       );
@@ -376,7 +391,7 @@ class FilePreview extends React.Component<Props, State> {
     return (
       <div className="preview">
         <PNIDViewer
-          selectedDocument={this.props.selectedDocument}
+          selectedDocument={this.props.selectedFile!}
           unselectDocument={this.props.unselectDocument}
         />
       </div>
@@ -385,6 +400,11 @@ class FilePreview extends React.Component<Props, State> {
 
   render() {
     const { hideSidebar } = this.state;
+    const { selectedFile } = this.props;
+
+    if (!selectedFile) {
+      return <Spin />;
+    }
 
     return (
       <Wrapper>
@@ -417,17 +437,19 @@ class FilePreview extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
+const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
     app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
+    selectedFile: selectFiles(state).files[props.fileId],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setAssetId,
+      fetchFile,
     },
     dispatch
   );
