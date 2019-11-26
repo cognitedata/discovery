@@ -62,9 +62,10 @@ class Auth extends React.Component<Props, State> {
     }
     if (cdfEnv && !fromUrlCdfEnv) {
       if (tenant) {
+        // if env is not visible via URL add it in
         this.props.replace({
           pathname: this.props.history.location.pathname,
-          search: `?env=${cdfEnv}${
+          search: `#env=${cdfEnv}${
             fromUrlApiKey ? `&apikey=${fromUrlApiKey}` : ''
           }`,
         });
