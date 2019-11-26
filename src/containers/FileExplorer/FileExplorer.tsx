@@ -19,7 +19,7 @@ import {
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
-import FilePreview from './FilePreview';
+import FilePreview from './FilePreview/FilePreview';
 import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 import FileUploadTab from './FileUploadTab';
 import ImageFilesTab from './ImageFilesTab';
