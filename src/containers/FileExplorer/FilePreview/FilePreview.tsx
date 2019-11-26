@@ -82,6 +82,7 @@ const ItemPreview = styled.div<ItemPreviewProps>`
   }
   .preview .react-transform-component {
     height: 100%;
+    overflow: scroll;
   }
 `;
 

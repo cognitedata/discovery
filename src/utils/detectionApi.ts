@@ -90,7 +90,7 @@ export interface DetectionFilter {
   /**
    * Filter based on file id
    */
-  fileId?: string;
+  fileExternalId?: string;
 }
 
 export interface DetectionFilterRequest extends FilterQuery {
@@ -239,8 +239,8 @@ class DetectionMapper {
       lastUpdatedTime: detectionFilter.lastUpdatedTime,
       metadata: {
         ...detectionFilter.metadata,
-        ...(detectionFilter.fileId && {
-          [this.key('file_external_id')]: detectionFilter.fileId,
+        ...(detectionFilter.fileExternalId && {
+          [this.key('file_external_id')]: detectionFilter.fileExternalId,
         }),
       },
       assetIds: detectionFilter.assetIds,

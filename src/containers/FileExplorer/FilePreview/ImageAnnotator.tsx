@@ -168,12 +168,12 @@ class ImagePreview extends React.Component<Props, State> {
 
     const [detectionsResp, moreDetectionsResp] = await Promise.all([
       this.detectionApi.list({
-        filter: { fileId: `${this.props.file.id}` },
+        filter: { fileExternalId: `${this.props.file.id}` },
       }),
       ...(this.props.file.externalId
         ? [
             this.detectionApi.list({
-              filter: { fileId: this.props.file.externalId },
+              filter: { fileExternalId: this.props.file.externalId },
             }),
           ]
         : [Promise.resolve({ items: [] })]),
