@@ -81,7 +81,7 @@ class EditFileModal extends React.Component<Props, State> {
         }),
       },
     });
-    message.info('Updating asset...');
+    message.info('Updating file...');
     this.props.onClose();
   };
 
@@ -94,16 +94,15 @@ class EditFileModal extends React.Component<Props, State> {
     return (
       <Modal
         visible
-        title="Edit Asset"
+        title={`Edit File: ${this.props.file.name}`}
         onCancel={this.props.onClose}
         footer={[
           <Button key="submit" type="primary" onClick={this.saveChanges}>
-            Update Asset
+            Update File
           </Button>,
         ]}
       >
         <FormDetails>
-          <p>Name: {this.props.file.name}</p>
           <p>Linked Assets</p>
           <AssetSelect
             onAssetSelected={this.updateAssetIds}
