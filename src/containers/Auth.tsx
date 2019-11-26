@@ -17,10 +17,10 @@ import {
 import { RootState } from '../reducers/index';
 
 export const getCdfEnvFromUrl = () =>
-  queryString.parse(window.location.search).env as string;
+  queryString.parse(window.location.hash).env as string;
 
 export const getApiKeyFromUrl = () =>
-  queryString.parse(window.location.search).apikey as string;
+  queryString.parse(window.location.hash).apikey as string;
 
 type Props = {
   app: AppState;
@@ -62,9 +62,10 @@ class Auth extends React.Component<Props, State> {
     }
     if (cdfEnv && !fromUrlCdfEnv) {
       if (tenant) {
+        // if env is not visible via URL add it in
         this.props.replace({
           pathname: this.props.history.location.pathname,
-          search: `?env=${cdfEnv}${
+          search: `#env=${cdfEnv}${
             fromUrlApiKey ? `&apikey=${fromUrlApiKey}` : ''
           }`,
         });
