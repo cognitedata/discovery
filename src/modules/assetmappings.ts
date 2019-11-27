@@ -91,11 +91,11 @@ export const fetchMappingsFromAssetId = (
   ) {
     return;
   }
-  if (currentFetching.asset[assetId]) {
+  if (currentFetching.asset[`${modelId}-${assetId}-${assetId}`]) {
     // Currently fetching this
     return;
   }
-  currentFetching.asset[assetId] = true;
+  currentFetching.asset[`${modelId}-${assetId}-${assetId}`] = true;
   try {
     const result = await sdk.assetMappings3D.list(modelId, revisionId, {
       assetId,
@@ -116,7 +116,7 @@ export const fetchMappingsFromAssetId = (
     // Could not fetch
   }
 
-  currentFetching.asset[assetId] = false;
+  currentFetching.asset[`${modelId}-${assetId}-${assetId}`] = false;
 };
 
 export function fetchMappingsFromNodeId(

@@ -1,7 +1,7 @@
 // TODO is this ideal?
 import React from 'react';
 import { connect } from 'react-redux';
-import { Model3DViewer, CacheObject, Callback } from '@cognite/gearbox';
+import { Model3DViewer, CacheObject } from '@cognite/gearbox';
 import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
 import { Slider, message } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
@@ -46,7 +46,6 @@ type Props = {
 };
 
 type State = {
-  nodeId?: number;
   progress?: ProgressObject;
   forceReload: boolean;
 };
@@ -69,54 +68,45 @@ class Model3D extends React.Component<Props, State> {
   };
 
   componentDidMount() {
-    if (this.props.nodeId) {
-      this.setState({ nodeId: this.props.nodeId });
-      this.props.doFetchNode(
-        this.props.modelId,
-        this.props.revisionId,
-        this.props.nodeId
-      );
+    const { nodeId } = this.props;
+    if (nodeId) {
+      const assetId = this.getAssetIdForNodeId(nodeId);
+      if (assetId) {
+        this.props.onAssetIdChange(assetId);
+      }
+      this.props.doFetchNode(this.props.modelId, this.props.revisionId, nodeId);
     }
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
-    if (prevProps.nodeId !== this.props.nodeId) {
-      // eslint-disable-next-line react/no-did-update-set-state
-      this.setState({ nodeId: undefined });
-    }
+  componentDidUpdate(prevProps: Props) {
+    const { nodeId } = this.props;
 
-    if (prevState.nodeId !== this.state.nodeId && this.state.nodeId) {
-      // If a user clicks on a 3d node
-      const assetId = this.getAssetIdForNodeId(this.state.nodeId);
-      if (assetId) {
-        this.props.onAssetIdChange(assetId);
-      } else {
-        this.props.onNodeIdChange(this.state.nodeId);
-      }
+    if (!nodeId) {
+      this.selectNode(undefined, true);
     }
 
     if (prevProps.assetMappings !== this.props.assetMappings) {
-      if (this.state.nodeId && this.state.nodeId !== this.props.nodeId) {
-        const assetId = this.getAssetIdForNodeId(this.state.nodeId);
+      if (nodeId && prevProps.nodeId !== nodeId) {
+        const assetId = this.getAssetIdForNodeId(nodeId);
         if (assetId) {
           this.props.onAssetIdChange(assetId);
-        } else if (!this.hasWarnedAboutNode[this.state.nodeId]) {
+        } else if (!this.hasWarnedAboutNode[nodeId]) {
           message.info('Did not find any asset associated to this 3D object.');
           setTimeout(() => {
-            this.hasWarnedAboutNode[this.state.nodeId!] = true;
+            this.hasWarnedAboutNode[nodeId] = true;
           }, 10);
         }
       }
     }
 
-    if (prevProps.nodeId !== this.props.nodeId) {
+    if (nodeId && prevProps.nodeId !== nodeId) {
       this.props.doFetchNode(
         this.props.modelId,
         this.props.revisionId,
         this.props.nodeId!
       );
       if (this.model) {
-        this.selectNode(this.props.nodeId!, true, 1500);
+        this.selectNode(nodeId, true);
       }
     }
 
@@ -187,29 +177,16 @@ class Model3D extends React.Component<Props, State> {
   onComplete = () => {
     trackUsage('3DViewer.Complete');
     this.setState({ progress: undefined });
-    let { nodeId } = this.props;
-    if (this.state.nodeId) {
-      ({ nodeId } = this.state);
-    }
-
-    if (nodeId) {
-      this.selectNode(nodeId, true, 0);
-    }
-
-    if (!this.model) {
-      return;
-    }
-    // TODO, this is not valid...
-    // @ts-ignore
-    // eslint-disable-next-line no-underscore-dangle
-    this.model!._treeIndexNodeIdMap.forEach(id => {
-      this.model!.setNodeColor(id, 170, 170, 170);
-    });
   };
 
   onClick = (nodeId: number) => {
     trackUsage('3DViewer.SelectNode', { nodeId });
-    this.setState({ nodeId });
+    const assetId = this.getAssetIdForNodeId(nodeId);
+    if (assetId) {
+      this.props.onAssetIdChange(assetId);
+    } else {
+      this.props.onNodeIdChange(nodeId);
+    }
   };
 
   onReady = (viewer: Cognite3DViewer, model: Cognite3DModel) => {
@@ -224,34 +201,47 @@ class Model3D extends React.Component<Props, State> {
     window.THREE = THREE;
     window.model = model;
     trackUsage('3DViewer.Ready');
+
+    const { nodeId } = this.props;
+
+    if (!this.model) {
+      return;
+    }
+
+    // TODO, this is not valid...
+    // @ts-ignore
+    // eslint-disable-next-line no-underscore-dangle
+    this.model!._treeIndexNodeIdMap.forEach(id => {
+      this.model!.setNodeColor(id, 170, 170, 170);
+    });
+
+    if (nodeId) {
+      this.selectNode(nodeId, true);
+    }
   };
 
   selectNode = async (
-    nodeId: number,
-    animate: boolean,
+    nodeId?: number,
+    animate: boolean = true,
     duration: number = 500
   ) => {
     if (!this.model) {
       return;
     }
     this.model!.deselectAllNodes();
-    if (nodeId == null) {
+    if (!nodeId) {
       return;
     }
 
-    let mapping = this.props.assetMappings.byNodeId[nodeId];
-
-    if (!mapping) {
-      const nodes = await sdk.viewer3D.listRevealNodes3D(
-        this.props.modelId,
-        this.props.revisionId,
-        {
-          nodeId,
-          depth: 0,
-        }
-      );
-      [mapping] = nodes.items;
-    }
+    const nodes = await sdk.viewer3D.listRevealNodes3D(
+      this.props.modelId,
+      this.props.revisionId,
+      {
+        nodeId,
+        depth: 0,
+      }
+    );
+    const [mapping] = nodes.items;
     if (!mapping) {
       return;
     }
@@ -279,33 +269,9 @@ class Model3D extends React.Component<Props, State> {
     }
   };
 
-  iterateNodeSubtree = (nodeId: number, action: Callback) => {
-    const mapping = this.props.assetMappings.byNodeId[nodeId];
-    if (mapping) {
-      for (
-        let { treeIndex } = mapping;
-        treeIndex < mapping.treeIndex + mapping.subtreeSize;
-        treeIndex++
-      ) {
-        // TODO invalid function -> move into 3d-viewer
-        // @ts-ignore
-        // eslint-disable-next-line no-underscore-dangle
-        const id = this.model!._getNodeId(treeIndex);
-        if (id != null) {
-          action(id);
-        }
-      }
-
-      // Did execute
-      return true;
-    }
-    // Did not execute
-    return false;
-  };
-
   setSlicingForCurrentAsset = () => {
     const boundingBox = new THREE.Box3();
-    this.iterateNodeSubtree(this.props.nodeId!, id => {
+    this.model!.iterateSubtree(this.props.nodeId!, id => {
       boundingBox.union(this.model!.getBoundingBox(id));
     });
 
@@ -323,9 +289,9 @@ class Model3D extends React.Component<Props, State> {
     this.viewer!.setSlicingPlanes([plane1, plane2]);
   };
 
-  colorSearchResult() {
+  colorSearchResult = () => {
     this.currentColoredNodes.forEach(nodeId => {
-      this.iterateNodeSubtree(nodeId, id => {
+      this.model!.iterateSubtree(nodeId, id => {
         this.model!.setNodeColor(id, 100, 100, 100);
       });
     });
@@ -337,7 +303,7 @@ class Model3D extends React.Component<Props, State> {
       const mapping = this.props.assetMappings.byAssetId[asset.id];
       if (mapping) {
         const { nodeId } = mapping;
-        const didColor = this.iterateNodeSubtree(nodeId, id => {
+        const didColor = this.model!.iterateSubtree(nodeId, id => {
           this.model!.resetNodeColor(id);
         });
 
@@ -346,7 +312,7 @@ class Model3D extends React.Component<Props, State> {
         }
       }
     });
-  }
+  };
 
   renderSlider = () => {
     return (
@@ -375,7 +341,7 @@ class Model3D extends React.Component<Props, State> {
       return null;
     }
     if (this.model) {
-      this.colorSearchResult();
+      // this.colorSearchResult();
       // this.setSlicingForCurrentAsset();
     }
     return (
