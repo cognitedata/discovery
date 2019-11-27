@@ -18,6 +18,7 @@ import {
   DetectionsAPI,
   ExternalDetection,
   CogniteDetection,
+  ManualVerificationState,
 } from '../../../utils/detectionApi';
 import { sdk } from '../../../index';
 import AssetSelect from '../../../components/AssetSelect';
@@ -214,6 +215,7 @@ class ImagePreview extends React.Component<Props, State> {
         {
           ...annotation.data,
           fileExternalId: this.props.file.externalId || `${this.props.file.id}`,
+          manuallyVerified: ManualVerificationState.VERIFIED,
           box: {
             width: annotation.geometry!.width,
             height: annotation.geometry!.height,
