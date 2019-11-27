@@ -121,7 +121,7 @@ export const setModelAndRevisionAndNode = (
 
 export const setAssetId = (
   rootAssetId: number,
-  assetId: number,
+  assetId?: number,
   redirect = true
 ) => async (
   dispatch: ThunkDispatch<
@@ -133,6 +133,7 @@ export const setAssetId = (
 ) => {
   trackUsage('App.setAssetId', {
     assetId,
+    rootAssetId,
   });
   const {
     assetMappings: { byAssetId },
@@ -147,11 +148,21 @@ export const setAssetId = (
       el => el.revisionId === revisionId && el.modelId === modelId
     ) !== undefined;
 
+  if (!revisionId && !modelId) {
+    if (
+      representsAsset[rootAssetId] &&
+      representsAsset[rootAssetId].length === 1
+    ) {
+      newModelId = representsAsset[rootAssetId][0].modelId;
+      newRevisionId = representsAsset[rootAssetId][0].revisionId;
+    }
+  }
+
   if (currentModelSelected) {
     newModelId = modelId;
     newRevisionId = revisionId;
   }
-  const assetMapping = byAssetId[assetId];
+  const assetMapping = assetId ? byAssetId[assetId] : undefined;
   dispatch({
     type: SET_APP_STATE,
     payload: {
@@ -381,13 +392,21 @@ export default function app(state = initialState, action: AppAction): AppState {
           state.revisionId
         );
       }
-      if (state.rootAssetId) {
-        mapping = representsAsset[state.rootAssetId];
+      if (state.rootAssetId && representsAsset[state.rootAssetId]) {
+        mapping =
+          representsAsset[state.rootAssetId].length === 1
+            ? representsAsset[state.rootAssetId][0]
+            : {
+                revisionId: state.revisionId,
+                modelId: state.modelId,
+              };
       }
       return {
         ...state,
         ...(rootAssetId && { rootAssetId: Number(rootAssetId) }),
-        ...(!state.assetId && rootAssetId && { assetId: Number(rootAssetId) }),
+        ...(!state.assetId && // Only set when theres no current Asset or Node selected
+          !state.nodeId &&
+          rootAssetId && { assetId: Number(rootAssetId) }),
         ...mapping,
       };
     }

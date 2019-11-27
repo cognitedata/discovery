@@ -22,41 +22,36 @@ import {
   removeAssetFromTimeseries,
   TimeseriesState,
   fetchTimeseriesForAssetId,
-} from '../../modules/timeseries';
-import {
-  selectTypes,
-  TypesState,
-  fetchTypeForAssets,
-} from '../../modules/types';
+} from 'modules/timeseries';
+import { selectTypes, TypesState, fetchTypeForAssets } from 'modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
   EventsAndTypes,
-} from '../../modules/events';
-import AddTypes from '../Modals/AddTypesModal';
-import { createAssetTitle } from '../../utils/utils';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
+} from 'modules/events';
+import { createAssetTitle } from 'utils/utils';
+import { selectThreeD, ThreeDState } from 'modules/threed';
 import {
   ExtendedAsset,
   fetchAsset,
   deleteAsset,
   selectAssets,
   AssetsState,
-} from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { sdk } from '../../index';
-import AddChildAsset from '../Modals/AddChildAssetModal';
-import { selectFiles } from '../../modules/files';
-import { deleteAssetNodeMapping } from '../../modules/assetmappings';
-import EditAssetModal from '../Modals/EditAssetModal';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
+} from 'modules/assets';
+import { RootState } from 'reducers/index';
+import { sdk } from 'index';
+import { selectFiles } from 'modules/files';
+import { deleteAssetNodeMapping } from 'modules/assetmappings';
+import { selectApp, AppState, setAssetId } from 'modules/app';
+import { trackUsage } from 'utils/metrics';
+import { BetaTag } from 'components/BetaWarning';
+import AddChildAsset from 'containers/Modals/AddChildAssetModal';
+import EditAssetModal from 'containers/Modals/EditAssetModal';
+import AddTypes from 'containers/Modals/AddTypesModal';
 import RootAssetList from './RootAssetList';
-import MapNodeToAssetForm from '../MapNodeToAssetForm';
 import TimeseriesSection from './TimeseriesSection';
-import { trackUsage } from '../../utils/metrics';
 import EventsSection from './EventsSection';
 import TypeSection from './TypeSection';
-import { BetaTag } from '../../components/BetaWarning';
 
 const { Panel } = Collapse;
 
@@ -388,7 +383,6 @@ class AssetDrawer extends React.Component<Props, State> {
           <h3>{`No Asset linked to ${
             models[modelId] ? models[modelId].name : 'Loading...'
           } right now`}</h3>
-          <MapNodeToAssetForm />
         </>
       );
     }
