@@ -7,6 +7,7 @@ type Props = {
   style: React.CSSProperties;
   onAssetSelected: (ids: number[]) => void;
   rootOnly: boolean;
+  disabled: boolean;
   multiple: boolean;
   selectedAssetIds?: number[];
 };
@@ -24,6 +25,7 @@ class AssetSelect extends Component<Props, State> {
     onAssetSelected: () => {},
     multiple: false,
     rootOnly: false,
+    disabled: false,
   };
 
   constructor(props: Props) {
@@ -110,7 +112,7 @@ class AssetSelect extends Component<Props, State> {
   };
 
   render() {
-    const { style, multiple } = this.props;
+    const { style, multiple, disabled } = this.props;
     const {
       fetching,
       searchResults,
@@ -121,6 +123,7 @@ class AssetSelect extends Component<Props, State> {
       <Select
         showSearch
         style={style}
+        disabled={disabled}
         mode={multiple ? 'multiple' : 'default'}
         placeholder="Search for an asset"
         value={multiple ? selectedIds : selectedIds[0]}

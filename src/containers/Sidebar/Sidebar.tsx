@@ -42,13 +42,39 @@ type Props = {
 };
 
 type State = {
-  selectedPane: string;
+  selectedPane: 'asset' | '3d';
 };
 
 class Sidebar extends React.Component<Props, State> {
-  state = {
+  state: Readonly<State> = {
     selectedPane: 'asset',
   };
+
+  componentDidMount() {
+    if (!!this.props.app.assetId && !!this.props.app.modelId) {
+      this.setState({ selectedPane: 'asset' });
+    } else if (!this.props.app.assetId && !!this.props.app.modelId) {
+      this.setState({ selectedPane: '3d' });
+    }
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (
+      !prevProps.app.assetId &&
+      !!this.props.app.assetId &&
+      !!this.props.app.modelId
+    ) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ selectedPane: 'asset' });
+    } else if (
+      !!prevProps.app.assetId &&
+      !this.props.app.assetId &&
+      !!this.props.app.modelId
+    ) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ selectedPane: '3d' });
+    }
+  }
 
   render() {
     const {
@@ -58,7 +84,18 @@ class Sidebar extends React.Component<Props, State> {
     let onboardingText = (
       <Button
         style={{ marginBottom: '12px' }}
-        onClick={() => this.props.resetAppState()}
+        onClick={() => {
+          // Only reset to model id if a node is selected
+          if (this.props.app.modelId && this.props.app.nodeId) {
+            this.props.setModelAndRevisionAndNode(
+              this.props.app.modelId,
+              this.props.app.revisionId,
+              undefined
+            );
+          } else {
+            this.props.resetAppState();
+          }
+        }}
       >
         Clear Selection
       </Button>
@@ -103,7 +140,12 @@ class Sidebar extends React.Component<Props, State> {
           }}
           value={this.state.selectedPane}
         >
-          <Radio.Button value="asset">Asset View</Radio.Button>
+          <Radio.Button
+            value="asset"
+            disabled={!this.props.app.assetId && !!this.props.app.modelId}
+          >
+            Asset View
+          </Radio.Button>
           <Radio.Button value="3d">3D View</Radio.Button>
         </RootSelector>
         {onboardingText}
