@@ -65,6 +65,25 @@ const ItemPreview = styled.div<ItemPreviewProps>`
     overflow: visible;
     width: 0;
     transition: 0.4s all;
+    display: flex;
+    flex-direction: column;
+  }
+  .content .ant-tabs {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .content .ant-tabs-content {
+    flex: 1;
+    display: flex;
+    height: 0px;
+  }
+  .content .ant-tabs .ant-tabs-top-content > .ant-tabs-tabpane {
+    overflow-y: auto;
+  }
+  .content .ant-tabs .ant-tabs-top-content > .ant-tabs-tabpane pre {
+    overflow-x: auto;
   }
   .preview {
     flex: 3;
