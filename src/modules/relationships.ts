@@ -71,7 +71,7 @@ export async function postWithCursor(url: string, data: any) {
       ...data,
       cursor: result.data.nextCursor,
     });
-    items = [items, ...newData.items];
+    items = items.concat(newData.items);
   }
 
   return { items };
