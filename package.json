@@ -48,7 +48,7 @@
     "connected-react-router": "^6.5.2",
     "d3": "^5.9.7",
     "eslint-plugin-react-hooks": ">=1.7",
-    "gcs-browser-upload": "cognitedata/gcs-browser-upload",
+    "gcs-browser-upload": "cognitedata/gcs-browser-upload#04b119b199a2edfe27aefa1849bc764555eaa29c",
     "lodash": "^4.17.15",
     "makecancelable": "^1.1.1",
     "mime-types": "^2.1.24",
