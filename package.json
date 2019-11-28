@@ -70,7 +70,7 @@
     "react-resize-detector": "^4.2.1",
     "react-router-dom": "^5.0.1",
     "react-scripts": "^3.2.0",
-    "react-zoom-pan-pinch": "cognitedata/react-zoom-pan-pinch#dist",
+    "react-zoom-pan-pinch": "cognitedata/react-zoom-pan-pinch#a1d30c5eb8f742bd850df5fdbbf48c1e1cba2db7",
     "redux": "^4.0.1",
     "redux-actions": "^2.6.5",
     "redux-devtools-extension": "^2.13.2",
