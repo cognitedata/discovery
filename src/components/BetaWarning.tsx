@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tag, Badge } from 'antd';
 
 const BetaWarning = () => (
   <div
@@ -14,6 +15,42 @@ const BetaWarning = () => (
   >
     <span>BETA FEATURE, USE WITH CAUTION</span>
   </div>
+);
+
+export const BetaTag = ({ style }: { style?: React.CSSProperties }) => (
+  <Tag
+    color="#FFBB00"
+    style={{
+      alignSelf: 'center',
+      marginRight: '4px',
+      ...(style || {}),
+    }}
+  >
+    Beta
+  </Tag>
+);
+export const BetaBadge = ({ children }: { children?: React.ReactNode }) => (
+  <span style={{ marginRight: '16px', display: 'inline-flex' }}>
+    <Badge
+      color="#FFBB00"
+      count={
+        <span
+          style={{
+            fontSize: 8,
+            borderRadius: 2,
+            backgroundColor: '#FFBB00',
+            padding: '2px 3px',
+            zIndex: 1,
+            color: '#FFF',
+          }}
+        >
+          BETA
+        </span>
+      }
+    >
+      {children}
+    </Badge>
+  </span>
 );
 
 export default BetaWarning;

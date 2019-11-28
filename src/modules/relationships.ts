@@ -1,9 +1,10 @@
-import { AnyAction, Action } from 'redux';
+import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { ExtendedAsset } from './assets';
+import { checkForAccessPermission, arrayToObjectById } from '../utils/utils';
 
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
@@ -28,37 +29,68 @@ export interface Relationship {
 }
 
 interface FetchRelationshipsAction extends Action<typeof GET_RELATIONSHIPS> {
-  payload: { items: Relationship[] };
+  payload: { items: Relationship[]; assetId: string };
 }
 
 type RelationshipActions = FetchRelationshipsAction;
 
 // Functions
-export function fetchRelationships() {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-    const { project } = sdk;
-    try {
-      const response = await sdk.get(
-        `/api/playground/projects/${project}/relationships`
-      );
+// export function fetchRelationships() {
+//   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+//     const { project } = sdk;
+//     try {
+//       const response = await sdk.get(
+//         `/api/playground/projects/${project}/relationships`
+//       );
 
-      if (response.status === 200) {
-        dispatch({
-          type: GET_RELATIONSHIPS,
-          payload: { items: response.data.items },
-        });
-      } else {
-        throw new Error('Unable to fetch relationships');
-      }
-    } catch (ex) {
-      message.error('unable to retrieve relationship data');
-    }
-  };
+//       if (response.status === 200) {
+//         dispatch({
+//           type: GET_RELATIONSHIPS,
+//           payload: { items: response.data.items },
+//         });
+//       } else {
+//         throw new Error('Unable to fetch relationships');
+//       }
+//     } catch (ex) {
+//       message.error('unable to retrieve relationship data');
+//     }
+//   };
+// }
+
+export async function postWithCursor(url: string, data: any) {
+  const result = await sdk.post(url, {
+    data,
+  });
+  if (result.status !== 200) {
+    throw new Error('Could not fetch relationships.');
+  }
+
+  let { items } = result.data;
+  if (result.data.nextCursor) {
+    const newData = await postWithCursor(url, {
+      ...data,
+      cursor: result.data.nextCursor,
+    });
+    items = [items, ...newData.items];
+  }
+
+  return { items };
 }
+
 export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
-  return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, FetchRelationshipsAction>,
+    getState: () => RootState
+  ) => {
+    const { groups } = getState().app;
+
+    if (!checkForAccessPermission(groups, 'relationshipsAcl', 'READ', true)) {
+      return;
+    }
+
     try {
       const { project } = sdk;
+      const limit = 1000;
 
       const [
         resultFrom,
@@ -66,76 +98,74 @@ export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
         resultFromExt,
         resultToExt,
       ] = await Promise.all([
-        sdk.post(`/api/playground/projects/${project}/relationships/list`, {
-          data: {
+        postWithCursor(
+          `/api/playground/projects/${project}/relationships/list`,
+          {
             filter: {
               sourceResource: 'asset',
               sourceResourceId: `${asset.id}`,
             },
-          },
-        }),
-        sdk.post(`/api/playground/projects/${project}/relationships/list`, {
-          data: {
+            limit,
+          }
+        ),
+        postWithCursor(
+          `/api/playground/projects/${project}/relationships/list`,
+          {
             filter: {
               targetResource: 'asset',
               targetResourceId: `${asset.id}`,
             },
-          },
-        }),
+            limit,
+          }
+        ),
         ...(asset.externalId
           ? [
-              sdk.post(
+              postWithCursor(
                 `/api/playground/projects/${project}/relationships/list`,
                 {
-                  data: {
-                    filter: {
-                      sourceResource: 'asset',
-                      sourceResourceId: `${asset.externalId}`,
-                    },
+                  filter: {
+                    sourceResource: 'asset',
+                    sourceResourceId: `${asset.externalId}`,
                   },
+                  limit,
                 }
               ),
-              sdk.post(
+              postWithCursor(
                 `/api/playground/projects/${project}/relationships/list`,
                 {
-                  data: {
-                    filter: {
-                      targetResource: 'asset',
-                      targetResourceId: `${asset.externalId}`,
-                    },
+                  filter: {
+                    targetResource: 'asset',
+                    targetResourceId: `${asset.externalId}`,
                   },
+                  limit,
                 }
               ),
             ]
           : []),
       ]);
 
-      if (resultFrom.status === 200 && resultTo.status === 200) {
-        let items = resultFrom.data.items.concat(resultTo.data.items);
-        if (asset.externalId) {
-          items = items
-            .concat(resultFromExt.data.items)
-            .concat(resultToExt.data.items);
-        }
-        dispatch({
-          type: GET_RELATIONSHIPS,
-          payload: { items },
-        });
-      } else {
-        throw new Error('Unable to fetch relationships for given asset');
+      let items = resultFrom.items.concat(resultTo.items);
+      if (asset.externalId) {
+        items = items.concat(resultFromExt.items).concat(resultToExt.items);
       }
+      dispatch({
+        type: GET_RELATIONSHIPS,
+        payload: { items, assetId: `${asset.id}` },
+      });
     } catch (ex) {
-      message.error('unable to retrieve relationship data');
+      message.error('Unable to retrieve relationship data');
     }
   };
 }
 
 // Reducer
 export interface RelationshipState {
-  items: Relationship[];
+  items: { [key: string]: Relationship };
+  assetRelationshipMap: { [key: string]: string[] };
 }
 const initialState: RelationshipState = {
-  items: [],
+  items: {},
+  assetRelationshipMap: {},
 };
 
 export default function relationships(
@@ -144,10 +174,17 @@ export default function relationships(
 ): RelationshipState {
   switch (action.type) {
     case GET_RELATIONSHIPS: {
-      const { items } = action.payload;
+      const { items, assetId } = action.payload;
       return {
         ...state,
-        items,
+        items: {
+          ...state.items,
+          ...arrayToObjectById(items.map(el => ({ ...el, id: el.externalId }))),
+        },
+        assetRelationshipMap: {
+          ...state.assetRelationshipMap,
+          [assetId]: items.map(el => el.externalId),
+        },
       };
     }
 

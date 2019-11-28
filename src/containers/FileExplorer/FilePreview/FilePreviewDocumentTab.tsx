@@ -3,18 +3,21 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Button, message, Spin, Table, Icon, Divider } from 'antd';
 import styled from 'styled-components';
+import { BetaTag } from 'components/BetaWarning';
 import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
-import { sdk } from '../../index';
-import LoaderBPSvg from '../../assets/loader-bp.svg';
-import { FilesMetadataWithDownload } from './FileExplorer';
+import { selectThreeD, ThreeDState } from 'modules/threed';
+import { selectAssets, AssetsState } from 'modules/assets';
+import { RootState } from 'reducers/index';
+import { selectApp, AppState, setAssetId } from 'modules/app';
+import { sdk } from 'index';
+import LoaderBPSvg from 'assets/loader-bp.svg';
+import { trackUsage } from 'utils/metrics';
+import AssetSelect from 'components/AssetSelect';
+import { GCSUploader } from 'components/FileUploader';
+import { checkForAccessPermission } from 'utils/utils';
+import { FilesMetadataWithDownload } from '../FileExplorer';
+
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../utils/metrics';
-import AssetSelect from '../../components/AssetSelect';
-import { GCSUploader } from '../../components/FileUploader';
 
 const Wrapper = styled.div`
   display: flex;
@@ -115,6 +118,16 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     fileId: number,
     selectedRootAssetId: number
   ) => {
+    if (
+      !checkForAccessPermission(
+        this.props.app.groups,
+        'filesAcl',
+        'WRITE',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
     const { selectedDocument } = this.props;
     let names: string[] = [];
@@ -176,6 +189,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       );
       if (newJob.status !== 200) {
         message.error('Unable to process file to interactive P&ID');
+        this.setState({ convertingToSvg: undefined });
       } else {
         const interval = setInterval(async () => {
           const status = await sdk.get(
@@ -184,9 +198,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           if (status.status !== 200) {
             clearInterval(interval);
             message.error('Unable to process file to interactive P&ID');
+            this.setState({ convertingToSvg: undefined });
           } else if (status.data.status === 'Failed') {
             clearInterval(interval);
             message.error('Failed to process file to interactive P&ID');
+            this.setState({ convertingToSvg: undefined });
           } else if (status.data.status === 'Completed') {
             clearInterval(interval);
             this.setState({ convertingToSvg: 'Uploading Interactive P&ID' });
@@ -298,7 +314,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
     return (
       <>
-        <h2>Detect Assets In Document</h2>
+        <h2 style={{ display: 'flex' }}>
+          <BetaTag />
+          Detect Assets In Document
+        </h2>
         <p>Find mentioned Assets in your document.</p>
         <Button
           size="large"
@@ -308,15 +327,18 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           Detect Assets
         </Button>
         <Divider />
-        <h2>Convert to Interactive P&ID</h2>
+        <h2 style={{ display: 'flex' }}>
+          <BetaTag />
+          Convert to Interactive P&ID
+        </h2>
         <p>
           Navigate the asset hierarchy via clicking on the P&ID diagram. This is
           only possible for PDFs with 1 page.
         </p>
         <AssetSelect
           rootOnly
-          onAssetSelected={selectedId =>
-            this.setState({ selectedAssetId: selectedId })
+          onAssetSelected={selectedIds =>
+            this.setState({ selectedAssetId: selectedIds[0] })
           }
         />
         <br />

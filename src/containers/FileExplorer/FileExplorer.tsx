@@ -19,7 +19,7 @@ import {
 import { RootState } from '../../reducers/index';
 import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
-import FilePreview from './FilePreview';
+import FilePreview from './FilePreview/FilePreview';
 import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 import FileUploadTab from './FileUploadTab';
 import ImageFilesTab from './ImageFilesTab';
@@ -230,7 +230,9 @@ class FileExplorerComponent extends React.Component<Props, State> {
       new Set<number>()
     );
 
-    this.props.fetchAssets(Array.from(extraAssets).map(el => ({ id: el })));
+    if (extraAssets.size > 0) {
+      this.props.fetchAssets(Array.from(extraAssets).map(el => ({ id: el })));
+    }
   };
 
   onClickDocument = (document: FilesMetadata, index: number) => {
@@ -279,7 +281,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (currentDocument) {
       return (
         <FilePreview
-          selectedDocument={currentDocument}
+          fileId={currentDocument.id}
           deleteFile={this.onDeleteDocumentClicked}
           unselectDocument={this.backToPreviousDocument}
           selectDocument={this.setCurrentDocument}

@@ -1,25 +1,26 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Icon, Pagination, Tabs } from 'antd';
+import { Button, Icon, Pagination, Tabs, Spin } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
-import { sdk } from '../../index';
-import {
-  FilesMetadataWithDownload,
-  FileExplorerTabsType,
-} from './FileExplorer';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../utils/metrics';
-import PNIDViewer from './PNIDViewer';
+import EditFileModal from 'containers/Modals/EditFileModal';
+import { selectThreeD, ThreeDState } from 'modules/threed';
+import { selectAssets, AssetsState } from 'modules/assets';
+import { RootState } from 'reducers/index';
+import { selectApp, AppState, setAssetId } from 'modules/app';
+import { sdk } from 'index';
+import { trackUsage } from 'utils/metrics';
+import { FileExplorerTabsType } from '../FileExplorer';
+import PNIDViewer from '../PNIDViewer';
 import FilePreviewDocumentTab from './FilePreviewDocumentTab';
+import ImageAnnotator from './ImageAnnotator';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { selectFiles, fetchFile } from '../../../modules/files';
+import { BetaBadge } from '../../../components/BetaWarning';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -65,6 +66,25 @@ const ItemPreview = styled.div<ItemPreviewProps>`
     overflow: visible;
     width: 0;
     transition: 0.4s all;
+    display: flex;
+    flex-direction: column;
+  }
+  .content .ant-tabs {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .content .ant-tabs-content {
+    flex: 1;
+    display: flex;
+    height: 0px;
+  }
+  .content .ant-tabs .ant-tabs-top-content > .ant-tabs-tabpane {
+    overflow-y: auto;
+  }
+  .content .ant-tabs .ant-tabs-top-content > .ant-tabs-tabpane pre {
+    overflow-x: auto;
   }
   .preview {
     flex: 3;
@@ -76,7 +96,12 @@ const ItemPreview = styled.div<ItemPreviewProps>`
     flex-direction: column;
   }
   .preview img {
+    height: 100%;
     width: 100%;
+  }
+  .preview .react-transform-component {
+    height: 100%;
+    overflow: scroll;
   }
 `;
 
@@ -126,7 +151,7 @@ const ButtonRow = styled.div`
 `;
 
 type OrigProps = {
-  selectedDocument: FilesMetadataWithDownload;
+  fileId: number;
   selectDocument: (file: FilesMetadata) => void;
   deleteFile: (fileId: number) => void;
   unselectDocument: () => void;
@@ -137,19 +162,23 @@ type Props = {
   assets: AssetsState;
   threed: ThreeDState;
   setAssetId: typeof setAssetId;
+  fetchFile: typeof fetchFile;
+  selectedFile?: FilesMetadata;
 } & OrigProps;
 
 type State = {
   filePreviewUrl?: string;
   hideSidebar: boolean;
+  editFileVisible: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
-class MapModelToAssetForm extends React.Component<Props, State> {
+class FilePreview extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
+      editFileVisible: false,
       hideSidebar: false,
       pdfState: {
         numPages: 0,
@@ -160,20 +189,23 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.componentDidUpdate();
+    if (!this.props.selectedFile) {
+      this.props.fetchFile(this.props.fileId);
+    }
+    this.fetchFileUrl();
   }
 
-  componentDidUpdate() {
-    if (
-      (this.type === 'images' || this.type === 'documents') &&
-      !this.state.filePreviewUrl
-    ) {
+  componentDidUpdate(prevProps: Props) {
+    if (!this.props.selectedFile) {
+      this.props.fetchFile(this.props.fileId);
+    }
+    if (this.props.fileId !== prevProps.fileId) {
       this.fetchFileUrl();
     }
   }
 
   get type(): FileExplorerTabsType {
-    const { mimeType } = this.props.selectedDocument;
+    const { mimeType } = this.props.selectedFile!;
     if (!mimeType) {
       return 'all';
     }
@@ -193,28 +225,35 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   }
 
   fetchFileUrl = async () => {
-    const { selectedDocument } = this.props;
-    const [url] = await sdk.files.getDownloadUrls([
-      { id: selectedDocument.id },
-    ]);
-    this.setState({
-      filePreviewUrl: url.downloadUrl,
-    });
+    this.setState(
+      {
+        filePreviewUrl: undefined,
+      },
+      async () => {
+        const { fileId } = this.props;
+        const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
+        this.setState({
+          filePreviewUrl: url.downloadUrl,
+        });
+      }
+    );
   };
 
   onDownloadClicked = async () => {
-    const { selectedDocument } = this.props;
-    trackUsage('FilePreview.DownloadFile', { filedId: selectedDocument.id });
-    const [url] = await sdk.files.getDownloadUrls([
-      { id: selectedDocument.id },
-    ]);
+    const { fileId, selectedFile } = this.props;
+    trackUsage('FilePreview.DownloadFile', { filedId: fileId });
+    const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
     const blob = await this.downloadFile(url.downloadUrl);
-    saveData(blob, selectedDocument.name); // saveAs is a part of FileSaver.js
+    saveData(blob, selectedFile!.name); // saveAs is a part of FileSaver.js
   };
 
   onDeleteClicked = async () => {
-    const { selectedDocument } = this.props;
-    this.props.deleteFile(selectedDocument.id);
+    const { fileId } = this.props;
+    this.props.deleteFile(fileId);
+  };
+
+  onEditClicked = async () => {
+    this.setState({ editFileVisible: true });
   };
 
   downloadFile = async (url: string) => {
@@ -226,23 +265,31 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     return blob;
   };
 
-  renderDefaultContentView = () => {
-    const { selectedDocument } = this.props;
-    const { pdfState } = this.state;
-    const {
-      name,
-      source,
-      mimeType,
-      createdTime,
-      metadata,
-      id,
-    } = selectedDocument;
+  renderFileDetailsPane = () => {
+    const { selectedFile } = this.props;
+    if (!selectedFile) {
+      return <Spin />;
+    }
+    const { pdfState, editFileVisible } = this.state;
+    const { name, source, mimeType, createdTime, metadata, id } = selectedFile;
     return (
       <>
+        {editFileVisible && (
+          <EditFileModal
+            file={selectedFile}
+            onClose={() => this.setState({ editFileVisible: false })}
+          />
+        )}
         <h1>Name: {name}</h1>
         <ButtonRow>
           <Button onClick={this.onDownloadClicked}>Download File</Button>
-          <Button onClick={this.onDeleteClicked}>Delete File</Button>
+          <Button onClick={this.onEditClicked}>Edit File</Button>
+          <Button
+            type="danger"
+            ghost
+            icon="delete"
+            onClick={this.onDeleteClicked}
+          />
         </ButtonRow>
         <Tabs defaultActiveKey="1">
           <TabPane tab="Information" key="1">
@@ -253,9 +300,9 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             <pre>{JSON.stringify(metadata, null, 2)}</pre>
           </TabPane>
           {this.type === 'documents' && (
-            <TabPane tab="Utilities" key="2">
+            <TabPane tab={<BetaBadge>Utilities</BetaBadge>} key="2">
               <FilePreviewDocumentTab
-                selectedDocument={selectedDocument}
+                selectedDocument={selectedFile}
                 downloadFile={this.downloadFile}
                 selectDocument={this.props.selectDocument}
                 unselectDocument={this.props.unselectDocument}
@@ -312,7 +359,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               }}
               onLoadError={async () => {
                 trackUsage('FilePreview.PDFLoadingFailed', {
-                  fileId: this.props.selectedDocument.id,
+                  fileId: this.props.fileId,
                 });
                 await this.fetchFileUrl();
                 this.setState({
@@ -349,22 +396,22 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   };
 
   renderImage = () => {
-    const { filePreviewUrl } = this.state;
-    return (
-      <div
-        className="preview"
-        style={{ backgroundImage: `url(${filePreviewUrl})` }}
-      >
-        {!filePreviewUrl && <p>Loading...</p>}
-      </div>
-    );
+    if (this.state.filePreviewUrl) {
+      return (
+        <ImageAnnotator
+          file={this.props.selectedFile!}
+          filePreviewUrl={this.state.filePreviewUrl!}
+        />
+      );
+    }
+    return null;
   };
 
   renderPnID = () => {
     return (
       <div className="preview">
         <PNIDViewer
-          selectedDocument={this.props.selectedDocument}
+          selectedDocument={this.props.selectedFile!}
           unselectDocument={this.props.unselectDocument}
         />
       </div>
@@ -373,6 +420,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
   render() {
     const { hideSidebar } = this.state;
+    const { selectedFile } = this.props;
+
+    if (!selectedFile) {
+      return <Spin />;
+    }
 
     return (
       <Wrapper>
@@ -397,7 +449,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             >
               <Icon type={hideSidebar ? 'caret-left' : 'caret-right'} />
             </HideButton>
-            {this.renderDefaultContentView()}
+            {this.renderFileDetailsPane()}
           </div>
         </ItemPreview>
       </Wrapper>
@@ -405,21 +457,23 @@ class MapModelToAssetForm extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
+const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
     app: selectApp(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
+    selectedFile: selectFiles(state).files[props.fileId],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       setAssetId,
+      fetchFile,
     },
     dispatch
   );
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(MapModelToAssetForm);
+)(FilePreview);

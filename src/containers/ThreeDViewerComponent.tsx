@@ -46,46 +46,49 @@ class ThreeDViewerComponent extends Component<Props, State> {
     if (assetId) {
       this.getNodeId(true);
     }
-    this.checkAndSetToDefaultRevision();
   }
 
   componentDidUpdate(prevProps: Props) {
+    const { rootAssetId, assetId } = this.props.app;
+    const { representsAsset } = this.props.threed;
+    if (assetId && prevProps.app.assetId !== assetId) {
+      this.getNodeId(true);
+    }
     if (
-      prevProps.app.assetId !== this.props.app.assetId &&
-      this.props.app.assetId
+      rootAssetId &&
+      representsAsset[rootAssetId] &&
+      prevProps.threed.representsAsset[rootAssetId] !==
+        representsAsset[rootAssetId]
     ) {
       this.getNodeId(true);
     }
-    this.checkAndSetToDefaultRevision();
   }
 
-  checkAndSetToDefaultRevision = () => {
-    const {
-      threed: { representsAsset },
-      app: { rootAssetId, modelId, revisionId },
-    } = this.props;
-    if (rootAssetId && !modelId && !revisionId) {
-      if (
-        representsAsset[rootAssetId] &&
-        representsAsset[rootAssetId].length === 1
-      ) {
-        const representAsset = representsAsset[rootAssetId][0];
-        this.props.setModelAndRevisionAndNode(
-          representAsset.modelId,
-          representAsset.revisionId
-        );
-      }
-    }
-  };
-
   getNodeId = (fetchIfMissing: boolean) => {
-    const { modelId, revisionId, nodeId, assetId } = this.props.app;
+    const {
+      modelId,
+      revisionId,
+      nodeId,
+      assetId,
+      rootAssetId,
+    } = this.props.app;
+    const { representsAsset } = this.props.threed;
     if (nodeId) {
       return nodeId;
     }
 
-    if (assetId && fetchIfMissing && modelId && revisionId) {
-      this.props.fetchMappingsFromAssetId(modelId, revisionId, assetId);
+    if (assetId && fetchIfMissing) {
+      if (modelId && revisionId) {
+        this.props.fetchMappingsFromAssetId(modelId, revisionId, assetId);
+      } else if (rootAssetId && representsAsset[rootAssetId]) {
+        representsAsset[rootAssetId].map(el =>
+          this.props.fetchMappingsFromAssetId(
+            el.modelId,
+            el.revisionId,
+            assetId
+          )
+        );
+      }
     }
 
     return undefined;
@@ -119,7 +122,7 @@ class ThreeDViewerComponent extends Component<Props, State> {
 
   render() {
     const {
-      threed: { models, representsAsset },
+      threed: { models, representsAsset, loading },
       app: { rootAssetId, modelId, revisionId },
     } = this.props;
     if (modelId && revisionId) {
@@ -141,6 +144,9 @@ class ThreeDViewerComponent extends Component<Props, State> {
           <div style={{ flex: 1 }}>{this.render3D()}</div>
         </Wrapper>
       );
+    }
+    if (loading) {
+      return <Placeholder componentName="3D Viewer" text="Loading Models..." />;
     }
     if (!rootAssetId) {
       return (

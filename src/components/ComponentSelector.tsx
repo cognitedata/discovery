@@ -5,12 +5,10 @@ import { ViewerTypeMap, ViewerType } from '../containers/AssetViewer';
 export const ViewerTypeCategory: { [key in ViewerType]: string } = {
   none: 'None',
   threed: '3D',
-  pnid: 'Deprecated',
   vx: 'Asset',
   network: 'Asset',
   relationship: 'Beta',
   file: 'Files',
-  assetbreadcrumbs: 'Asset',
 };
 
 const ComponentSelector = ({
@@ -44,7 +42,7 @@ const ComponentSelector = ({
             <Select.OptGroup label={key} key={key}>
               {views[key].map(viewType => (
                 <Select.Option key={viewType} value={viewType}>
-                  {`${ViewerTypeMap[viewType as ViewerType]}`}
+                  {ViewerTypeMap[viewType as ViewerType]}
                 </Select.Option>
               ))}
             </Select.OptGroup>

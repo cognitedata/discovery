@@ -4,10 +4,12 @@ import ForceGraph from 'force-graph';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
-import { Select, Spin, message } from 'antd';
+import { Select, Spin, message, Button, Icon } from 'antd';
 import * as d3 from 'd3';
 import Placeholder from 'components/Placeholder';
 import { IdEither } from '@cognite/sdk';
+import { withResizeDetector } from 'react-resize-detector';
+import TypeBadge from 'containers/TypeBadge';
 import {
   AppState,
   selectApp,
@@ -29,6 +31,7 @@ import {
   TimeseriesState,
 } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
+import { selectTypes, TypesState, fetchTypes } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -37,9 +40,24 @@ import {
   RelationshipState,
 } from '../../modules/relationships';
 
+const { OptGroup, Option } = Select;
+
 const isNumeric = (value: string) => {
   return /^\d+$/.test(value);
 };
+
+const doesIntersect = (
+  point: { x: number; y: number },
+  node: { x: number; y: number; w: number; h: number }
+) => {
+  return (
+    point.x >= node.x &&
+    point.x <= node.x + node.w &&
+    point.y >= node.y &&
+    point.y <= node.y + node.h
+  );
+};
+
 const BGCOLOR = '#101020';
 
 const Wrapper = styled.div`
@@ -57,6 +75,8 @@ const Wrapper = styled.div`
     right: 12px;
     height: auto;
     top: 12px;
+    color: #fff;
+    width: 260px;
   }
 `;
 
@@ -95,6 +115,28 @@ const Legend = styled.div`
   .node p,
   .relationship p {
     margin-bottom: 0px;
+  }
+`;
+
+const SelectedAssetViewer = styled.div`
+  &&&& {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background-color: #000;
+    color: #fff;
+    height: auto;
+    padding: 8px;
+    min-width: 200px;
+    max-width: 300px;
+  }
+  h3 {
+    color: #fff;
+    word-break: break-all;
+  }
+  .buttons button {
+    display: block;
+    margin-top: 8px;
   }
 `;
 
@@ -139,13 +181,13 @@ const LoadingWrapper = styled.div<{ visible: string }>`
   }
 `;
 
-type OwnProps = {
-  topShowing: boolean;
-};
+type OwnProps = { width?: number; height?: number };
+
 type StateProps = {
   app: AppState;
   relationships: RelationshipState;
   assets: AssetsState;
+  types: TypesState;
   asset: ExtendedAsset | undefined;
   timeseries: TimeseriesState;
   threed: ThreeDState;
@@ -154,6 +196,7 @@ type DispatchProps = {
   fetchRelationshipsForAssetId: typeof fetchRelationshipsForAssetId;
   setAssetId: typeof setAssetId;
   fetchAssets: typeof fetchAssets;
+  fetchTypes: typeof fetchTypes;
   fetchTimeseries: typeof fetchTimeseries;
   setTimeseriesId: typeof setTimeseriesId;
 };
@@ -161,29 +204,39 @@ type DispatchProps = {
 type Props = StateProps & DispatchProps & OwnProps;
 
 type State = {
+  query: string[];
   controls: string;
   loading: boolean;
+  showLegend: boolean;
   data: { nodes: any[]; links: any[] };
+  selectedAsset?: RelationshipResource;
+  visibleAssetIds: number[];
 };
 
-class TreeViewer extends Component<Props, State> {
+class RelationshipTreeViewer extends Component<Props, State> {
   forceGraphRef: React.RefObject<
     ForceGraph.ForceGraphInstance
   > = React.createRef();
 
   wrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
 
+  nodes: { [key: string]: { x: number; y: number; w: number; h: number } } = {};
+
   constructor(props: Props) {
     super(props);
 
     this.state = {
-      controls: 'none',
+      controls: 'lr',
+      visibleAssetIds: [],
+      showLegend: false,
       loading: false,
+      query: [],
       data: { nodes: [], links: [] },
     };
   }
 
   async componentDidMount() {
+    this.props.fetchTypes();
     if (this.props.app.assetId) {
       // add collision force
       this.forceGraphRef.current!.d3Force(
@@ -198,7 +251,7 @@ class TreeViewer extends Component<Props, State> {
       );
 
       if (this.props.asset) {
-        this.props.fetchRelationshipsForAssetId(this.props.asset);
+        this.fetchRelationshipforAssetId(this.props.asset);
       } else {
         this.props.fetchAssets([{ id: this.props.app.assetId }]);
       }
@@ -206,6 +259,10 @@ class TreeViewer extends Component<Props, State> {
   }
 
   async componentDidUpdate(prevProps: Props) {
+    if (prevProps.app.rootAssetId !== this.props.app.rootAssetId) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ visibleAssetIds: [] });
+    }
     const data = this.getData();
     if (
       data.nodes.length !== this.state.data.nodes.length ||
@@ -217,6 +274,7 @@ class TreeViewer extends Component<Props, State> {
         this.loadMissingResources(data.nodes);
         // eslint-disable-next-line react/no-did-update-set-state
         setTimeout(() => {
+          this.nodes = {};
           this.setState({ loading: false });
           // add collision force
           this.forceGraphRef.current!.d3Force(
@@ -227,20 +285,23 @@ class TreeViewer extends Component<Props, State> {
           this.forceGraphRef.current!.d3Force(
             'charge',
             // @ts-ignore
-            d3.forceManyBody().strength(-80)
+            d3.forceManyBody().strength(-400)
           );
         }, 500);
+      } else {
+        // eslint-disable-next-line react/no-did-update-set-state
+        this.setState({ loading: false });
       }
     }
     if (prevProps.asset === undefined && this.props.asset) {
-      this.props.fetchRelationshipsForAssetId(this.props.asset);
+      this.fetchRelationshipforAssetId(this.props.asset);
     }
     if (
       prevProps.asset &&
       this.props.asset &&
       prevProps.asset.id !== this.props.asset.id
     ) {
-      this.props.fetchRelationshipsForAssetId(this.props.asset);
+      this.fetchRelationshipforAssetId(this.props.asset);
     }
     if (
       this.props.app.assetId &&
@@ -249,6 +310,99 @@ class TreeViewer extends Component<Props, State> {
       this.props.fetchAssets([{ id: this.props.app.assetId }]);
     }
   }
+
+  get filters(): {
+    [key: string]: {
+      [key: string]: {
+        name: string;
+        filterNode?: (node: RelationshipResource) => boolean;
+        filterLink?: (link: Relationship) => boolean;
+      };
+    };
+  } {
+    const { externalIdMap } = this.props.assets;
+    const { items, assetTypes } = this.props.types;
+    return {
+      Resource: {
+        asset: {
+          name: 'Asset',
+          filterNode: (node: RelationshipResource) => {
+            return node.resource === 'asset';
+          },
+        },
+        timeseries: {
+          name: 'Timeseries',
+          filterNode: (node: RelationshipResource) => {
+            return node.resource === 'timeSeries';
+          },
+        },
+        '3d': {
+          name: '3D',
+          filterNode: (node: RelationshipResource) => {
+            return (
+              node.resource === 'threeD' || node.resource === 'threeDRevision'
+            );
+          },
+        },
+      },
+      Relationships: {
+        flowsTo: {
+          name: 'Flows To',
+          filterLink: (link: Relationship) => {
+            return link.relationshipType === 'flowsTo';
+          },
+        },
+        belongsTo: {
+          name: 'Belongs To',
+          filterLink: (link: Relationship) => {
+            return link.relationshipType === 'belongsTo';
+          },
+        },
+        isParentOf: {
+          name: 'Is Parent Of',
+          filterLink: (link: Relationship) => {
+            return link.relationshipType === 'isParentOf';
+          },
+        },
+        implements: {
+          name: 'Implements',
+          filterLink: (link: Relationship) => {
+            return link.relationshipType === 'implements';
+          },
+        },
+      },
+      Types: Object.keys(items).reduce((prev, el) => {
+        const typeSchema = items[Number(el)];
+        return {
+          ...prev,
+          [el]: {
+            name: typeSchema ? typeSchema.name : 'Loading...',
+            filterNode: (node: RelationshipResource) => {
+              const nodeTypes =
+                assetTypes[
+                  externalIdMap[node.resourceId] || Number(node.resourceId)
+                ];
+              if (
+                nodeTypes &&
+                nodeTypes.find(type => type.type.id === Number(el))
+              ) {
+                return true;
+              }
+              return false;
+            },
+          },
+        };
+      }, {}),
+    };
+  }
+
+  fetchRelationshipforAssetId = (asset: ExtendedAsset) => {
+    const { visibleAssetIds } = this.state;
+    this.setState({
+      visibleAssetIds: [...visibleAssetIds, asset.id],
+    });
+    this.props.fetchRelationshipsForAssetId(asset);
+  };
 
   loadMissingResources = (nodes: any[]) => {
     const ids = nodes.reduce(
@@ -328,10 +482,14 @@ class TreeViewer extends Component<Props, State> {
   };
 
   chooseNodeColor = (node: RelationshipResource) => {
-    const { assetId } = this.props.app;
+    const { asset } = this.props;
     switch (node.resource) {
       case 'asset': {
-        if (Number(node.resourceId) === assetId) {
+        if (
+          asset &&
+          (node.resourceId === asset.externalId ||
+            Number(node.resourceId) === asset.id)
+        ) {
           return 'rgba(0,0,0,0.5)';
         }
         return 'rgba(0,0,255,0.5)';
@@ -346,15 +504,13 @@ class TreeViewer extends Component<Props, State> {
   };
 
   chooseRelationshipColor = (relationship: Relationship) => {
-    const {
-      app: { assetId },
-      asset,
-    } = this.props;
+    const { asset } = this.props;
     switch (relationship.relationshipType) {
       case 'isParentOf': {
         if (
-          (asset && relationship.target.resourceId === asset.externalId) ||
-          Number(relationship.target.resourceId) === assetId
+          asset &&
+          (relationship.target.resourceId === asset.externalId ||
+            Number(relationship.target.resourceId) === asset.id)
         ) {
           return 'rgba(0,255,255,0.5)';
         }
@@ -371,37 +527,173 @@ class TreeViewer extends Component<Props, State> {
 
   getData = () => {
     const {
-      relationships: { items },
+      relationships: { items, assetRelationshipMap },
+      assets: { externalIdMap },
     } = this.props;
+    const { visibleAssetIds, query } = this.state;
     const nodes: { [key: string]: any } = {};
     const links: any[] = [];
-    items.forEach((relationship: Relationship) => {
-      nodes[relationship.source.resourceId] = {
-        ...relationship.source,
-        id: relationship.source.resourceId,
-        color: this.chooseNodeColor(relationship.source),
-      };
-      nodes[relationship.target.resourceId] = {
-        ...relationship.target,
-        id: relationship.target.resourceId,
-        color: this.chooseNodeColor(relationship.target),
-      };
-      if (relationship.source.resourceId !== relationship.target.resourceId) {
-        links.push({
-          ...relationship,
-          linkWidth: 3,
-          source: relationship.source.resourceId,
-          target: relationship.target.resourceId,
+    const relationshipIds: Set<string> = new Set();
+    visibleAssetIds.forEach(id => {
+      if (assetRelationshipMap[id]) {
+        assetRelationshipMap[id].forEach(relationshipId => {
+          if (items[relationshipId]) {
+            relationshipIds.add(relationshipId);
+          }
         });
       }
     });
+    const { filters } = this;
+    const nodeFilters = query
+      .map(el => {
+        const split = el.split('.');
+        if (!filters[split[0]] || !filters[split[0]][split[1]]) {
+          return undefined;
+        }
+        return filters[split[0]][split[1]].filterNode;
+      })
+      .filter(el => !!el) as ((node: RelationshipResource) => boolean)[];
+    const linkFilters = query
+      .map(el => {
+        const split = el.split('.');
+        if (!filters[split[0]] || !filters[split[0]][split[1]]) {
+          return undefined;
+        }
+        return filters[split[0]][split[1]].filterLink;
+      })
+      .filter(el => !!el) as ((link: Relationship) => boolean)[];
+    Array.from(relationshipIds)
+      .map(id => items[id])
+      .forEach((relationship: Relationship) => {
+        const sourcePassFilter = nodeFilters.some(filter =>
+          filter(relationship.source)
+        );
+        const targetPassFilter = nodeFilters.some(filter =>
+          filter(relationship.target)
+        );
+        if (
+          (nodeFilters.length === 0 ||
+            (sourcePassFilter && targetPassFilter) ||
+            (sourcePassFilter &&
+              visibleAssetIds.includes(
+                externalIdMap[relationship.target.resourceId] ||
+                  Number(relationship.target.resourceId)
+              )) ||
+            (targetPassFilter &&
+              visibleAssetIds.includes(
+                externalIdMap[relationship.source.resourceId] ||
+                  Number(relationship.source.resourceId)
+              ))) &&
+          (linkFilters.length === 0 ||
+            linkFilters.some(filter => filter(relationship)))
+        ) {
+          nodes[relationship.source.resourceId] = {
+            ...relationship.source,
+            id: relationship.source.resourceId,
+            color: this.chooseNodeColor(relationship.source),
+          };
+          nodes[relationship.target.resourceId] = {
+            ...relationship.target,
+            id: relationship.target.resourceId,
+            color: this.chooseNodeColor(relationship.target),
+          };
+          if (
+            relationship.source.resourceId !== relationship.target.resourceId
+          ) {
+            links.push({
+              ...relationship,
+              linkWidth: 3,
+              source: relationship.source.resourceId,
+              target: relationship.target.resourceId,
+            });
+          }
+        }
+      });
     return {
       nodes: Object.values(nodes),
       links,
     };
   };
 
+  onNodeClicked = (node: RelationshipResource) => {
+    switch (node.resource) {
+      case 'asset': {
+        const {
+          assets: { all, externalIdMap },
+        } = this.props;
+        const asset =
+          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+        if (asset) {
+          this.setState({ selectedAsset: node });
+        } else {
+          message.error('Asset not yet loaded.');
+        }
+        return;
+      }
+      case 'timeSeries': {
+        this.props.setTimeseriesId(Number(node.resourceId));
+        trackUsage('RelationshipViewer.TimeseriesClicked', {
+          assetId: node.resourceId,
+        });
+      }
+    }
+  };
+
+  onLoadMoreSelected = (node: RelationshipResource, navigateAway = true) => {
+    switch (node.resource) {
+      case 'asset': {
+        const {
+          assets: { all, externalIdMap },
+        } = this.props;
+        const asset =
+          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+        if (asset) {
+          const { visibleAssetIds } = this.state;
+          if (navigateAway) {
+            this.props.setAssetId(asset.rootId, asset.id);
+          } else {
+            this.props.fetchRelationshipsForAssetId(asset);
+          }
+          this.setState({
+            visibleAssetIds: [...visibleAssetIds, asset.id],
+          });
+          trackUsage('RelationshipViewer.AssetClicked', {
+            assetId: node.resourceId,
+          });
+        } else {
+          message.error('Asset not yet loaded.');
+        }
+      }
+    }
+  };
+
+  checkNodeClicked = (event: any) => {
+    const { data } = this.state;
+    let ratio = 1;
+    if (this.forceGraphRef.current && this.wrapperRef.current) {
+      // @ts-ignore
+      const canvas = this.forceGraphRef.current!.rootElem.children[0]
+        .children[0];
+      ratio =
+        canvas.width /
+        (this.props.width || this.wrapperRef.current.clientWidth);
+    }
+    const nodeId = Object.keys(this.nodes).find(id =>
+      doesIntersect(
+        { x: event.offsetX * ratio, y: event.offsetY * ratio },
+        this.nodes[id]
+      )
+    );
+    if (nodeId !== undefined) {
+      const node: any = data.nodes.find(el => el.id === nodeId);
+      if (node) {
+        this.onNodeClicked(node);
+      }
+    }
+  };
+
   renderLegend = () => {
+    const { showLegend } = this.state;
     const nodes: { [key: string]: RelationshipResource } = {
       'Current Asset': {
         resource: 'asset',
@@ -447,37 +739,138 @@ class TreeViewer extends Component<Props, State> {
     };
     return (
       <Legend>
-        <h3>Legend</h3>
-        <p>
-          <strong>Nodes</strong>
-        </p>
-        {Object.keys(nodes).map(label => (
-          <div key={label} className="node">
-            <p style={{ color: this.chooseNodeColor(nodes[label]) }}>{label}</p>
-          </div>
-        ))}
-        <p>
-          <strong>Relationships</strong>
-        </p>
-        {Object.keys(relationships).map(label => (
-          <div key={label} className="relationship">
-            <div
-              className="line"
-              style={{
-                backgroundColor: this.chooseRelationshipColor(
-                  relationships[label]
-                ),
-              }}
-            />
-            <p>{label}</p>
-          </div>
-        ))}
+        <h3>
+          Legend{' '}
+          <Icon
+            type={showLegend ? 'caret-up' : 'caret-down'}
+            twoToneColor="white"
+            onClick={() => this.setState({ showLegend: !showLegend })}
+          />
+        </h3>
+        {showLegend && (
+          <>
+            <p>
+              <strong>Nodes</strong>
+            </p>
+            {Object.keys(nodes).map(label => (
+              <div key={label} className="node">
+                <p style={{ color: this.chooseNodeColor(nodes[label]) }}>
+                  {label}
+                </p>
+              </div>
+            ))}
+            <p>
+              <strong>Relationships</strong>
+            </p>
+            {Object.keys(relationships).map(label => (
+              <div key={label} className="relationship">
+                <div
+                  className="line"
+                  style={{
+                    backgroundColor: this.chooseRelationshipColor(
+                      relationships[label]
+                    ),
+                  }}
+                />
+                <p>{label}</p>
+              </div>
+            ))}
+          </>
+        )}
       </Legend>
     );
   };
 
+  renderSelectedAsset = () => {
+    const { selectedAsset, visibleAssetIds } = this.state;
+    const { all, externalIdMap } = this.props.assets;
+    if (!selectedAsset || selectedAsset.resource !== 'asset') {
+      return null;
+    }
+    const asset =
+      all[
+        externalIdMap[selectedAsset.resourceId] ||
+          Number(selectedAsset.resourceId)
+      ];
+
+    const index = visibleAssetIds.indexOf(asset.id);
+    return (
+      <SelectedAssetViewer>
+        <Icon
+          type="close"
+          twoToneColor="white"
+          onClick={() => this.setState({ selectedAsset: undefined })}
+        />
+        <h3>Name: {asset.name}</h3>
+        {asset.description && <p>{asset.description}</p>}
+        <TypeBadge assetId={asset.id} />
+        <div className="buttons">
+          <Button
+            onClick={() => {
+              if (index > -1) {
+                this.setState({
+                  visibleAssetIds: [
+                    ...visibleAssetIds.slice(0, index),
+                    ...visibleAssetIds.slice(index + 1),
+                  ],
+                });
+              } else {
+                this.onLoadMoreSelected(selectedAsset, false);
+              }
+            }}
+          >
+            {index === -1 ? 'View Relationships' : 'Hide Relationships'}
+          </Button>
+          <Button onClick={() => this.onLoadMoreSelected(selectedAsset)}>
+            Go To Asset
+          </Button>
+        </div>
+      </SelectedAssetViewer>
+    );
+  };
+
+  renderFilterSelect = () => {
+    const { query } = this.state;
+    const { filters } = this;
+    const children = Object.keys(filters).map(filterGroup => {
+      return (
+        <OptGroup key={filterGroup} label={filterGroup}>
+          {Object.keys(filters[filterGroup]).map(subfilterKey => {
+            return (
+              <Option
+                value={`${filterGroup}.${subfilterKey}`}
+                key={subfilterKey}
+              >
+                {filters[filterGroup][subfilterKey].name}
+              </Option>
+            );
+          })}
+        </OptGroup>
+      );
+    });
+
+    return (
+      <Select
+        mode="multiple"
+        style={{ width: '100%' }}
+        placeholder="Filter"
+        onChange={(value: string[]) => this.setState({ query: value })}
+        value={query}
+      >
+        {children}
+      </Select>
+    );
+  };
+
   render() {
-    const { controls, loading, data } = this.state;
+    const {
+      controls,
+      loading,
+      data,
+      visibleAssetIds,
+      selectedAsset,
+    } = this.state;
+    const { externalIdMap } = this.props.assets;
     if (!this.props.app.assetId) {
       return <Placeholder componentName="Relationship Viewer" />;
     }
@@ -487,16 +880,13 @@ class TreeViewer extends Component<Props, State> {
           <Spin size="large" />
         </LoadingWrapper>
         <ForceGraph2D
-          width={
-            this.wrapperRef.current ? this.wrapperRef.current.clientWidth : '0'
-          }
-          height={
-            this.wrapperRef.current ? this.wrapperRef.current.clientHeight : '0'
-          }
+          onBackgroundClick={(event: any) => this.checkNodeClicked(event)}
+          width={this.props.width || 0}
+          height={this.props.height || 0}
           ref={this.forceGraphRef}
           graphData={data}
           dagMode={controls === 'none' ? null : controls}
-          dagLevelDistance={100}
+          dagLevelDistance={60}
           backgroundColor={BGCOLOR}
           linkColor={(link: Relationship) => this.chooseRelationshipColor(link)}
           nodeRelSize={1}
@@ -504,36 +894,11 @@ class TreeViewer extends Component<Props, State> {
           nodeVal={(node: any) => 100 / (node.level + 1)}
           nodeLabel="name"
           nodeAutoColorBy="color"
+          warmupTicks={200}
           linkDirectionalParticles={2}
-          linkDirectionalParticleWidth={2}
-          onNodeClick={(node: RelationshipResource) => {
-            switch (node.resource) {
-              case 'asset': {
-                const {
-                  assets: { all, externalIdMap },
-                } = this.props;
-                const asset =
-                  all[
-                    externalIdMap[node.resourceId] || Number(node.resourceId)
-                  ];
-                if (asset) {
-                  this.props.setAssetId(asset.rootId, asset.id);
-                  trackUsage('RelationshipViewer.AssetClicked', {
-                    assetId: node.resourceId,
-                  });
-                } else {
-                  message.error('Asset not yet loaded.');
-                }
-                return;
-              }
-              case 'timeSeries': {
-                this.props.setTimeseriesId(Number(node.resourceId));
-                trackUsage('RelationshipViewer.TimeseriesClicked', {
-                  assetId: node.resourceId,
-                });
-              }
-            }
-          }}
+          linkWidth={2}
+          onNodeClick={this.onNodeClicked}
+          linkDirectionalParticleWidth={3}
           nodeCanvasObject={(
             node: RelationshipResource & {
               color: string;
@@ -550,7 +915,17 @@ class TreeViewer extends Component<Props, State> {
             const [bgwidth, bgheight] = [textWidth, fontSize].map(
               n => n + fontSize * 0.7
             ); // some padding
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            if (selectedAsset && selectedAsset.resourceId === node.resourceId) {
+              ctx.fillStyle = 'rgba(200, 255, 200, 0.8)';
+            } else if (
+              visibleAssetIds.includes(
+                externalIdMap[node.resourceId] || Number(node.resourceId)
+              )
+            ) {
+              ctx.fillStyle = 'rgba(255, 255, 200, 0.8)';
+            } else {
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            }
             ctx.fillRect(
               node.x - bgwidth / 2,
               node.y - bgheight / 2,
@@ -561,12 +936,29 @@ class TreeViewer extends Component<Props, State> {
             ctx.textBaseline = 'middle';
             ctx.fillStyle = node.color;
             ctx.fillText(label, node.x, node.y);
+
+            // update mapping
+            const pointA = ctx.getTransform().transformPoint({
+              x: node.x - bgwidth / 2,
+              y: node.y - bgheight / 2,
+            });
+            const pointB = ctx.getTransform().transformPoint({
+              x: node.x + bgwidth / 2,
+              y: node.y + bgheight / 2,
+            });
+            this.nodes[node.resourceId] = {
+              x: pointA.x,
+              y: pointA.y,
+              w: pointB.x - pointA.x,
+              h: pointB.y - pointA.y,
+            };
           }}
           d3VelocityDecay={0.3}
         />
         <div className="selector">
+          <p>View Options</p>
           <Select
-            style={{ width: '200px' }}
+            style={{ width: '100%' }}
             placeholder="Choose a layout"
             value={controls}
             onChange={(val: string) => this.setState({ controls: val })}
@@ -577,8 +969,11 @@ class TreeViewer extends Component<Props, State> {
               </Select.Option>
             ))}
           </Select>
+          <p>Filter</p>
+          {this.renderFilterSelect()}
         </div>
         {this.renderLegend()}
+        {this.renderSelectedAsset()}
       </Wrapper>
     );
   }
@@ -592,6 +987,7 @@ const mapStateToProps = (state: RootState): StateProps => {
     asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
+    types: selectTypes(state),
   };
 };
 
@@ -600,6 +996,7 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     {
       fetchRelationshipsForAssetId,
       setAssetId,
+      fetchTypes,
       fetchAssets,
       fetchTimeseries,
       setTimeseriesId,
@@ -607,7 +1004,9 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     dispatch
   );
 
-export default connect<StateProps, DispatchProps, OwnProps, RootState>(
-  mapStateToProps,
-  mapDispatchToProps
-)(TreeViewer);
+export default withResizeDetector(
+  connect<StateProps, DispatchProps, OwnProps, RootState>(
+    mapStateToProps,
+    mapDispatchToProps
+  )(RelationshipTreeViewer)
+);
