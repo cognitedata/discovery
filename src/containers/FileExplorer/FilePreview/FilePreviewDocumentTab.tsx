@@ -3,19 +3,21 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Button, message, Spin, Table, Icon, Divider } from 'antd';
 import styled from 'styled-components';
+import { BetaTag } from 'components/BetaWarning';
 import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../../modules/threed';
-import { selectAssets, AssetsState } from '../../../modules/assets';
-import { RootState } from '../../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../../modules/app';
-import { sdk } from '../../../index';
-import LoaderBPSvg from '../../../assets/loader-bp.svg';
+import { selectThreeD, ThreeDState } from 'modules/threed';
+import { selectAssets, AssetsState } from 'modules/assets';
+import { RootState } from 'reducers/index';
+import { selectApp, AppState, setAssetId } from 'modules/app';
+import { sdk } from 'index';
+import LoaderBPSvg from 'assets/loader-bp.svg';
+import { trackUsage } from 'utils/metrics';
+import AssetSelect from 'components/AssetSelect';
+import { GCSUploader } from 'components/FileUploader';
+import { checkForAccessPermission } from 'utils/utils';
 import { FilesMetadataWithDownload } from '../FileExplorer';
+
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../../utils/metrics';
-import AssetSelect from '../../../components/AssetSelect';
-import { GCSUploader } from '../../../components/FileUploader';
-import { checkForAccessPermission } from '../../../utils/utils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -312,7 +314,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     }
     return (
       <>
-        <h2>Detect Assets In Document</h2>
+        <h2 style={{ display: 'flex' }}>
+          <BetaTag />
+          Detect Assets In Document
+        </h2>
         <p>Find mentioned Assets in your document.</p>
         <Button
           size="large"
@@ -322,7 +327,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           Detect Assets
         </Button>
         <Divider />
-        <h2>Convert to Interactive P&ID</h2>
+        <h2 style={{ display: 'flex' }}>
+          <BetaTag />
+          Convert to Interactive P&ID
+        </h2>
         <p>
           Navigate the asset hierarchy via clicking on the P&ID diagram. This is
           only possible for PDFs with 1 page.

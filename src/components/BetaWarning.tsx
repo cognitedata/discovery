@@ -21,6 +21,7 @@ export const BetaTag = ({ style }: { style?: React.CSSProperties }) => (
   <Tag
     color="#FFBB00"
     style={{
+      alignSelf: 'center',
       marginRight: '4px',
       ...(style || {}),
     }}
