@@ -56,6 +56,27 @@ type RelationshipActions = FetchRelationshipsAction;
 //     }
 //   };
 // }
+
+export async function postWithCursor(url: string, data: any) {
+  const result = await sdk.post(url, {
+    data,
+  });
+  if (result.status !== 200) {
+    throw new Error('Could not fetch relationships.');
+  }
+
+  let { items } = result.data;
+  if (result.data.nextCursor) {
+    const newData = await postWithCursor(url, {
+      ...data,
+      cursor: result.data.nextCursor,
+    });
+    items = [items, ...newData.items];
+  }
+
+  return { items };
+}
+
 export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
   return async (
     dispatch: ThunkDispatch<any, void, FetchRelationshipsAction>,
@@ -69,6 +90,7 @@ export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
 
     try {
       const { project } = sdk;
+      const limit = 1000;
 
       const [
         resultFrom,
@@ -76,66 +98,62 @@ export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
         resultFromExt,
         resultToExt,
       ] = await Promise.all([
-        sdk.post(`/api/playground/projects/${project}/relationships/list`, {
-          data: {
+        postWithCursor(
+          `/api/playground/projects/${project}/relationships/list`,
+          {
             filter: {
               sourceResource: 'asset',
               sourceResourceId: `${asset.id}`,
             },
-          },
-        }),
-        sdk.post(`/api/playground/projects/${project}/relationships/list`, {
-          data: {
+            limit,
+          }
+        ),
+        postWithCursor(
+          `/api/playground/projects/${project}/relationships/list`,
+          {
             filter: {
               targetResource: 'asset',
               targetResourceId: `${asset.id}`,
             },
-          },
-        }),
+            limit,
+          }
+        ),
         ...(asset.externalId
           ? [
-              sdk.post(
+              postWithCursor(
                 `/api/playground/projects/${project}/relationships/list`,
                 {
-                  data: {
-                    filter: {
-                      sourceResource: 'asset',
-                      sourceResourceId: `${asset.externalId}`,
-                    },
+                  filter: {
+                    sourceResource: 'asset',
+                    sourceResourceId: `${asset.externalId}`,
                   },
+                  limit,
                 }
               ),
-              sdk.post(
+              postWithCursor(
                 `/api/playground/projects/${project}/relationships/list`,
                 {
-                  data: {
-                    filter: {
-                      targetResource: 'asset',
-                      targetResourceId: `${asset.externalId}`,
-                    },
+                  filter: {
+                    targetResource: 'asset',
+                    targetResourceId: `${asset.externalId}`,
                   },
+                  limit,
                 }
               ),
             ]
           : []),
       ]);
 
-      if (resultFrom.status === 200 && resultTo.status === 200) {
-        let items = resultFrom.data.items.concat(resultTo.data.items);
-        if (asset.externalId) {
-          items = items
-            .concat(resultFromExt.data.items)
-            .concat(resultToExt.data.items);
-        }
-        dispatch({
-          type: GET_RELATIONSHIPS,
-          payload: { items, assetId: `${asset.id}` },
-        });
-      } else {
-        throw new Error('Unable to fetch relationships for given asset');
+      let items = resultFrom.items.concat(resultTo.items);
+      if (asset.externalId) {
+        items = items.concat(resultFromExt.items).concat(resultToExt.items);
       }
+      dispatch({
+        type: GET_RELATIONSHIPS,
+        payload: { items, assetId: `${asset.id}` },
+      });
     } catch (ex) {
-      message.error('unable to retrieve relationship data');
+      message.error('Unable to retrieve relationship data');
     }
   };
 }
