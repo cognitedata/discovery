@@ -163,9 +163,6 @@ class AssetDrawer extends React.Component<Props, State> {
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
       this.resetState();
     }
-    if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
-      this.resetState();
-    }
   }
 
   get asset() {
