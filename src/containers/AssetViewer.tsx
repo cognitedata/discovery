@@ -24,7 +24,7 @@ import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
 import ThreeDViewerComponent from './ThreeDViewerComponent';
 
-export const ViewerTypeMap: { [key in ViewerType]: React.ReactNode } = {
+export const ViewerTypeMap: { [key in ViewerType]: string } = {
   none: 'None',
   threed: '3D',
   vx: 'VX Network Viewer',
