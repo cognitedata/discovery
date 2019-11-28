@@ -4,17 +4,18 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, message, Spin, Table, Icon, Divider } from 'antd';
 import styled from 'styled-components';
 import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
-import { sdk } from '../../index';
-import LoaderBPSvg from '../../assets/loader-bp.svg';
-import { FilesMetadataWithDownload } from './FileExplorer';
+import { selectThreeD, ThreeDState } from '../../../modules/threed';
+import { selectAssets, AssetsState } from '../../../modules/assets';
+import { RootState } from '../../../reducers/index';
+import { selectApp, AppState, setAssetId } from '../../../modules/app';
+import { sdk } from '../../../index';
+import LoaderBPSvg from '../../../assets/loader-bp.svg';
+import { FilesMetadataWithDownload } from '../FileExplorer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { trackUsage } from '../../utils/metrics';
-import AssetSelect from '../../components/AssetSelect';
-import { GCSUploader } from '../../components/FileUploader';
+import { trackUsage } from '../../../utils/metrics';
+import AssetSelect from '../../../components/AssetSelect';
+import { GCSUploader } from '../../../components/FileUploader';
+import { checkForAccessPermission } from '../../../utils/utils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -115,6 +116,16 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     fileId: number,
     selectedRootAssetId: number
   ) => {
+    if (
+      !checkForAccessPermission(
+        this.props.app.groups,
+        'filesAcl',
+        'WRITE',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('FilePreview.ConvertToPnIDClicked', { fileId });
     const { selectedDocument } = this.props;
     let names: string[] = [];
@@ -176,6 +187,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       );
       if (newJob.status !== 200) {
         message.error('Unable to process file to interactive P&ID');
+        this.setState({ convertingToSvg: undefined });
       } else {
         const interval = setInterval(async () => {
           const status = await sdk.get(
@@ -184,9 +196,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
           if (status.status !== 200) {
             clearInterval(interval);
             message.error('Unable to process file to interactive P&ID');
+            this.setState({ convertingToSvg: undefined });
           } else if (status.data.status === 'Failed') {
             clearInterval(interval);
             message.error('Failed to process file to interactive P&ID');
+            this.setState({ convertingToSvg: undefined });
           } else if (status.data.status === 'Completed') {
             clearInterval(interval);
             this.setState({ convertingToSvg: 'Uploading Interactive P&ID' });

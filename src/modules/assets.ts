@@ -4,14 +4,17 @@ import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
-import { arrayToObjectById } from '../utils/utils';
-// eslint-disable-next-line import/no-cycle
-import { Type } from './types';
+import {
+  arrayToObjectById,
+  checkForAccessPermission,
+  isInternalId,
+} from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
 import { setRevisionRepresentAsset } from './threed';
 import { trackUsage } from '../utils/metrics';
+import { fetchTypeForAssets } from './types';
 
 // Constants
 export const SET_ASSETS = 'assets/SET_ASSETS';
@@ -19,9 +22,18 @@ export const ADD_ASSETS = 'assets/ADD_ASSETS';
 export const UPDATE_ASSET = 'assets/UPDATE_ASSET';
 export const DELETE_ASSETS = 'assets/DELETE_ASSETS';
 
+export interface AssetTypeInfo {
+  type: {
+    id: number;
+    version: number;
+    externalId: string;
+  };
+  object: any;
+}
+
 export interface ExtendedAsset extends Asset {
   rootId: number;
-  types: Type[];
+  types: AssetTypeInfo[];
   metadata?: { [key: string]: string };
 }
 
@@ -125,7 +137,7 @@ export function fetchAsset(assetId: number, redirect = false) {
           } = getState();
           dispatch(
             push(
-              `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.search}`
+              `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.hash}`
             )
           );
         }
@@ -224,8 +236,8 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
   };
 }
 
-export function fetchAssets(assetIds: IdEither[]) {
-  return async (dispatch: Dispatch) => {
+export function fetchAssets(assetIds: IdEither[], isRetry = false) {
+  return async (dispatch: ThunkDispatch<AnyAction, any, any>) => {
     if (assetIds.length === 0) {
       return;
     }
@@ -238,15 +250,52 @@ export function fetchAssets(assetIds: IdEither[]) {
           results.map(asset => slimAssetObject(asset))
         );
 
+        dispatch(fetchTypeForAssets(results.map(el => el.id)));
+
         dispatch({ type: ADD_ASSETS, payload: { items } });
       }
     } catch (ex) {
-      message.error(`Could not fetch assets.`);
+      if (isRetry) {
+        message.error(`Could not fetch assets.`);
+      } else {
+        const failed: IdEither[] = ex.errors.reduce(
+          (prev: IdEither[], error: { missing?: IdEither[] }) =>
+            prev.concat(error.missing || []),
+          [] as IdEither[]
+        );
+        dispatch(
+          fetchAssets(
+            assetIds.filter(
+              (el: any) =>
+                !failed.find((fail: any) => {
+                  if (isInternalId(el)) {
+                    return fail.id === el.id;
+                  }
+                  return fail.externalId === el.externalId;
+                })
+            ),
+            true
+          )
+        );
+        dispatch(
+          fetchAssets(
+            failed
+              .map(el => {
+                if (isInternalId(el)) {
+                  return { externalId: `${el.id}` };
+                }
+                return undefined;
+              })
+              .filter(el => !!el) as IdEither[],
+            true
+          )
+        );
+      }
     }
   };
 }
 
-export function createNewAsset(
+export const createNewAsset = (
   newAsset: ExternalAssetItem,
   mappingInfo?: {
     modelId?: number;
@@ -254,52 +303,71 @@ export function createNewAsset(
     nodeId?: number;
   },
   callback?: (asset: Asset) => void
-) {
-  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
-    trackUsage('Assets.createNewAsset', {
-      mappedTo3D: !!mappingInfo,
-    });
-    try {
-      const results = await sdk.assets.create([
-        {
-          ...newAsset,
-          metadata: {
-            ...newAsset.metadata,
-            COGNITE__SOURCE: 'discovery',
-          },
+) => async (
+  dispatch: ThunkDispatch<any, any, AnyAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
+  ) {
+    return;
+  }
+  trackUsage('Assets.createNewAsset', {
+    mappedTo3D: !!mappingInfo,
+  });
+  try {
+    const results = await sdk.assets.create([
+      {
+        ...newAsset,
+        metadata: {
+          ...newAsset.metadata,
+          COGNITE__SOURCE: 'discovery',
         },
-      ]);
-      if (results) {
-        const items = arrayToObjectById(
-          results.map(asset => slimAssetObject(asset))
-        );
+      },
+    ]);
+    if (results) {
+      const items = arrayToObjectById(
+        results.map(asset => slimAssetObject(asset))
+      );
 
-        const assetId = results[0].id;
+      const assetId = results[0].id;
 
-        if (mappingInfo) {
-          const { modelId, revisionId, nodeId } = mappingInfo;
-          if (modelId && revisionId && nodeId) {
-            dispatch(
-              createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
-            );
-          } else if (modelId && revisionId) {
-            dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
-          }
+      if (mappingInfo) {
+        const { modelId, revisionId, nodeId } = mappingInfo;
+        if (modelId && revisionId && nodeId) {
+          dispatch(
+            createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
+          );
+        } else if (modelId && revisionId) {
+          dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
         }
-        if (callback) {
-          callback(results[0]);
-        }
-
-        dispatch({ type: ADD_ASSETS, payload: { items } });
       }
-    } catch (ex) {
-      message.error(`Could not add assets.`);
+      if (callback) {
+        callback(results[0]);
+      }
+
+      dispatch({ type: ADD_ASSETS, payload: { items } });
     }
-  };
-}
+  } catch (ex) {
+    message.error(`Could not add assets.`);
+  }
+};
 
 export function editAsset(asset: AssetChange) {
-  return async (dispatch: Dispatch<UpdateAction>) => {
+  return async (
+    dispatch: Dispatch<UpdateAction>,
+    getState: () => RootState
+  ) => {
+    if (
+      !checkForAccessPermission(
+        getState().app.groups,
+        'assetsAcl',
+        'READ',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('Assets.editAsset', {
       assetd: asset.update.externalId,
     });
@@ -321,24 +389,30 @@ export function editAsset(asset: AssetChange) {
   };
 }
 
-export function deleteAsset(assetId: number) {
-  return async (dispatch: Dispatch<DeleteAssetAction>) => {
-    trackUsage('Assets.deleteAsset', {
-      assetId,
+export const deleteAsset = (assetId: number) => async (
+  dispatch: Dispatch<DeleteAssetAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
+  ) {
+    return;
+  }
+  trackUsage('Assets.deleteAsset', {
+    assetId,
+  });
+  try {
+    const results = await sdk.assets.delete([{ id: assetId }], {
+      recursive: true,
     });
-    try {
-      const results = await sdk.assets.delete([{ id: assetId }], {
-        recursive: true,
-      });
 
-      if (results) {
-        dispatch({ type: DELETE_ASSETS, payload: { assetId } });
-      }
-    } catch (ex) {
-      message.error(`Could not delete asset with children.`);
+    if (results) {
+      dispatch({ type: DELETE_ASSETS, payload: { assetId } });
     }
-  };
-}
+  } catch (ex) {
+    message.error(`Could not delete asset with children.`);
+  }
+};
 
 // Reducer
 export interface AssetsState {

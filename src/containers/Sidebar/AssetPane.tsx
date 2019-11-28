@@ -5,7 +5,6 @@ import {
   Spin,
   Collapse,
   Button,
-  Icon,
   Popconfirm,
   Switch,
   Pagination,
@@ -16,45 +15,43 @@ import styled from 'styled-components';
 import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
+import { AssetTree, AssetBreadcrumb } from '@cognite/gearbox';
+import TypeBadge from 'containers/TypeBadge';
 import {
   selectTimeseries,
   removeAssetFromTimeseries,
   TimeseriesState,
   fetchTimeseriesForAssetId,
-} from '../../modules/timeseries';
-import {
-  selectTypes,
-  removeTypeFromAsset,
-  Type,
-  TypesState,
-} from '../../modules/types';
+} from 'modules/timeseries';
+import { selectTypes, TypesState, fetchTypeForAssets } from 'modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
   EventsAndTypes,
-} from '../../modules/events';
-import AddTypes from '../Modals/AddTypesModal';
-import { createAssetTitle } from '../../utils/utils';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
+} from 'modules/events';
+import { createAssetTitle } from 'utils/utils';
+import { selectThreeD, ThreeDState } from 'modules/threed';
 import {
   ExtendedAsset,
   fetchAsset,
   deleteAsset,
   selectAssets,
   AssetsState,
-} from '../../modules/assets';
-import { RootState } from '../../reducers/index';
-import { sdk } from '../../index';
-import AddChildAsset from '../Modals/AddChildAssetModal';
-import { selectFiles } from '../../modules/files';
-import { deleteAssetNodeMapping } from '../../modules/assetmappings';
-import EditAssetModal from '../Modals/EditAssetModal';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
+} from 'modules/assets';
+import { RootState } from 'reducers/index';
+import { sdk } from 'index';
+import { selectFiles } from 'modules/files';
+import { deleteAssetNodeMapping } from 'modules/assetmappings';
+import { selectApp, AppState, setAssetId } from 'modules/app';
+import { trackUsage } from 'utils/metrics';
+import { BetaTag } from 'components/BetaWarning';
+import AddChildAsset from 'containers/Modals/AddChildAssetModal';
+import EditAssetModal from 'containers/Modals/EditAssetModal';
+import AddTypes from 'containers/Modals/AddTypesModal';
 import RootAssetList from './RootAssetList';
-import MapNodeToAssetForm from '../MapNodeToAssetForm';
 import TimeseriesSection from './TimeseriesSection';
-import { trackUsage } from '../../utils/metrics';
 import EventsSection from './EventsSection';
+import TypeSection from './TypeSection';
 
 const { Panel } = Collapse;
 
@@ -72,12 +69,6 @@ const SpinContainer = styled.div`
   justify-content: center;
 `;
 
-const HeaderWithButton = styled.div`
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-`;
 const MetadataPanel = styled(Panel)`
   display: flex;
   max-height: 500px;
@@ -88,14 +79,25 @@ const MetadataPanel = styled(Panel)`
   }
 `;
 
+const AssetOverview = styled.div`
+  margin-bottom: 16px;
+  h3,
+  p {
+    margin-bottom: 0px;
+  }
+  p {
+    margin-top: 8px;
+  }
+`;
+
 type OrigProps = {};
 
 type Props = {
+  doFetchTypeForAssets: typeof fetchTypeForAssets;
   doFetchEvents: typeof fetchEvents;
   doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
-  doRemoveTypeFromAsset: typeof removeTypeFromAsset;
   deleteAsset: typeof deleteAsset;
   setAssetId: typeof setAssetId;
   timeseries: TimeseriesState;
@@ -130,10 +132,16 @@ class AssetDrawer extends React.Component<Props, State> {
   };
 
   componentDidMount() {
-    const { doFetchTimeseries, doFetchEvents, app } = this.props;
+    const {
+      doFetchTimeseries,
+      doFetchEvents,
+      doFetchTypeForAssets,
+      app,
+    } = this.props;
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      doFetchTypeForAssets([app.assetId]);
     }
     this.resetState();
   }
@@ -142,12 +150,17 @@ class AssetDrawer extends React.Component<Props, State> {
     const {
       doFetchTimeseries,
       doFetchEvents,
+      doFetchTypeForAssets,
       app,
       assets: { all },
     } = this.props;
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
       doFetchEvents(app.assetId);
+      doFetchTypeForAssets([app.assetId]);
+      this.resetState();
+    }
+    if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
       this.resetState();
     }
     if (app.assetId && all[app.assetId] !== prevProps.assets.all[app.assetId]) {
@@ -186,41 +199,18 @@ class AssetDrawer extends React.Component<Props, State> {
     });
   };
 
-  renderTypes = (asset: ExtendedAsset, types: Type[]) => (
-    <Panel
-      header={
-        <HeaderWithButton>
-          <span>Types ({types.length})</span>
-          <Button type="primary" onClick={this.addTypeClick}>
-            Add
-          </Button>
-        </HeaderWithButton>
-      }
-      key="types"
-    >
-      {types.map(type => (
-        <HeaderWithButton key={`ts_${type.id}`}>
-          {type.name}
-          <Popconfirm
-            title="Are you sure？"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={() => this.props.doRemoveTypeFromAsset(type, asset)}
-          >
-            <Button type="danger">
-              <Icon type="delete" />
-            </Button>
-          </Popconfirm>
-        </HeaderWithButton>
-      ))}
-    </Panel>
-  );
-
   onCollapseChange = (change: string | string[]) => {
     trackUsage('AssetPane.VisiblePanes', {
       change,
     });
     this.setState({ activeCollapsed: change as string[] });
+  };
+
+  renderTypeInformation = () => {
+    if (this.asset) {
+      return <TypeBadge assetId={this.asset.id} />;
+    }
+    return null;
   };
 
   resetState = () => {
@@ -396,7 +386,6 @@ class AssetDrawer extends React.Component<Props, State> {
           <h3>{`No Asset linked to ${
             models[modelId] ? models[modelId].name : 'Loading...'
           } right now`}</h3>
-          <MapNodeToAssetForm />
         </>
       );
     }
@@ -446,14 +435,43 @@ class AssetDrawer extends React.Component<Props, State> {
           />
         )}
         <div>
-          <h3>{createAssetTitle(asset)}</h3>
-          {asset.description && <p>{asset.description}</p>}
+          <AssetOverview>
+            <AssetBreadcrumb
+              assetId={asset.id}
+              onBreadcrumbClick={selectedAsset =>
+                this.props.setAssetId(selectedAsset.rootId, selectedAsset.id)
+              }
+            />
+            <h3>{createAssetTitle(asset)}</h3>
+            {asset.description && <p>{asset.description}</p>}
+            {this.renderTypeInformation()}
+          </AssetOverview>
           <Collapse
             onChange={this.onCollapseChange}
             defaultActiveKey={defaultActiveKey}
           >
-            {asset != null && this.renderExternalLinks(asset.id)}
-
+            <Panel header={<span>Hierarchy Tree</span>} key="tree">
+              <AssetTree
+                assetIds={[asset.id]}
+                defaultExpandedKeys={[asset.id]}
+                showLoading
+                onSelect={({ node }) => {
+                  if (node) {
+                    this.props.setAssetId(node.rootId, node.id);
+                  }
+                }}
+              />
+            </Panel>
+            <Panel
+              header={
+                <span>
+                  Types <BetaTag />
+                </span>
+              }
+              key="types"
+            >
+              <TypeSection />
+            </Panel>
             <Panel
               header={<span>Timeseries ({currentAssetTimeseriesCount})</span>}
               key="timeseries"
@@ -466,6 +484,7 @@ class AssetDrawer extends React.Component<Props, State> {
               <EventsSection />
             </Panel>
             {this.renderMetadata()}
+            {this.renderExternalLinks(asset.id)}
             {this.state.showEditHierarchy && this.renderEdit(asset)}
           </Collapse>
           <EditHieraryToggle>
@@ -497,7 +516,9 @@ const mapStateToProps = (state: RootState) => {
         },
     types: selectTypes(state),
     files: state.app.assetId
-      ? selectFiles(state).byAssetId[state.app.assetId]
+      ? (selectFiles(state).byAssetId[state.app.assetId] || [])
+          .map(id => selectFiles(state).files[id])
+          .filter(el => !!el)
       : [],
   };
 };
@@ -505,10 +526,10 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       doFetchTimeseries: fetchTimeseriesForAssetId,
+      doFetchTypeForAssets: fetchTypeForAssets,
       doFetchEvents: fetchEvents,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,
-      doRemoveTypeFromAsset: removeTypeFromAsset,
       deleteAssetNodeMapping,
       doFetchAsset: fetchAsset,
       setAssetId,

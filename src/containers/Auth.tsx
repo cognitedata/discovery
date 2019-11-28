@@ -7,14 +7,20 @@ import { replace } from 'connected-react-router';
 import Main from './Main';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
-import { selectApp, setTenant, AppState, setCdfEnv } from '../modules/app';
+import {
+  selectApp,
+  setTenant,
+  AppState,
+  setCdfEnv,
+  fetchUserGroups,
+} from '../modules/app';
 import { RootState } from '../reducers/index';
 
 export const getCdfEnvFromUrl = () =>
-  queryString.parse(window.location.search).env as string;
+  queryString.parse(window.location.hash).env as string;
 
 export const getApiKeyFromUrl = () =>
-  queryString.parse(window.location.search).apikey as string;
+  queryString.parse(window.location.hash).apikey as string;
 
 type Props = {
   app: AppState;
@@ -22,6 +28,7 @@ type Props = {
   history: any;
   setCdfEnv: typeof setCdfEnv;
   setTenant: typeof setTenant;
+  fetchUserGroups: typeof fetchUserGroups;
   replace: typeof replace;
 };
 
@@ -55,9 +62,10 @@ class Auth extends React.Component<Props, State> {
     }
     if (cdfEnv && !fromUrlCdfEnv) {
       if (tenant) {
+        // if env is not visible via URL add it in
         this.props.replace({
           pathname: this.props.history.location.pathname,
-          search: `?env=${cdfEnv}${
+          hash: `#env=${cdfEnv}${
             fromUrlApiKey ? `&apikey=${fromUrlApiKey}` : ''
           }`,
         });
@@ -87,6 +95,8 @@ class Auth extends React.Component<Props, State> {
       await sdk.loginWithOAuth({ project: tenant || pathTenant });
       status = await sdk.authenticate();
     }
+
+    await this.props.fetchUserGroups();
 
     this.setState({
       auth: status !== null,
@@ -139,6 +149,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       setTenant,
       setCdfEnv,
+      fetchUserGroups,
       replace,
     },
     dispatch

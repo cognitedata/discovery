@@ -4,7 +4,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { Revision3D, Model3D } from '@cognite/sdk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
-import { arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
 
@@ -30,12 +30,14 @@ export interface CurrentNode {
 
 // Constants
 export const LOAD_MODELS = 'threed/LOAD_MODELS';
+export const LOADED_MODELS = 'threed/LOADED_MODELS';
 export const SET_MODELS = 'threed/SET_MODELS';
 export const UPDATE_REVISON = 'threed/UPDATE_REVISON';
 export const ADD_REVISIONS = 'threed/ADD_REVISIONS';
 export const SET_NODE = 'threed/SET_NODE';
 
 interface LoadModelAction extends Action<typeof LOAD_MODELS> {}
+interface LoadedModelAction extends Action<typeof LOADED_MODELS> {}
 interface SetModelAction extends Action<typeof SET_MODELS> {
   payload: { models: { [key: string]: ThreeDModel } };
 }
@@ -67,10 +69,15 @@ type ThreeDAction =
   | SetNodeAction
   | AddRevisionAction
   | LoadModelAction
+  | LoadedModelAction
   | UpdateRevisionAction;
 
 export function fetchRevisions(modelId: number) {
-  return async (dispatch: Dispatch<AddRevisionAction>) => {
+  return async (
+    dispatch: Dispatch<AddRevisionAction>,
+    getState: () => RootState
+  ) => {
+    const { representsAsset: origRepresentsAsset } = getState().threed;
     const requestResult = await sdk.revisions3D.list(modelId, { limit: 1000 });
     if (requestResult) {
       const { items } = requestResult;
@@ -78,16 +85,16 @@ export function fetchRevisions(modelId: number) {
         (prev, revision: TBDRevision) => {
           if (revision.metadata!.representsAsset) {
             const { representsAsset } = revision.metadata!;
-            if (prev[Number(representsAsset)] === undefined) {
-              // eslint-disable-next-line no-param-reassign
-              prev[Number(representsAsset)] = [
-                ...(prev[Number(representsAsset)] || []),
-                {
-                  modelId,
-                  revisionId: revision.id,
-                },
-              ];
-            }
+            // eslint-disable-next-line no-param-reassign
+            prev[Number(representsAsset)] = [
+              ...(prev[Number(representsAsset)] ||
+                origRepresentsAsset[Number(representsAsset)] ||
+                []),
+              {
+                modelId,
+                revisionId: revision.id,
+              },
+            ];
           }
           return prev;
         },
@@ -114,6 +121,16 @@ export function setRevisionRepresentAsset(
     dispatch: Dispatch<UpdateRevisionAction>,
     getState: () => RootState
   ) => {
+    if (
+      !checkForAccessPermission(
+        getState().app.groups,
+        'threedAcl',
+        'UPDATE',
+        true
+      )
+    ) {
+      return;
+    }
     trackUsage('3D.setRevisionRepresentAsset', {
       assetId,
       revisionId,
@@ -181,14 +198,57 @@ export function fetchModels() {
     });
     const requestResult = await sdk.models3D.list({ limit: 200 });
     if (requestResult) {
-      const { items } = requestResult;
-      items.forEach(el => dispatch(fetchRevisions(el.id)));
-
       dispatch({
         type: SET_MODELS,
-        payload: { models: arrayToObjectById(items) },
+        payload: { models: arrayToObjectById(requestResult.items) },
+      });
+
+      const results = await Promise.all(
+        requestResult.items.map(model =>
+          sdk.revisions3D.list(model.id, {
+            limit: 1000,
+          })
+        )
+      );
+
+      let cumulativeRepresentsAsset: {
+        [key: number]: { modelId: number; revisionId: number }[];
+      } = {};
+
+      results.forEach((revisionResults, i) => {
+        const modelId = requestResult.items[i].id;
+        const { items } = revisionResults;
+        cumulativeRepresentsAsset = items.reduce(
+          (prev, revision: TBDRevision) => {
+            if (revision.metadata!.representsAsset) {
+              const { representsAsset } = revision.metadata!;
+              // eslint-disable-next-line no-param-reassign
+              prev[Number(representsAsset)] = [
+                ...(prev[Number(representsAsset)] || []),
+                {
+                  modelId,
+                  revisionId: revision.id,
+                },
+              ];
+            }
+            return prev;
+          },
+          cumulativeRepresentsAsset
+        );
+        dispatch({
+          type: ADD_REVISIONS,
+          payload: {
+            modelId,
+            revisions: items,
+            representsAsset:
+              i === results.length - 1 ? cumulativeRepresentsAsset : {},
+          },
+        });
       });
     }
+    dispatch({
+      type: LOADED_MODELS,
+    });
   };
 }
 
@@ -224,6 +284,12 @@ export default function threed(
         loading: true,
       };
     }
+    case LOADED_MODELS: {
+      return {
+        ...state,
+        loading: false,
+      };
+    }
     case UPDATE_REVISON: {
       const { modelId, revisionId, assetId, item } = action.payload;
       const revisions = state.models[modelId].revisions || [];
@@ -257,18 +323,7 @@ export default function threed(
     }
     case ADD_REVISIONS: {
       const { modelId, revisions, representsAsset } = action.payload;
-      // TODO, replacd with relationships
-      const newRepresentMap: {
-        [key: number]: { modelId: number; revisionId: number }[];
-      } = {
-        ...state.representsAsset,
-      };
-      Object.keys(representsAsset).forEach(assetId => {
-        newRepresentMap[Number(assetId)] = [
-          ...(newRepresentMap[Number(assetId)] || []),
-          ...representsAsset[Number(assetId)],
-        ];
-      });
+      // TODO, replaced with relationships
       return {
         ...state,
         models: {
@@ -278,8 +333,10 @@ export default function threed(
             revisions,
           },
         },
-        loading: false,
-        representsAsset: newRepresentMap,
+        representsAsset: {
+          ...state.representsAsset,
+          ...representsAsset,
+        },
       };
     }
     case SET_NODE: {

@@ -30,6 +30,7 @@ import TimeseriesPreview from './TimeseriesPreview';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
+import { checkForAccessPermission } from '../utils/utils';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
@@ -193,6 +194,8 @@ class Main extends React.Component<Props, State> {
 
   componentDidMount() {
     this.checkAndFixURL();
+
+    checkForAccessPermission(this.props.app.groups, 'assetsAcl', 'READ');
 
     this.props.fetchModels();
 
