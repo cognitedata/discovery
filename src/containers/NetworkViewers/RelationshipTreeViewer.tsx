@@ -285,7 +285,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
           this.forceGraphRef.current!.d3Force(
             'charge',
             // @ts-ignore
-            d3.forceManyBody().strength(-80)
+            d3.forceManyBody().strength(-400)
           );
         }, 500);
       } else {
@@ -886,7 +886,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
           ref={this.forceGraphRef}
           graphData={data}
           dagMode={controls === 'none' ? null : controls}
-          dagLevelDistance={100}
+          dagLevelDistance={60}
           backgroundColor={BGCOLOR}
           linkColor={(link: Relationship) => this.chooseRelationshipColor(link)}
           nodeRelSize={1}
