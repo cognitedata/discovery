@@ -6497,9 +6497,9 @@ gauge@~2.7.3:
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
 
-gcs-browser-upload@cognitedata/gcs-browser-upload:
+gcs-browser-upload@cognitedata/gcs-browser-upload#04b119b199a2edfe27aefa1849bc764555eaa29c:
   version "1.0.2"
-  resolved "https://codeload.github.com/cognitedata/gcs-browser-upload/tar.gz/8301b82b877b0795c7cacf4e0aa1e8ee608d72cb"
+  resolved "https://codeload.github.com/cognitedata/gcs-browser-upload/tar.gz/04b119b199a2edfe27aefa1849bc764555eaa29c"
   dependencies:
     "@cognite/eslint-config" "1.4.2"
     axios "^0.19.0"
