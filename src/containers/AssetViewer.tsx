@@ -19,7 +19,6 @@ import {
 } from '../modules/app';
 import AssetTreeViewerVX from './NetworkViewers/AssetTreeViewerVX';
 import AssetTreeViewer from './NetworkViewers/AssetTreeViewer';
-import AssetBreadcrumbs from './AssetBreadcrumbs';
 import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 import FileExplorer from './FileExplorer';
 import { trackUsage } from '../utils/metrics';
@@ -29,7 +28,6 @@ import ThreeDViewerComponent from './ThreeDViewerComponent';
 export const ViewerTypeMap: { [key in ViewerType]: React.ReactNode } = {
   none: 'None',
   threed: '3D',
-  pnid: 'DEPRECATED - P&ID',
   vx: 'VX Network Viewer',
   network: 'Force Network Viewer',
   relationship: (
@@ -39,18 +37,15 @@ export const ViewerTypeMap: { [key in ViewerType]: React.ReactNode } = {
     </span>
   ),
   file: 'File Viewer',
-  assetbreadcrumbs: 'Asset Breadcrumbs',
 };
 
 export type ViewerType =
   | 'none'
   | 'file'
   | 'threed'
-  | 'pnid'
   | 'vx'
   | 'network'
-  | 'relationship'
-  | 'assetbreadcrumbs';
+  | 'relationship';
 
 type OwnProps = {
   type: ViewerType;
@@ -116,27 +111,12 @@ export class AssetViewer extends React.Component<Props, State> {
     return <ThreeDViewerComponent />;
   };
 
-  renderPNID = () => {
-    return (
-      <>
-        <h3>Deprecated!</h3>
-        <p>
-          Please use the P&ID section of the <code>File Viewer</code> Component!
-        </p>
-      </>
-    );
-  };
-
   renderAssetNetworkVX = () => {
     return <AssetTreeViewerVX />;
   };
 
   renderAssetNetwork = () => {
     return <AssetTreeViewer />;
-  };
-
-  renderAssetBreadcrumbs = () => {
-    return <AssetBreadcrumbs />;
   };
 
   renderRelationshipsViewer = () => {
@@ -158,10 +138,6 @@ export class AssetViewer extends React.Component<Props, State> {
         return this.renderAssetNetworkVX();
       case 'relationship':
         return this.renderRelationshipsViewer();
-      case 'assetbreadcrumbs':
-        return this.renderAssetBreadcrumbs();
-      case 'pnid':
-        return this.renderPNID();
       case 'file':
         return this.renderFileExplorer();
       case 'none':
