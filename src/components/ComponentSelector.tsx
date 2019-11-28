@@ -42,7 +42,7 @@ const ComponentSelector = ({
             <Select.OptGroup label={key} key={key}>
               {views[key].map(viewType => (
                 <Select.Option key={viewType} value={viewType}>
-                  {`${ViewerTypeMap[viewType as ViewerType]}`}
+                  {ViewerTypeMap[viewType as ViewerType]}
                 </Select.Option>
               ))}
             </Select.OptGroup>
