@@ -20,6 +20,7 @@ import FilePreviewDocumentTab from './FilePreviewDocumentTab';
 import ImageAnnotator from './ImageAnnotator';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { selectFiles, fetchFile } from '../../../modules/files';
+import { BetaBadge } from '../../../components/BetaWarning';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -299,7 +300,7 @@ class FilePreview extends React.Component<Props, State> {
             <pre>{JSON.stringify(metadata, null, 2)}</pre>
           </TabPane>
           {this.type === 'documents' && (
-            <TabPane tab="Utilities" key="2">
+            <TabPane tab={<BetaBadge>Utilities</BetaBadge>} key="2">
               <FilePreviewDocumentTab
                 selectedDocument={selectedFile}
                 downloadFile={this.downloadFile}

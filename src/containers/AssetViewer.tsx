@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, bindActionCreators } from 'redux';
+import { BetaTag } from 'components/BetaWarning';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import {
@@ -25,13 +26,18 @@ import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
 import ThreeDViewerComponent from './ThreeDViewerComponent';
 
-export const ViewerTypeMap: { [key in ViewerType]: string } = {
+export const ViewerTypeMap: { [key in ViewerType]: React.ReactNode } = {
   none: 'None',
   threed: '3D',
   pnid: 'DEPRECATED - P&ID',
   vx: 'VX Network Viewer',
   network: 'Force Network Viewer',
-  relationship: 'Relationships',
+  relationship: (
+    <span>
+      <BetaTag />
+      Relationships
+    </span>
+  ),
   file: 'File Viewer',
   assetbreadcrumbs: 'Asset Breadcrumbs',
 };
