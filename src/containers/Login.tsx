@@ -37,7 +37,6 @@ const Login = ({ doSetTenant, doSetCdfEnv }: Props) => (
             sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
           }
           doSetCdfEnv(cdfEnv);
-          console.log(tenant);
           doSetTenant(tenant, true);
         }}
         header="Cognite Data Fusion project name"
