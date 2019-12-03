@@ -244,7 +244,11 @@ class MapModelToAssetForm extends React.Component<Props, State> {
       }
     } catch (e) {
       message.error('Unable to convert to P&ID, please try again');
-      this.setState({ assetResults: undefined, detectingAsset: false });
+      this.setState({
+        assetResults: undefined,
+        detectingAsset: false,
+        convertingToSvg: undefined,
+      });
     }
   };
 
