@@ -96,11 +96,14 @@ class Auth extends React.Component<Props, State> {
       status = await sdk.authenticate();
     }
 
-    await this.props.fetchUserGroups();
-
-    this.setState({
-      auth: status !== null,
-    });
+    this.setState(
+      {
+        auth: status !== null,
+      },
+      async () => {
+        await this.props.fetchUserGroups();
+      }
+    );
   };
 
   render() {
