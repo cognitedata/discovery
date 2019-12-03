@@ -29,9 +29,9 @@ const StyledSVGViewerContainer = styled.div`
   max-height: 100%;
   width: 100%;
   position: relative;
-  .myCoolThing {
-    outline: auto 2px #3838ff;
-    transition: all 0.2s ease;
+  .metadata-container.highlighted {
+    outline: solid 12px #3838ff;
+    outline-offset: 4px;
     > {
       text {
         stroke: #3838ff;
@@ -56,7 +56,6 @@ type Props = {
   assets: AssetsState;
   files: FilesState;
   setAssetId: typeof setAssetId;
-  unselectDocument: () => void;
   selectedDocument: FilesMetadata;
 };
 
@@ -67,6 +66,8 @@ type State = {
 
 class PNIDViewer extends React.Component<Props, State> {
   svgviewer?: SVGViewer | null = undefined;
+
+  targetCurrentAsset = true;
 
   constructor(props: Props) {
     super(props);
@@ -185,6 +186,7 @@ class PNIDViewer extends React.Component<Props, State> {
       trackUsage('PNIDViewer.loadNextPNIDError', { query: name });
       return;
     }
+    this.targetCurrentAsset = true;
     this.setState({ currentFiles, currentIndex: currentFiles.length - 1 });
   };
 
@@ -231,19 +233,20 @@ class PNIDViewer extends React.Component<Props, State> {
             documentId={this.currentFile ? this.currentFile.id : 0}
             title={this.currentFile && this.currentFile.fileName}
             description="P&ID"
-            handleCancel={() => {
-              this.props.unselectDocument();
+            isCurrentAsset={(node: any) => {
+              if (!this.targetCurrentAsset) {
+                return false;
+              }
+              return this.isCurrentAsset(node);
             }}
-            isCurrentAsset={this.isCurrentAsset}
-            // metadataClassesConditions={[
-            //   {
-            //     condition: node => {
-            //       return getTextFromMetadataNode(node) === '13PST1233';
-            //     },
-            //     className: 'myCoolThing',
-            //   },
-            // ]}
+            metadataClassesConditions={[
+              {
+                condition: this.isCurrentAsset,
+                className: 'highlighted',
+              },
+            ]}
             handleItemClick={item => {
+              this.targetCurrentAsset = false;
               const name = item.children[0].children[0].innerHTML;
               if (item.children[0].children[0].tagName === 'file_id') {
                 this.loadNextPNID(name);

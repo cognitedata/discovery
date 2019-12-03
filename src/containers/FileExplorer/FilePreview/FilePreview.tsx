@@ -410,10 +410,7 @@ class FilePreview extends React.Component<Props, State> {
   renderPnID = () => {
     return (
       <div className="preview">
-        <PNIDViewer
-          selectedDocument={this.props.selectedFile!}
-          unselectDocument={this.props.unselectDocument}
-        />
+        <PNIDViewer selectedDocument={this.props.selectedFile!} />
       </div>
     );
   };
