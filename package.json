@@ -1,7 +1,7 @@
 {
   "name": "discovery",
   "description": "App to view, filter and edit CDF data and relationships.",
-  "version": "0.1.6",
+  "version": "0.1.5.1",
   "contributors": [
     "David Liu <david.liu@cognite.com>",
     "Anders Hafreager <anders.hafreager@cognite.com>"
