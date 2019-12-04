@@ -95,12 +95,18 @@ class Auth extends React.Component<Props, State> {
       await sdk.loginWithOAuth({ project: tenant || pathTenant });
       status = await sdk.authenticate();
     }
-
-    await this.props.fetchUserGroups();
-
-    this.setState({
-      auth: status !== null,
-    });
+    this.setState(
+      {
+        auth: status !== null,
+      },
+      async () => {
+        // clear `apikey`
+        const queryParameters = queryString.parse(window.location.hash);
+        delete queryParameters.apikey;
+        window.location.hash = queryString.stringify(queryParameters);
+        await this.props.fetchUserGroups();
+      }
+    );
   };
 
   render() {
