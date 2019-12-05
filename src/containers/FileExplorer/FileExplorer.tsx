@@ -139,6 +139,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
     if (
       prevState.query !== this.state.query ||
       prevState.currentOnly !== this.state.currentOnly ||
+      prevState.searchAnnotation !== this.state.searchAnnotation ||
       (prevState.tab !== this.state.tab &&
         RELOAD_SEARCH_TABS.includes(this.state.tab))
     ) {
@@ -185,8 +186,12 @@ class FileExplorerComponent extends React.Component<Props, State> {
         },
       });
       if (detections.length !== 0) {
+        const ids = new Set<number>();
+        detections
+          .filter(el => el.fileExternalId)
+          .forEach(el => ids.add(Number(el.fileExternalId)));
         const response = await sdk.files.retrieve(
-          detections.map(el => ({ id: Number(el.fileExternalId) }))
+          Array.from(ids).map(id => ({ id }))
         );
         results = response;
       }
