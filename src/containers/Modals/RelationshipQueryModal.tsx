@@ -81,7 +81,8 @@ class RelationshipQueryModal extends React.Component<Props, State> {
         title="Relationship Graph Query"
         width="90%"
         onCancel={this.props.onClose}
-        footer={undefined}
+        onOk={this.props.onClose}
+        footer={null}
       >
         <Content>
           <div className="query">

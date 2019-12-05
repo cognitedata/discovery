@@ -86,6 +86,13 @@ class RelationshipTreeViewer extends Component<Props, State> {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ visibleAssetIds: [] });
     }
+    if (
+      prevProps.app.assetId !== this.props.app.assetId &&
+      this.props.app.assetId
+    ) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ visibleAssetIds: [this.props.app.assetId] });
+    }
   }
 
   get filters(): {
