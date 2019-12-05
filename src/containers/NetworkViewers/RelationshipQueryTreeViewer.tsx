@@ -115,7 +115,52 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
       };
     }, {});
 
+    const externalIds = Object.values(nodes)
+      .reduce((p: number[], c: any) => [...p, c.resourceId], [])
+      .map((externalId: number) => ({
+        resource: 'asset',
+        resourceId: externalId,
+      }));
+
     const links: any[] = [];
+
+    if (externalIds.length > 0) {
+      const { project } = sdk;
+      const relationships = await sdk.post(
+        `/api/playground/projects/${project}/relationships/list`,
+        {
+          data: {
+            filter: {
+              sources: externalIds,
+              targets: externalIds,
+            },
+            limit: 100,
+          },
+        }
+      );
+
+      relationships.data.items.forEach((relationship: Relationship) => {
+        nodes[relationship.source.resourceId] = {
+          ...relationship.source,
+          id: relationship.source.resourceId,
+          color: this.chooseNodeColor(relationship.source),
+        };
+        nodes[relationship.target.resourceId] = {
+          ...relationship.target,
+          id: relationship.target.resourceId,
+          color: this.chooseNodeColor(relationship.target),
+        };
+        // no loops
+        if (relationship.source.resourceId !== relationship.target.resourceId) {
+          links.push({
+            ...relationship,
+            linkWidth: 3,
+            source: relationship.source.resourceId,
+            target: relationship.target.resourceId,
+          });
+        }
+      });
+    }
 
     results.items.forEach((relationship: Relationship) => {
       nodes[relationship.source.resourceId] = {
