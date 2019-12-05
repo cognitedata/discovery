@@ -31,13 +31,12 @@ import {
   TimeseriesState,
 } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypes, TypesState, fetchTypes } from '../../modules/types';
+import { selectTypes, TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
   Relationship,
   fetchRelationshipsForAssetId,
-  RelationshipState,
 } from '../../modules/relationships';
 
 const { OptGroup, Option } = Select;
@@ -201,13 +200,14 @@ type OwnProps = {
   buildLabel: (node: RelationshipResource) => string;
   chooseNodeColor: (node: RelationshipResource) => string;
   chooseRelationshipColor: (relationship: Relationship) => string;
-  visibleAssetIds: number[];
-  setVisibleAssetIds: (ids: number[]) => void;
+  assetSelection?: {
+    visibleAssetIds: number[];
+    setVisibleAssetIds: (ids: number[]) => void;
+  };
 };
 
 type StateProps = {
   app: AppState;
-  relationships: RelationshipState;
   assets: AssetsState;
   types: TypesState;
   asset: ExtendedAsset | undefined;
@@ -218,7 +218,6 @@ type DispatchProps = {
   fetchRelationshipsForAssetId: typeof fetchRelationshipsForAssetId;
   setAssetId: typeof setAssetId;
   fetchAssets: typeof fetchAssets;
-  fetchTypes: typeof fetchTypes;
   fetchTimeseries: typeof fetchTimeseries;
   setTimeseriesId: typeof setTimeseriesId;
 };
@@ -254,7 +253,6 @@ class RelationshipTreeViewer extends Component<Props, State> {
   }
 
   async componentDidMount() {
-    this.props.fetchTypes();
     if (this.props.app.assetId) {
       // add collision force
       this.forceGraphRef.current!.d3Force(
@@ -326,9 +324,14 @@ class RelationshipTreeViewer extends Component<Props, State> {
   }
 
   fetchRelationshipforAssetId = (asset: ExtendedAsset) => {
-    const { visibleAssetIds } = this.props;
-    this.props.setVisibleAssetIds([...visibleAssetIds, asset.id]);
-    this.props.fetchRelationshipsForAssetId(asset);
+    const { assetSelection } = this.props;
+    if (assetSelection) {
+      assetSelection.setVisibleAssetIds([
+        ...assetSelection.visibleAssetIds,
+        asset.id,
+      ]);
+      this.props.fetchRelationshipsForAssetId(asset);
+    }
   };
 
   loadMissingResources = (nodes: any[]) => {
@@ -409,17 +412,22 @@ class RelationshipTreeViewer extends Component<Props, State> {
         const asset =
           all[externalIdMap[node.resourceId] || Number(node.resourceId)];
         if (asset) {
-          const { visibleAssetIds } = this.props;
-          if (navigateAway) {
-            this.props.setAssetId(asset.rootId, asset.id);
-            this.props.setVisibleAssetIds([asset.id]);
-          } else {
-            this.props.fetchRelationshipsForAssetId(asset);
-            this.props.setVisibleAssetIds([...visibleAssetIds, asset.id]);
+          const { assetSelection } = this.props;
+          if (assetSelection) {
+            if (navigateAway) {
+              this.props.setAssetId(asset.rootId, asset.id);
+              assetSelection.setVisibleAssetIds([asset.id]);
+            } else {
+              this.props.fetchRelationshipsForAssetId(asset);
+              assetSelection.setVisibleAssetIds([
+                ...assetSelection.visibleAssetIds,
+                asset.id,
+              ]);
+            }
+            trackUsage('RelationshipViewer.AssetClicked', {
+              assetId: node.resourceId,
+            });
           }
-          trackUsage('RelationshipViewer.AssetClicked', {
-            assetId: node.resourceId,
-          });
         } else {
           message.error('Asset not yet loaded.');
         }
@@ -542,7 +550,10 @@ class RelationshipTreeViewer extends Component<Props, State> {
   };
 
   renderSelectedAsset = () => {
-    const { visibleAssetIds } = this.props;
+    const { assetSelection } = this.props;
+    if (!assetSelection) {
+      return null;
+    }
     const { selectedAsset } = this.state;
     const { all, externalIdMap } = this.props.assets;
     if (!selectedAsset || selectedAsset.resource !== 'asset') {
@@ -554,7 +565,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
           Number(selectedAsset.resourceId)
       ];
 
-    const index = visibleAssetIds.indexOf(asset.id);
+    const index = assetSelection.visibleAssetIds.indexOf(asset.id);
     return (
       <SelectedAssetViewer>
         <Icon
@@ -569,9 +580,9 @@ class RelationshipTreeViewer extends Component<Props, State> {
           <Button
             onClick={() => {
               if (index > -1) {
-                this.props.setVisibleAssetIds([
-                  ...visibleAssetIds.slice(0, index),
-                  ...visibleAssetIds.slice(index + 1),
+                assetSelection.setVisibleAssetIds([
+                  ...assetSelection.visibleAssetIds.slice(0, index),
+                  ...assetSelection.visibleAssetIds.slice(index + 1),
                 ]);
               } else {
                 this.onLoadMoreSelected(selectedAsset, false);
@@ -612,21 +623,24 @@ class RelationshipTreeViewer extends Component<Props, State> {
     });
 
     return (
-      <Select
-        mode="tags"
-        style={{ width: '100%' }}
-        placeholder="Filter"
-        onChange={(value: string[]) => setQuery(value)}
-        value={query}
-      >
-        {children}
-      </Select>
+      <>
+        <p>Filter</p>
+        <Select
+          mode="tags"
+          style={{ width: '100%' }}
+          placeholder="Filter"
+          onChange={(value: string[]) => setQuery(value)}
+          value={query}
+        >
+          {children}
+        </Select>
+      </>
     );
   };
 
   render() {
     const { controls, loading, data, selectedAsset } = this.state;
-    const { visibleAssetIds } = this.props;
+    const { assetSelection } = this.props;
     const { externalIdMap } = this.props.assets;
     if (!this.props.app.assetId) {
       return <Placeholder componentName="Relationship Viewer" />;
@@ -677,7 +691,8 @@ class RelationshipTreeViewer extends Component<Props, State> {
             if (selectedAsset && selectedAsset.resourceId === node.resourceId) {
               ctx.fillStyle = 'rgba(200, 255, 200, 0.8)';
             } else if (
-              visibleAssetIds.includes(
+              assetSelection &&
+              assetSelection.visibleAssetIds.includes(
                 externalIdMap[node.resourceId] || Number(node.resourceId)
               )
             ) {
@@ -728,7 +743,6 @@ class RelationshipTreeViewer extends Component<Props, State> {
               </Select.Option>
             ))}
           </Select>
-          <p>Filter</p>
           {this.renderFilterSelect()}
         </div>
         {this.renderLegend()}
@@ -740,7 +754,6 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    relationships: state.relationships,
     app: selectApp(state),
     assets: selectAssets(state),
     asset: selectCurrentAsset(state),
@@ -755,7 +768,6 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     {
       fetchRelationshipsForAssetId,
       setAssetId,
-      fetchTypes,
       fetchAssets,
       fetchTimeseries,
       setTimeseriesId,

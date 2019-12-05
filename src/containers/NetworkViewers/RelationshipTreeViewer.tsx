@@ -2,7 +2,9 @@ import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import Placeholder from 'components/Placeholder';
-import { withResizeDetector } from 'react-resize-detector';
+import { Button } from 'antd';
+import RelationshipQueryModal from 'containers/Modals/RelationshipQueryModal';
+import styled from 'styled-components';
 import {
   AppState,
   selectApp,
@@ -32,6 +34,20 @@ import {
   RelationshipState,
 } from '../../modules/relationships';
 import TreeViewer from './TreeViewer';
+import { BetaTag } from '../../components/BetaWarning';
+
+const Wrapper = styled.div`
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  && > div {
+    flex: 1;
+  }
+  && > div.button {
+    flex: unset;
+    margin-bottom: 12px;
+  }
+`;
 
 type OwnProps = {};
 
@@ -44,17 +60,26 @@ type StateProps = {
   timeseries: TimeseriesState;
   threed: ThreeDState;
 };
-type DispatchProps = {};
+type DispatchProps = { fetchTypes: typeof fetchTypes };
 
 type Props = StateProps & DispatchProps & OwnProps;
 
-type State = { visibleAssetIds: number[]; query: string[] };
+type State = {
+  visibleAssetIds: number[];
+  query: string[];
+  graphQueryVisible: boolean;
+};
 
 class RelationshipTreeViewer extends Component<Props, State> {
   readonly state: Readonly<State> = {
     visibleAssetIds: [],
     query: [],
+    graphQueryVisible: false,
   };
+
+  componentDidMount() {
+    this.props.fetchTypes();
+  }
 
   async componentDidUpdate(prevProps: Props) {
     if (prevProps.app.rootAssetId !== this.props.app.rootAssetId) {
@@ -326,24 +351,48 @@ class RelationshipTreeViewer extends Component<Props, State> {
   };
 
   render() {
-    const { query, visibleAssetIds } = this.state;
+    const { query, visibleAssetIds, graphQueryVisible } = this.state;
     if (!this.props.app.assetId) {
       return <Placeholder componentName="Relationship Viewer" />;
     }
     return (
-      <TreeViewer
-        data={this.getData()}
-        dataFilter={{
-          query,
-          setQuery: (newQuery: string[]) => this.setState({ query: newQuery }),
-          filters: this.filters,
-        }}
-        buildLabel={this.buildLabel}
-        chooseNodeColor={this.chooseNodeColor}
-        chooseRelationshipColor={this.chooseRelationshipColor}
-        visibleAssetIds={visibleAssetIds}
-        setVisibleAssetIds={ids => this.setState({ visibleAssetIds: ids })}
-      />
+      <Wrapper>
+        <div className="button">
+          <Button
+            type="primary"
+            ghost
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onClick={() => this.setState({ graphQueryVisible: true })}
+          >
+            <BetaTag />
+            Run Graph Query
+          </Button>
+        </div>
+        <TreeViewer
+          data={this.getData()}
+          dataFilter={{
+            query,
+            setQuery: (newQuery: string[]) =>
+              this.setState({ query: newQuery }),
+            filters: this.filters,
+          }}
+          buildLabel={this.buildLabel}
+          chooseNodeColor={this.chooseNodeColor}
+          chooseRelationshipColor={this.chooseRelationshipColor}
+          assetSelection={{
+            visibleAssetIds,
+            setVisibleAssetIds: ids => this.setState({ visibleAssetIds: ids }),
+          }}
+        />
+        {graphQueryVisible && (
+          <RelationshipQueryModal
+            onClose={() => this.setState({ graphQueryVisible: false })}
+          />
+        )}
+      </Wrapper>
     );
   }
 }
@@ -373,9 +422,7 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     dispatch
   );
 
-export default withResizeDetector(
-  connect<StateProps, DispatchProps, OwnProps, RootState>(
-    mapStateToProps,
-    mapDispatchToProps
-  )(RelationshipTreeViewer)
-);
+export default connect<StateProps, DispatchProps, OwnProps, RootState>(
+  mapStateToProps,
+  mapDispatchToProps
+)(RelationshipTreeViewer);
