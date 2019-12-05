@@ -24,6 +24,7 @@ import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 import FileUploadTab from './FileUploadTab';
 import ImageFilesTab from './ImageFilesTab';
 import ListFilesTab from './ListFilesTab';
+import { DetectionsAPI } from '../../utils/detectionApi';
 
 const { TabPane } = Tabs;
 
@@ -103,6 +104,7 @@ type State = {
   tab: FileExplorerTabsType;
   current: number;
   fetching: boolean;
+  searchAnnotation: boolean;
   currentOnly: boolean;
   query: string;
   searchResults: FilesMetadata[];
@@ -113,6 +115,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
   readonly state: Readonly<State> = {
     query: '',
     tab: 'all',
+    searchAnnotation: false,
     fetching: false,
     currentOnly: true,
     current: 0,
@@ -173,7 +176,22 @@ class FileExplorerComponent extends React.Component<Props, State> {
     };
     this.setState({ fetching: true, searchResults: [] });
     let results: FilesMetadata[] = [];
-    if (query && query.length > 0) {
+    // check if we should search annotation instead!
+    if (query && this.state.searchAnnotation && tab === 'images') {
+      const detectionApi = new DetectionsAPI(sdk);
+      const detections = await detectionApi.search({
+        search: {
+          description: query,
+        },
+      });
+      if (detections.length !== 0) {
+        const response = await sdk.files.retrieve(
+          detections.map(el => ({ id: Number(el.fileExternalId) }))
+        );
+        results = response;
+      }
+      // standard query
+    } else if (query && query.length > 0) {
       results = await sdk.files.search({
         search: { name: query },
         ...config,
@@ -355,6 +373,17 @@ class FileExplorerComponent extends React.Component<Props, State> {
           >
             Only Documents Linked to Current Asset
           </Checkbox>
+          {tab === 'images' && (
+            <Checkbox
+              style={{ marginTop: '6px', marginBottom: '6px' }}
+              checked={this.state.searchAnnotation}
+              onChange={ev =>
+                this.setState({ searchAnnotation: ev.target.checked })
+              }
+            >
+              Search based on Annotations
+            </Checkbox>
+          )}
         </div>
         <StyledTabs
           activeKey={tab}
