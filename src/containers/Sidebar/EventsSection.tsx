@@ -120,7 +120,4 @@ const mapStateToProps = (state: RootState) => {
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({ deleteEvent }, dispatch);
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(EventsSection);
+export default connect(mapStateToProps, mapDispatchToProps)(EventsSection);

@@ -242,7 +242,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(FileUploadTab);
+export default connect(mapStateToProps, mapDispatchToProps)(FileUploadTab);

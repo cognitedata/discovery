@@ -70,7 +70,4 @@ const mapStateToProps = (state: RootState) => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({ setTimeseriesId }, dispatch);
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TimeseriesPreview);
+export default connect(mapStateToProps, mapDispatchToProps)(TimeseriesPreview);
