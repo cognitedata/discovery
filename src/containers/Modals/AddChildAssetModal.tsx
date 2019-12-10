@@ -62,7 +62,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(AddChildAsset);
+export default connect(mapStateToProps, mapDispatchToProps)(AddChildAsset);

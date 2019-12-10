@@ -89,7 +89,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(AddTimeseries);
+export default connect(mapStateToProps, mapDispatchToProps)(AddTimeseries);

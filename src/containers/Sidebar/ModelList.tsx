@@ -84,7 +84,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ModelList);
+export default connect(mapStateToProps, mapDispatchToProps)(ModelList);
