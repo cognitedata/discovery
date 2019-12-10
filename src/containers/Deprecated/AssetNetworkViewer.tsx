@@ -237,7 +237,10 @@ export class AssetNetworkViewer extends React.Component<Props, State> {
         // @ts-ignore
         d3
           .zoom()
-          .extent([[0, 0], [width, height]])
+          .extent([
+            [0, 0],
+            [width, height],
+          ])
           .scaleExtent([1, 8])
           .on('zoom', () => {
             const { transform } = d3.event;

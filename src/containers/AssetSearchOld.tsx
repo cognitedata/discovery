@@ -196,19 +196,14 @@ class AssetSearch extends React.Component<Props, State> {
       ...eventFilter,
     };
 
-    if (
-      change.length < 2 ||
-      change[0] === undefined ||
-      change[1] === undefined
-    ) {
-      this.removeEventFilter();
-    } else {
+    if (change.length === 2 && !!change[0] && !!change[1]) {
       newFilter.from = change[0].unix() * 1000; // ms
       newFilter.to = (change[1].unix() + 86400) * 1000; // the day after, ms
-
       this.setState({
         eventFilter: newFilter,
       });
+    } else {
+      this.removeEventFilter();
     }
   };
 
@@ -480,7 +475,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(AssetSearch);
+export default connect(mapStateToProps, mapDispatchToProps)(AssetSearch);

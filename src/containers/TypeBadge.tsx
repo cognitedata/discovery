@@ -71,7 +71,4 @@ const mapStateToProps = (state: RootState) => {
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({ fetchTypeForAssets }, dispatch);
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(EventsSection);
+export default connect(mapStateToProps, mapDispatchToProps)(EventsSection);

@@ -206,7 +206,4 @@ const mapStateToProps = (state: RootState) => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({}, dispatch);
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ImageFilesTab);
+export default connect(mapStateToProps, mapDispatchToProps)(ImageFilesTab);
