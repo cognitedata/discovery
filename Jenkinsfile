@@ -8,10 +8,10 @@ podTemplate(
         envVars: [
           envVar(key: 'CI', value: 'true'),
         ],
-        resourceRequestCpu: '8000m',
-        resourceRequestMemory: '8500Mi',
-        resourceLimitCpu: '8000m',
-        resourceLimitMemory: '8500Mi',
+        resourceRequestCpu: '7000m',
+        resourceRequestMemory: '7500Mi',
+        resourceLimitCpu: '7000m',
+        resourceLimitMemory: '7500Mi',
         ttyEnabled: true
       )
     ],
