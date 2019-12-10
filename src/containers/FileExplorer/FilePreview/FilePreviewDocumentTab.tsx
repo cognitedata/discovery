@@ -209,7 +209,10 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             const data = await this.props.downloadFile(status.data.svgUrl);
             // @ts-ignore
             const newFile = await sdk.files.upload({
-              name: `Processed-${selectedDocument.name}.svg`,
+              name: `Processed-${selectedDocument.name.substr(
+                0,
+                selectedDocument.name.lastIndexOf('.')
+              )}.svg`,
               mimeType: 'image/svg+xml',
               assetIds: selectedDocument.assetIds,
               metadata: {
@@ -235,6 +238,29 @@ class MapModelToAssetForm extends React.Component<Props, State> {
               },
             ]);
             await uploader.start();
+            await sdk.post(
+              `/api/playground/projects/${sdk.project}/relationships`,
+              {
+                data: {
+                  items: [
+                    {
+                      source: {
+                        resource: 'file',
+                        resourceId: `${newFile.id}`,
+                      },
+                      target: {
+                        resource: 'file',
+                        resourceId: `${fileId}`,
+                      },
+                      confidence: 1,
+                      dataSet: `discovery-manual-contextualization`,
+                      externalId: `${fileId}-manual-pnid-${newFile.id}`,
+                      relationshipType: 'belongsTo',
+                    },
+                  ],
+                },
+              }
+            );
             setTimeout(() => {
               this.setState({ convertingToSvg: undefined });
               this.props.selectDocument(newFile);
