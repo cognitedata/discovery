@@ -366,9 +366,9 @@ class DetectionMapper {
         eventPatch.update.metadata,
         async () => {
           if (this.oldMetadataRequired(change)) {
-            return (await this.sdk.events.retrieve([
-              { id: internalId, externalId },
-            ]))[0].metadata;
+            return (
+              await this.sdk.events.retrieve([{ id: internalId, externalId }])
+            )[0].metadata;
           }
           return {};
         }

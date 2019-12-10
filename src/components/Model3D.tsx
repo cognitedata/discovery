@@ -380,7 +380,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Model3D);
+export default connect(mapStateToProps, mapDispatchToProps)(Model3D);

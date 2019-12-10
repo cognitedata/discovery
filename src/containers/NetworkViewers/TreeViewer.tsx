@@ -239,6 +239,8 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
   wrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
 
+  globalScale: DOMMatrix = new DOMMatrix();
+
   nodes: { [key: string]: { x: number; y: number; w: number; h: number } } = {};
 
   constructor(props: Props) {
@@ -440,8 +442,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
     let ratio = 1;
     if (this.forceGraphRef.current && this.wrapperRef.current) {
       // @ts-ignore
-      const canvas = this.forceGraphRef.current!.rootElem.children[0]
-        .children[0];
+      const canvas = this.wrapperRef.current!.getElementsByTagName('canvas')[0];
       ratio =
         canvas.width /
         (this.props.width || this.wrapperRef.current.clientWidth);
@@ -720,6 +721,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
               x: node.x + bgwidth / 2,
               y: node.y + bgheight / 2,
             });
+            this.globalScale = ctx.getTransform();
             this.nodes[node.resourceId] = {
               x: pointA.x,
               y: pointA.y,

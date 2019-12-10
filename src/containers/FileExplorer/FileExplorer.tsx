@@ -162,7 +162,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
       app: { assetId },
     } = this.props;
     const { currentOnly } = this.state;
-    this.currentQuery = this.currentQuery + 1;
+    this.currentQuery += 1;
     const thisQuery = this.currentQuery;
     const { tab } = this.state;
     const config: FilesSearchFilter = {

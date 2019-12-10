@@ -378,22 +378,25 @@ class RelationshipTreeViewer extends Component<Props, State> {
             Run Graph Query
           </Button>
         </div>
-        <TreeViewer
-          data={this.getData()}
-          dataFilter={{
-            query,
-            setQuery: (newQuery: string[]) =>
-              this.setState({ query: newQuery }),
-            filters: this.filters,
-          }}
-          buildLabel={this.buildLabel}
-          chooseNodeColor={this.chooseNodeColor}
-          chooseRelationshipColor={this.chooseRelationshipColor}
-          assetSelection={{
-            visibleAssetIds,
-            setVisibleAssetIds: ids => this.setState({ visibleAssetIds: ids }),
-          }}
-        />
+        <div style={{ position: 'relative', flex: 1, height: 0 }}>
+          <TreeViewer
+            data={this.getData()}
+            dataFilter={{
+              query,
+              setQuery: (newQuery: string[]) =>
+                this.setState({ query: newQuery }),
+              filters: this.filters,
+            }}
+            buildLabel={this.buildLabel}
+            chooseNodeColor={this.chooseNodeColor}
+            chooseRelationshipColor={this.chooseRelationshipColor}
+            assetSelection={{
+              visibleAssetIds,
+              setVisibleAssetIds: ids =>
+                this.setState({ visibleAssetIds: ids }),
+            }}
+          />
+        </div>
         {graphQueryVisible && (
           <RelationshipQueryModal
             onClose={() => this.setState({ graphQueryVisible: false })}
