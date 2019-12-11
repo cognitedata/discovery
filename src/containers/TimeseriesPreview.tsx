@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Button } from 'antd';
+import { Modal, Button, Descriptions } from 'antd';
 import { TimeseriesChartMeta } from '@cognite/gearbox';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
@@ -48,6 +48,17 @@ class TimeseriesPreview extends React.PureComponent<Props, State> {
               }
             />
           )}
+          <Descriptions title="Timeseries Details" size="small" column={1}>
+            <Descriptions.Item label="Description">
+              {timeseries ? timeseries.description : 'Loading...'}
+            </Descriptions.Item>
+            <Descriptions.Item label="External Id">
+              {timeseries ? timeseries.externalId : 'Loading...'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Unit">
+              {timeseries ? timeseries.unit : 'Loading...'}
+            </Descriptions.Item>
+          </Descriptions>
           <Button onClick={() => this.setState({ editModal: true })}>
             Edit Timeseries
           </Button>
