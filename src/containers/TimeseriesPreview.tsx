@@ -48,7 +48,10 @@ class TimeseriesPreview extends React.PureComponent<Props, State> {
               }
             />
           )}
-          <Descriptions title="Timeseries Details" size="small" column={1}>
+          <Button onClick={() => this.setState({ editModal: true })}>
+            Edit Timeseries
+          </Button>
+          <Descriptions size="small" column={1} style={{ marginTop: '12px' }}>
             <Descriptions.Item label="Description">
               {timeseries ? timeseries.description : 'Loading...'}
             </Descriptions.Item>
@@ -59,11 +62,11 @@ class TimeseriesPreview extends React.PureComponent<Props, State> {
               {timeseries ? timeseries.unit : 'Loading...'}
             </Descriptions.Item>
           </Descriptions>
-          <Button onClick={() => this.setState({ editModal: true })}>
-            Edit Timeseries
-          </Button>
           {timeseries && !editModal && (
-            <TimeseriesChartMeta timeseriesId={timeseries.id} />
+            <TimeseriesChartMeta
+              timeseriesId={timeseries.id}
+              showDescription={false}
+            />
           )}
         </>
       </Modal>
