@@ -3,6 +3,7 @@ import { Modal, Button, Descriptions } from 'antd';
 import { TimeseriesChartMeta } from '@cognite/gearbox';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import moment from 'moment';
 import { selectTimeseries, TimeseriesState } from '../modules/timeseries';
 import { RootState } from '../reducers/index';
 import { selectApp, AppState, setTimeseriesId } from '../modules/app';
@@ -60,6 +61,16 @@ class TimeseriesPreview extends React.PureComponent<Props, State> {
             </Descriptions.Item>
             <Descriptions.Item label="Unit">
               {timeseries ? timeseries.unit : 'Loading...'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Created Time">
+              {timeseries
+                ? moment(timeseries.createdTime).format('YYYY-MM-DD hh:mm')
+                : 'Loading...'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Last Updated Time">
+              {timeseries
+                ? moment(timeseries.lastUpdatedTime).format('YYYY-MM-DD hh:mm')
+                : 'Loading...'}
             </Descriptions.Item>
           </Descriptions>
           {timeseries && !editModal && (
