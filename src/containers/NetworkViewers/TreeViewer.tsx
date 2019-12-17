@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { ForceGraph2D } from 'react-force-graph';
+import ForceGraph2D from 'react-force-graph-2d';
 import ForceGraph from 'force-graph';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
@@ -256,17 +256,19 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
   async componentDidMount() {
     if (this.props.app.assetId) {
-      // add collision force
-      this.forceGraphRef.current!.d3Force(
-        'collision',
-        // @ts-ignore
-        d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
-      );
-      this.forceGraphRef.current!.d3Force(
-        'charge',
-        // @ts-ignore
-        d3.forceManyBody().strength(-80)
-      );
+      if (this.forceGraphRef.current) {
+        // add collision force
+        this.forceGraphRef.current.d3Force(
+          'collision',
+          // @ts-ignore
+          d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
+        );
+        this.forceGraphRef.current.d3Force(
+          'charge',
+          // @ts-ignore
+          d3.forceManyBody().strength(-80)
+        );
+      }
 
       if (this.props.asset) {
         this.fetchRelationshipforAssetId(this.props.asset);
