@@ -81,25 +81,22 @@ export function fetchRevisions(modelId: number) {
     const requestResult = await sdk.revisions3D.list(modelId, { limit: 1000 });
     if (requestResult) {
       const { items } = requestResult;
-      const representsAssetMap = items.reduce(
-        (prev, revision: TBDRevision) => {
-          if (revision.metadata!.representsAsset) {
-            const { representsAsset } = revision.metadata!;
-            // eslint-disable-next-line no-param-reassign
-            prev[Number(representsAsset)] = [
-              ...(prev[Number(representsAsset)] ||
-                origRepresentsAsset[Number(representsAsset)] ||
-                []),
-              {
-                modelId,
-                revisionId: revision.id,
-              },
-            ];
-          }
-          return prev;
-        },
-        {} as { [key: number]: { modelId: number; revisionId: number }[] }
-      );
+      const representsAssetMap = items.reduce((prev, revision: TBDRevision) => {
+        if (revision.metadata!.representsAsset) {
+          const { representsAsset } = revision.metadata!;
+          // eslint-disable-next-line no-param-reassign
+          prev[Number(representsAsset)] = [
+            ...(prev[Number(representsAsset)] ||
+              origRepresentsAsset[Number(representsAsset)] ||
+              []),
+            {
+              modelId,
+              revisionId: revision.id,
+            },
+          ];
+        }
+        return prev;
+      }, {} as { [key: number]: { modelId: number; revisionId: number }[] });
       dispatch({
         type: ADD_REVISIONS,
         payload: {
