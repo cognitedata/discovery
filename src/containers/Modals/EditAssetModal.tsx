@@ -242,7 +242,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(EditAssetModal);
+export default connect(mapStateToProps, mapDispatchToProps)(EditAssetModal);

@@ -245,7 +245,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     },
     dispatch
   );
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(NodeDrawer);
+export default connect(mapStateToProps, mapDispatchToProps)(NodeDrawer);

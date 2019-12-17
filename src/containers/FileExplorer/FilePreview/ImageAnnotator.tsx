@@ -478,7 +478,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     },
     dispatch
   );
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ImagePreview);
+export default connect(mapStateToProps, mapDispatchToProps)(ImagePreview);

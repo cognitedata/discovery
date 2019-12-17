@@ -1,7 +1,7 @@
 // <reference types="react-scripts" />
 // <reference types="console" />
 
-declare module 'react-force-graph';
+declare module 'react-force-graph-2d';
 declare module '*.svg' {
   const content: any;
   export default content;

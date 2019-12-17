@@ -10,19 +10,19 @@ import { selectApp, AppState } from '../../modules/app';
 import { sdk } from '../../index';
 
 const Images = styled.div`
-  display: flex;
   height: 100%;
   width: 100%;
-  flex-wrap: wrap;
-  overflow: auto;
   margin: -12px;
   margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  overflow-y: auto;
 
   && > .item {
     margin: 12px;
     padding: 6px;
+    height: fit-content;
     background: #fff;
-    flex: 1 250px;
     transition: 0.3s all;
   }
 
@@ -206,7 +206,4 @@ const mapStateToProps = (state: RootState) => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({}, dispatch);
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ImageFilesTab);
+export default connect(mapStateToProps, mapDispatchToProps)(ImageFilesTab);
