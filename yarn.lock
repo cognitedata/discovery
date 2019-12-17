@@ -13055,9 +13055,9 @@ react-slick@~0.25.2:
     lodash.debounce "^4.0.8"
     resize-observer-polyfill "^1.5.0"
 
-react-zoom-pan-pinch@cognitedata/react-zoom-pan-pinch#a1d30c5eb8f742bd850df5fdbbf48c1e1cba2db7:
+react-zoom-pan-pinch@cognitedata/react-zoom-pan-pinch#d3f84319d2561f074ea1fd7059e66d414ab68da5:
   version "1.4.5"
-  resolved "https://codeload.github.com/cognitedata/react-zoom-pan-pinch/tar.gz/a1d30c5eb8f742bd850df5fdbbf48c1e1cba2db7"
+  resolved "https://codeload.github.com/cognitedata/react-zoom-pan-pinch/tar.gz/d3f84319d2561f074ea1fd7059e66d414ab68da5"
 
 react@^16.12.0:
   version "16.12.0"
