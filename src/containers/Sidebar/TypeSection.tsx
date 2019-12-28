@@ -3,10 +3,10 @@ import { connect } from 'react-redux';
 import { List, Spin } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState } from '../../modules/app';
+import { selectAppState, AppState } from '../../modules/app';
 import {
   fetchTypeForAssets,
-  selectTypes,
+  selectTypesState,
   TypesState,
 } from '../../modules/types';
 
@@ -84,9 +84,9 @@ class EventsSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    asset: selectApp(state),
-    app: selectApp(state),
-    types: selectTypes(state),
+    asset: selectAppState(state),
+    app: selectAppState(state),
+    types: selectTypesState(state),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

@@ -13,7 +13,7 @@ import {
   AssetsState,
 } from '../../../modules/assets';
 import { RootState } from '../../../reducers/index';
-import { selectApp } from '../../../modules/app';
+import { selectAppState } from '../../../modules/app';
 import {
   DetectionsAPI,
   ExternalDetection,
@@ -467,7 +467,7 @@ class ImagePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     assets: selectAssets(state),
   };
 };

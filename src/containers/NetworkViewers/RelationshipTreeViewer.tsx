@@ -7,7 +7,7 @@ import RelationshipQueryModal from 'containers/Modals/RelationshipQueryModal';
 import styled from 'styled-components';
 import {
   AppState,
-  selectApp,
+  selectAppState,
   setAssetId,
   setTimeseriesId,
 } from '../../modules/app';
@@ -25,7 +25,7 @@ import {
   TimeseriesState,
 } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypes, TypesState, fetchTypes } from '../../modules/types';
+import { selectTypesState, TypesState, fetchTypes } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -410,12 +410,12 @@ class RelationshipTreeViewer extends Component<Props, State> {
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     relationships: state.relationships,
-    app: selectApp(state),
+    app: selectAppState(state),
     assets: selectAssets(state),
     asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
-    types: selectTypes(state),
+    types: selectTypesState(state),
   };
 };
 

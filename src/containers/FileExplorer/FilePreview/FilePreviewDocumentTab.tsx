@@ -8,7 +8,7 @@ import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
-import { selectApp, AppState, setAssetId } from 'modules/app';
+import { selectAppState, AppState, setAssetId } from 'modules/app';
 import { sdk } from 'index';
 import LoaderBPSvg from 'assets/loader-bp.svg';
 import { trackUsage } from 'utils/metrics';
@@ -391,7 +391,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

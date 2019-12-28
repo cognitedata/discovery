@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import moment from 'moment';
 import { selectTimeseries, TimeseriesState } from '../modules/timeseries';
 import { RootState } from '../reducers/index';
-import { selectApp, AppState, setTimeseriesId } from '../modules/app';
+import { selectAppState, AppState, setTimeseriesId } from '../modules/app';
 import EditTimeseriesModal from './Modals/EditTimeseriesModal';
 
 type Props = {
@@ -88,7 +88,7 @@ class TimeseriesPreview extends React.PureComponent<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     timeseries: selectTimeseries(state),
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 

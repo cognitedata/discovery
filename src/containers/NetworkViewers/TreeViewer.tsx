@@ -12,7 +12,7 @@ import { withResizeDetector } from 'react-resize-detector';
 import TypeBadge from 'containers/TypeBadge';
 import {
   AppState,
-  selectApp,
+  selectAppState,
   setAssetId,
   setTimeseriesId,
 } from '../../modules/app';
@@ -31,7 +31,7 @@ import {
   TimeseriesState,
 } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypes, TypesState } from '../../modules/types';
+import { selectTypesState, TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -758,12 +758,12 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     assets: selectAssets(state),
     asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
-    types: selectTypes(state),
+    types: selectTypesState(state),
   };
 };
 

@@ -7,7 +7,7 @@ import { Asset } from '@cognite/sdk';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import {
   AppState,
-  selectApp,
+  selectAppState,
   setAssetId,
   resetAppState,
   setModelAndRevisionAndNode,
@@ -157,7 +157,7 @@ class Sidebar extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

@@ -6,7 +6,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { CogniteEvent } from '@cognite/sdk';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState } from '../../modules/app';
+import { selectAppState, AppState } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 import EventPreview from '../../components/EventPreview';
 import { selectEventsByAssetId, deleteEvent } from '../../modules/events';
@@ -111,7 +111,7 @@ class EventsSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     assets: selectAssets(state),
     events: state.app.assetId
       ? selectEventsByAssetId(state, state.app.assetId).items

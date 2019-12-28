@@ -17,7 +17,7 @@ import FileUploader from '../../components/FileUploader';
 import { trackSearchUsage } from '../../utils/metrics';
 import { sdk } from '../../index';
 import { checkForAccessPermission } from '../../utils/utils';
-import { selectApp, AppState } from '../../modules/app';
+import { selectAppState, AppState } from '../../modules/app';
 
 const Wrapper = styled.div`
   .wrapper {
@@ -230,7 +230,7 @@ const mapStateToProps = (state: RootState) => {
   return {
     assetId: state.app.assetId,
     asset: selectCurrentAsset(state),
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 

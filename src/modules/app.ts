@@ -458,4 +458,4 @@ export default function app(state = initialState, action: AppAction): AppState {
 }
 
 // Selectors
-export const selectApp = (state: RootState) => state.app || {};
+export const selectAppState = (state: RootState) => state.app || {};

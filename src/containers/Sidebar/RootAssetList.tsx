@@ -3,7 +3,7 @@ import { List } from 'antd';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../../reducers/index';
-import { selectApp, setAssetId } from '../../modules/app';
+import { selectAppState, setAssetId } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 import {
   selectAssets,
@@ -64,7 +64,7 @@ class ModelList extends Component<Props, {}> {
 const mapStateToProps = (state: RootState) => {
   return {
     assets: selectAssets(state),
-    tenant: selectApp(state).tenant!,
+    tenant: selectAppState(state).tenant!,
   };
 };
 

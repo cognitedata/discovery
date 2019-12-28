@@ -10,7 +10,7 @@ import {
 } from 'modules/threed';
 import { selectAssets, AssetsState, createNewAsset } from 'modules/assets';
 import { RootState } from 'reducers/index';
-import { selectApp, AppState } from 'modules/app';
+import { selectAppState, AppState } from 'modules/app';
 
 type OrigProps = {};
 
@@ -86,7 +86,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

@@ -15,7 +15,7 @@ import {
 import AddTimeseries from '../Modals/AddTimeseriesModal';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState, setTimeseriesId } from '../../modules/app';
+import { selectAppState, AppState, setTimeseriesId } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 import { sdk } from '../..';
 
@@ -211,7 +211,7 @@ class TimeseriesSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     assets: selectAssets(state),
     timeseries: selectTimeseries(state),
   };

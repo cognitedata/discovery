@@ -19,7 +19,7 @@ import { selectAssets, AssetsState } from '../modules/assets';
 import { RootState } from '../reducers/index';
 import {
   AppState,
-  selectApp,
+  selectAppState,
   setAssetId,
   resetAppState,
   setModelAndRevisionAndNode,
@@ -414,7 +414,7 @@ class Main extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

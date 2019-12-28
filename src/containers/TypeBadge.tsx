@@ -3,9 +3,9 @@ import { connect } from 'react-redux';
 import { Tag } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../reducers/index';
-import { selectApp } from '../modules/app';
+import { selectAppState } from '../modules/app';
 import { BetaBadge } from '../components/BetaWarning';
-import { fetchTypeForAssets, selectTypes, TypesState } from '../modules/types';
+import { fetchTypeForAssets, selectTypesState, TypesState } from '../modules/types';
 
 type OrigProps = { assetId: number };
 
@@ -16,7 +16,7 @@ type Props = {
 
 type State = {};
 
-class EventsSection extends React.Component<Props, State> {
+class TypeBadge extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {};
@@ -65,10 +65,10 @@ class EventsSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    asset: selectApp(state),
-    types: selectTypes(state),
+    asset: selectAppState(state),
+    types: selectTypesState(state),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({ fetchTypeForAssets }, dispatch);
-export default connect(mapStateToProps, mapDispatchToProps)(EventsSection);
+export default connect(mapStateToProps, mapDispatchToProps)(TypeBadge);

@@ -14,7 +14,7 @@ import MapNodeToAssetForm from './Forms/MapNodeToAssetForm';
 import {
   resetAppState,
   AppState,
-  selectApp,
+  selectAppState,
   setModelAndRevisionAndNode,
   setAssetId,
 } from '../../modules/app';
@@ -229,7 +229,7 @@ class NodeDrawer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

@@ -14,7 +14,7 @@ import { selectAssets, AssetsState, createNewAsset } from 'modules/assets';
 import { RootState } from 'reducers/index';
 import { sdk } from 'index';
 import { createAssetNodeMapping } from 'modules/assetmappings';
-import { selectApp, AppState } from 'modules/app';
+import { selectAppState, AppState } from 'modules/app';
 import { trackSearchUsage } from 'utils/metrics';
 
 const { Option } = Select;
@@ -215,7 +215,7 @@ class MapNodeToAssetForm extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

@@ -16,7 +16,7 @@ import {
   ExtendedAsset,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { AppState, selectApp, setAssetId } from '../../modules/app';
+import { AppState, selectAppState, setAssetId } from '../../modules/app';
 import NoAssetSelected from '../../components/Placeholder';
 
 const Wrapper = styled.div`
@@ -549,7 +549,7 @@ const mapStateToProps = (state: RootState): StateProps => {
     asset: state.app.assetId
       ? selectAssets(state).all[state.app.assetId]
       : undefined,
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 

@@ -4,17 +4,19 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import queryString from 'query-string';
 import { replace } from 'connected-react-router';
-import Main from './Main';
+import { Layout } from 'antd';
+import Header from 'containers/Header';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
 import {
-  selectApp,
+  selectAppState,
   setTenant,
   AppState,
   setCdfEnv,
   fetchUserGroups,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
+import SearchPage from './SearchPage';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -110,35 +112,23 @@ class Auth extends React.Component<Props, State> {
   };
 
   render() {
-    const { match } = this.props;
+    // const { match } = this.props;
     if (!this.state.auth) {
       return <Loader />;
     }
     return (
       <>
-        <Switch>
-          <Route
-            path={`${match.path}/asset/:rootAssetId`}
-            exact
-            component={Main}
-          />
-          <Route
-            path={`${match.path}/asset/:rootAssetId/:assetId`}
-            exact
-            component={Main}
-          />
-          <Route
-            path={`${match.path}/models/:modelId/:revisionId`}
-            exact
-            component={Main}
-          />
-          <Route
-            path={`${match.path}/models/:modelId/:revisionId/:nodeId`}
-            exact
-            component={Main}
-          />
-          <Route component={Main} />
-        </Switch>
+        <Layout style={{ height: '100vh' }}>
+          <Header />
+          <Layout>
+            <Layout.Content style={{ height: '100vh', overflow: 'auto' }}>
+              <Switch>
+                <Route path="/search/:tab" exact component={SearchPage} />
+                <Route path="/search/:tab" exact component={SearchPage} />
+              </Switch>
+            </Layout.Content>
+          </Layout>
+        </Layout>
       </>
     );
   }
@@ -146,7 +136,7 @@ class Auth extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 

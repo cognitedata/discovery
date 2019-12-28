@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import { selectThreeD, fetchModels, ThreeDState } from '../modules/threed';
 import { RootState } from '../reducers/index';
 import {
-  selectApp,
+  selectAppState,
   setModelAndRevisionAndNode,
   AppState,
   setAssetId,
@@ -196,7 +196,7 @@ class ThreeDViewerComponent extends Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     threed: selectThreeD(state),
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 

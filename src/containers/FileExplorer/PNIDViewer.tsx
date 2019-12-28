@@ -10,7 +10,7 @@ import { selectFiles, FilesState } from '../../modules/files';
 import { sleep } from '../../utils/utils';
 import { RootState } from '../../reducers';
 import { sdk } from '../../index';
-import { selectApp, AppState, setAssetId } from '../../modules/app';
+import { selectAppState, AppState, setAssetId } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
@@ -271,7 +271,7 @@ class PNIDViewer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     files: selectFiles(state),
     assets: selectAssets(state),
   };

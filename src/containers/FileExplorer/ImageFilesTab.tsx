@@ -6,7 +6,7 @@ import { FilesMetadata } from '@cognite/sdk';
 import styled from 'styled-components';
 import moment from 'moment';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState } from '../../modules/app';
+import { selectAppState, AppState } from '../../modules/app';
 import { sdk } from '../../index';
 
 const Images = styled.div`
@@ -200,7 +200,7 @@ class ImageFilesTab extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

@@ -13,7 +13,7 @@ import {
   AssetsState,
   selectAssets,
 } from '../../modules/assets';
-import { AppState, setAssetId, selectApp } from '../../modules/app';
+import { AppState, setAssetId, selectAppState } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import NoAssetSelected from '../../components/Placeholder';
 import { trackUsage } from '../../utils/metrics';
@@ -308,7 +308,7 @@ const mapStateToProps = (state: RootState): StateProps => {
     asset: state.app.assetId
       ? selectAssets(state).all[state.app.assetId]
       : undefined,
-    app: selectApp(state),
+    app: selectAppState(state),
   };
 };
 

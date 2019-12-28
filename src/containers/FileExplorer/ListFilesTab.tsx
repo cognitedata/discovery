@@ -13,7 +13,7 @@ import {
   fetchAssets,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState } from '../../modules/app';
+import { selectAppState, AppState } from '../../modules/app';
 
 const Wrapper = styled.div`
   .ant-table-thead > tr > th,
@@ -126,7 +126,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

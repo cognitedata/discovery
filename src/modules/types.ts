@@ -217,4 +217,4 @@ export default function typesReducer(
 }
 
 // Selectors
-export const selectTypes = (state: RootState) => state.types;
+export const selectTypesState = (state: RootState) => state.types;

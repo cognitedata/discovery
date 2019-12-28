@@ -23,7 +23,7 @@ import {
   TimeseriesState,
   fetchTimeseriesForAssetId,
 } from 'modules/timeseries';
-import { selectTypes, TypesState, fetchTypeForAssets } from 'modules/types';
+import { selectTypesState, TypesState, fetchTypeForAssets } from 'modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
@@ -42,7 +42,7 @@ import { RootState } from 'reducers/index';
 import { sdk } from 'index';
 import { selectFiles } from 'modules/files';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
-import { selectApp, AppState, setAssetId } from 'modules/app';
+import { selectAppState, AppState, setAssetId } from 'modules/app';
 import { trackUsage } from 'utils/metrics';
 import { BetaTag } from 'components/BetaWarning';
 import AddChildAsset from 'containers/Modals/AddChildAssetModal';
@@ -501,7 +501,7 @@ class AssetDrawer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     assets: selectAssets(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
@@ -511,7 +511,7 @@ const mapStateToProps = (state: RootState) => {
           items: [],
           types: [],
         },
-    types: selectTypes(state),
+    types: selectTypesState(state),
     files: state.app.assetId
       ? (selectFiles(state).byAssetId[state.app.assetId] || [])
           .map(id => selectFiles(state).files[id])

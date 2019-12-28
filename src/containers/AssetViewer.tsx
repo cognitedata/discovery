@@ -13,7 +13,7 @@ import { RootState } from '../reducers/index';
 import { selectThreeD, ThreeDState } from '../modules/threed';
 import {
   setAssetId,
-  selectApp,
+  selectAppState,
   AppState,
   setModelAndRevisionAndNode,
 } from '../modules/app';
@@ -152,7 +152,7 @@ export class AssetViewer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
     assetMappings: selectAssetMappings(state),

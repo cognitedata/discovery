@@ -11,7 +11,7 @@ import EditFileModal from 'containers/Modals/EditFileModal';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
-import { selectApp, AppState, setAssetId } from 'modules/app';
+import { selectAppState, AppState, setAssetId } from 'modules/app';
 import { sdk } from 'index';
 import { trackUsage } from 'utils/metrics';
 import { FileExplorerTabsType } from '../FileExplorer';
@@ -456,7 +456,7 @@ class FilePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
     selectedFile: selectFiles(state).files[props.fileId],

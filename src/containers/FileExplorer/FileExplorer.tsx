@@ -17,7 +17,7 @@ import {
   fetchAssets,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { selectApp, AppState } from '../../modules/app';
+import { selectAppState, AppState } from '../../modules/app';
 import { sdk } from '../../index';
 import FilePreview from './FilePreview/FilePreview';
 import { trackSearchUsage, trackUsage } from '../../utils/metrics';
@@ -419,7 +419,7 @@ class FileExplorerComponent extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectApp(state),
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };

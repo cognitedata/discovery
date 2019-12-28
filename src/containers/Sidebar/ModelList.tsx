@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { selectThreeD, fetchModels, ThreeDState } from '../../modules/threed';
 import { RootState } from '../../reducers/index';
-import { selectApp, setModelAndRevisionAndNode } from '../../modules/app';
+import { selectAppState, setModelAndRevisionAndNode } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 
 type Props = {
@@ -71,7 +71,7 @@ class ModelList extends Component<Props, {}> {
 const mapStateToProps = (state: RootState) => {
   return {
     threed: selectThreeD(state),
-    tenant: selectApp(state).tenant!,
+    tenant: selectAppState(state).tenant!,
   };
 };
 
