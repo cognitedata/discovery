@@ -10,6 +10,7 @@ import filters, { FilterState } from '../modules/filters';
 import threed, { ThreeDState } from '../modules/threed';
 import assetMappings, { AssetMappingState } from '../modules/assetmappings';
 import app, { AppState } from '../modules/app';
+import search, { SearchState } from '../modules/search';
 import relationships, { RelationshipState } from '../modules/relationships';
 
 const createRootReducer = (history: History) =>
@@ -24,6 +25,7 @@ const createRootReducer = (history: History) =>
     threed,
     app,
     relationships,
+    search,
     router: connectRouter(history),
   });
 
@@ -38,6 +40,7 @@ export interface RootState {
   relationships: RelationshipState;
   assetMappings: AssetMappingState;
   app: AppState;
+  search: SearchState;
   router: RouterState;
 }
 

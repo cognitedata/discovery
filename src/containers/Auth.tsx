@@ -17,6 +17,7 @@ import {
 } from '../modules/app';
 import { RootState } from '../reducers/index';
 import SearchPage from './SearchPage';
+import AssetPage from './AssetPage';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -121,10 +122,27 @@ class Auth extends React.Component<Props, State> {
         <Layout style={{ height: '100vh' }}>
           <Header />
           <Layout>
-            <Layout.Content style={{ height: '100vh', overflow: 'auto' }}>
+            <Layout.Content
+              style={{
+                height: '100vh',
+                overflow: 'auto',
+                background: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <Switch>
-                <Route path="/search/:tab" exact component={SearchPage} />
-                <Route path="/search/:tab" exact component={SearchPage} />
+                <Route path="/:tenant/" exact component={SearchPage} />
+                <Route
+                  path="/:tenant/search/:tab"
+                  exact
+                  component={SearchPage}
+                />
+                <Route
+                  path="/:tenant/asset/:assetId"
+                  exact
+                  component={AssetPage}
+                />
               </Switch>
             </Layout.Content>
           </Layout>

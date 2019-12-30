@@ -80,6 +80,19 @@ export function searchTimeseries(query: string, assetId?: number) {
   };
 }
 
+export function addTimeseriesToState(
+  timeseriesToAdd: GetTimeSeriesMetadataDTO[]
+) {
+  return async (dispatch: Dispatch) => {
+    dispatch({
+      type: SET_TIMESERIES,
+      payload: {
+        items: timeseriesToAdd,
+      },
+    });
+  };
+}
+
 export const removeAssetFromTimeseries = (
   timeseriesId: number,
   assetId: number

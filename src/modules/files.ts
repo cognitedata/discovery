@@ -40,6 +40,17 @@ export const fetchFiles = (assetId: number) => async (
   dispatch({ type: ADD_FILES, payload: { assetId, items } });
 };
 
+export function addFilesToState(filesToAdd: FilesMetadata[]) {
+  return async (dispatch: Dispatch) => {
+    dispatch({
+      type: ADD_FILES,
+      payload: {
+        items: filesToAdd,
+      },
+    });
+  };
+}
+
 export const fetchFile = (fileId: number) => async (
   dispatch: Dispatch,
   getState: () => RootState

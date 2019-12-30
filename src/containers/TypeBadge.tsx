@@ -5,7 +5,11 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../reducers/index';
 import { selectAppState } from '../modules/app';
 import { BetaBadge } from '../components/BetaWarning';
-import { fetchTypeForAssets, selectTypesState, TypesState } from '../modules/types';
+import {
+  fetchTypeForAssets,
+  selectTypesState,
+  TypesState,
+} from '../modules/types';
 
 type OrigProps = { assetId: number };
 

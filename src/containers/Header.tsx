@@ -52,6 +52,15 @@ type State = {};
 class Sidebar extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
+  get selectedKeys(): string[] {
+    const { pathname } = this.props;
+    const firstPart = pathname.substring(0, pathname.indexOf('/', 1));
+    if (firstPart === 'relationships') {
+      return ['relationships'];
+    }
+    return ['resources'];
+  }
+
   render() {
     const { tenant } = this.props.app;
     return (
@@ -60,15 +69,15 @@ class Sidebar extends React.Component<Props, State> {
           <img src={Logo} alt="Cognite Logo" />
           <h1>Discovery</h1>
         </LogoWrapper>
-        <Menu selectedKeys={[this.props.pathname]} mode="horizontal">
+        <Menu selectedKeys={this.selectedKeys} mode="horizontal">
           <Menu.Item
-            key={`/${tenant}`}
+            key="resources"
             onClick={() => this.props.push(`/${tenant}`)}
           >
             <span>Resources</span>
           </Menu.Item>
           <Menu.Item
-            key={`/${tenant}/datakits`}
+            key="relationships"
             onClick={() => this.props.push(`/${tenant}/datakits`)}
           >
             <span>Relationships</span>

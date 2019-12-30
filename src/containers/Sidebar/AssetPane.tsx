@@ -23,7 +23,11 @@ import {
   TimeseriesState,
   fetchTimeseriesForAssetId,
 } from 'modules/timeseries';
-import { selectTypesState, TypesState, fetchTypeForAssets } from 'modules/types';
+import {
+  selectTypesState,
+  TypesState,
+  fetchTypeForAssets,
+} from 'modules/types';
 import {
   fetchEvents,
   selectEventsByAssetId,
