@@ -143,6 +143,16 @@ class Auth extends React.Component<Props, State> {
                   exact
                   component={AssetPage}
                 />
+                <Route
+                  path="/:tenant/asset/:assetId/:tab"
+                  exact
+                  component={AssetPage}
+                />
+                <Route
+                  path="/:tenant/asset/:assetId/:tab/:itemId"
+                  exact
+                  component={AssetPage}
+                />
               </Switch>
             </Layout.Content>
           </Layout>

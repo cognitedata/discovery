@@ -112,7 +112,9 @@ export class AssetViewer extends React.Component<Props, State> {
   };
 
   renderAssetNetworkVX = () => {
-    return <AssetTreeViewerVX />;
+    return (
+      <AssetTreeViewerVX asset={this.asset!} onAssetClicked={console.log} />
+    );
   };
 
   renderAssetNetwork = () => {

@@ -93,7 +93,7 @@ export function fetchTypeForAssets(assetIds: number[]) {
           payload: {
             assetTypes: response.data.items.reduce(
               (prev: { [key: number]: AssetTypeInfo[] }, el: ExtendedAsset) => {
-                return { ...prev, [el.id]: el.types };
+                return { ...prev, [el.id]: el.types || [] };
               },
               {}
             ),

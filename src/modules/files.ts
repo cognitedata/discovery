@@ -122,3 +122,11 @@ export const actions = {
 // Selectors
 export const selectFiles = (state: RootState) =>
   state.files || { byAssetId: {} };
+
+export const selectFilesForAsset = (state: RootState, assetId: number) => {
+  const filesForAsset = state.files.byAssetId[assetId];
+  if (filesForAsset) {
+    return filesForAsset.map(id => state.files.files[id]);
+  }
+  return undefined;
+};

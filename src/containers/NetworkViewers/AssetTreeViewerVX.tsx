@@ -34,7 +34,6 @@ import {
   AssetsState,
   selectAssets,
 } from '../../modules/assets';
-import { AppState, setAssetId, selectAppState } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import NoAssetSelected from '../../components/Placeholder';
 import { trackUsage } from '../../utils/metrics';
@@ -88,16 +87,16 @@ const Wrapper = styled.div`
   }
 `;
 
-type OwnProps = {};
+type OwnProps = {
+  asset: Asset;
+  onAssetClicked: (assetId: number) => void;
+};
 type StateProps = {
-  app: AppState;
-  asset?: Asset;
   assets: AssetsState;
 };
 type DispatchProps = {
   loadAssetChildren: typeof loadAssetChildren;
   loadParentRecurse: typeof loadParentRecurse;
-  setAssetId: typeof setAssetId;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -126,45 +125,24 @@ class TreeViewer extends Component<Props, State> {
   }
 
   componentDidMount() {
-    const {
-      asset,
-      app: { rootAssetId },
-    } = this.props;
+    const { asset } = this.props;
 
     const { nodes, length } = this.getData();
     if (length !== this.state.length) {
       this.setState({ data: nodes, length });
     }
 
-    if (asset && asset.id !== rootAssetId && asset.parentId) {
-      this.props.loadParentRecurse(asset.parentId, rootAssetId!);
+    if (asset.id !== asset.rootId && asset.parentId) {
+      this.props.loadParentRecurse(asset.parentId, asset.rootId!);
     }
-    if (asset && asset.id) {
-      this.props.loadAssetChildren(asset.id);
-    }
+    this.props.loadAssetChildren(asset.id);
   }
 
   componentDidUpdate(prevProps: Props) {
-    const {
-      asset,
-      app: { rootAssetId },
-      assets: { all },
-    } = this.props;
+    const { asset } = this.props;
 
-    if (
-      asset &&
-      asset.parentId &&
-      !all[asset.parentId] &&
-      asset.id !== rootAssetId
-    ) {
-      this.props.loadParentRecurse(asset.parentId, rootAssetId!);
-    }
-
-    if (
-      (!prevProps.asset && asset) ||
-      (prevProps.asset && asset && prevProps.asset.id !== asset.id)
-    ) {
-      this.props.loadAssetChildren(asset.id);
+    if (asset.id !== prevProps.asset.id) {
+      this.componentDidMount();
     }
 
     const { nodes, length } = this.getData();
@@ -177,59 +155,53 @@ class TreeViewer extends Component<Props, State> {
   getData = () => {
     const {
       assets: { all },
-      app: { assetId, rootAssetId },
+      asset,
     } = this.props;
-    if (rootAssetId && assetId) {
-      let nodes: Node | undefined;
-      let length = 0;
-      let currentAssetId: number | undefined = assetId;
-      let currentAssetNode: Node | undefined;
-      do {
-        if (currentAssetId && all[currentAssetId]) {
-          length += 1;
-          nodes = {
-            name: all[currentAssetId].name || `${all[currentAssetId].id}`,
-            node: all[currentAssetId],
-            children: nodes ? [nodes] : undefined,
-          };
-          if (!nodes.children) {
-            currentAssetNode = nodes;
-            currentAssetNode.children = [];
-          }
-          if (currentAssetId === rootAssetId) {
-            break;
-          }
-          currentAssetId = all[currentAssetId!].parentId;
-        } else {
-          return {
-            nodes: undefined,
-            length: 0,
-          };
+    let nodes: Node | undefined;
+    let length = 0;
+    let currentAssetId: number | undefined = asset.id;
+    let currentAssetNode: Node | undefined;
+    do {
+      if (currentAssetId && all[currentAssetId]) {
+        length += 1;
+        nodes = {
+          name: all[currentAssetId].name || `${all[currentAssetId].id}`,
+          node: all[currentAssetId],
+          children: nodes ? [nodes] : undefined,
+        };
+        if (!nodes.children) {
+          currentAssetNode = nodes;
+          currentAssetNode.children = [];
         }
-      } while (currentAssetId);
-      if (!currentAssetNode) {
+        if (currentAssetId === asset.rootId) {
+          break;
+        }
+        currentAssetId = all[currentAssetId!].parentId;
+      } else {
         return {
           nodes: undefined,
           length: 0,
         };
       }
-      Object.values(all)
-        .filter(el => el.parentId === assetId)
-        .forEach(el => {
-          length += 1;
-          currentAssetNode!.children!.push({
-            name: el.name || `${el.id}`,
-            node: el,
-          });
-        });
+    } while (currentAssetId);
+    if (!currentAssetNode) {
       return {
-        nodes,
-        length,
+        nodes: undefined,
+        length: 0,
       };
     }
+    Object.values(all)
+      .filter(el => el.parentId === asset.id)
+      .forEach(el => {
+        length += 1;
+        currentAssetNode!.children!.push({
+          name: el.name || `${el.id}`,
+          node: el,
+        });
+      });
     return {
-      nodes: undefined,
-      length: 0,
+      nodes,
+      length,
     };
   };
 
@@ -491,8 +463,7 @@ class TreeViewer extends Component<Props, State> {
                                       trackUsage('AssetVXViewer.AssetClicked', {
                                         assetId: node.data.node.id,
                                       });
-                                      this.props.setAssetId(
-                                        node.data.node.rootId,
+                                      this.props.onAssetClicked(
                                         node.data.node.id
                                       );
                                       this.forceUpdate();
@@ -524,8 +495,7 @@ class TreeViewer extends Component<Props, State> {
                                       trackUsage('AssetVXViewer.AssetClicked', {
                                         assetId: node.data.node.id,
                                       });
-                                      this.props.setAssetId(
-                                        node.data.node.rootId,
+                                      this.props.onAssetClicked(
                                         node.data.node.id
                                       );
                                       this.forceUpdate();
@@ -603,10 +573,6 @@ class TreeViewer extends Component<Props, State> {
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     assets: selectAssets(state),
-    asset: state.app.assetId
-      ? selectAssets(state).all[state.app.assetId]
-      : undefined,
-    app: selectAppState(state),
   };
 };
 
@@ -615,7 +581,6 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
     {
       loadParentRecurse,
       loadAssetChildren,
-      setAssetId,
     },
     dispatch
   );

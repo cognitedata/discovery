@@ -2,11 +2,13 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
-import { Input, Icon, Button, Tabs, Table } from 'antd';
-import { ColumnProps } from 'antd/lib/table';
+import { Input, Icon, Button, Tabs } from 'antd';
+import Table, { ColumnProps } from 'antd/lib/table';
 import { push } from 'connected-react-router';
 import debounce from 'lodash/debounce';
 import moment from 'moment';
+import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
+import FlexTableWrapper from 'components/FlexTableWrapper';
 import { sdk } from '../../index';
 import { trackUsage } from '../../utils/metrics';
 import { addAssetsToState, AssetsState } from '../../modules/assets';
@@ -52,60 +54,11 @@ const TabWrapper = styled.div`
 `;
 
 const ResultWrapper = styled.div`
-  padding: 26px 55px;
+  padding: 26px 56px;
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 0;
-
-  .details-row {
-    display: flex;
-    margin-bottom: 26px;
-
-    .left {
-      flex: 1;
-      align-self: center;
-    }
-    p {
-      margin-bottom: 0px;
-    }
-
-    .right {
-    }
-  }
-  .ant-table-wrapper {
-    flex: 1;
-    height: 0;
-
-    .ant-spin-nested-loading {
-      height: 100%;
-    }
-
-    .ant-spin-container {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .ant-table {
-      height: 0;
-      flex: 1;
-    }
-
-    .ant-table-content {
-      height: 100%;
-    }
-
-    .ant-table-scroll {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    .ant-table-pagination.ant-pagination {
-      display: block;
-      margin-left: auto;
-    }
-  }
 `;
 
 type TabKeys = 'assets' | 'timeseries' | 'files' | 'threed';
@@ -327,7 +280,7 @@ class SearchPage extends React.Component<Props, State> {
           </Tabs>
         </TabWrapper>
         <ResultWrapper>
-          <div className="details-row">
+          <VerticallyCenteredRow>
             <div className="left">
               <p />
             </div>
@@ -336,29 +289,31 @@ class SearchPage extends React.Component<Props, State> {
                 {UploadString[this.tab]}
               </Button>
             </div>
-          </div>
-          <Table
-            columns={this.columns}
-            scroll={{ y: true }}
-            pagination={{
-              position: 'bottom',
-              showQuickJumper: true,
-              showSizeChanger: true,
-            }}
-            loading={search.loading}
-            dataSource={this.tableData}
-            onRow={row => ({
-              onClick: () => {
-                switch (this.tab) {
-                  case 'assets':
-                    this.props.push(
-                      `/${this.props.match.params.tenant}/asset/${row.id}`
-                    );
-                    break;
-                }
-              },
-            })}
-          />
+          </VerticallyCenteredRow>
+          <FlexTableWrapper>
+            <Table
+              columns={this.columns}
+              scroll={{ y: true }}
+              pagination={{
+                position: 'bottom',
+                showQuickJumper: true,
+                showSizeChanger: true,
+              }}
+              loading={search.loading}
+              dataSource={this.tableData}
+              onRow={(row: any) => ({
+                onClick: () => {
+                  switch (this.tab) {
+                    case 'assets':
+                      this.props.push(
+                        `/${this.props.match.params.tenant}/asset/${row.id}`
+                      );
+                      break;
+                  }
+                },
+              })}
+            />
+          </FlexTableWrapper>
         </ResultWrapper>
       </>
     );
