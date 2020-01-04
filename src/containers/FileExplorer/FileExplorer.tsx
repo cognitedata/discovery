@@ -306,8 +306,6 @@ class FileExplorerComponent extends React.Component<Props, State> {
         <FilePreview
           fileId={currentDocument.id}
           deleteFile={this.onDeleteDocumentClicked}
-          unselectDocument={this.backToPreviousDocument}
-          selectDocument={this.setCurrentDocument}
         />
       );
     }

@@ -4,20 +4,20 @@ import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import { Button } from 'antd';
-import { FilesMetadata } from '@cognite/sdk';
+import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
-import FilePreview from 'containers/FileExplorer/FilePreview/FilePreview';
+import { TimeseriesChartMeta } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
-  fetchFiles,
-  selectFilesForAsset,
-  selectFiles,
-} from '../../modules/files';
+  fetchTimeseriesForAssetId,
+  selectTimeseriesByAssetId,
+  selectTimeseries,
+} from '../../modules/timeseries';
 import ViewingDetailsNavBar from './ViewingDetailsNavBar';
 
 const Wrapper = styled.div`
@@ -35,22 +35,22 @@ const Wrapper = styled.div`
 type OrigProps = {
   asset: ExtendedAsset;
   mimeTypes?: string[];
-  fileId?: number;
+  timeseriesId?: number;
   onSelect: (id: number) => void;
-  onViewDetails: (type: string, id: number) => void;
   onClearSelection: () => void;
+  onViewDetails: (type: string, id: number) => void;
 };
 
 type Props = {
-  files: FilesMetadata[] | undefined;
-  selectFile: FilesMetadata | undefined;
+  timeseries: GetTimeSeriesMetadataDTO[] | undefined;
+  selectedTimeseries: GetTimeSeriesMetadataDTO | undefined;
   push: typeof push;
-  fetchFiles: typeof fetchFiles;
+  fetchTimeseriesForAssetId: typeof fetchTimeseriesForAssetId;
 } & OrigProps;
 
 type State = {};
 
-class AssetFileSection extends React.Component<Props, State> {
+class AssetTimeseriesSection extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -58,16 +58,16 @@ class AssetFileSection extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.fetchFiles(this.props.asset.id);
+    this.props.fetchTimeseriesForAssetId(this.props.asset.id);
   }
 
   componentDidUpdate(prevProps: Props) {
     if (this.props.asset.id !== prevProps.asset.id) {
-      this.props.fetchFiles(this.props.asset.id);
+      this.props.fetchTimeseriesForAssetId(this.props.asset.id);
     }
   }
 
-  get columns(): ColumnProps<FilesMetadata>[] {
+  get columns(): ColumnProps<GetTimeSeriesMetadataDTO>[] {
     return [
       {
         title: 'Name',
@@ -80,15 +80,10 @@ class AssetFileSection extends React.Component<Props, State> {
         dataIndex: 'description',
       },
       {
-        title: 'File Type',
-        key: 'mimeType',
-        dataIndex: 'mimeType',
-      },
-      {
         title: 'Last Modified',
         key: 'last-modified',
         render: item => {
-          return moment(item.lastUpdatedTime).format('YYYY-MM-DD hh:mm');
+          return moment(item.updatedTime).format('YYYY-MM-DD hh:mm');
         },
       },
       {
@@ -111,31 +106,21 @@ class AssetFileSection extends React.Component<Props, State> {
     ];
   }
 
-  get files() {
-    const { files, mimeTypes } = this.props;
-    if (files) {
-      if (mimeTypes) {
-        return files.filter(
-          file => mimeTypes.indexOf(file.mimeType || '') !== -1
-        );
-      }
-      return files;
-    }
-    return undefined;
-  }
-
   onUnlinkClicked = (fileId: number) => {
     console.log(fileId);
   };
 
   renderItem = () => {
-    const { selectFile, fileId } = this.props;
-    if (fileId && selectFile) {
+    const { selectedTimeseries, timeseriesId } = this.props;
+    if (timeseriesId && selectedTimeseries) {
       return (
         <>
           <ViewingDetailsNavBar
-            name={selectFile.name || 'Timeseries'}
-            onButtonClicked={() => this.props.onViewDetails('file', fileId)}
+            name={selectedTimeseries.name || 'Timeseries'}
+            description={selectedTimeseries.description || ''}
+            onButtonClicked={() =>
+              this.props.onViewDetails('timeseries', timeseriesId)
+            }
             onBackClicked={this.props.onClearSelection}
           />
           <div
@@ -143,7 +128,14 @@ class AssetFileSection extends React.Component<Props, State> {
               marginTop: '24px',
             }}
           >
-            <FilePreview fileId={fileId} deleteFile={() => {}} />
+            <TimeseriesChartMeta
+              timeseriesId={timeseriesId}
+              showMetadata={false}
+              showDescription={false}
+              showDatapoint={false}
+              liveUpdate={!selectedTimeseries.isString}
+              updateIntervalMillis={2000}
+            />
           </div>
         </>
       );
@@ -162,7 +154,8 @@ class AssetFileSection extends React.Component<Props, State> {
   };
 
   render() {
-    if (this.props.fileId) {
+    const { timeseries, timeseriesId } = this.props;
+    if (timeseriesId) {
       return this.renderItem();
     }
     return (
@@ -173,13 +166,13 @@ class AssetFileSection extends React.Component<Props, State> {
           </div>
           <div className="right">
             <Button icon="plus" type="primary">
-              Upload New File
+              Create New Timeseries
             </Button>
           </div>
         </VerticallyCenteredRow>
         <FlexTableWrapper>
           <Table
-            dataSource={this.files}
+            dataSource={timeseries}
             columns={this.columns}
             scroll={{ y: true }}
             pagination={{
@@ -187,12 +180,12 @@ class AssetFileSection extends React.Component<Props, State> {
               showQuickJumper: true,
               showSizeChanger: true,
             }}
-            onRow={(row: any) => ({
+            onRow={(row: GetTimeSeriesMetadataDTO) => ({
               onClick: () => {
                 this.props.onSelect(row.id);
               },
             })}
-            loading={!this.files}
+            loading={!timeseries}
           />
         </FlexTableWrapper>
       </Wrapper>
@@ -202,12 +195,15 @@ class AssetFileSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
-    files: selectFilesForAsset(state, origProps.asset.id),
-    selectFile: origProps.fileId
-      ? selectFiles(state).files[origProps.fileId]
+    timeseries: selectTimeseriesByAssetId(state, origProps.asset.id),
+    selectedTimeseries: origProps.timeseriesId
+      ? selectTimeseries(state).timeseriesData[origProps.timeseriesId]
       : undefined,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchFiles }, dispatch);
-export default connect(mapStateToProps, mapDispatchToProps)(AssetFileSection);
+  bindActionCreators({ push, fetchTimeseriesForAssetId }, dispatch);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(AssetTimeseriesSection);

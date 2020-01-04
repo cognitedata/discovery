@@ -9,6 +9,7 @@ import debounce from 'lodash/debounce';
 import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
+import { FilesMetadata } from '@cognite/sdk';
 import { sdk } from '../../index';
 import { trackUsage } from '../../utils/metrics';
 import { addAssetsToState, AssetsState } from '../../modules/assets';
@@ -138,6 +139,31 @@ class SearchPage extends React.Component<Props, State> {
 
   get columns(): ColumnProps<any>[] {
     switch (this.tab) {
+      case 'files':
+        return [
+          {
+            title: 'Name',
+            key: 'name',
+            dataIndex: 'name',
+          },
+          {
+            title: 'Description',
+            key: 'description',
+            dataIndex: 'description',
+          },
+          {
+            title: 'File Type',
+            key: 'mimeType',
+            dataIndex: 'mimeType',
+          },
+          {
+            title: 'Last Modified',
+            key: 'last-modified',
+            render: (item: FilesMetadata) => {
+              return moment(item.lastUpdatedTime).format('YYYY-MM-DD hh:mm');
+            },
+          },
+        ];
       default:
         return [
           {
@@ -270,6 +296,7 @@ class SearchPage extends React.Component<Props, State> {
               );
               this.doSearch();
             }}
+            activeKey={this.tab}
           >
             {Object.keys(TabValues).map(key => (
               <Tabs.TabPane

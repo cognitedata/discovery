@@ -10,6 +10,7 @@ import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import AssetFilesSection from './AssetFilesSection';
 import AssetSidebar from './AssetSidebar';
+import AssetTimeseriesSection from './AssetTimeseriesSection';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -34,6 +35,12 @@ const AssetView = styled.div`
   }
   .ant-tabs-bar {
     margin-bottom: 0px;
+  }
+  .content {
+    flex: 1;
+    height: 0;
+    display: flex;
+    flex-direction: column;
   }
 `;
 
@@ -62,6 +69,7 @@ type OrigProps = {
   match: {
     params: {
       tab?: string;
+      itemId?: number;
       assetId: number;
       tenant: string;
     };
@@ -101,22 +109,88 @@ class AssetPage extends React.Component<Props, State> {
       : 'hierarchy';
   }
 
+  get tenant() {
+    return this.props.match.params.tenant;
+  }
+
   get asset() {
     return this.props.assets.all[this.props.match.params.assetId];
+  }
+
+  get itemId() {
+    return this.props.match.params.itemId;
   }
 
   onBackClicked = () => {
     this.props.push(`/${this.props.match.params.tenant}/search/assets`);
   };
 
+  onClearSelection = () => {
+    this.props.push(
+      `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}`
+    );
+  };
+
+  onSelect = (id: number) => {
+    this.props.push(
+      `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}/${id}`
+    );
+  };
+
+  onViewDetails = (type: string, id: number) => {
+    this.props.push(`/${this.tenant}/${type}/${id}`);
+  };
+
   renderCurrentTab = () => {
     switch (this.currentTab) {
-      case 'hierarchy':
+      case 'hierarchy': {
         return (
-          <AssetTreeViewerVX asset={this.asset} onAssetClicked={console.log} />
+          <AssetTreeViewerVX
+            asset={this.asset}
+            onAssetClicked={id =>
+              this.props.push(`/${this.tenant}/asset/${id}/${this.currentTab}`)
+            }
+          />
         );
-      case 'files':
-        return <AssetFilesSection asset={this.asset} />;
+      }
+      case 'timeseries': {
+        return (
+          <AssetTimeseriesSection
+            asset={this.asset}
+            timeseriesId={this.itemId}
+            onSelect={id =>
+              this.props.push(
+                `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}/${id}`
+              )
+            }
+            onClearSelection={this.onClearSelection}
+            onViewDetails={this.onViewDetails}
+          />
+        );
+      }
+      case 'files': {
+        return (
+          <AssetFilesSection
+            asset={this.asset}
+            fileId={this.itemId}
+            onSelect={this.onSelect}
+            onClearSelection={this.onClearSelection}
+            onViewDetails={this.onViewDetails}
+          />
+        );
+      }
+      case 'pnid': {
+        return (
+          <AssetFilesSection
+            asset={this.asset}
+            mimeTypes={['svg', 'SVG']}
+            fileId={this.itemId}
+            onSelect={this.onSelect}
+            onClearSelection={this.onClearSelection}
+            onViewDetails={this.onViewDetails}
+          />
+        );
+      }
     }
     return <h1>Hello</h1>;
   };
@@ -148,9 +222,7 @@ class AssetPage extends React.Component<Props, State> {
                   ></Tabs.TabPane>
                 ))}
               </Tabs>
-              <div style={{ flex: 1, height: 0 }}>
-                {this.renderCurrentTab()}
-              </div>
+              <div className="content">{this.renderCurrentTab()}</div>
             </AssetView>
           </Wrapper>
         ) : (

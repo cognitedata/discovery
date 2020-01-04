@@ -38,6 +38,12 @@ const FlexTableWrapper = styled.div`
       display: block;
       margin-left: auto;
     }
+    .ant-table-body {
+      flex: 1;
+    }
+    .ant-table-placeholder {
+      height: 100%;
+    }
   }
 `;
 

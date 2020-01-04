@@ -20,7 +20,7 @@ export const REMOVE_ASSET_FROM_TIMESERIES =
   'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
 
 interface SetTimeseriesAction extends Action<typeof SET_TIMESERIES> {
-  payload: { items: GetTimeSeriesMetadataDTO[] };
+  payload: { items: GetTimeSeriesMetadataDTO[]; assetId?: number };
 }
 interface RemoveAssetAction
   extends Action<typeof REMOVE_ASSET_FROM_TIMESERIES> {
@@ -44,7 +44,10 @@ export function fetchTimeseriesForAssetId(assetId: number) {
       assetIds: [assetId],
       limit: 1000,
     });
-    dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
+    dispatch({
+      type: SET_TIMESERIES,
+      payload: { items: results.items, assetId },
+    });
   };
 }
 export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
@@ -197,8 +200,9 @@ export const editTimeseries = (
 // Reducer
 export interface TimeseriesState {
   timeseriesData: { [key: number]: GetTimeSeriesMetadataDTO };
+  byAssetId: { [key: number]: number[] };
 }
-const initialState: TimeseriesState = { timeseriesData: {} };
+const initialState: TimeseriesState = { timeseriesData: {}, byAssetId: {} };
 
 export default function timeseries(
   state = initialState,
@@ -206,12 +210,18 @@ export default function timeseries(
 ): TimeseriesState {
   switch (action.type) {
     case SET_TIMESERIES: {
-      const { items } = action.payload;
+      const { items, assetId } = action.payload;
       return {
         ...state,
         timeseriesData: {
           ...state.timeseriesData,
           ...arrayToObjectById(items),
+        },
+        byAssetId: {
+          ...state.byAssetId,
+          ...(assetId && {
+            [assetId]: items.map(el => el.id),
+          }),
         },
       };
     }
@@ -238,5 +248,16 @@ export const actions = {
 };
 
 // Selectors
-export const selectTimeseries = (state: RootState) =>
-  state.timeseries || { items: [] };
+export const selectTimeseries = (state: RootState) => state.timeseries;
+export const selectTimeseriesByAssetId = (
+  state: RootState,
+  assetId: number
+) => {
+  const tsForAsset = state.timeseries.byAssetId[assetId];
+  if (tsForAsset) {
+    return tsForAsset
+      .map(id => state.timeseries.timeseriesData[id])
+      .filter(el => !!el);
+  }
+  return tsForAsset;
+};

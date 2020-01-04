@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, message, Spin, Table, Icon, Divider } from 'antd';
 import styled from 'styled-components';
 import { BetaTag } from 'components/BetaWarning';
-import { Asset, FilesMetadata, UploadFileMetadataResponse } from '@cognite/sdk';
+import { Asset, UploadFileMetadataResponse } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
@@ -47,9 +47,7 @@ const SpinWrapper = styled.div`
 
 type OrigProps = {
   selectedDocument: FilesMetadataWithDownload;
-  selectDocument: (file: FilesMetadata) => void;
   deleteFile: (fileId: number) => void;
-  unselectDocument: () => void;
   setPage: (page: number) => void;
   downloadFile: (url: string) => Promise<Blob>;
   isPnIDParsingAllowed: boolean;
@@ -263,7 +261,6 @@ class MapModelToAssetForm extends React.Component<Props, State> {
             );
             setTimeout(() => {
               this.setState({ convertingToSvg: undefined });
-              this.props.selectDocument(newFile);
             }, 1000);
           }
         }, 1000);

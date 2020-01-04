@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
+import Placeholder from 'components/Placeholder';
 import EditFileModal from 'containers/Modals/EditFileModal';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
@@ -152,9 +153,7 @@ const ButtonRow = styled.div`
 
 type OrigProps = {
   fileId: number;
-  selectDocument: (file: FilesMetadata) => void;
   deleteFile: (fileId: number) => void;
-  unselectDocument: () => void;
 };
 
 type Props = {
@@ -304,8 +303,6 @@ class FilePreview extends React.Component<Props, State> {
               <FilePreviewDocumentTab
                 selectedDocument={selectedFile}
                 downloadFile={this.downloadFile}
-                selectDocument={this.props.selectDocument}
-                unselectDocument={this.props.unselectDocument}
                 deleteFile={this.props.deleteFile}
                 isPnIDParsingAllowed={pdfState.numPages === 1}
                 currentPage={pdfState.page}
@@ -415,6 +412,24 @@ class FilePreview extends React.Component<Props, State> {
     );
   };
 
+  renderContent = () => {
+    switch (this.type) {
+      case 'images':
+        return this.renderImage();
+      case 'documents':
+        return this.renderPDF();
+      case 'pnid':
+        return this.renderPnID();
+      default:
+        return (
+          <Placeholder
+            text="Unable to Preview File"
+            componentName={this.props.selectedFile!.name}
+          />
+        );
+    }
+  };
+
   render() {
     const { hideSidebar } = this.state;
     const { selectedFile } = this.props;
@@ -425,16 +440,8 @@ class FilePreview extends React.Component<Props, State> {
 
     return (
       <Wrapper>
-        <div>
-          <Button onClick={this.props.unselectDocument}>
-            <Icon type="arrow-left" />
-            BACK
-          </Button>
-        </div>
         <ItemPreview hideSidebar={hideSidebar ? 'true' : 'false'}>
-          {this.type === 'images' && this.renderImage()}
-          {this.type === 'documents' && this.renderPDF()}
-          {this.type === 'pnid' && this.renderPnID()}
+          {this.renderContent()}
           <div className="content">
             <HideButton
               onClick={() =>
