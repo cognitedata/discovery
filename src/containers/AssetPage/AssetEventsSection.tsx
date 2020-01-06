@@ -4,21 +4,21 @@ import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import { Button } from 'antd';
-import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
-import { TimeseriesChartMeta } from '@cognite/gearbox';
+import { CogniteEvent } from '@cognite/sdk';
+import { EventPreview } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import {
-  fetchTimeseriesForAssetId,
-  selectTimeseriesByAssetId,
-  selectTimeseries,
-} from '../../modules/timeseries';
 import ViewingDetailsNavBar from './ViewingDetailsNavBar';
+import {
+  selectEvents,
+  fetchEventsForAssetId,
+  selectEventsByAssetId,
+} from '../../modules/events';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -34,17 +34,17 @@ const Wrapper = styled.div`
 
 type OrigProps = {
   asset: ExtendedAsset;
-  timeseriesId?: number;
+  eventId?: number;
   onSelect: (id: number) => void;
   onClearSelection: () => void;
   onViewDetails: (type: string, id: number) => void;
 };
 
 type Props = {
-  timeseries: GetTimeSeriesMetadataDTO[] | undefined;
-  selectedTimeseries: GetTimeSeriesMetadataDTO | undefined;
+  events: CogniteEvent[] | undefined;
+  selectedEvent: CogniteEvent | undefined;
   push: typeof push;
-  fetchTimeseriesForAssetId: typeof fetchTimeseriesForAssetId;
+  fetchEventsForAssetId: typeof fetchEventsForAssetId;
 } & OrigProps;
 
 type State = {};
@@ -57,21 +57,26 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.fetchTimeseriesForAssetId(this.props.asset.id);
+    this.props.fetchEventsForAssetId(this.props.asset.id);
   }
 
   componentDidUpdate(prevProps: Props) {
     if (this.props.asset.id !== prevProps.asset.id) {
-      this.props.fetchTimeseriesForAssetId(this.props.asset.id);
+      this.props.fetchEventsForAssetId(this.props.asset.id);
     }
   }
 
-  get columns(): ColumnProps<GetTimeSeriesMetadataDTO>[] {
+  get columns(): ColumnProps<CogniteEvent>[] {
     return [
       {
-        title: 'Name',
-        key: 'name',
-        dataIndex: 'name',
+        title: 'Type',
+        key: 'type',
+        dataIndex: 'type',
+      },
+      {
+        title: 'Subtype',
+        key: 'subtype',
+        dataIndex: 'subtype',
       },
       {
         title: 'Description',
@@ -79,10 +84,20 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
         dataIndex: 'description',
       },
       {
+        title: 'Start Time',
+        key: 'description',
+        dataIndex: 'startTime',
+      },
+      {
+        title: 'Start Time',
+        key: 'description',
+        dataIndex: 'endTime',
+      },
+      {
         title: 'Last Modified',
         key: 'last-modified',
-        render: item => {
-          return moment(item.updatedTime).format('YYYY-MM-DD hh:mm');
+        render: (item: CogniteEvent) => {
+          return moment(item.lastUpdatedTime).format('YYYY-MM-DD hh:mm');
         },
       },
       {
@@ -110,16 +125,14 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   };
 
   renderItem = () => {
-    const { selectedTimeseries, timeseriesId } = this.props;
-    if (timeseriesId && selectedTimeseries) {
+    const { selectedEvent, eventId } = this.props;
+    if (eventId && selectedEvent) {
       return (
         <>
           <ViewingDetailsNavBar
-            name={selectedTimeseries.name || 'Timeseries'}
-            description={selectedTimeseries.description || ''}
-            onButtonClicked={() =>
-              this.props.onViewDetails('timeseries', timeseriesId)
-            }
+            name={selectedEvent.type || 'Event'}
+            description={selectedEvent.description || ''}
+            onButtonClicked={() => this.props.onViewDetails('event', eventId)}
             onBackClicked={this.props.onClearSelection}
           />
           <div
@@ -127,14 +140,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
               marginTop: '24px',
             }}
           >
-            <TimeseriesChartMeta
-              timeseriesId={timeseriesId}
-              showMetadata={false}
-              showDescription={false}
-              showDatapoint={false}
-              liveUpdate={!selectedTimeseries.isString}
-              updateIntervalMillis={2000}
-            />
+            <EventPreview eventId={eventId} />
           </div>
         </>
       );
@@ -142,19 +148,19 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
     return (
       <>
         <ViewingDetailsNavBar
-          name="Timeseries"
+          name="Event"
           description="Loading..."
           onButtonClicked={() => {}}
           onBackClicked={this.props.onClearSelection}
         />
-        <LoadingWrapper>Loading Timeseries</LoadingWrapper>
+        <LoadingWrapper>Loading Event</LoadingWrapper>
       </>
     );
   };
 
   render() {
-    const { timeseries, timeseriesId } = this.props;
-    if (timeseriesId) {
+    const { events, eventId } = this.props;
+    if (eventId) {
       return this.renderItem();
     }
     return (
@@ -165,13 +171,13 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
           </div>
           <div className="right">
             <Button icon="plus" type="primary">
-              Create New Timeseries
+              Create New Event
             </Button>
           </div>
         </VerticallyCenteredRow>
         <FlexTableWrapper>
           <Table
-            dataSource={timeseries}
+            dataSource={events}
             columns={this.columns}
             scroll={{ y: true }}
             pagination={{
@@ -179,12 +185,12 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
               showQuickJumper: true,
               showSizeChanger: true,
             }}
-            onRow={(row: GetTimeSeriesMetadataDTO) => ({
+            onRow={(row: CogniteEvent) => ({
               onClick: () => {
                 this.props.onSelect(row.id);
               },
             })}
-            loading={!timeseries}
+            loading={!events}
           />
         </FlexTableWrapper>
       </Wrapper>
@@ -194,14 +200,14 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
-    timeseries: selectTimeseriesByAssetId(state, origProps.asset.id),
-    selectedTimeseries: origProps.timeseriesId
-      ? selectTimeseries(state).timeseriesData[origProps.timeseriesId]
+    events: selectEventsByAssetId(state, origProps.asset.id),
+    selectedEvent: origProps.eventId
+      ? selectEvents(state).items[origProps.eventId]
       : undefined,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchTimeseriesForAssetId }, dispatch);
+  bindActionCreators({ push, fetchEventsForAssetId }, dispatch);
 export default connect(
   mapStateToProps,
   mapDispatchToProps

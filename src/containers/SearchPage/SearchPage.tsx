@@ -22,7 +22,7 @@ import {
   setFilesTable,
   setThreeDTable,
 } from '../../modules/search';
-import { ThreeDState, fetchModels } from '../../modules/threed';
+import { ThreeDState } from '../../modules/threed';
 import {
   addTimeseriesToState,
   TimeseriesState,
@@ -93,7 +93,6 @@ type Props = {
   threed: ThreeDState;
   search: SearchState;
   push: typeof push;
-  fetchModels: typeof fetchModels;
   addAssetsToState: typeof addAssetsToState;
   setAssetsTable: typeof setAssetsTable;
   setSearchLoading: typeof setSearchLoading;
@@ -120,7 +119,6 @@ class SearchPage extends React.Component<Props, State> {
 
   componentDidMount() {
     this.doSearch();
-    this.props.fetchModels();
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -139,6 +137,26 @@ class SearchPage extends React.Component<Props, State> {
 
   get columns(): ColumnProps<any>[] {
     switch (this.tab) {
+      case 'assets':
+        return [
+          {
+            title: 'Name',
+            key: 'name',
+            dataIndex: 'name',
+          },
+          {
+            title: 'Description',
+            key: 'description',
+            dataIndex: 'description',
+          },
+          {
+            title: 'Last Modified',
+            key: 'last-modified',
+            render: (item: FilesMetadata) => {
+              return moment(item.lastUpdatedTime).format('YYYY-MM-DD hh:mm');
+            },
+          },
+        ];
       case 'files':
         return [
           {
@@ -368,7 +386,6 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setThreeDTable,
       addTimeseriesToState,
       addFilesToState,
-      fetchModels,
     },
     dispatch
   );

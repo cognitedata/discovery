@@ -113,9 +113,7 @@ const mapStateToProps = (state: RootState) => {
   return {
     app: selectAppState(state),
     assets: selectAssets(state),
-    events: state.app.assetId
-      ? selectEventsByAssetId(state, state.app.assetId).items
-      : [],
+    events: selectEventsByAssetId(state, state.app.assetId!) || [],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

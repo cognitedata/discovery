@@ -14,7 +14,7 @@ import {
 import styled from 'styled-components';
 import moment from 'moment';
 import { bindActionCreators, Dispatch } from 'redux';
-import { FilesMetadata } from '@cognite/sdk';
+import { FilesMetadata, CogniteEvent } from '@cognite/sdk';
 import { AssetTree, AssetBreadcrumb } from '@cognite/gearbox';
 import TypeBadge from 'containers/TypeBadge';
 import {
@@ -28,11 +28,7 @@ import {
   TypesState,
   fetchTypeForAssets,
 } from 'modules/types';
-import {
-  fetchEvents,
-  selectEventsByAssetId,
-  EventsAndTypes,
-} from 'modules/events';
+import { selectEventsByAssetId } from 'modules/events';
 import { createAssetTitle } from 'utils/utils';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import {
@@ -56,6 +52,7 @@ import RootAssetList from './RootAssetList';
 import TimeseriesSection from './TimeseriesSection';
 import EventsSection from './EventsSection';
 import TypeSection from './TypeSection';
+import { fetchEventsForAssetId } from '../../modules/events';
 
 const { Panel } = Collapse;
 
@@ -98,14 +95,14 @@ type OrigProps = {};
 
 type Props = {
   doFetchTypeForAssets: typeof fetchTypeForAssets;
-  doFetchEvents: typeof fetchEvents;
+  doFetchEventsForAssetId: typeof fetchEventsForAssetId;
   doFetchTimeseries: typeof fetchTimeseriesForAssetId;
   doRemoveAssetFromTimeseries: typeof removeAssetFromTimeseries;
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
   deleteAsset: typeof deleteAsset;
   setAssetId: typeof setAssetId;
   timeseries: TimeseriesState;
-  events: EventsAndTypes;
+  events: CogniteEvent[];
   threed: ThreeDState;
   app: AppState;
   assets: AssetsState;
@@ -138,13 +135,13 @@ class AssetDrawer extends React.Component<Props, State> {
   componentDidMount() {
     const {
       doFetchTimeseries,
-      doFetchEvents,
+      doFetchEventsForAssetId,
       doFetchTypeForAssets,
       app,
     } = this.props;
     if (app.assetId) {
       doFetchTimeseries(app.assetId);
-      doFetchEvents(app.assetId);
+      doFetchEventsForAssetId(app.assetId);
       doFetchTypeForAssets([app.assetId]);
     }
     this.resetState();
@@ -153,14 +150,14 @@ class AssetDrawer extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     const {
       doFetchTimeseries,
-      doFetchEvents,
+      doFetchEventsForAssetId,
       doFetchTypeForAssets,
       app,
       assets: { all },
     } = this.props;
     if (prevProps.app.assetId !== app.assetId && app.assetId) {
       doFetchTimeseries(app.assetId);
-      doFetchEvents(app.assetId);
+      doFetchEventsForAssetId(app.assetId);
       doFetchTypeForAssets([app.assetId]);
       this.resetState();
     }
@@ -401,7 +398,7 @@ class AssetDrawer extends React.Component<Props, State> {
     const { showeditAsset, showAddChild, showAddTypes } = this.state;
 
     const allTypes = this.props.types.items ? this.props.types.items : [];
-    const events = this.props.events.items ? this.props.events.items : [];
+    const events = this.props.events || [];
 
     const defaultActiveKey = this.state.activeCollapsed
       ? this.state.activeCollapsed
@@ -509,12 +506,7 @@ const mapStateToProps = (state: RootState) => {
     assets: selectAssets(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
-    events: state.app.assetId
-      ? selectEventsByAssetId(state, state.app.assetId)
-      : {
-          items: [],
-          types: [],
-        },
+    events: selectEventsByAssetId(state, state.app.assetId!) || [],
     types: selectTypesState(state),
     files: state.app.assetId
       ? (selectFiles(state).byAssetId[state.app.assetId] || [])
@@ -528,7 +520,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       doFetchTimeseries: fetchTimeseriesForAssetId,
       doFetchTypeForAssets: fetchTypeForAssets,
-      doFetchEvents: fetchEvents,
+      doFetchEventsForAssetId: fetchEventsForAssetId,
       doRemoveAssetFromTimeseries: removeAssetFromTimeseries,
       deleteAsset,
       deleteAssetNodeMapping,

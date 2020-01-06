@@ -18,6 +18,7 @@ import {
 import { RootState } from '../reducers/index';
 import SearchPage from './SearchPage';
 import AssetPage from './AssetPage';
+import { fetchModels } from '../modules/threed';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -32,6 +33,7 @@ type Props = {
   setCdfEnv: typeof setCdfEnv;
   setTenant: typeof setTenant;
   fetchUserGroups: typeof fetchUserGroups;
+  fetchModels: typeof fetchModels;
   replace: typeof replace;
 };
 
@@ -108,6 +110,7 @@ class Auth extends React.Component<Props, State> {
         delete queryParameters.apikey;
         window.location.hash = queryString.stringify(queryParameters);
         await this.props.fetchUserGroups();
+        await this.props.fetchModels();
       }
     );
   };
@@ -149,7 +152,7 @@ class Auth extends React.Component<Props, State> {
                   component={AssetPage}
                 />
                 <Route
-                  path="/:tenant/asset/:assetId/:tab/:itemId"
+                  path="/:tenant/asset/:assetId/:tab/:itemId/:itemId2?/:itemId3?/"
                   exact
                   component={AssetPage}
                 />
@@ -174,6 +177,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setTenant,
       setCdfEnv,
       fetchUserGroups,
+      fetchModels,
       replace,
     },
     dispatch

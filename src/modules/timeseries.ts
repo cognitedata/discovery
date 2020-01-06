@@ -7,7 +7,6 @@ import {
   TimeSeriesUpdate,
   IdEither,
 } from '@cognite/sdk';
-import { fetchEvents } from './events';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
@@ -165,7 +164,6 @@ export const addTimeseriesToAsset = (
 
   setTimeout(() => {
     dispatch(fetchTimeseriesForAssetId(assetId));
-    dispatch(fetchEvents(assetId));
   }, 1000);
 };
 

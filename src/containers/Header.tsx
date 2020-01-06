@@ -49,7 +49,7 @@ const WrappedHeader = styled(Header)`
 
 type Props = { push: typeof push; app: AppState; pathname: string };
 type State = {};
-class Sidebar extends React.Component<Props, State> {
+class DiscoveryHeader extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   get selectedKeys(): string[] {
@@ -103,4 +103,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(mapStateToProps, mapDispatchToProps)(Sidebar);
+export default connect(mapStateToProps, mapDispatchToProps)(DiscoveryHeader);

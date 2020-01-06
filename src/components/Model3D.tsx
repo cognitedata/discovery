@@ -183,6 +183,7 @@ class Model3D extends React.Component<Props, State> {
     trackUsage('3DViewer.SelectNode', { nodeId });
     const assetId = this.getAssetIdForNodeId(nodeId);
     if (assetId) {
+      this.props.onNodeIdChange(nodeId);
       this.props.onAssetIdChange(assetId);
     } else {
       this.props.onNodeIdChange(nodeId);

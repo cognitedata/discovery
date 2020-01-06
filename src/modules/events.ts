@@ -23,7 +23,7 @@ export const REMOVE_EVENT = 'events/REMOVE_EVENT';
 export const ADD_UNIQUE_EVENT_TYPES = 'events/ADD_UNIQUE_EVENT_TYPES';
 
 interface AddEventAction extends Action<typeof ADD_EVENTS> {
-  payload: { items: { [key: string]: CogniteEvent } };
+  payload: { items: CogniteEvent[]; assetId: number };
 }
 interface RemoveEventAction extends Action<typeof REMOVE_EVENT> {
   payload: { eventId: number };
@@ -62,7 +62,7 @@ export async function createEvent(
   ]);
 }
 
-export function fetchEvents(assetId: number) {
+export function fetchEventsForAssetId(assetId: number) {
   return async (dispatch: Dispatch) => {
     const result = await sdk.events.list({
       filter: { assetIds: [assetId] },
@@ -70,10 +70,10 @@ export function fetchEvents(assetId: number) {
     });
 
     const types = result.items.map(event => event.type);
-    const items = arrayToObjectById(result.items);
+    const { items } = result;
 
     dispatch({ type: ADD_UNIQUE_EVENT_TYPES, payload: { items: types } });
-    dispatch({ type: ADD_EVENTS, payload: { items } });
+    dispatch({ type: ADD_EVENTS, payload: { items, assetId } });
   };
 }
 
@@ -107,9 +107,10 @@ export function deleteEvent(eventId: number) {
 // Reducer
 export interface EventState {
   items: { [key: string]: CogniteEvent };
+  byAssetId: { [key: number]: number[] };
   types: string[];
 }
-const initialState: EventState = { items: {}, types: [] };
+const initialState: EventState = { items: {}, types: [], byAssetId: {} };
 
 export default function events(
   state = initialState,
@@ -117,10 +118,17 @@ export default function events(
 ): EventState {
   switch (action.type) {
     case ADD_EVENTS: {
-      const items = { ...state.items, ...action.payload.items };
+      const items = {
+        ...state.items,
+        ...arrayToObjectById(action.payload.items),
+      };
       return {
         ...state,
         items,
+        byAssetId: {
+          ...state.byAssetId,
+          [action.payload.assetId]: action.payload.items.map(el => el.id),
+        },
       };
     }
     case REMOVE_EVENT: {
@@ -165,12 +173,10 @@ export const selectEventList = (state: RootState) => {
   ); // to array
   return { items };
 };
-export const selectEventsByAssetId = (
-  state: RootState,
-  assetId: number
-): EventsAndTypes => {
-  const items = Object.keys(state.events.items)
-    .map(key => state.events.items[key]) // to array
-    .filter(event => event.assetIds && event.assetIds.indexOf(assetId) !== -1); // filter by assetId
-  return { items, types: [] };
+export const selectEventsByAssetId = (state: RootState, assetId: number) => {
+  const eventsForAsset = state.events.byAssetId[assetId];
+  if (eventsForAsset) {
+    return eventsForAsset.map(id => state.events.items[id]);
+  }
+  return eventsForAsset;
 };

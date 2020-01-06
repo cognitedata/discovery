@@ -25,7 +25,6 @@ import {
   setModelAndRevisionAndNode,
 } from '../modules/app';
 import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
-import Sidebar from './Sidebar';
 import TimeseriesPreview from './TimeseriesPreview';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
@@ -307,7 +306,6 @@ class Main extends React.Component<Props, State> {
         <TimeseriesPreview />
         <Layout>
           <Layout>
-            <Sidebar />
             <Content
               style={{
                 display: 'flex',

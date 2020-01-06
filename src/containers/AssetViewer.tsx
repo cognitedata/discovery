@@ -23,7 +23,6 @@ import RelationshipTreeViewer from './NetworkViewers/RelationshipTreeViewer';
 import FileExplorer from './FileExplorer';
 import { trackUsage } from '../utils/metrics';
 import ComponentSelector from '../components/ComponentSelector';
-import ThreeDViewerComponent from './ThreeDViewerComponent';
 
 export const ViewerTypeMap: { [key in ViewerType]: React.ReactNode } = {
   none: 'None',
@@ -107,10 +106,6 @@ export class AssetViewer extends React.Component<Props, State> {
     return undefined;
   }
 
-  render3D = () => {
-    return <ThreeDViewerComponent />;
-  };
-
   renderAssetNetworkVX = () => {
     return (
       <AssetTreeViewerVX asset={this.asset!} onAssetClicked={console.log} />
@@ -133,7 +128,8 @@ export class AssetViewer extends React.Component<Props, State> {
     const { type } = this.props;
     switch (type) {
       case 'threed':
-        return this.render3D();
+        // return this.render3D();
+        return <></>;
       case 'network':
         return this.renderAssetNetwork();
       case 'vx':

@@ -1,91 +1,88 @@
 import React, { Component } from 'react';
-import { Button, Table } from 'antd';
+import { Table, Button } from 'antd';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
+import Placeholder from 'components/Placeholder';
+import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import styled from 'styled-components';
-import { selectThreeD, fetchModels, ThreeDState } from '../modules/threed';
-import { RootState } from '../reducers/index';
 import {
-  selectAppState,
-  setModelAndRevisionAndNode,
-  AppState,
-  setAssetId,
-} from '../modules/app';
+  selectThreeD,
+  fetchModels,
+  ThreeDState,
+  ThreeDModel,
+} from '../modules/threed';
+import { RootState } from '../reducers/index';
 import { fetchMappingsFromAssetId } from '../modules/assetmappings';
-import Placeholder from '../components/Placeholder';
 import Model3D from '../components/Model3D';
+import { ExtendedAsset } from '../modules/assets';
+import ViewingDetailsNavBar from './AssetPage/ViewingDetailsNavBar';
+import FlexTableWrapper from '../components/FlexTableWrapper';
 
 const Wrapper = styled.div`
   height: 100%;
+  padding: 24px 56px;
   display: flex;
-  width: 100%;
   flex-direction: column;
 
-  .back {
-    margin-bottom: 6px;
+  h1 {
+    margin-top: 12px;
+    margin-bottom: 0px;
   }
 `;
 
+type OrigProps = {
+  asset: ExtendedAsset;
+  modelId?: number;
+  revisionId?: number;
+  nodeId?: number;
+  onAssetClicked: (id: number) => void;
+  onNodeClicked: (modelId: number, revisionId: number, nodeId: number) => void;
+  onRevisionClicked: (modelId: number, revisionId: number) => void;
+  onClearSelection: () => void;
+  onViewDetails: (type: string, ...ids: number[]) => void;
+};
+
 type Props = {
-  setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
-  setAssetId: typeof setAssetId;
   fetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
   fetchModels: typeof fetchModels;
   threed: ThreeDState;
-  app: AppState;
-};
+  selectedModel: ThreeDModel | undefined;
+} & OrigProps;
 
 type State = {};
 class ThreeDViewerComponent extends Component<Props, State> {
   cache = {};
 
   componentDidMount() {
-    const {
-      app: { assetId },
-    } = this.props;
-    if (assetId) {
+    const { asset } = this.props;
+    if (asset.id) {
       this.getNodeId(true);
     }
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { rootAssetId, assetId } = this.props.app;
-    const { representsAsset } = this.props.threed;
-    if (assetId && prevProps.app.assetId !== assetId) {
-      this.getNodeId(true);
-    }
-    if (
-      rootAssetId &&
-      representsAsset[rootAssetId] &&
-      prevProps.threed.representsAsset[rootAssetId] !==
-        representsAsset[rootAssetId]
-    ) {
+    const { asset } = this.props;
+    if (prevProps.asset.id !== asset.id) {
       this.getNodeId(true);
     }
   }
 
   getNodeId = (fetchIfMissing: boolean) => {
-    const {
-      modelId,
-      revisionId,
-      nodeId,
-      assetId,
-      rootAssetId,
-    } = this.props.app;
     const { representsAsset } = this.props.threed;
+    const { nodeId, revisionId, modelId, asset } = this.props;
     if (nodeId) {
       return nodeId;
     }
 
-    if (assetId && fetchIfMissing) {
+    if (asset.id && fetchIfMissing) {
       if (modelId && revisionId) {
-        this.props.fetchMappingsFromAssetId(modelId, revisionId, assetId);
-      } else if (rootAssetId && representsAsset[rootAssetId]) {
-        representsAsset[rootAssetId].map(el =>
+        this.props.fetchMappingsFromAssetId(modelId, revisionId, asset.id);
+      } else if (asset.rootId && representsAsset[asset.rootId]) {
+        representsAsset[asset.rootId].map(el =>
           this.props.fetchMappingsFromAssetId(
             el.modelId,
             el.revisionId,
-            assetId
+            asset.id
           )
         );
       }
@@ -99,104 +96,112 @@ class ThreeDViewerComponent extends Component<Props, State> {
       nodeId: propNodeId,
       modelId,
       revisionId,
-      assetId,
-      rootAssetId,
-    } = this.props.app;
+      asset,
+      selectedModel,
+    } = this.props;
     const nodeId = propNodeId || this.getNodeId(false);
+    if (selectedModel && modelId && revisionId) {
+      return (
+        <>
+          <ViewingDetailsNavBar
+            name={selectedModel.name || '3D Model'}
+            onButtonClicked={() =>
+              this.props.onViewDetails(
+                'threed',
+                ...[modelId, revisionId, ...(nodeId ? [nodeId] : [])]
+              )
+            }
+            onBackClicked={this.props.onClearSelection}
+          />
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Model3D
+              assetId={asset.id!}
+              modelId={modelId!}
+              revisionId={revisionId!}
+              nodeId={nodeId}
+              onAssetIdChange={(id: number) => this.props.onAssetClicked(id)}
+              onNodeIdChange={(id: number) =>
+                this.props.onNodeClicked(modelId!, revisionId!, id)
+              }
+              cache={this.cache}
+            />
+          </div>
+        </>
+      );
+    }
     return (
-      <Model3D
-        assetId={assetId!}
-        modelId={modelId!}
-        revisionId={revisionId!}
-        nodeId={nodeId}
-        onAssetIdChange={(id: number) =>
-          this.props.setAssetId(rootAssetId!, id)
-        }
-        onNodeIdChange={(id: number) =>
-          this.props.setModelAndRevisionAndNode(modelId!, revisionId!, id)
-        }
-        cache={this.cache}
-      />
+      <>
+        <ViewingDetailsNavBar
+          name="3D Model"
+          onButtonClicked={() => {}}
+          onBackClicked={this.props.onClearSelection}
+        />
+        <div>
+          <Placeholder text="Loading..." componentName="3D Model" />
+        </div>
+      </>
     );
   };
 
   render() {
     const {
       threed: { models, representsAsset, loading },
-      app: { rootAssetId, modelId, revisionId },
+      modelId,
+      revisionId,
+      asset,
     } = this.props;
     if (modelId && revisionId) {
-      return (
-        <Wrapper>
-          {rootAssetId &&
-            representsAsset[rootAssetId] &&
-            representsAsset[rootAssetId].length !== 1 && (
-              <div className="back">
-                <Button
-                  onClick={() => {
-                    this.props.setModelAndRevisionAndNode();
-                  }}
-                >
-                  Back
-                </Button>
-              </div>
-            )}
-          <div style={{ flex: 1 }}>{this.render3D()}</div>
-        </Wrapper>
-      );
-    }
-    if (loading) {
-      return <Placeholder componentName="3D Viewer" text="Loading Models..." />;
-    }
-    if (!rootAssetId) {
-      return (
-        <Placeholder componentName="3D Viewer" text="No Root Asset Selected" />
-      );
-    }
-    const mappedAssets = representsAsset[rootAssetId];
-    if (!mappedAssets || mappedAssets.length === 0) {
-      return (
-        <Placeholder
-          componentName="3D Viewer"
-          text="No 3D Model Mapped to Asset"
-        />
-      );
+      return this.render3D();
     }
     return (
-      <Table
-        dataSource={representsAsset[rootAssetId!]}
-        pagination={false}
-        rowKey="modelId"
-        onRow={item => ({
-          onClick: () => {
-            this.props.setModelAndRevisionAndNode(
-              item.modelId,
-              item.revisionId
-            );
-          },
-        })}
-        columns={[
-          {
-            title: '3D Model Names',
-            key: 'name',
-            render: item => {
-              const model = models[item.modelId];
-              if (model) {
-                return <span>{model.name}</span>;
-              }
-              return <span>Loading...</span>;
-            },
-          },
-        ]}
-      />
+      <Wrapper>
+        <VerticallyCenteredRow>
+          <div className="left">
+            <p />
+          </div>
+          <div className="right">
+            <Button icon="plus" type="primary">
+              Create 3D Model
+            </Button>
+          </div>
+        </VerticallyCenteredRow>
+        <FlexTableWrapper>
+          <Table
+            dataSource={representsAsset[asset.rootId!]}
+            loading={loading}
+            pagination={false}
+            rowKey="modelId"
+            onRow={item => ({
+              onClick: () => {
+                this.props.onRevisionClicked(item.modelId, item.revisionId);
+              },
+            })}
+            columns={[
+              {
+                title: '3D Model Names',
+                key: 'name',
+                render: item => {
+                  const model = models[item.modelId];
+                  if (model) {
+                    return <span>{model.name}</span>;
+                  }
+                  return <span>Loading...</span>;
+                },
+              },
+            ]}
+          />
+        </FlexTableWrapper>
+      </Wrapper>
     );
   }
 }
 
-const mapStateToProps = (state: RootState) => {
+const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
     threed: selectThreeD(state),
-    app: selectAppState(state),
+    selectedModel: origProps.modelId
+      ? selectThreeD(state).models[origProps.modelId]
+      : undefined,
   };
 };
 
@@ -204,9 +209,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       fetchModels,
-      setAssetId,
       fetchMappingsFromAssetId,
-      setModelAndRevisionAndNode,
     },
     dispatch
   );

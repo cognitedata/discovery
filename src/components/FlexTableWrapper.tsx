@@ -44,6 +44,9 @@ const FlexTableWrapper = styled.div`
     .ant-table-placeholder {
       height: 100%;
     }
+    .ant-empty-description {
+      color: #dfdfdf;
+    }
   }
 `;
 

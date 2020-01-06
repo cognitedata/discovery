@@ -5,12 +5,14 @@ import { Button, Tabs } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
+import ThreeDViewerComponent from 'containers/ThreeDViewerComponent';
 import { AssetsState, fetchAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import AssetFilesSection from './AssetFilesSection';
 import AssetSidebar from './AssetSidebar';
 import AssetTimeseriesSection from './AssetTimeseriesSection';
+import AssetEventsSection from './AssetEventsSection';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -70,6 +72,8 @@ type OrigProps = {
     params: {
       tab?: string;
       itemId?: number;
+      itemId2?: number;
+      itemId3?: number;
       assetId: number;
       tenant: string;
     };
@@ -121,6 +125,14 @@ class AssetPage extends React.Component<Props, State> {
     return this.props.match.params.itemId;
   }
 
+  get itemId2() {
+    return this.props.match.params.itemId2;
+  }
+
+  get itemId3() {
+    return this.props.match.params.itemId3;
+  }
+
   onBackClicked = () => {
     this.props.push(`/${this.props.match.params.tenant}/search/assets`);
   };
@@ -131,14 +143,16 @@ class AssetPage extends React.Component<Props, State> {
     );
   };
 
-  onSelect = (id: number) => {
+  onSelect = (...ids: number[]) => {
     this.props.push(
-      `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}/${id}`
+      `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}/${ids.join(
+        '/'
+      )}`
     );
   };
 
-  onViewDetails = (type: string, id: number) => {
-    this.props.push(`/${this.tenant}/${type}/${id}`);
+  onViewDetails = (type: string, ...ids: number[]) => {
+    this.props.push(`/${this.tenant}/${type}/${ids.join('/')}`);
   };
 
   renderCurrentTab = () => {
@@ -186,6 +200,32 @@ class AssetPage extends React.Component<Props, State> {
             mimeTypes={['svg', 'SVG']}
             fileId={this.itemId}
             onSelect={this.onSelect}
+            onClearSelection={this.onClearSelection}
+            onViewDetails={this.onViewDetails}
+          />
+        );
+      }
+      case 'events': {
+        return (
+          <AssetEventsSection
+            asset={this.asset}
+            eventId={this.itemId}
+            onSelect={this.onSelect}
+            onClearSelection={this.onClearSelection}
+            onViewDetails={this.onViewDetails}
+          />
+        );
+      }
+      case 'threed': {
+        return (
+          <ThreeDViewerComponent
+            asset={this.asset}
+            modelId={this.itemId}
+            revisionId={this.itemId2}
+            nodeId={this.itemId3}
+            onAssetClicked={console.log}
+            onRevisionClicked={this.onSelect}
+            onNodeClicked={this.onSelect}
             onClearSelection={this.onClearSelection}
             onViewDetails={this.onViewDetails}
           />
