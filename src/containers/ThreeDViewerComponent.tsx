@@ -96,7 +96,6 @@ class ThreeDViewerComponent extends Component<Props, State> {
       nodeId: propNodeId,
       modelId,
       revisionId,
-      asset,
       selectedModel,
     } = this.props;
     const nodeId = propNodeId || this.getNodeId(false);
@@ -115,7 +114,6 @@ class ThreeDViewerComponent extends Component<Props, State> {
           />
           <div style={{ flex: 1, position: 'relative' }}>
             <Model3D
-              assetId={asset.id!}
               modelId={modelId!}
               revisionId={revisionId!}
               nodeId={nodeId}

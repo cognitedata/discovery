@@ -119,8 +119,11 @@ class AssetSidebar extends React.Component<Props, State> {
               <Descriptions.Item label="Description">
                 {asset.description}
               </Descriptions.Item>
+              <Descriptions.Item label="External ID">
+                {asset.externalId}
+              </Descriptions.Item>
               <Descriptions.Item label="ID">{asset.id}</Descriptions.Item>
-              <Descriptions.Item label="Created">
+              <Descriptions.Item label="Created Time">
                 {moment(asset.createdTime).format('YYYY-MM-DD hh:mm')}
               </Descriptions.Item>
               <Descriptions.Item label="Last Modified">

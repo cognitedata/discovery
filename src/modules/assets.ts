@@ -503,5 +503,7 @@ export const actions = {
 
 // Selectors
 export const selectAssets = (state: RootState) => state.assets || initialState;
+export const selectAssetById = (state: RootState, id: number) =>
+  state.assets.all[id];
 export const selectCurrentAsset = (state: RootState) =>
   state.app.assetId ? selectAssets(state).all[state.app.assetId] : undefined;

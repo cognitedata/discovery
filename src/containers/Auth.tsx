@@ -16,9 +16,12 @@ import {
   fetchUserGroups,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
+import { fetchModels } from '../modules/threed';
 import SearchPage from './SearchPage';
 import AssetPage from './AssetPage';
-import { fetchModels } from '../modules/threed';
+import TimeseriesPage from './TimeseriesPage';
+import FilePage from './FilePage';
+import ThreeDPage from './ThreeDPage';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -155,6 +158,21 @@ class Auth extends React.Component<Props, State> {
                   path="/:tenant/asset/:assetId/:tab/:itemId/:itemId2?/:itemId3?/"
                   exact
                   component={AssetPage}
+                />
+                <Route
+                  path="/:tenant/timeseries/:timeseriesId"
+                  exact
+                  component={TimeseriesPage}
+                />
+                <Route
+                  path="/:tenant/file/:fileId"
+                  exact
+                  component={FilePage}
+                />
+                <Route
+                  path="/:tenant/threed/:modelId/:revisionId/:nodeId?"
+                  exact
+                  component={ThreeDPage}
                 />
               </Switch>
             </Layout.Content>

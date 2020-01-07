@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
-import { Input, Icon, Button, Tabs } from 'antd';
+import { Input, Icon, Button, Tabs, message } from 'antd';
 import Table, { ColumnProps } from 'antd/lib/table';
 import { push } from 'connected-react-router';
 import debounce from 'lodash/debounce';
@@ -22,7 +22,7 @@ import {
   setFilesTable,
   setThreeDTable,
 } from '../../modules/search';
-import { ThreeDState } from '../../modules/threed';
+import { ThreeDState, ThreeDModel } from '../../modules/threed';
 import {
   addTimeseriesToState,
   TimeseriesState,
@@ -354,6 +354,27 @@ class SearchPage extends React.Component<Props, State> {
                         `/${this.props.match.params.tenant}/asset/${row.id}`
                       );
                       break;
+                    case 'timeseries':
+                      this.props.push(
+                        `/${this.props.match.params.tenant}/timeseries/${row.id}`
+                      );
+                      break;
+                    case 'files':
+                      this.props.push(
+                        `/${this.props.match.params.tenant}/file/${row.id}`
+                      );
+                      break;
+                    case 'threed': {
+                      const model = row as ThreeDModel;
+                      if (model.revisions && model.revisions.length > 0) {
+                        this.props.push(
+                          `/${this.props.match.params.tenant}/threed/${model.id}/${model.revisions[0].id}`
+                        );
+                      } else {
+                        message.info('Unable to preview model');
+                      }
+                      break;
+                    }
                   }
                 },
               })}

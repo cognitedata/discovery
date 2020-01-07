@@ -33,7 +33,6 @@ declare global {
 type Props = {
   modelId: number;
   revisionId: number;
-  assetId: number;
   cache?: CacheObject;
   nodeId?: number;
   onAssetIdChange: (assetId: number) => void;

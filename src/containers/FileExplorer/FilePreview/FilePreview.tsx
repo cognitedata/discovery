@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Icon, Pagination, Tabs, Spin } from 'antd';
+import { Button, Pagination, Tabs, Spin } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -47,46 +47,6 @@ const Wrapper = styled.div`
   && .current {
     background-color: #dfdfdf;
   }
-`;
-
-type ItemPreviewProps = {
-  hideSidebar: string;
-};
-const ItemPreview = styled.div<ItemPreviewProps>`
-  display: flex;
-  flex: 1;
-  margin-top: 12px;
-  overflow: hidden;
-  .content {
-    border-left: 4px solid #dedede;
-    padding-left: 12px;
-    flex: ${props => (props.hideSidebar === 'true' ? '0' : '1 300px')};
-    min-width: ${props => (props.hideSidebar === 'true' ? '0px' : '400px')};
-    overflow: auto;
-    position: relative;
-    overflow: visible;
-    width: 0;
-    transition: 0.4s all;
-    display: flex;
-    flex-direction: column;
-  }
-  .content .ant-tabs {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  .content .ant-tabs-content {
-    flex: 1;
-    display: flex;
-    height: 0px;
-  }
-  .content .ant-tabs .ant-tabs-top-content > .ant-tabs-tabpane {
-    overflow-y: auto;
-  }
-  .content .ant-tabs .ant-tabs-top-content > .ant-tabs-tabpane pre {
-    overflow-x: auto;
-  }
   .preview {
     flex: 3;
     overflow: hidden;
@@ -114,34 +74,6 @@ const StyledPDFViewer = styled(Document)`
   }
 `;
 
-const HideButton = styled(Button)`
-  && {
-    background: #dedede;
-    border: none;
-    position: absolute;
-    left: -21px;
-    width: 18px !important;
-    padding: 0;
-    height: 60px;
-    top: 12px;
-    display: flex;
-    border-radius: 0px;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    align-items: center;
-  }
-
-  &&:hover,
-  &&:active,
-  &&:focus {
-    background: #dedede !important;
-  }
-
-  && > * {
-    margin: 0 auto;
-  }
-`;
-
 const ButtonRow = styled.div`
   display: flex;
   flex-wrap: wrap;
@@ -162,12 +94,11 @@ type Props = {
   threed: ThreeDState;
   setAssetId: typeof setAssetId;
   fetchFile: typeof fetchFile;
-  selectedFile?: FilesMetadata;
+  file?: FilesMetadata;
 } & OrigProps;
 
 type State = {
   filePreviewUrl?: string;
-  hideSidebar: boolean;
   editFileVisible: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
@@ -178,7 +109,6 @@ class FilePreview extends React.Component<Props, State> {
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
       editFileVisible: false,
-      hideSidebar: false,
       pdfState: {
         numPages: 0,
         page: 1,
@@ -188,14 +118,14 @@ class FilePreview extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    if (!this.props.selectedFile) {
+    if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
     }
     this.fetchFileUrl();
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (!this.props.selectedFile) {
+    if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
     }
     if (this.props.fileId !== prevProps.fileId) {
@@ -204,7 +134,7 @@ class FilePreview extends React.Component<Props, State> {
   }
 
   get type(): FileExplorerTabsType {
-    const { mimeType } = this.props.selectedFile!;
+    const { mimeType } = this.props.file!;
     if (!mimeType) {
       return 'all';
     }
@@ -239,11 +169,11 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   onDownloadClicked = async () => {
-    const { fileId, selectedFile } = this.props;
+    const { fileId, file } = this.props;
     trackUsage('FilePreview.DownloadFile', { filedId: fileId });
     const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
     const blob = await this.downloadFile(url.downloadUrl);
-    saveData(blob, selectedFile!.name); // saveAs is a part of FileSaver.js
+    saveData(blob, file!.name); // saveAs is a part of FileSaver.js
   };
 
   onDeleteClicked = async () => {
@@ -265,17 +195,17 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   renderFileDetailsPane = () => {
-    const { selectedFile } = this.props;
-    if (!selectedFile) {
+    const { file } = this.props;
+    if (!file) {
       return <Spin />;
     }
     const { pdfState, editFileVisible } = this.state;
-    const { name, source, mimeType, createdTime, metadata, id } = selectedFile;
+    const { name, source, mimeType, createdTime, metadata, id } = file;
     return (
       <>
         {editFileVisible && (
           <EditFileModal
-            file={selectedFile}
+            file={file}
             onClose={() => this.setState({ editFileVisible: false })}
           />
         )}
@@ -301,7 +231,7 @@ class FilePreview extends React.Component<Props, State> {
           {this.type === 'documents' && (
             <TabPane tab={<BetaBadge>Utilities</BetaBadge>} key="2">
               <FilePreviewDocumentTab
-                selectedDocument={selectedFile}
+                selectedDocument={file}
                 downloadFile={this.downloadFile}
                 deleteFile={this.props.deleteFile}
                 isPnIDParsingAllowed={pdfState.numPages === 1}
@@ -396,7 +326,7 @@ class FilePreview extends React.Component<Props, State> {
     if (this.state.filePreviewUrl) {
       return (
         <ImageAnnotator
-          file={this.props.selectedFile!}
+          file={this.props.file!}
           filePreviewUrl={this.state.filePreviewUrl!}
         />
       );
@@ -407,7 +337,7 @@ class FilePreview extends React.Component<Props, State> {
   renderPnID = () => {
     return (
       <div className="preview">
-        <PNIDViewer selectedDocument={this.props.selectedFile!} />
+        <PNIDViewer selectedDocument={this.props.file!} />
       </div>
     );
   };
@@ -424,40 +354,20 @@ class FilePreview extends React.Component<Props, State> {
         return (
           <Placeholder
             text="Unable to Preview File"
-            componentName={this.props.selectedFile!.name}
+            componentName={this.props.file!.name}
           />
         );
     }
   };
 
   render() {
-    const { hideSidebar } = this.state;
-    const { selectedFile } = this.props;
+    const { file } = this.props;
 
-    if (!selectedFile) {
+    if (!file) {
       return <Spin />;
     }
 
-    return (
-      <Wrapper>
-        <ItemPreview hideSidebar={hideSidebar ? 'true' : 'false'}>
-          {this.renderContent()}
-          <div className="content">
-            <HideButton
-              onClick={() =>
-                this.setState(state => ({
-                  ...state,
-                  hideSidebar: !state.hideSidebar,
-                }))
-              }
-            >
-              <Icon type={hideSidebar ? 'caret-left' : 'caret-right'} />
-            </HideButton>
-            {this.renderFileDetailsPane()}
-          </div>
-        </ItemPreview>
-      </Wrapper>
-    );
+    return <Wrapper>{this.renderContent()}</Wrapper>;
   }
 }
 
@@ -466,7 +376,7 @@ const mapStateToProps = (state: RootState, props: OrigProps) => {
     app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
-    selectedFile: selectFiles(state).files[props.fileId],
+    file: selectFiles(state).files[props.fileId],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
