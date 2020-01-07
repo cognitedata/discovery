@@ -196,6 +196,8 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
         buildLabel={this.buildLabel}
         chooseNodeColor={this.chooseNodeColor}
         chooseRelationshipColor={this.chooseRelationshipColor}
+        onNodeClicked={console.log}
+        onLinkClicked={console.log}
       />
     );
   }

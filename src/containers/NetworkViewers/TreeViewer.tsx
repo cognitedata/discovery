@@ -6,25 +6,12 @@ import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Select, Spin, message, Button, Icon } from 'antd';
 import * as d3 from 'd3';
-import Placeholder from 'components/Placeholder';
 import { IdEither } from '@cognite/sdk';
 import { withResizeDetector } from 'react-resize-detector';
 import TypeBadge from 'containers/TypeBadge';
-import {
-  AppState,
-  selectAppState,
-  setAssetId,
-  setTimeseriesId,
-} from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import { trackUsage } from '../../utils/metrics';
-import {
-  fetchAssets,
-  selectAssets,
-  AssetsState,
-  selectCurrentAsset,
-  ExtendedAsset,
-} from '../../modules/assets';
+import { fetchAssets, selectAssets, AssetsState } from '../../modules/assets';
 import {
   fetchTimeseries,
   selectTimeseries,
@@ -204,22 +191,21 @@ type OwnProps = {
     visibleAssetIds: number[];
     setVisibleAssetIds: (ids: number[]) => void;
   };
+  onNodeClicked: (node: RelationshipResource) => void;
+  onLinkClicked: (link: Relationship) => void;
 };
 
 type StateProps = {
-  app: AppState;
   assets: AssetsState;
   types: TypesState;
-  asset: ExtendedAsset | undefined;
   timeseries: TimeseriesState;
   threed: ThreeDState;
 };
+
 type DispatchProps = {
   fetchRelationshipsForAssetId: typeof fetchRelationshipsForAssetId;
-  setAssetId: typeof setAssetId;
   fetchAssets: typeof fetchAssets;
   fetchTimeseries: typeof fetchTimeseries;
-  setTimeseriesId: typeof setTimeseriesId;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -255,30 +241,28 @@ class RelationshipTreeViewer extends Component<Props, State> {
   }
 
   async componentDidMount() {
-    if (this.props.app.assetId) {
-      if (this.forceGraphRef.current) {
-        // add collision force
-        this.forceGraphRef.current.d3Force(
-          'collision',
-          // @ts-ignore
-          d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
-        );
-        this.forceGraphRef.current.d3Force(
-          'charge',
-          // @ts-ignore
-          d3.forceManyBody().strength(-80)
-        );
-      }
-
-      if (this.props.asset) {
-        this.fetchRelationshipforAssetId(this.props.asset);
-      } else {
-        this.props.fetchAssets([{ id: this.props.app.assetId }]);
-      }
+    if (this.forceGraphRef.current) {
+      // add collision force
+      this.forceGraphRef.current.d3Force(
+        'collision',
+        // @ts-ignore
+        d3.forceCollide(node => Math.sqrt(100 / (node.level + 1)))
+      );
+      this.forceGraphRef.current.d3Force(
+        'charge',
+        // @ts-ignore
+        d3.forceManyBody().strength(-80)
+      );
     }
+
+    // if (this.props.asset) {
+    //   this.fetchRelationshipforAssetId(this.props.asset);
+    // } else {
+    //   this.props.fetchAssets([{ id: this.props.asset.id }]);
+    // }
   }
 
-  async componentDidUpdate(prevProps: Props) {
+  async componentDidUpdate() {
     const { data } = this.props;
     if (
       data.nodes.length !== this.state.data.nodes.length ||
@@ -309,34 +293,18 @@ class RelationshipTreeViewer extends Component<Props, State> {
         this.setState({ loading: false });
       }
     }
-    if (prevProps.asset === undefined && this.props.asset) {
-      this.fetchRelationshipforAssetId(this.props.asset);
-    }
-    if (
-      prevProps.asset &&
-      this.props.asset &&
-      prevProps.asset.id !== this.props.asset.id
-    ) {
-      this.fetchRelationshipforAssetId(this.props.asset);
-    }
-    if (
-      this.props.app.assetId &&
-      prevProps.app.assetId !== this.props.app.assetId
-    ) {
-      this.props.fetchAssets([{ id: this.props.app.assetId }]);
-    }
   }
 
-  fetchRelationshipforAssetId = (asset: ExtendedAsset) => {
-    const { assetSelection } = this.props;
-    if (assetSelection) {
-      assetSelection.setVisibleAssetIds([
-        ...assetSelection.visibleAssetIds,
-        asset.id,
-      ]);
-      this.props.fetchRelationshipsForAssetId(asset);
-    }
-  };
+  // fetchRelationshipforAssetId = (asset: ExtendedAsset) => {
+  //   const { assetSelection } = this.props;
+  //   if (assetSelection) {
+  //     assetSelection.setVisibleAssetIds([
+  //       ...assetSelection.visibleAssetIds,
+  //       asset.id,
+  //     ]);
+  //     this.props.fetchRelationshipsForAssetId(asset);
+  //   }
+  // };
 
   loadMissingResources = (nodes: any[]) => {
     const ids = nodes.reduce(
@@ -384,27 +352,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
   };
 
   onNodeClicked = (node: RelationshipResource) => {
-    switch (node.resource) {
-      case 'asset': {
-        const {
-          assets: { all, externalIdMap },
-        } = this.props;
-        const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
-        if (asset) {
-          this.setState({ selectedAsset: node });
-        } else {
-          message.error('Asset not yet loaded.');
-        }
-        return;
-      }
-      case 'timeSeries': {
-        this.props.setTimeseriesId(Number(node.resourceId));
-        trackUsage('RelationshipViewer.TimeseriesClicked', {
-          assetId: node.resourceId,
-        });
-      }
-    }
+    this.props.onNodeClicked(node);
   };
 
   onLoadMoreSelected = (node: RelationshipResource, navigateAway = true) => {
@@ -419,7 +367,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
           const { assetSelection } = this.props;
           if (assetSelection) {
             if (navigateAway) {
-              this.props.setAssetId(asset.rootId, asset.id);
+              this.props.onNodeClicked(node);
               assetSelection.setVisibleAssetIds([asset.id]);
             } else {
               this.props.fetchRelationshipsForAssetId(asset);
@@ -466,10 +414,6 @@ class RelationshipTreeViewer extends Component<Props, State> {
   renderLegend = () => {
     const { showLegend } = this.state;
     const nodes: { [key: string]: RelationshipResource } = {
-      'Current Asset': {
-        resource: 'asset',
-        resourceId: `${this.props.app.assetId}`,
-      },
       Asset: { resource: 'asset', resourceId: '-1' },
       Timeseries: { resource: 'timeSeries', resourceId: '-1' },
       '3D': { resource: 'threeD', resourceId: '-1:-1' },
@@ -645,9 +589,6 @@ class RelationshipTreeViewer extends Component<Props, State> {
     const { controls, loading, data, selectedAsset } = this.state;
     const { assetSelection } = this.props;
     const { externalIdMap } = this.props.assets;
-    if (!this.props.app.assetId) {
-      return <Placeholder componentName="Relationship Viewer" />;
-    }
     return (
       <Wrapper ref={this.wrapperRef}>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
@@ -758,9 +699,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    app: selectAppState(state),
     assets: selectAssets(state),
-    asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
     types: selectTypesState(state),
@@ -771,10 +710,8 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
       fetchRelationshipsForAssetId,
-      setAssetId,
       fetchAssets,
       fetchTimeseries,
-      setTimeseriesId,
     },
     dispatch
   );

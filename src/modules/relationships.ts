@@ -1,9 +1,9 @@
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
+import { Asset } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
-import { ExtendedAsset } from './assets';
 import { checkForAccessPermission, arrayToObjectById } from '../utils/utils';
 
 // Constants
@@ -77,7 +77,7 @@ export async function postWithCursor(url: string, data: any) {
   return { items };
 }
 
-export function fetchRelationshipsForAssetId(asset: ExtendedAsset) {
+export function fetchRelationshipsForAssetId(asset: Asset) {
   return async (
     dispatch: ThunkDispatch<any, void, FetchRelationshipsAction>,
     getState: () => RootState

@@ -54,8 +54,8 @@ class DiscoveryHeader extends React.Component<Props, State> {
 
   get selectedKeys(): string[] {
     const { pathname } = this.props;
-    const firstPart = pathname.substring(0, pathname.indexOf('/', 1));
-    if (firstPart === 'relationships') {
+    const [, , path] = pathname.split('/');
+    if (path === 'relationships') {
       return ['relationships'];
     }
     return ['resources'];
@@ -78,7 +78,7 @@ class DiscoveryHeader extends React.Component<Props, State> {
           </Menu.Item>
           <Menu.Item
             key="relationships"
-            onClick={() => this.props.push(`/${tenant}/datakits`)}
+            onClick={() => this.props.push(`/${tenant}/relationships`)}
           >
             <span>Relationships</span>
           </Menu.Item>

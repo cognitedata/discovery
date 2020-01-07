@@ -395,6 +395,8 @@ class RelationshipTreeViewer extends Component<Props, State> {
               setVisibleAssetIds: ids =>
                 this.setState({ visibleAssetIds: ids }),
             }}
+            onNodeClicked={console.log}
+            onLinkClicked={console.log}
           />
         </div>
         {graphQueryVisible && (

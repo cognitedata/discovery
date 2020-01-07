@@ -22,6 +22,7 @@ import AssetPage from './AssetPage';
 import TimeseriesPage from './TimeseriesPage';
 import FilePage from './FilePage';
 import ThreeDPage from './ThreeDPage';
+import RelationshipPage from './RelationshipPage';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -139,6 +140,11 @@ class Auth extends React.Component<Props, State> {
             >
               <Switch>
                 <Route path="/:tenant/" exact component={SearchPage} />
+                <Route
+                  path="/:tenant/relationships"
+                  exact
+                  component={RelationshipPage}
+                />
                 <Route
                   path="/:tenant/search/:tab"
                   exact
