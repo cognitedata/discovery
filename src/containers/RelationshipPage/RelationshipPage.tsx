@@ -484,7 +484,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
             chooseNodeColor={this.chooseNodeColor}
             chooseRelationshipColor={this.chooseRelationshipColor}
             onNodeClicked={this.onNodeClicked}
-            onLinkClicked={console.log}
+            onLinkClicked={() => message.info('Coming soon')}
           />
         </div>
         {graphQueryVisible && (

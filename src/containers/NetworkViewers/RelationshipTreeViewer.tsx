@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import Placeholder from 'components/Placeholder';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import RelationshipQueryModal from 'containers/Modals/RelationshipQueryModal';
 import styled from 'styled-components';
 import {
@@ -395,8 +395,8 @@ class RelationshipTreeViewer extends Component<Props, State> {
               setVisibleAssetIds: ids =>
                 this.setState({ visibleAssetIds: ids }),
             }}
-            onNodeClicked={console.log}
-            onLinkClicked={console.log}
+            onNodeClicked={() => message.info('Coming soon')}
+            onLinkClicked={() => message.info('Coming soon')}
           />
         </div>
         {graphQueryVisible && (

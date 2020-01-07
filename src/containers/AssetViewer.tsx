@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, bindActionCreators } from 'redux';
 import { BetaTag } from 'components/BetaWarning';
+import { message } from 'antd';
 import { fetchAsset, selectAssets, AssetsState } from '../modules/assets';
 import { fetchFiles } from '../modules/files';
 import {
@@ -108,7 +109,10 @@ export class AssetViewer extends React.Component<Props, State> {
 
   renderAssetNetworkVX = () => {
     return (
-      <AssetTreeViewerVX asset={this.asset!} onAssetClicked={console.log} />
+      <AssetTreeViewerVX
+        asset={this.asset!}
+        onAssetClicked={() => message.info('Coming soon')}
+      />
     );
   };
 

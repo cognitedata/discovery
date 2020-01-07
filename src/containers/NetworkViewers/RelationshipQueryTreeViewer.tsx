@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { message } from 'antd';
 import { RootState } from '../../reducers/index';
 import { selectAssets, AssetsState } from '../../modules/assets';
 
@@ -196,8 +197,8 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
         buildLabel={this.buildLabel}
         chooseNodeColor={this.chooseNodeColor}
         chooseRelationshipColor={this.chooseRelationshipColor}
-        onNodeClicked={console.log}
-        onLinkClicked={console.log}
+        onNodeClicked={() => message.info('Coming soon')}
+        onLinkClicked={() => message.info('Coming soon')}
       />
     );
   }

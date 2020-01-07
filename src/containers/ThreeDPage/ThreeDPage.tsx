@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import Model3D from 'components/Model3D';
@@ -106,7 +106,7 @@ class ThreeDPage extends React.Component<Props, State> {
                 modelId={modelId}
                 revisionId={revisionId}
                 nodeId={this.nodeId}
-                onAssetIdChange={(id: number) => console.log(id)}
+                onAssetIdChange={() => message.info('Coming soon')}
                 onNodeIdChange={(id: number) =>
                   this.props.push(
                     `/${this.tenant}/threed/${modelId}/${revisionId}/${id}`

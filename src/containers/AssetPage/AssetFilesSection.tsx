@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import { FilesMetadata } from '@cognite/sdk';
 import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
@@ -125,7 +125,7 @@ class AssetFileSection extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = (fileId: number) => {
-    console.log(fileId);
+    message.info(`Coming soon ${fileId}`);
   };
 
   renderItem = () => {

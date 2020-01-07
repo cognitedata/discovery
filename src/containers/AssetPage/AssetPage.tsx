@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Tabs } from 'antd';
+import { Button, Tabs, message } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
@@ -223,7 +223,9 @@ class AssetPage extends React.Component<Props, State> {
             modelId={this.itemId}
             revisionId={this.itemId2}
             nodeId={this.itemId3}
-            onAssetClicked={console.log}
+            onAssetClicked={assetId =>
+              message.success(`Coming soon ${assetId}`)
+            }
             onRevisionClicked={this.onSelect}
             onNodeClicked={this.onSelect}
             onClearSelection={this.onClearSelection}

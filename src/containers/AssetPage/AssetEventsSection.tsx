@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
@@ -121,7 +121,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = (fileId: number) => {
-    console.log(fileId);
+    message.success(`Coming soon ${fileId}`);
   };
 
   renderItem = () => {
