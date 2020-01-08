@@ -141,9 +141,15 @@ class AssetFileSection extends React.Component<Props, State> {
           <div
             style={{
               marginTop: '24px',
+              flex: 1,
             }}
           >
-            <FilePreview fileId={fileId} deleteFile={() => {}} />
+            <FilePreview
+              assetId={this.props.asset.id}
+              onViewDetails={this.props.onViewDetails}
+              fileId={fileId}
+              deleteFile={() => {}}
+            />
           </div>
         </>
       );

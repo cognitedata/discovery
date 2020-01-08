@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Switch, Button, Icon } from 'antd';
+import { Layout, Button, Icon } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import {
@@ -8,51 +8,34 @@ import {
   WidthProvider,
   Layout as GridLayout,
 } from 'react-grid-layout';
-import { fetchTypes } from '../modules/types';
+import { fetchTypes } from '../../modules/types';
 import {
   selectThreeD,
   ThreeDState,
   fetchRevisions,
   fetchModels,
-} from '../modules/threed';
-import { selectAssets, AssetsState } from '../modules/assets';
-import { RootState } from '../reducers/index';
-import {
-  AppState,
-  selectAppState,
-  setAssetId,
-  resetAppState,
-  setModelAndRevisionAndNode,
-} from '../modules/app';
-import AssetViewer, { ViewerType, ViewerTypeMap } from './AssetViewer';
-import TimeseriesPreview from './TimeseriesPreview';
-import { sdk } from '../index';
-import { trackUsage } from '../utils/metrics';
-import ComponentSelector from '../components/ComponentSelector';
-import { checkForAccessPermission } from '../utils/utils';
+} from '../../modules/threed';
+import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
+import { RootState } from '../../reducers/index';
+import AssetCustomSectionView, {
+  AssetViewerType,
+  AssetViewerTypeMap,
+} from './AssetCustomSectionView';
+import TimeseriesPreview from '../TimeseriesPreview';
+import { sdk } from '../../index';
+import { trackUsage } from '../../utils/metrics';
+import ComponentSelector from '../../components/ComponentSelector';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
 
 interface DiscoveryLayout extends GridLayout {
-  viewType: ViewerType;
+  viewType: AssetViewerType;
 }
 
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 // 13FV1234 is useful asset
-const { Content, Header } = Layout;
-
-const StyledHeader = styled(Header)`
-  && {
-    background-color: rgba(0, 0, 0, 0);
-    z-index: 100;
-    padding-left: 24px;
-    background: #343434;
-  }
-  && button {
-    margin-right: 12px;
-  }
-`;
+const { Content } = Layout;
 
 type LayoutProps = {
   editable: boolean;
@@ -98,14 +81,17 @@ const DraggingView = styled.div`
   }
 `;
 
-const AddButton = styled(Button)`
-  && {
-    position: absolute;
-    right: 24px;
-    bottom: 24px;
-    z-index: 1000;
+const ButtonArea = styled.div`
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+
+  && > * {
+    margin-left: 24px;
   }
 `;
+
 const DeleteButton = styled(Button)`
   && {
     position: absolute;
@@ -116,18 +102,14 @@ const DeleteButton = styled(Button)`
 `;
 
 type Props = {
-  match: any;
-  history: any;
-  location: any;
+  asset: ExtendedAsset;
+  tenant: string;
+  search: string | undefined;
   threed: ThreeDState;
-  app: AppState;
   assets: AssetsState;
+  onViewDetails: (type: string, ...ids: number[]) => void;
   doFetchRevisions: typeof fetchRevisions;
   fetchModels: typeof fetchModels;
-  doFetchTypes: typeof fetchTypes;
-  setAssetId: typeof setAssetId;
-  setModelAndRevisionAndNode: typeof setModelAndRevisionAndNode;
-  resetAppState: typeof resetAppState;
 };
 
 type State = {
@@ -135,7 +117,7 @@ type State = {
   layout: DiscoveryLayout[];
 };
 
-class Main extends React.Component<Props, State> {
+class AssetCustomSection extends React.Component<Props, State> {
   gridRef = React.createRef<Responsive>();
 
   constructor(props: Props) {
@@ -192,45 +174,13 @@ class Main extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.checkAndFixURL();
-
-    checkForAccessPermission(this.props.app.groups, 'assetsAcl', 'READ');
-
-    this.props.fetchModels();
-
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 200);
   }
 
-  componentDidUpdate() {
-    this.checkAndFixURL();
-  }
-
-  checkAndFixURL = () => {
-    const {
-      match: {
-        params: { rootAssetId, assetId },
-      },
-    } = this.props;
-    if (assetId || rootAssetId) {
-      const asset = this.props.assets.all[Number(assetId || rootAssetId)];
-      if (asset && Number(asset.rootId) !== Number(rootAssetId)) {
-        this.onAssetIdChange(asset.rootId, asset.id);
-      }
-    }
-  };
-
-  onAssetIdChange = (rootAssetId?: number, assetId?: number) => {
-    if (rootAssetId) {
-      this.props.setAssetId(rootAssetId, assetId || rootAssetId);
-    } else {
-      this.props.resetAppState();
-    }
-  };
-
   onAddComponent = () => {
-    trackUsage('Main.ComponentedAdded');
+    trackUsage('AssetCustomSection.ComponentedAdded');
     const i =
       this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
       1;
@@ -253,7 +203,7 @@ class Main extends React.Component<Props, State> {
   };
 
   changeEdit = (edit = false) => {
-    trackUsage('Main.LayoutEdit', { edit });
+    trackUsage('AssetCustomSection.LayoutEdit', { edit });
     this.setState({
       editLayout: edit,
     });
@@ -266,7 +216,7 @@ class Main extends React.Component<Props, State> {
     }));
     this.setState({ layout });
     // Track usage where the size has changed.
-    trackUsage('Main.LayoutSizeChange', {
+    trackUsage('AssetCustomSection.LayoutSizeChange', {
       layoutChanged: newLayout.filter(el => {
         const orig = this.state.layout.find(it => it.i === el.i)!;
         return (
@@ -286,13 +236,16 @@ class Main extends React.Component<Props, State> {
     return true;
   };
 
-  changeLayoutType = (type: ViewerType, index: string) => {
+  changeLayoutType = (type: AssetViewerType, index: string) => {
     const { layout } = this.state;
     const newArray = [...layout];
     const arrayItem = newArray.find(item => item.i === index);
     if (arrayItem) {
       arrayItem.viewType = type;
-      trackUsage('Main.LayoutTypeChange', { layout: arrayItem, type });
+      trackUsage('AssetCustomSection.LayoutTypeChange', {
+        layout: arrayItem,
+        type,
+      });
       this.setState({ layout: newArray }, () => {
         localStorage.setItem(LAYOUT_LOCAL_STORAGE, JSON.stringify(newArray));
       });
@@ -302,7 +255,10 @@ class Main extends React.Component<Props, State> {
   render() {
     const { layout, editLayout } = this.state;
     return (
-      <div className="main-layout" style={{ width: '100%', height: '100vh' }}>
+      <div
+        className="AssetCustomSection-layout"
+        style={{ width: '100%', height: '100vh' }}
+      >
         <TimeseriesPreview />
         <Layout>
           <Layout>
@@ -313,22 +269,6 @@ class Main extends React.Component<Props, State> {
                 flexDirection: 'column',
               }}
             >
-              <StyledHeader>
-                <Switch
-                  checked={editLayout}
-                  checkedChildren="Edit ON"
-                  unCheckedChildren="Edit OFF"
-                  onChange={this.changeEdit}
-                />
-                <a
-                  style={{ float: 'right', color: '#fff' }}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://docs.cognite.com/discovery/blog/releasenotes.html"
-                >
-                  v{process.env.REACT_APP_VERSION}
-                </a>
-              </StyledHeader>
               <CustomGridLayout
                 editable={editLayout}
                 ref={this.gridRef}
@@ -350,22 +290,25 @@ class Main extends React.Component<Props, State> {
                       <DraggingView>
                         <div>
                           <Icon className="big" type="drag" />
-                          <h2>{ViewerTypeMap[el.viewType]}</h2>
+                          <h2>{AssetViewerTypeMap[el.viewType]}</h2>
                           <p>
                             Resize by dragging the bottom right corner, drag
                             around each component to make your own layout
                           </p>
                           <ComponentSelector
-                            onComponentChange={(viewType: ViewerType) => {
+                            onComponentChange={(viewType: AssetViewerType) => {
                               this.changeLayoutType(viewType, el.i!);
                             }}
                           />
                         </div>
                       </DraggingView>
                     )}
-                    <AssetViewer
+                    <AssetCustomSectionView
                       type={el.viewType}
-                      onComponentChange={(type: ViewerType) => {
+                      asset={this.props.asset}
+                      search={this.props.search}
+                      onViewDetails={this.props.onViewDetails}
+                      onComponentChange={(type: AssetViewerType) => {
                         this.changeLayoutType(type, el.i!);
                       }}
                     />
@@ -391,17 +334,27 @@ class Main extends React.Component<Props, State> {
                   </div>
                 ))}
               </CustomGridLayout>
-              {editLayout && (
-                <AddButton
+              <ButtonArea>
+                {editLayout && (
+                  <Button
+                    shape="round"
+                    icon="plus"
+                    size="large"
+                    onClick={this.onAddComponent}
+                  >
+                    Add Layout
+                  </Button>
+                )}
+                <Button
                   type="primary"
                   shape="round"
-                  icon="plus"
+                  icon={editLayout ? 'check' : 'edit'}
                   size="large"
-                  onClick={this.onAddComponent}
+                  onClick={() => this.changeEdit(!editLayout)}
                 >
-                  Add Layout
-                </AddButton>
-              )}
+                  {editLayout ? 'Save Layout' : 'Edit Layout'}
+                </Button>
+              </ButtonArea>
             </Content>
           </Layout>
         </Layout>
@@ -412,7 +365,6 @@ class Main extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
   };
@@ -424,11 +376,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       doFetchTypes: fetchTypes,
       doFetchRevisions: fetchRevisions,
       fetchModels,
-      setAssetId,
-      setModelAndRevisionAndNode,
-      resetAppState,
     },
     dispatch
   );
 
-export default connect(mapStateToProps, mapDispatchToProps)(Main);
+export default connect(mapStateToProps, mapDispatchToProps)(AssetCustomSection);

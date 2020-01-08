@@ -23,6 +23,7 @@ import TimeseriesPage from './TimeseriesPage';
 import FilePage from './FilePage';
 import ThreeDPage from './ThreeDPage';
 import RelationshipPage from './RelationshipPage';
+import { fetchTypes } from '../modules/types';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -38,6 +39,7 @@ type Props = {
   setTenant: typeof setTenant;
   fetchUserGroups: typeof fetchUserGroups;
   fetchModels: typeof fetchModels;
+  fetchTypes: typeof fetchTypes;
   replace: typeof replace;
 };
 
@@ -115,6 +117,7 @@ class Auth extends React.Component<Props, State> {
         window.location.hash = queryString.stringify(queryParameters);
         await this.props.fetchUserGroups();
         await this.props.fetchModels();
+        await this.props.fetchTypes();
       }
     );
   };
@@ -202,6 +205,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setCdfEnv,
       fetchUserGroups,
       fetchModels,
+      fetchTypes,
       replace,
     },
     dispatch

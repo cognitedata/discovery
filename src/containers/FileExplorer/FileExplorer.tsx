@@ -19,7 +19,7 @@ import {
 import { RootState } from '../../reducers/index';
 import { selectAppState, AppState } from '../../modules/app';
 import { sdk } from '../../index';
-import FilePreview from './FilePreview/FilePreview';
+// import FilePreview from './FilePreview/FilePreview';
 import { trackSearchUsage, trackUsage } from '../../utils/metrics';
 import FileUploadTab from './FileUploadTab';
 import ImageFilesTab from './ImageFilesTab';
@@ -302,12 +302,11 @@ class FileExplorerComponent extends React.Component<Props, State> {
     const { assetId } = this.props.app;
     const { currentDocument } = this;
     if (currentDocument) {
-      return (
-        <FilePreview
-          fileId={currentDocument.id}
-          deleteFile={this.onDeleteDocumentClicked}
-        />
-      );
+      return null;
+      // <FilePreview
+      //   fileId={currentDocument.id}
+      //   deleteFile={this.onDeleteDocumentClicked}
+      // />
     }
     let list = <p>Invalid Tab</p>;
 

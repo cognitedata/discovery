@@ -12,7 +12,6 @@ import EditFileModal from 'containers/Modals/EditFileModal';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
-import { selectAppState, AppState, setAssetId } from 'modules/app';
 import { sdk } from 'index';
 import { trackUsage } from 'utils/metrics';
 import { FileExplorerTabsType } from '../FileExplorer';
@@ -86,13 +85,13 @@ const ButtonRow = styled.div`
 type OrigProps = {
   fileId: number;
   deleteFile: (fileId: number) => void;
+  onViewDetails: (type: string, id: number) => void;
 };
 
 type Props = {
-  app: AppState;
+  assetId?: number;
   assets: AssetsState;
   threed: ThreeDState;
-  setAssetId: typeof setAssetId;
   fetchFile: typeof fetchFile;
   file?: FilesMetadata;
 } & OrigProps;
@@ -337,7 +336,11 @@ class FilePreview extends React.Component<Props, State> {
   renderPnID = () => {
     return (
       <div className="preview">
-        <PNIDViewer selectedDocument={this.props.file!} />
+        <PNIDViewer
+          assetId={this.props.assetId}
+          selectedDocument={this.props.file!}
+          onAssetClicked={id => this.props.onViewDetails('asset', id)}
+        />
       </div>
     );
   };
@@ -373,7 +376,6 @@ class FilePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
-    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
     file: selectFiles(state).files[props.fileId],
@@ -382,7 +384,6 @@ const mapStateToProps = (state: RootState, props: OrigProps) => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      setAssetId,
       fetchFile,
     },
     dispatch

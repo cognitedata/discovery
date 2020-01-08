@@ -4,8 +4,8 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, Tabs, message } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
 import ThreeDViewerComponent from 'containers/ThreeDViewerComponent';
+import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
 import { AssetsState, fetchAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
@@ -13,6 +13,8 @@ import AssetFilesSection from './AssetFilesSection';
 import AssetSidebar from './AssetSidebar';
 import AssetTimeseriesSection from './AssetTimeseriesSection';
 import AssetEventsSection from './AssetEventsSection';
+import AssetRelationshipSection from './AssetRelationshipSection';
+import AssetCustomSection from './AssetCustomSection';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -46,7 +48,7 @@ const AssetView = styled.div`
   }
 `;
 
-type TabKeys =
+export type AssetTabKeys =
   | 'hierarchy'
   | 'threed'
   | 'files'
@@ -56,7 +58,7 @@ type TabKeys =
   | 'relationships'
   | 'custom';
 
-const TabNames: { [key in TabKeys]: string } = {
+export const AssetTabNames: { [key in AssetTabKeys]: string } = {
   hierarchy: 'Hierarchy',
   threed: '3D Models',
   files: 'Files',
@@ -68,6 +70,7 @@ const TabNames: { [key in TabKeys]: string } = {
 };
 
 type OrigProps = {
+  search: string;
   match: {
     params: {
       tab?: string;
@@ -101,15 +104,18 @@ class AssetPage extends React.Component<Props, State> {
     }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps: Props) {
     if (!this.asset) {
       this.props.fetchAsset(this.props.match.params.assetId);
     }
+    if (prevProps.search !== this.props.search) {
+      this.forceUpdate();
+    }
   }
 
-  get currentTab(): TabKeys {
+  get currentTab(): AssetTabKeys {
     return this.props.match.params.tab
-      ? (this.props.match.params.tab as TabKeys)
+      ? (this.props.match.params.tab as AssetTabKeys)
       : 'hierarchy';
   }
 
@@ -121,15 +127,27 @@ class AssetPage extends React.Component<Props, State> {
     return this.props.assets.all[this.props.match.params.assetId];
   }
 
-  get itemId() {
+  get fileId() {
     return this.props.match.params.itemId;
   }
 
-  get itemId2() {
+  get timeseriesId() {
+    return this.props.match.params.itemId;
+  }
+
+  get modelId() {
+    return this.props.match.params.itemId;
+  }
+
+  get eventId() {
+    return this.props.match.params.itemId;
+  }
+
+  get revisionId() {
     return this.props.match.params.itemId2;
   }
 
-  get itemId3() {
+  get nodeId() {
     return this.props.match.params.itemId3;
   }
 
@@ -152,18 +170,42 @@ class AssetPage extends React.Component<Props, State> {
   };
 
   onViewDetails = (type: string, ...ids: number[]) => {
-    this.props.push(`/${this.tenant}/${type}/${ids.join('/')}`);
+    if (type === 'asset') {
+      this.props.push(
+        `/${this.tenant}/${type}/${ids.join('/')}/${this.currentTab}/${
+          this.props.match.params.itemId
+        }`
+      );
+    } else {
+      this.props.push(`/${this.tenant}/${type}/${ids.join('/')}`);
+    }
   };
 
-  renderCurrentTab = () => {
-    switch (this.currentTab) {
+  renderCurrentTab = (tabKeys: AssetTabKeys) => {
+    switch (tabKeys) {
+      case 'custom': {
+        return (
+          <AssetCustomSection
+            asset={this.asset}
+            search={this.props.search}
+            tenant={this.tenant}
+            onViewDetails={this.onViewDetails}
+          />
+        );
+      }
+      case 'relationships': {
+        return (
+          <AssetRelationshipSection
+            asset={this.asset}
+            onAssetClicked={id => this.onViewDetails('asset', id)}
+          />
+        );
+      }
       case 'hierarchy': {
         return (
           <AssetTreeViewerVX
             asset={this.asset}
-            onAssetClicked={id =>
-              this.props.push(`/${this.tenant}/asset/${id}/${this.currentTab}`)
-            }
+            onAssetClicked={id => this.onViewDetails('asset', id)}
           />
         );
       }
@@ -171,12 +213,8 @@ class AssetPage extends React.Component<Props, State> {
         return (
           <AssetTimeseriesSection
             asset={this.asset}
-            timeseriesId={this.itemId}
-            onSelect={id =>
-              this.props.push(
-                `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}/${id}`
-              )
-            }
+            timeseriesId={this.timeseriesId}
+            onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
             onViewDetails={this.onViewDetails}
           />
@@ -186,8 +224,8 @@ class AssetPage extends React.Component<Props, State> {
         return (
           <AssetFilesSection
             asset={this.asset}
-            fileId={this.itemId}
-            onSelect={this.onSelect}
+            fileId={this.fileId}
+            onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
             onViewDetails={this.onViewDetails}
           />
@@ -198,8 +236,8 @@ class AssetPage extends React.Component<Props, State> {
           <AssetFilesSection
             asset={this.asset}
             mimeTypes={['svg', 'SVG']}
-            fileId={this.itemId}
-            onSelect={this.onSelect}
+            fileId={this.fileId}
+            onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
             onViewDetails={this.onViewDetails}
           />
@@ -209,8 +247,8 @@ class AssetPage extends React.Component<Props, State> {
         return (
           <AssetEventsSection
             asset={this.asset}
-            eventId={this.itemId}
-            onSelect={this.onSelect}
+            eventId={this.eventId}
+            onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
             onViewDetails={this.onViewDetails}
           />
@@ -220,21 +258,25 @@ class AssetPage extends React.Component<Props, State> {
         return (
           <ThreeDViewerComponent
             asset={this.asset}
-            modelId={this.itemId}
-            revisionId={this.itemId2}
-            nodeId={this.itemId3}
+            modelId={this.modelId}
+            revisionId={this.revisionId}
+            nodeId={this.nodeId}
             onAssetClicked={assetId =>
               message.success(`Coming soon ${assetId}`)
             }
-            onRevisionClicked={this.onSelect}
-            onNodeClicked={this.onSelect}
+            onRevisionClicked={(modelId, revisionId) =>
+              this.onSelect(modelId, revisionId)
+            }
+            onNodeClicked={(modelId, revisionId, nodeId) =>
+              this.onSelect(modelId, revisionId, nodeId)
+            }
             onClearSelection={this.onClearSelection}
             onViewDetails={this.onViewDetails}
           />
         );
       }
     }
-    return <h1>Hello</h1>;
+    return <h1>Unable to load component.</h1>;
   };
 
   render() {
@@ -257,14 +299,16 @@ class AssetPage extends React.Component<Props, State> {
                   this.props.push(`/${tenant}/asset/${assetId}/${key}`);
                 }}
               >
-                {Object.keys(TabNames).map(key => (
+                {Object.keys(AssetTabNames).map(key => (
                   <Tabs.TabPane
-                    tab={TabNames[key as TabKeys]}
+                    tab={AssetTabNames[key as AssetTabKeys]}
                     key={key}
                   ></Tabs.TabPane>
                 ))}
               </Tabs>
-              <div className="content">{this.renderCurrentTab()}</div>
+              <div className="content">
+                {this.renderCurrentTab(this.currentTab)}
+              </div>
             </AssetView>
           </Wrapper>
         ) : (
@@ -280,6 +324,7 @@ class AssetPage extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState) => {
   return {
     assets: state.assets,
+    search: state.router.location.search,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

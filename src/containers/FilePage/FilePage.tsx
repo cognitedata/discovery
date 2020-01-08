@@ -141,6 +141,7 @@ class FilePage extends React.Component<Props, State> {
               <FilePreview
                 fileId={this.file.id}
                 deleteFile={this.onDeleteFileClicked}
+                onViewDetails={console.log}
               />
             </FileView>
           </Wrapper>

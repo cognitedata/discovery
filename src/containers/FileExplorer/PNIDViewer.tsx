@@ -10,7 +10,6 @@ import { selectFiles, FilesState } from '../../modules/files';
 import { sleep } from '../../utils/utils';
 import { RootState } from '../../reducers';
 import { sdk } from '../../index';
-import { selectAppState, AppState, setAssetId } from '../../modules/app';
 import { trackUsage } from '../../utils/metrics';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
@@ -52,11 +51,11 @@ const StyledSVGViewerContainer = styled.div`
 `;
 
 type Props = {
-  app: AppState;
+  assetId?: number;
   assets: AssetsState;
   files: FilesState;
-  setAssetId: typeof setAssetId;
   selectedDocument: FilesMetadata;
+  onAssetClicked: (id: number) => void;
 };
 
 type State = {
@@ -95,11 +94,11 @@ class PNIDViewer extends React.Component<Props, State> {
         ],
       });
     }
-    if (prevProps.app.assetId !== this.props.app.assetId) {
+    if (prevProps.assetId !== this.props.assetId) {
       setTimeout(async () => {
         if (this.svgviewer) {
           this.svgviewer.zoomOnCurrentAsset(
-            document.querySelector(`.${'current-asset'}`)
+            document.querySelector(`.current-asset`)
           );
 
           // Workaround https://github.com/cognitedata/gearbox.js/issues/300
@@ -155,7 +154,7 @@ class PNIDViewer extends React.Component<Props, State> {
     } else {
       [asset] = matches;
     }
-    this.props.setAssetId(asset.rootId, asset.id);
+    this.props.onAssetClicked(asset.id);
   };
 
   loadNextPNID = async (nameString: string) => {
@@ -191,11 +190,11 @@ class PNIDViewer extends React.Component<Props, State> {
   };
 
   isCurrentAsset = (metadata: any) => {
-    if (!this.props.app.assetId) {
+    if (!this.props.assetId) {
       return false;
     }
 
-    const asset = this.props.assets.all[this.props.app.assetId];
+    const asset = this.props.assets.all[this.props.assetId];
     if (!asset) {
       return false;
     }
@@ -271,18 +270,12 @@ class PNIDViewer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectAppState(state),
     files: selectFiles(state),
     assets: selectAssets(state),
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators(
-    {
-      setAssetId,
-    },
-    dispatch
-  );
+  bindActionCreators({}, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(PNIDViewer);

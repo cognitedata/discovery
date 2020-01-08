@@ -2,17 +2,11 @@ import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Button, message, notification, Descriptions } from 'antd';
-import RelationshipQueryModal from 'containers/Modals/RelationshipQueryModal';
 import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
 import { RootState } from '../../reducers/index';
-import {
-  selectAssets,
-  AssetsState,
-  selectCurrentAsset,
-  ExtendedAsset,
-} from '../../modules/assets';
+import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
 import { selectTimeseries, TimeseriesState } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectTypesState, TypesState } from '../../modules/types';
@@ -24,8 +18,6 @@ import {
   fetchRelationshipsForAssetId,
 } from '../../modules/relationships';
 import TreeViewer from '../NetworkViewers/TreeViewer';
-import { BetaTag } from '../../components/BetaWarning';
-import { sdk } from '../../index';
 import { trackUsage } from '../../utils/metrics';
 
 const Wrapper = styled.div`
@@ -33,31 +25,17 @@ const Wrapper = styled.div`
   height: 100%;
   position: relative;
   flex-direction: column;
-  && > div.button {
-    flex: unset;
-    position: absolute;
-    bottom: 24px;
-    left: 24px;
-    display: block;
-    height: unset;
-    z-index: 100;
-    background: #fff;
-  }
 `;
 
 type OwnProps = {
-  match: {
-    params: {
-      tenant: string;
-    };
-  };
+  asset: ExtendedAsset;
+  onAssetClicked: (id: number) => void;
 };
 
 type StateProps = {
   relationships: RelationshipState;
   assets: AssetsState;
   types: TypesState;
-  asset: ExtendedAsset | undefined;
   timeseries: TimeseriesState;
   threed: ThreeDState;
 };
@@ -70,9 +48,7 @@ type Props = StateProps & DispatchProps & OwnProps;
 
 type State = {
   visibleNodeIds: Set<number>;
-  rootAssetIds: number[];
   query: string[];
-  graphQueryVisible: boolean;
   nodeDetailsPreview?: {
     title: string;
     type: 'asset' | 'file' | 'timeseries' | 'threed';
@@ -81,17 +57,23 @@ type State = {
   };
 };
 
-class RelationshipViewer extends Component<Props, State> {
+class AssetRelationshipSection extends Component<Props, State> {
   readonly state: Readonly<State> = {
     visibleNodeIds: new Set(),
-    rootAssetIds: [],
     query: [],
-    graphQueryVisible: false,
   };
 
-  async componentDidMount() {
-    const assets = await sdk.assets.list({ filter: { root: true } });
-    this.setState({ rootAssetIds: assets.items.map(el => el.id) });
+  componentDidMount() {
+    this.setState({ visibleNodeIds: new Set([this.props.asset.id]) });
+    this.props.fetchRelationshipsForAssetId(this.props.asset);
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.props.asset.id !== prevProps.asset.id) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ visibleNodeIds: new Set([this.props.asset.id]) });
+      this.props.fetchRelationshipsForAssetId(this.props.asset);
+    }
   }
 
   get filters(): {
@@ -179,23 +161,17 @@ class RelationshipViewer extends Component<Props, State> {
     };
   }
 
-  get tenant() {
-    return this.props.match.params.tenant;
-  }
-
-  get data() {
+  getData = () => {
     const {
       relationships: { items, assetRelationshipMap },
       assets: { externalIdMap, all },
     } = this.props;
-    const { visibleNodeIds, rootAssetIds, query } = this.state;
+    const { visibleNodeIds, query } = this.state;
     // TODO fix this is a mix across resource type! unsafe!
     const nodes: { [key: string]: any } = {};
     const links: any[] = [];
     const relationshipIds: Set<string> = new Set();
-    const visibleIds =
-      visibleNodeIds.size === 0 ? rootAssetIds : Array.from(visibleNodeIds);
-    visibleIds.forEach(id => {
+    visibleNodeIds.forEach(id => {
       if (assetRelationshipMap[id]) {
         assetRelationshipMap[id].forEach(relationshipId => {
           if (items[relationshipId]) {
@@ -296,7 +272,7 @@ class RelationshipViewer extends Component<Props, State> {
       nodes: Object.values(nodes),
       links,
     };
-  }
+  };
 
   buildLabel = (node: RelationshipResource): string => {
     const {
@@ -340,7 +316,6 @@ class RelationshipViewer extends Component<Props, State> {
         const asset =
           all[externalIdMap[node.resourceId] || Number(node.resourceId)];
         if (asset) {
-          this.props.fetchRelationshipsForAssetId(asset);
           visibleNodeIds.add(asset.id);
           this.setState({
             nodeDetailsPreview: {
@@ -399,9 +374,7 @@ class RelationshipViewer extends Component<Props, State> {
   onGoToPreviewNodeClicked = () => {
     const { nodeDetailsPreview } = this.state;
     if (nodeDetailsPreview) {
-      this.props.push(
-        `/${this.tenant}/${nodeDetailsPreview.type}/${nodeDetailsPreview.id}`
-      );
+      this.props.onAssetClicked(nodeDetailsPreview.id);
     }
   };
 
@@ -446,26 +419,12 @@ class RelationshipViewer extends Component<Props, State> {
   };
 
   render() {
-    const { query, graphQueryVisible, nodeDetailsPreview } = this.state;
+    const { query, nodeDetailsPreview } = this.state;
     return (
       <Wrapper>
-        <div className="button">
-          <Button
-            type="primary"
-            ghost
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-            }}
-            onClick={() => this.setState({ graphQueryVisible: true })}
-          >
-            <BetaTag />
-            Run Graph Query
-          </Button>
-        </div>
         <div style={{ position: 'relative', flex: 1, height: 0 }}>
           <TreeViewer
-            data={this.data}
+            data={this.getData()}
             dataFilter={{
               query,
               setQuery: (newQuery: string[]) =>
@@ -492,11 +451,6 @@ class RelationshipViewer extends Component<Props, State> {
             }
           />
         </div>
-        {graphQueryVisible && (
-          <RelationshipQueryModal
-            onClose={() => this.setState({ graphQueryVisible: false })}
-          />
-        )}
         {nodeDetailsPreview && (
           <BottomRightCard
             title={nodeDetailsPreview.title}
@@ -506,13 +460,6 @@ class RelationshipViewer extends Component<Props, State> {
               <strong>Description</strong>
               <p>{nodeDetailsPreview.description}</p>
               <div className="button-row">
-                <Button
-                  onClick={() =>
-                    this.removeFromVisibleNodeIds(nodeDetailsPreview.id)
-                  }
-                >
-                  Hide Relationships
-                </Button>
                 <Button onClick={this.onGoToPreviewNodeClicked} type="primary">
                   View {nodeDetailsPreview.type}
                 </Button>
@@ -529,7 +476,6 @@ const mapStateToProps = (state: RootState): StateProps => {
   return {
     relationships: state.relationships,
     assets: selectAssets(state),
-    asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
     types: selectTypesState(state),
@@ -548,4 +494,4 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
 export default connect<StateProps, DispatchProps, OwnProps, RootState>(
   mapStateToProps,
   mapDispatchToProps
-)(RelationshipViewer);
+)(AssetRelationshipSection);
