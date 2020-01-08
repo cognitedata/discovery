@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Layout, Button, Icon } from 'antd';
+import { Button, Icon } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import {
@@ -21,7 +21,6 @@ import AssetCustomSectionView, {
   AssetViewerType,
   AssetViewerTypeMap,
 } from './AssetCustomSectionView';
-import TimeseriesPreview from '../TimeseriesPreview';
 import { sdk } from '../../index';
 import { trackUsage } from '../../utils/metrics';
 import ComponentSelector from '../../components/ComponentSelector';
@@ -35,14 +34,14 @@ interface DiscoveryLayout extends GridLayout {
 const ResponsiveReactGridLayout = WidthProvider(Responsive);
 
 // 13FV1234 is useful asset
-const { Content } = Layout;
-
 type LayoutProps = {
   editable: boolean;
 };
 
 const CustomGridLayout = styled(ResponsiveReactGridLayout)<LayoutProps>`
   position: relative;
+  overflow: auto;
+
   .react-grid-item {
     padding: 12px;
     background: #fff;
@@ -102,7 +101,7 @@ const DeleteButton = styled(Button)`
 `;
 
 type Props = {
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
   tenant: string;
   search: string | undefined;
   threed: ThreeDState;
@@ -153,7 +152,7 @@ class AssetCustomSection extends React.Component<Props, State> {
           x: 0,
           y: 0,
           w: 2,
-          h: 31,
+          h: 18,
           viewType: 'none',
         },
         {
@@ -161,7 +160,7 @@ class AssetCustomSection extends React.Component<Props, State> {
           x: 2,
           y: 0,
           w: 2,
-          h: 31,
+          h: 18,
           viewType: 'none',
         },
       ];
@@ -257,107 +256,100 @@ class AssetCustomSection extends React.Component<Props, State> {
     return (
       <div
         className="AssetCustomSection-layout"
-        style={{ width: '100%', height: '100vh' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'auto',
+          backgroundColor: '#efefef',
+        }}
       >
-        <TimeseriesPreview />
-        <Layout>
-          <Layout>
-            <Content
+        <CustomGridLayout
+          editable={editLayout}
+          ref={this.gridRef}
+          className="layout"
+          rowHeight={30}
+          cols={{ lg: 4, md: 4, sm: 4, xs: 4, xxs: 4 }}
+          onLayoutChange={this.onLayoutChange}
+          onDragStart={() => {
+            return editLayout;
+          }}
+        >
+          {layout.map((el, i) => (
+            <div
+              key={el.i}
+              data-grid={el}
               style={{
+                position: 'relative',
                 display: 'flex',
-                height: '100vh',
                 flexDirection: 'column',
               }}
             >
-              <CustomGridLayout
-                editable={editLayout}
-                ref={this.gridRef}
-                className="layout"
-                rowHeight={30}
-                cols={{ lg: 4, md: 4, sm: 4, xs: 4, xxs: 4 }}
-                onLayoutChange={this.onLayoutChange}
-                onDragStart={() => {
-                  return editLayout;
-                }}
-              >
-                {layout.map((el, i) => (
-                  <div
-                    key={el.i}
-                    data-grid={el}
-                    style={{ position: 'relative' }}
-                  >
-                    {editLayout && (
-                      <DraggingView>
-                        <div>
-                          <Icon className="big" type="drag" />
-                          <h2>{AssetViewerTypeMap[el.viewType]}</h2>
-                          <p>
-                            Resize by dragging the bottom right corner, drag
-                            around each component to make your own layout
-                          </p>
-                          <ComponentSelector
-                            onComponentChange={(viewType: AssetViewerType) => {
-                              this.changeLayoutType(viewType, el.i!);
-                            }}
-                          />
-                        </div>
-                      </DraggingView>
-                    )}
-                    <AssetCustomSectionView
-                      type={el.viewType}
-                      asset={this.props.asset}
-                      search={this.props.search}
-                      onViewDetails={this.props.onViewDetails}
-                      onComponentChange={(type: AssetViewerType) => {
-                        this.changeLayoutType(type, el.i!);
+              {editLayout && (
+                <DraggingView>
+                  <div>
+                    <Icon className="big" type="drag" />
+                    <h2>{AssetViewerTypeMap[el.viewType]}</h2>
+                    <p>
+                      Resize by dragging the bottom right corner, drag around
+                      each component to make your own layout
+                    </p>
+                    <ComponentSelector
+                      onComponentChange={(viewType: AssetViewerType) => {
+                        this.changeLayoutType(viewType, el.i!);
                       }}
                     />
-                    {editLayout && (
-                      <DeleteButton
-                        type="primary"
-                        shape="circle"
-                        icon="close-circle"
-                        size="small"
-                        onClick={() => {
-                          trackUsage('Component Deleted', {
-                            type: layout[i].viewType,
-                          });
-                          this.setState({
-                            layout: [
-                              ...layout.slice(0, i),
-                              ...layout.slice(i + 1),
-                            ],
-                          });
-                        }}
-                      />
-                    )}
                   </div>
-                ))}
-              </CustomGridLayout>
-              <ButtonArea>
-                {editLayout && (
-                  <Button
-                    shape="round"
-                    icon="plus"
-                    size="large"
-                    onClick={this.onAddComponent}
-                  >
-                    Add Layout
-                  </Button>
-                )}
-                <Button
+                </DraggingView>
+              )}
+              <AssetCustomSectionView
+                type={el.viewType}
+                asset={this.props.asset}
+                search={this.props.search}
+                onViewDetails={this.props.onViewDetails}
+                onComponentChange={(type: AssetViewerType) => {
+                  this.changeLayoutType(type, el.i!);
+                }}
+              />
+              {editLayout && (
+                <DeleteButton
                   type="primary"
-                  shape="round"
-                  icon={editLayout ? 'check' : 'edit'}
-                  size="large"
-                  onClick={() => this.changeEdit(!editLayout)}
-                >
-                  {editLayout ? 'Save Layout' : 'Edit Layout'}
-                </Button>
-              </ButtonArea>
-            </Content>
-          </Layout>
-        </Layout>
+                  shape="circle"
+                  icon="close-circle"
+                  size="small"
+                  onClick={() => {
+                    trackUsage('Component Deleted', {
+                      type: layout[i].viewType,
+                    });
+                    this.setState({
+                      layout: [...layout.slice(0, i), ...layout.slice(i + 1)],
+                    });
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </CustomGridLayout>
+        <ButtonArea>
+          {editLayout && (
+            <Button
+              shape="round"
+              icon="plus"
+              size="large"
+              onClick={this.onAddComponent}
+            >
+              Add Layout
+            </Button>
+          )}
+          <Button
+            type="primary"
+            shape="round"
+            icon={editLayout ? 'check' : 'edit'}
+            size="large"
+            onClick={() => this.changeEdit(!editLayout)}
+          >
+            {editLayout ? 'Save Layout' : 'Edit Layout'}
+          </Button>
+        </ButtonArea>
       </div>
     );
   }

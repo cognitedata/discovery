@@ -119,6 +119,27 @@ export const fetchMappingsFromAssetId = (
   currentFetching.asset[`${modelId}-${assetId}-${assetId}`] = false;
 };
 
+export const addAssetMappingsToState = (
+  modelId: number,
+  revisionId: number,
+  nodeId: number,
+  assetId: number
+) => async (dispatch: Dispatch) => {
+  dispatch({
+    type: ADD_ASSET_MAPPINGS,
+    payload: {
+      mapping: {
+        modelId,
+        revisionId,
+        nodeId,
+        assetId,
+      },
+      modelId,
+      revisionId,
+    },
+  });
+};
+
 export function fetchMappingsFromNodeId(
   modelId: number,
   revisionId: number,

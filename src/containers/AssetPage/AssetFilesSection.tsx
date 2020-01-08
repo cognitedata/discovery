@@ -18,7 +18,7 @@ import {
   selectFilesForAsset,
   selectFiles,
 } from '../../modules/files';
-import ViewingDetailsNavBar from './ViewingDetailsNavBar';
+import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -33,7 +33,7 @@ const Wrapper = styled.div`
 `;
 
 type OrigProps = {
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
   mimeTypes?: string[];
   fileId?: number;
   onSelect: (id: number) => void;
@@ -58,11 +58,16 @@ class AssetFileSection extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.fetchFiles(this.props.asset.id);
+    if (this.props.asset) {
+      this.props.fetchFiles(this.props.asset.id);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (this.props.asset.id !== prevProps.asset.id) {
+    if (
+      this.props.asset &&
+      (!prevProps.asset || this.props.asset.id !== prevProps.asset.id)
+    ) {
       this.props.fetchFiles(this.props.asset.id);
     }
   }
@@ -145,7 +150,7 @@ class AssetFileSection extends React.Component<Props, State> {
             }}
           >
             <FilePreview
-              assetId={this.props.asset.id}
+              assetId={this.props.asset ? this.props.asset.id : undefined}
               onViewDetails={this.props.onViewDetails}
               fileId={fileId}
               deleteFile={() => {}}
@@ -208,7 +213,9 @@ class AssetFileSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
-    files: selectFilesForAsset(state, origProps.asset.id),
+    files: origProps.asset
+      ? selectFilesForAsset(state, origProps.asset.id)
+      : undefined,
     selectFile: origProps.fileId
       ? selectFiles(state).files[origProps.fileId]
       : undefined,

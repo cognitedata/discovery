@@ -4,17 +4,17 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, Tabs, message } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import ThreeDViewerComponent from 'containers/ThreeDViewerComponent';
 import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
+import LoadingWrapper from 'components/LoadingWrapper';
 import { AssetsState, fetchAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import LoadingWrapper from '../../components/LoadingWrapper';
 import AssetFilesSection from './AssetFilesSection';
 import AssetSidebar from './AssetSidebar';
 import AssetTimeseriesSection from './AssetTimeseriesSection';
 import AssetEventsSection from './AssetEventsSection';
 import AssetRelationshipSection from './AssetRelationshipSection';
 import AssetCustomSection from './AssetCustomSection';
+import AssetThreeDSection from './AssetThreeDSection';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -171,11 +171,14 @@ class AssetPage extends React.Component<Props, State> {
 
   onViewDetails = (type: string, ...ids: number[]) => {
     if (type === 'asset') {
-      this.props.push(
-        `/${this.tenant}/${type}/${ids.join('/')}/${this.currentTab}/${
-          this.props.match.params.itemId
-        }`
-      );
+      const { itemId, itemId2, itemId3 } = this.props.match.params;
+      const secondaryIds = [itemId, itemId2, itemId3].filter(el => !!el);
+      this.props.push({
+        pathname: `/${this.tenant}/${type}/${ids.join('/')}/${
+          this.currentTab
+        }/${secondaryIds.join('/')}`,
+        search: this.props.search,
+      });
     } else {
       this.props.push(`/${this.tenant}/${type}/${ids.join('/')}`);
     }
@@ -186,7 +189,7 @@ class AssetPage extends React.Component<Props, State> {
       case 'custom': {
         return (
           <AssetCustomSection
-            asset={this.asset}
+            asset={this.asset!}
             search={this.props.search}
             tenant={this.tenant}
             onViewDetails={this.onViewDetails}
@@ -194,6 +197,13 @@ class AssetPage extends React.Component<Props, State> {
         );
       }
       case 'relationships': {
+        if (!this.asset) {
+          return (
+            <LoadingWrapper>
+              <span>Loading Asset...</span>
+            </LoadingWrapper>
+          );
+        }
         return (
           <AssetRelationshipSection
             asset={this.asset}
@@ -202,6 +212,13 @@ class AssetPage extends React.Component<Props, State> {
         );
       }
       case 'hierarchy': {
+        if (!this.asset) {
+          return (
+            <LoadingWrapper>
+              <span>Loading Asset...</span>
+            </LoadingWrapper>
+          );
+        }
         return (
           <AssetTreeViewerVX
             asset={this.asset}
@@ -256,7 +273,7 @@ class AssetPage extends React.Component<Props, State> {
       }
       case 'threed': {
         return (
-          <ThreeDViewerComponent
+          <AssetThreeDSection
             asset={this.asset}
             modelId={this.modelId}
             revisionId={this.revisionId}
@@ -288,34 +305,28 @@ class AssetPage extends React.Component<Props, State> {
             Back to Search Result
           </Button>
         </BackSection>
-        {this.asset ? (
-          <Wrapper>
-            <AssetSidebar asset={this.asset} />
-            <AssetView>
-              <Tabs
-                tabBarGutter={0}
-                activeKey={this.currentTab}
-                onChange={key => {
-                  this.props.push(`/${tenant}/asset/${assetId}/${key}`);
-                }}
-              >
-                {Object.keys(AssetTabNames).map(key => (
-                  <Tabs.TabPane
-                    tab={AssetTabNames[key as AssetTabKeys]}
-                    key={key}
-                  ></Tabs.TabPane>
-                ))}
-              </Tabs>
-              <div className="content">
-                {this.renderCurrentTab(this.currentTab)}
-              </div>
-            </AssetView>
-          </Wrapper>
-        ) : (
-          <LoadingWrapper>
-            <p>Loading Asset...</p>
-          </LoadingWrapper>
-        )}
+        <Wrapper>
+          <AssetSidebar asset={this.asset} onViewDetails={this.onViewDetails} />
+          <AssetView>
+            <Tabs
+              tabBarGutter={0}
+              activeKey={this.currentTab}
+              onChange={key => {
+                this.props.push(`/${tenant}/asset/${assetId}/${key}`);
+              }}
+            >
+              {Object.keys(AssetTabNames).map(key => (
+                <Tabs.TabPane
+                  tab={AssetTabNames[key as AssetTabKeys]}
+                  key={key}
+                ></Tabs.TabPane>
+              ))}
+            </Tabs>
+            <div className="content">
+              {this.renderCurrentTab(this.currentTab)}
+            </div>
+          </AssetView>
+        </Wrapper>
       </>
     );
   }

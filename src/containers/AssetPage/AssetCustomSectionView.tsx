@@ -5,11 +5,12 @@ import { BetaTag } from 'components/BetaWarning';
 import { message } from 'antd';
 import qs from 'query-string';
 import { push } from 'connected-react-router';
-import ThreeDViewerComponent from 'containers/ThreeDViewerComponent';
+import LoadingWrapper from 'components/LoadingWrapper';
 import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
 import {
   selectAssetMappings,
   AssetMappingState,
+  addAssetMappingsToState,
 } from '../../modules/assetmappings';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
@@ -21,6 +22,8 @@ import AssetRelationshipSection from './AssetRelationshipSection';
 import AssetTimeseriesSection from './AssetTimeseriesSection';
 import AssetFilesSection from './AssetFilesSection';
 import AssetEventsSection from './AssetEventsSection';
+import AssetThreeDSection from './AssetThreeDSection';
+import { sdk } from '../../index';
 
 export const AssetViewerTypeMap: {
   [key in AssetViewerType]: React.ReactNode | undefined;
@@ -45,7 +48,7 @@ export type AssetViewerType = 'none' | AssetTabKeys;
 
 type OwnProps = {
   type: AssetViewerType;
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
   search: string | undefined;
   onViewDetails: (type: string, ...ids: number[]) => void;
   onComponentChange: (type: AssetViewerType) => void;
@@ -57,6 +60,7 @@ type StateProps = {
 };
 type DispatchProps = {
   push: typeof push;
+  addAssetMappingsToState: typeof addAssetMappingsToState;
 };
 
 type Props = StateProps & DispatchProps & OwnProps;
@@ -64,11 +68,6 @@ type Props = StateProps & DispatchProps & OwnProps;
 type State = {};
 
 export class AssetCustomSectionView extends React.Component<Props, State> {
-  static defaultProps = {
-    assetMappings: { byNodeId: {}, byAssetId: {} },
-    model3D: undefined,
-  };
-
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
@@ -145,9 +144,36 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
     return undefined;
   }
 
-  onClearSelection = () => {
+  onClearSelection = (
+    type: 'asset' | 'timeseries' | 'file' | 'threed' | 'event'
+  ) => {
+    const prevSearch = this.props.search ? qs.parse(this.props.search) : {};
+    switch (type) {
+      case 'asset': {
+        delete prevSearch.assetId;
+        break;
+      }
+      case 'file': {
+        delete prevSearch.fileId;
+        break;
+      }
+      case 'timeseries': {
+        delete prevSearch.timeseriesId;
+        break;
+      }
+      case 'event': {
+        delete prevSearch.eventId;
+        break;
+      }
+      case 'threed': {
+        delete prevSearch.modelId;
+        delete prevSearch.revisionId;
+        delete prevSearch.nodeId;
+        break;
+      }
+    }
     this.props.push({
-      search: qs.stringify({}),
+      search: qs.stringify(prevSearch),
     });
   };
 
@@ -195,21 +221,68 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
     }
   };
 
+  onViewDetails = async (type: string, ...ids: number[]) => {
+    if (type === 'asset') {
+      const search = this.props.search ? qs.parse(this.props.search) : {};
+      if (search.modelId && search.revisionId && ids[0]) {
+        let mapping = this.props.assetMappings.byAssetId[Number(ids[0])];
+        if (!mapping) {
+          ({
+            items: [mapping],
+          } = await sdk.assetMappings3D.list(
+            Number(search.modelId),
+            Number(search.revisionId),
+            {
+              assetId: Number(ids[0]),
+            }
+          ));
+          this.props.addAssetMappingsToState(
+            mapping.modelId,
+            mapping.revisionId,
+            mapping.nodeId,
+            mapping.assetId
+          );
+        }
+        this.onSelect(
+          'threed',
+          Number(search.modelId),
+          Number(search.revisionId),
+          mapping.nodeId
+        );
+      }
+    }
+    this.props.onViewDetails(type, ...ids);
+  };
+
   renderView = (tabKey: AssetTabKeys) => {
     switch (tabKey) {
       case 'relationships': {
+        if (!this.props.asset) {
+          return (
+            <LoadingWrapper>
+              <span>Loading Asset...</span>
+            </LoadingWrapper>
+          );
+        }
         return (
           <AssetRelationshipSection
             asset={this.props.asset}
-            onAssetClicked={id => this.props.onViewDetails('asset', id)}
+            onAssetClicked={id => this.onViewDetails('asset', id)}
           />
         );
       }
       case 'hierarchy': {
+        if (!this.props.asset) {
+          return (
+            <LoadingWrapper>
+              <span>Loading Asset...</span>
+            </LoadingWrapper>
+          );
+        }
         return (
           <AssetTreeViewerVX
             asset={this.props.asset}
-            onAssetClicked={id => this.props.onViewDetails('asset', id)}
+            onAssetClicked={id => this.onViewDetails('asset', id)}
           />
         );
       }
@@ -219,8 +292,8 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             asset={this.props.asset}
             timeseriesId={this.timeseriesId}
             onSelect={id => this.onSelect('timeseries', id)}
-            onClearSelection={this.onClearSelection}
-            onViewDetails={this.props.onViewDetails}
+            onClearSelection={() => this.onClearSelection('timeseries')}
+            onViewDetails={this.onViewDetails}
           />
         );
       }
@@ -230,8 +303,8 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             asset={this.props.asset}
             fileId={this.fileId}
             onSelect={id => this.onSelect('file', id)}
-            onClearSelection={this.onClearSelection}
-            onViewDetails={this.props.onViewDetails}
+            onClearSelection={() => this.onClearSelection('file')}
+            onViewDetails={this.onViewDetails}
           />
         );
       }
@@ -242,8 +315,8 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             mimeTypes={['svg', 'SVG']}
             fileId={this.fileId}
             onSelect={id => this.onSelect('file', id)}
-            onClearSelection={this.onClearSelection}
-            onViewDetails={this.props.onViewDetails}
+            onClearSelection={() => this.onClearSelection('file')}
+            onViewDetails={this.onViewDetails}
           />
         );
       }
@@ -253,14 +326,14 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             asset={this.props.asset}
             eventId={this.eventId}
             onSelect={id => this.onSelect('event', id)}
-            onClearSelection={this.onClearSelection}
-            onViewDetails={this.props.onViewDetails}
+            onClearSelection={() => this.onClearSelection('event')}
+            onViewDetails={this.onViewDetails}
           />
         );
       }
       case 'threed': {
         return (
-          <ThreeDViewerComponent
+          <AssetThreeDSection
             asset={this.props.asset}
             modelId={this.modelId}
             revisionId={this.revisionId}
@@ -274,8 +347,8 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             onNodeClicked={(modelId, revisionId, nodeId) =>
               this.onSelect('threed', modelId, revisionId, nodeId)
             }
-            onClearSelection={this.onClearSelection}
-            onViewDetails={this.props.onViewDetails}
+            onClearSelection={() => this.onClearSelection('threed')}
+            onViewDetails={this.onViewDetails}
           />
         );
       }
@@ -305,7 +378,7 @@ const mapStateToProps = (state: RootState): StateProps => {
 };
 
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
-  bindActionCreators({ push }, dispatch);
+  bindActionCreators({ push, addAssetMappingsToState }, dispatch);
 
 export default connect<StateProps, DispatchProps, OwnProps, RootState>(
   mapStateToProps,

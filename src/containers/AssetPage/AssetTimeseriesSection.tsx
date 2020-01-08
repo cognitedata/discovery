@@ -18,7 +18,7 @@ import {
   selectTimeseriesByAssetId,
   selectTimeseries,
 } from '../../modules/timeseries';
-import ViewingDetailsNavBar from './ViewingDetailsNavBar';
+import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -33,7 +33,7 @@ const Wrapper = styled.div`
 `;
 
 type OrigProps = {
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
   timeseriesId?: number;
   onSelect: (id: number) => void;
   onClearSelection: () => void;
@@ -57,11 +57,16 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.fetchTimeseriesForAssetId(this.props.asset.id);
+    if (this.props.asset) {
+      this.props.fetchTimeseriesForAssetId(this.props.asset.id);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (this.props.asset.id !== prevProps.asset.id) {
+    if (
+      this.props.asset &&
+      (!prevProps.asset || this.props.asset.id !== prevProps.asset.id)
+    ) {
       this.props.fetchTimeseriesForAssetId(this.props.asset.id);
     }
   }
@@ -194,7 +199,9 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
-    timeseries: selectTimeseriesByAssetId(state, origProps.asset.id),
+    timeseries: origProps.asset
+      ? selectTimeseriesByAssetId(state, origProps.asset.id)
+      : undefined,
     selectedTimeseries: origProps.timeseriesId
       ? selectTimeseries(state).timeseriesData[origProps.timeseriesId]
       : undefined,

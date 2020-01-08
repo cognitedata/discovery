@@ -6,6 +6,7 @@ import { push } from 'connected-react-router';
 import { Button, Tabs, Descriptions, Spin } from 'antd';
 import moment from 'moment';
 import { AssetBreadcrumb, AssetTree } from '@cognite/gearbox';
+import LoadingWrapper from 'components/LoadingWrapper';
 import { ExtendedAsset } from '../../modules/assets';
 import { BetaTag } from '../../components/BetaWarning';
 import { RootState } from '../../reducers/index';
@@ -38,6 +39,10 @@ const Wrapper = styled.div`
   .ant-tabs-tabpane {
     overflow: auto;
   }
+
+  .ant-breadcrumb {
+    word-break: break-all;
+  }
 `;
 
 const ButtonRow = styled.div`
@@ -54,7 +59,8 @@ const ButtonRow = styled.div`
 `;
 
 type OrigProps = {
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
+  onViewDetails: (type: string, id: number) => void;
 };
 
 type Props = {
@@ -73,13 +79,16 @@ class AssetSidebar extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    if (!this.props.types.assetTypes[this.props.asset.id]) {
+    if (this.props.asset && !this.props.types.assetTypes[this.props.asset.id]) {
       this.props.fetchTypeForAssets([this.props.asset.id]);
     }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (this.props.asset.id !== prevProps.asset.id) {
+    if (
+      this.props.asset &&
+      (!prevProps.asset || this.props.asset.id !== prevProps.asset.id)
+    ) {
       this.props.fetchTypeForAssets([this.props.asset.id]);
     }
   }
@@ -92,19 +101,33 @@ class AssetSidebar extends React.Component<Props, State> {
     if (error) {
       return <span>Unable To Load Schema</span>;
     }
-    if (!assetTypes[this.props.asset.id]) {
+    if (!assetTypes[this.props.asset!.id]) {
       return <Spin />;
     }
-    return assetTypes[this.props.asset.id]
+    return assetTypes[this.props.asset!.id]
       .map(el => items[el.type.id].name)
       .map(type => <Button type="link">{type}</Button>);
   };
 
   render() {
     const { asset } = this.props;
+    if (!asset) {
+      return (
+        <Wrapper>
+          <LoadingWrapper>
+            <p>Loading Asset...</p>
+          </LoadingWrapper>
+        </Wrapper>
+      );
+    }
     return (
       <Wrapper>
-        <AssetBreadcrumb assetId={asset.id} />
+        <AssetBreadcrumb
+          assetId={asset.id}
+          onBreadcrumbClick={breadcrumb =>
+            this.props.onViewDetails('asset', breadcrumb.id)
+          }
+        />
         <h1>{asset.name}</h1>
         <ButtonRow>
           <Button type="primary" shape="round">
@@ -141,7 +164,14 @@ class AssetSidebar extends React.Component<Props, State> {
             </Descriptions>
           </Tabs.TabPane>
           <Tabs.TabPane tab="Children" key="assets">
-            <AssetTree assetIds={[asset.id]} />
+            <AssetTree
+              assetIds={[asset.id]}
+              onSelect={selectedAsset => {
+                if (selectedAsset.node) {
+                  this.props.onViewDetails('asset', selectedAsset.node.id);
+                }
+              }}
+            />
           </Tabs.TabPane>
           <Tabs.TabPane tab="Metadata" key="metadata">
             <pre>{JSON.stringify(asset.metadata, null, 2)}</pre>

@@ -35,7 +35,7 @@ import {
   selectAssets,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import NoAssetSelected from '../../components/Placeholder';
+import Placeholder from '../../components/Placeholder';
 import { trackUsage } from '../../utils/metrics';
 
 type Node = {
@@ -302,7 +302,12 @@ class TreeViewer extends Component<Props, State> {
       }
     }
     if (!nodeData) {
-      return <NoAssetSelected componentName="Asset Network Explorer" />;
+      return (
+        <Placeholder
+          text="Loading Asset..."
+          componentName="Asset Network Explorer"
+        />
+      );
     }
 
     return (

@@ -13,7 +13,7 @@ import { EventPreview } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import ViewingDetailsNavBar from './ViewingDetailsNavBar';
+import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import {
   selectEvents,
   fetchEventsForAssetId,
@@ -33,7 +33,7 @@ const Wrapper = styled.div`
 `;
 
 type OrigProps = {
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
   eventId?: number;
   onSelect: (id: number) => void;
   onClearSelection: () => void;
@@ -57,11 +57,16 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.fetchEventsForAssetId(this.props.asset.id);
+    if (this.props.asset) {
+      this.props.fetchEventsForAssetId(this.props.asset.id);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (this.props.asset.id !== prevProps.asset.id) {
+    if (
+      this.props.asset &&
+      (!prevProps.asset || this.props.asset.id !== prevProps.asset.id)
+    ) {
       this.props.fetchEventsForAssetId(this.props.asset.id);
     }
   }
@@ -200,7 +205,9 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
-    events: selectEventsByAssetId(state, origProps.asset.id),
+    events: origProps.asset
+      ? selectEventsByAssetId(state, origProps.asset.id)
+      : undefined,
     selectedEvent: origProps.eventId
       ? selectEvents(state).items[origProps.eventId]
       : undefined,

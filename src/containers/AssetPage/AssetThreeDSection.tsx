@@ -10,13 +10,13 @@ import {
   fetchModels,
   ThreeDState,
   ThreeDModel,
-} from '../modules/threed';
-import { RootState } from '../reducers/index';
-import { fetchMappingsFromAssetId } from '../modules/assetmappings';
-import Model3D from '../components/Model3D';
-import { ExtendedAsset } from '../modules/assets';
-import ViewingDetailsNavBar from './AssetPage/ViewingDetailsNavBar';
-import FlexTableWrapper from '../components/FlexTableWrapper';
+} from '../../modules/threed';
+import { RootState } from '../../reducers/index';
+import { fetchMappingsFromAssetId } from '../../modules/assetmappings';
+import Model3D from '../../components/Model3D';
+import { ExtendedAsset } from '../../modules/assets';
+import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
+import FlexTableWrapper from '../../components/FlexTableWrapper';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -31,7 +31,7 @@ const Wrapper = styled.div`
 `;
 
 type OrigProps = {
-  asset: ExtendedAsset;
+  asset?: ExtendedAsset;
   modelId?: number;
   revisionId?: number;
   nodeId?: number;
@@ -50,19 +50,19 @@ type Props = {
 } & OrigProps;
 
 type State = {};
-class ThreeDViewerComponent extends Component<Props, State> {
+class AssetThreeDSection extends Component<Props, State> {
   cache = {};
 
   componentDidMount() {
     const { asset } = this.props;
-    if (asset.id) {
+    if (asset && asset.id) {
       this.getNodeId(true);
     }
   }
 
   componentDidUpdate(prevProps: Props) {
     const { asset } = this.props;
-    if (prevProps.asset.id !== asset.id) {
+    if (asset && (!prevProps.asset || prevProps.asset.id !== asset.id)) {
       this.getNodeId(true);
     }
   }
@@ -74,7 +74,7 @@ class ThreeDViewerComponent extends Component<Props, State> {
       return nodeId;
     }
 
-    if (asset.id && fetchIfMissing) {
+    if (asset && asset.id && fetchIfMissing) {
       if (modelId && revisionId) {
         this.props.fetchMappingsFromAssetId(modelId, revisionId, asset.id);
       } else if (asset.rootId && representsAsset[asset.rootId]) {
@@ -117,7 +117,9 @@ class ThreeDViewerComponent extends Component<Props, State> {
               modelId={modelId!}
               revisionId={revisionId!}
               nodeId={nodeId}
-              onAssetIdChange={(id: number) => this.props.onAssetClicked(id)}
+              onAssetIdChange={(id: number) =>
+                this.props.onViewDetails('asset', id)
+              }
               onNodeIdChange={(id: number) =>
                 this.props.onNodeClicked(modelId!, revisionId!, id)
               }
@@ -165,7 +167,7 @@ class ThreeDViewerComponent extends Component<Props, State> {
         </VerticallyCenteredRow>
         <FlexTableWrapper>
           <Table
-            dataSource={representsAsset[asset.rootId!]}
+            dataSource={asset ? representsAsset[asset.rootId!] : undefined}
             loading={loading}
             pagination={false}
             rowKey="modelId"
@@ -212,7 +214,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ThreeDViewerComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(AssetThreeDSection);
