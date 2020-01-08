@@ -106,7 +106,7 @@ type Props = {
   search: string | undefined;
   threed: ThreeDState;
   assets: AssetsState;
-  onViewDetails: (type: string, ...ids: number[]) => void;
+  onNavigateToPage: (type: string, ...ids: number[]) => void;
   doFetchRevisions: typeof fetchRevisions;
   fetchModels: typeof fetchModels;
 };
@@ -305,7 +305,7 @@ class AssetCustomSection extends React.Component<Props, State> {
                 type={el.viewType}
                 asset={this.props.asset}
                 search={this.props.search}
-                onViewDetails={this.props.onViewDetails}
+                onNavigateToPage={this.props.onNavigateToPage}
                 onComponentChange={(type: AssetViewerType) => {
                   this.changeLayoutType(type, el.i!);
                 }}

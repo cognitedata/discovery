@@ -37,7 +37,7 @@ type OrigProps = {
   timeseriesId?: number;
   onSelect: (id: number) => void;
   onClearSelection: () => void;
-  onViewDetails: (type: string, id: number) => void;
+  onNavigateToPage: (type: string, id: number) => void;
 };
 
 type Props = {
@@ -123,7 +123,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
             name={selectedTimeseries.name || 'Timeseries'}
             description={selectedTimeseries.description || ''}
             onButtonClicked={() =>
-              this.props.onViewDetails('timeseries', timeseriesId)
+              this.props.onNavigateToPage('timeseries', timeseriesId)
             }
             onBackClicked={this.props.onClearSelection}
           />

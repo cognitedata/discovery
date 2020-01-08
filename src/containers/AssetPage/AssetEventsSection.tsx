@@ -37,7 +37,7 @@ type OrigProps = {
   eventId?: number;
   onSelect: (id: number) => void;
   onClearSelection: () => void;
-  onViewDetails: (type: string, id: number) => void;
+  onNavigateToPage: (type: string, id: number) => void;
 };
 
 type Props = {
@@ -137,7 +137,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
           <ViewingDetailsNavBar
             name={selectedEvent.type || 'Event'}
             description={selectedEvent.description || ''}
-            onButtonClicked={() => this.props.onViewDetails('event', eventId)}
+            onButtonClicked={() => this.props.onNavigateToPage('event', eventId)}
             onBackClicked={this.props.onClearSelection}
           />
           <div

@@ -60,7 +60,7 @@ const ButtonRow = styled.div`
 
 type OrigProps = {
   asset?: ExtendedAsset;
-  onViewDetails: (type: string, id: number) => void;
+  onNavigateToPage: (type: string, id: number) => void;
 };
 
 type Props = {
@@ -125,7 +125,7 @@ class AssetSidebar extends React.Component<Props, State> {
         <AssetBreadcrumb
           assetId={asset.id}
           onBreadcrumbClick={breadcrumb =>
-            this.props.onViewDetails('asset', breadcrumb.id)
+            this.props.onNavigateToPage('asset', breadcrumb.id)
           }
         />
         <h1>{asset.name}</h1>
@@ -168,7 +168,7 @@ class AssetSidebar extends React.Component<Props, State> {
               assetIds={[asset.id]}
               onSelect={selectedAsset => {
                 if (selectedAsset.node) {
-                  this.props.onViewDetails('asset', selectedAsset.node.id);
+                  this.props.onNavigateToPage('asset', selectedAsset.node.id);
                 }
               }}
             />

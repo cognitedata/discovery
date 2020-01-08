@@ -169,7 +169,7 @@ class AssetPage extends React.Component<Props, State> {
     );
   };
 
-  onViewDetails = (type: string, ...ids: number[]) => {
+  onNavigateToPage = (type: string, ...ids: number[]) => {
     if (type === 'asset') {
       const { itemId, itemId2, itemId3 } = this.props.match.params;
       const secondaryIds = [itemId, itemId2, itemId3].filter(el => !!el);
@@ -192,7 +192,7 @@ class AssetPage extends React.Component<Props, State> {
             asset={this.asset!}
             search={this.props.search}
             tenant={this.tenant}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -207,7 +207,7 @@ class AssetPage extends React.Component<Props, State> {
         return (
           <AssetRelationshipSection
             asset={this.asset}
-            onAssetClicked={id => this.onViewDetails('asset', id)}
+            onAssetClicked={id => this.onNavigateToPage('asset', id)}
           />
         );
       }
@@ -222,7 +222,7 @@ class AssetPage extends React.Component<Props, State> {
         return (
           <AssetTreeViewerVX
             asset={this.asset}
-            onAssetClicked={id => this.onViewDetails('asset', id)}
+            onAssetClicked={id => this.onNavigateToPage('asset', id)}
           />
         );
       }
@@ -233,7 +233,7 @@ class AssetPage extends React.Component<Props, State> {
             timeseriesId={this.timeseriesId}
             onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -244,7 +244,7 @@ class AssetPage extends React.Component<Props, State> {
             fileId={this.fileId}
             onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -256,7 +256,7 @@ class AssetPage extends React.Component<Props, State> {
             fileId={this.fileId}
             onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -267,7 +267,7 @@ class AssetPage extends React.Component<Props, State> {
             eventId={this.eventId}
             onSelect={id => this.onSelect(id)}
             onClearSelection={this.onClearSelection}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -288,7 +288,7 @@ class AssetPage extends React.Component<Props, State> {
               this.onSelect(modelId, revisionId, nodeId)
             }
             onClearSelection={this.onClearSelection}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -306,7 +306,7 @@ class AssetPage extends React.Component<Props, State> {
           </Button>
         </BackSection>
         <Wrapper>
-          <AssetSidebar asset={this.asset} onViewDetails={this.onViewDetails} />
+          <AssetSidebar asset={this.asset} onNavigateToPage={this.onNavigateToPage} />
           <AssetView>
             <Tabs
               tabBarGutter={0}

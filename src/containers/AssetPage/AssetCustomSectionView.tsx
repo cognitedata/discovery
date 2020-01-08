@@ -50,7 +50,7 @@ type OwnProps = {
   type: AssetViewerType;
   asset?: ExtendedAsset;
   search: string | undefined;
-  onViewDetails: (type: string, ...ids: number[]) => void;
+  onNavigateToPage: (type: string, ...ids: number[]) => void;
   onComponentChange: (type: AssetViewerType) => void;
 };
 type StateProps = {
@@ -221,7 +221,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
     }
   };
 
-  onViewDetails = async (type: string, ...ids: number[]) => {
+  onNavigateToPage = async (type: string, ...ids: number[]) => {
     if (type === 'asset') {
       const search = this.props.search ? qs.parse(this.props.search) : {};
       if (search.modelId && search.revisionId && ids[0]) {
@@ -251,7 +251,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
         );
       }
     }
-    this.props.onViewDetails(type, ...ids);
+    this.props.onNavigateToPage(type, ...ids);
   };
 
   renderView = (tabKey: AssetTabKeys) => {
@@ -267,7 +267,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
         return (
           <AssetRelationshipSection
             asset={this.props.asset}
-            onAssetClicked={id => this.onViewDetails('asset', id)}
+            onAssetClicked={id => this.onNavigateToPage('asset', id)}
           />
         );
       }
@@ -282,7 +282,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
         return (
           <AssetTreeViewerVX
             asset={this.props.asset}
-            onAssetClicked={id => this.onViewDetails('asset', id)}
+            onAssetClicked={id => this.onNavigateToPage('asset', id)}
           />
         );
       }
@@ -293,7 +293,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             timeseriesId={this.timeseriesId}
             onSelect={id => this.onSelect('timeseries', id)}
             onClearSelection={() => this.onClearSelection('timeseries')}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -304,7 +304,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             fileId={this.fileId}
             onSelect={id => this.onSelect('file', id)}
             onClearSelection={() => this.onClearSelection('file')}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -316,7 +316,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             fileId={this.fileId}
             onSelect={id => this.onSelect('file', id)}
             onClearSelection={() => this.onClearSelection('file')}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -327,7 +327,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             eventId={this.eventId}
             onSelect={id => this.onSelect('event', id)}
             onClearSelection={() => this.onClearSelection('event')}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }
@@ -348,7 +348,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
               this.onSelect('threed', modelId, revisionId, nodeId)
             }
             onClearSelection={() => this.onClearSelection('threed')}
-            onViewDetails={this.onViewDetails}
+            onNavigateToPage={this.onNavigateToPage}
           />
         );
       }

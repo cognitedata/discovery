@@ -37,7 +37,7 @@ type OrigProps = {
   mimeTypes?: string[];
   fileId?: number;
   onSelect: (id: number) => void;
-  onViewDetails: (type: string, id: number) => void;
+  onNavigateToPage: (type: string, id: number) => void;
   onClearSelection: () => void;
 };
 
@@ -140,7 +140,7 @@ class AssetFileSection extends React.Component<Props, State> {
         <>
           <ViewingDetailsNavBar
             name={selectFile.name || 'Timeseries'}
-            onButtonClicked={() => this.props.onViewDetails('file', fileId)}
+            onButtonClicked={() => this.props.onNavigateToPage('file', fileId)}
             onBackClicked={this.props.onClearSelection}
           />
           <div
@@ -151,7 +151,7 @@ class AssetFileSection extends React.Component<Props, State> {
           >
             <FilePreview
               assetId={this.props.asset ? this.props.asset.id : undefined}
-              onViewDetails={this.props.onViewDetails}
+              onNavigateToPage={this.props.onNavigateToPage}
               fileId={fileId}
               deleteFile={() => {}}
             />

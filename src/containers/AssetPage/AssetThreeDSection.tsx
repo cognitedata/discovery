@@ -39,7 +39,7 @@ type OrigProps = {
   onNodeClicked: (modelId: number, revisionId: number, nodeId: number) => void;
   onRevisionClicked: (modelId: number, revisionId: number) => void;
   onClearSelection: () => void;
-  onViewDetails: (type: string, ...ids: number[]) => void;
+  onNavigateToPage: (type: string, ...ids: number[]) => void;
 };
 
 type Props = {
@@ -105,7 +105,7 @@ class AssetThreeDSection extends Component<Props, State> {
           <ViewingDetailsNavBar
             name={selectedModel.name || '3D Model'}
             onButtonClicked={() =>
-              this.props.onViewDetails(
+              this.props.onNavigateToPage(
                 'threed',
                 ...[modelId, revisionId, ...(nodeId ? [nodeId] : [])]
               )
@@ -118,7 +118,7 @@ class AssetThreeDSection extends Component<Props, State> {
               revisionId={revisionId!}
               nodeId={nodeId}
               onAssetIdChange={(id: number) =>
-                this.props.onViewDetails('asset', id)
+                this.props.onNavigateToPage('asset', id)
               }
               onNodeIdChange={(id: number) =>
                 this.props.onNodeClicked(modelId!, revisionId!, id)
