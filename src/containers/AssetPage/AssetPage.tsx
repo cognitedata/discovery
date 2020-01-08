@@ -306,7 +306,10 @@ class AssetPage extends React.Component<Props, State> {
           </Button>
         </BackSection>
         <Wrapper>
-          <AssetSidebar asset={this.asset} onNavigateToPage={this.onNavigateToPage} />
+          <AssetSidebar
+            asset={this.asset}
+            onNavigateToPage={this.onNavigateToPage}
+          />
           <AssetView>
             <Tabs
               tabBarGutter={0}

@@ -137,7 +137,9 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
           <ViewingDetailsNavBar
             name={selectedEvent.type || 'Event'}
             description={selectedEvent.description || ''}
-            onButtonClicked={() => this.props.onNavigateToPage('event', eventId)}
+            onButtonClicked={() =>
+              this.props.onNavigateToPage('event', eventId)
+            }
             onBackClicked={this.props.onClearSelection}
           />
           <div
