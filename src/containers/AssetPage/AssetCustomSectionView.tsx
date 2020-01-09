@@ -197,7 +197,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
       }
       case 'timeseries': {
         this.props.push({
-          search: qs.stringify({ ...search, timeseriesId: ids[0] }),
+          search: qs.stringify({ ...search, timeseriçesId: ids[0] }),
         });
         break;
       }
@@ -245,7 +245,6 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             );
           }
         }
-        console.log(mapping);
         if (mapping) {
           await this.onSelect(
             'threed',
