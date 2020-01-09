@@ -106,7 +106,7 @@ class FilePage extends React.Component<Props, State> {
   };
 
   onGoToAssetClicked = (id: number) => {
-    this.props.push(`/${this.tenant}/asset/${id}`);
+    this.props.push(`/${this.tenant}/asset/${id}/files/${this.file.id}`);
   };
 
   onDeleteFileClicked = async () => {
@@ -141,13 +141,20 @@ class FilePage extends React.Component<Props, State> {
               <FilePreview
                 fileId={this.file.id}
                 deleteFile={this.onDeleteFileClicked}
-                onNavigateToPage={console.log}
+                onAssetClicked={id =>
+                  this.props.push(
+                    `/${this.tenant}/asset/${id}/files/${this.file.id}`
+                  )
+                }
+                onFileClicked={id =>
+                  this.props.push(`/${this.tenant}/files/${id}`)
+                }
               />
             </FileView>
           </Wrapper>
         ) : (
           <LoadingWrapper>
-            <p>Loading Timeseries...</p>
+            <p>Loading File...</p>
           </LoadingWrapper>
         )}
       </>

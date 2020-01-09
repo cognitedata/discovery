@@ -51,6 +51,9 @@ const CustomGridLayout = styled(ResponsiveReactGridLayout)<LayoutProps>`
     z-index: 1001;
     display: ${props => (props.editable ? 'block' : 'none')};
   }
+  &&&& > div > div {
+    padding: 12px;
+  }
 `;
 
 const DraggingView = styled.div`

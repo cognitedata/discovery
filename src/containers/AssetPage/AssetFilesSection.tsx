@@ -17,6 +17,7 @@ import {
   fetchFiles,
   selectFilesForAsset,
   selectFiles,
+  fetchFile,
 } from '../../modules/files';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 
@@ -43,9 +44,10 @@ type OrigProps = {
 
 type Props = {
   files: FilesMetadata[] | undefined;
-  selectFile: FilesMetadata | undefined;
+  selectedFile: FilesMetadata | undefined;
   push: typeof push;
   fetchFiles: typeof fetchFiles;
+  fetchFile: typeof fetchFile;
 } & OrigProps;
 
 type State = {};
@@ -61,6 +63,9 @@ class AssetFileSection extends React.Component<Props, State> {
     if (this.props.asset) {
       this.props.fetchFiles(this.props.asset.id);
     }
+    if (this.props.fileId && !this.props.selectedFile) {
+      this.props.fetchFile(this.props.fileId);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -69,6 +74,13 @@ class AssetFileSection extends React.Component<Props, State> {
       (!prevProps.asset || this.props.asset.id !== prevProps.asset.id)
     ) {
       this.props.fetchFiles(this.props.asset.id);
+    }
+    if (
+      this.props.fileId &&
+      this.props.fileId !== prevProps.fileId &&
+      !this.props.selectedFile
+    ) {
+      this.props.fetchFile(this.props.fileId);
     }
   }
 
@@ -120,8 +132,10 @@ class AssetFileSection extends React.Component<Props, State> {
     const { files, mimeTypes } = this.props;
     if (files) {
       if (mimeTypes) {
-        return files.filter(
-          file => mimeTypes.indexOf(file.mimeType || '') !== -1
+        return files.filter(file =>
+          mimeTypes.some(
+            mimeType => file.mimeType && file.mimeType.indexOf(mimeType) > -1
+          )
         );
       }
       return files;
@@ -134,12 +148,12 @@ class AssetFileSection extends React.Component<Props, State> {
   };
 
   renderItem = () => {
-    const { selectFile, fileId } = this.props;
-    if (fileId && selectFile) {
+    const { selectedFile, fileId } = this.props;
+    if (fileId && selectedFile) {
       return (
         <>
           <ViewingDetailsNavBar
-            name={selectFile.name || 'Timeseries'}
+            name={selectedFile.name || 'File'}
             onButtonClicked={() => this.props.onNavigateToPage('file', fileId)}
             onBackClicked={this.props.onClearSelection}
           />
@@ -151,7 +165,8 @@ class AssetFileSection extends React.Component<Props, State> {
           >
             <FilePreview
               assetId={this.props.asset ? this.props.asset.id : undefined}
-              onNavigateToPage={this.props.onNavigateToPage}
+              onAssetClicked={id => this.props.onNavigateToPage('asset', id)}
+              onFileClicked={id => this.props.onSelect(id)}
               fileId={fileId}
               deleteFile={() => {}}
             />
@@ -162,12 +177,14 @@ class AssetFileSection extends React.Component<Props, State> {
     return (
       <>
         <ViewingDetailsNavBar
-          name="Timeseries"
+          name="File"
           description="Loading..."
           onButtonClicked={() => {}}
           onBackClicked={this.props.onClearSelection}
         />
-        <LoadingWrapper>Loading Timeseries</LoadingWrapper>
+        <LoadingWrapper>
+          <p>Loading File</p>
+        </LoadingWrapper>
       </>
     );
   };
@@ -192,7 +209,7 @@ class AssetFileSection extends React.Component<Props, State> {
           <Table
             dataSource={this.files}
             columns={this.columns}
-            scroll={{ y: true }}
+            scroll={{ y: true, x: 600 }}
             pagination={{
               position: 'bottom',
               showQuickJumper: true,
@@ -216,11 +233,11 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
     files: origProps.asset
       ? selectFilesForAsset(state, origProps.asset.id)
       : undefined,
-    selectFile: origProps.fileId
+    selectedFile: origProps.fileId
       ? selectFiles(state).files[origProps.fileId]
       : undefined,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchFiles }, dispatch);
+  bindActionCreators({ push, fetchFiles, fetchFile }, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(AssetFileSection);

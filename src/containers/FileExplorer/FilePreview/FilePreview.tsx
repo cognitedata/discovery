@@ -85,7 +85,8 @@ const ButtonRow = styled.div`
 type OrigProps = {
   fileId: number;
   deleteFile: (fileId: number) => void;
-  onNavigateToPage: (type: string, id: number) => void;
+  onAssetClicked: (id: number) => void;
+  onFileClicked: (id: number) => void;
 };
 
 type Props = {
@@ -339,7 +340,8 @@ class FilePreview extends React.Component<Props, State> {
         <PNIDViewer
           assetId={this.props.assetId}
           selectedDocument={this.props.file!}
-          onAssetClicked={id => this.props.onNavigateToPage('asset', id)}
+          onAssetClicked={this.props.onAssetClicked}
+          onFileClicked={this.props.onFileClicked}
         />
       </div>
     );

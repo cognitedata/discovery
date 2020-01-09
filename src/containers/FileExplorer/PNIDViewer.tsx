@@ -1,10 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button, message, Icon } from 'antd';
+import { message, Button } from 'antd';
 import styled from 'styled-components';
 import { SVGViewer } from '@cognite/gearbox';
 import { bindActionCreators, Dispatch } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
+import BottomRightCard from 'components/BottomRightCard';
 import { selectAssets, AssetsState } from '../../modules/assets';
 import { selectFiles, FilesState } from '../../modules/files';
 import { sleep } from '../../utils/utils';
@@ -29,23 +30,43 @@ const StyledSVGViewerContainer = styled.div`
   width: 100%;
   position: relative;
   .metadata-container.highlighted {
-    outline: solid 12px #3838ff;
+    outline: solid 8px #4a67fb;
     outline-offset: 4px;
     > {
       text {
-        stroke: #3838ff;
-        fill: #3838ff;
+        stroke: #4a67fb;
+        fill: #4a67fb;
         transition: all 0.2s ease;
         text-decoration: none;
       }
       path {
-        stroke: #3838ff;
+        stroke: #4a67fb;
         transition: all 0.2s ease;
       }
     }
     &:hover,
     &:focus {
-      outline: auto 2px #36a2c2;
+      outline: solid 8px #4a67fb;
+    }
+  }
+  .metadata-container.highlighted-secondary {
+    outline: solid 8px #fc2574;
+    outline-offset: 4px;
+    > {
+      text {
+        stroke: #fc2574;
+        fill: #fc2574;
+        transition: all 0.2s ease;
+        text-decoration: none;
+      }
+      path {
+        stroke: #fc2574;
+        transition: all 0.2s ease;
+      }
+    }
+    &:hover,
+    &:focus {
+      outline: solid 8px #fc2574;
     }
   }
 `;
@@ -56,11 +77,17 @@ type Props = {
   files: FilesState;
   selectedDocument: FilesMetadata;
   onAssetClicked: (id: number) => void;
+  onFileClicked: (id: number) => void;
 };
 
 type State = {
-  currentFiles: { id: number; fileName: string }[];
-  currentIndex: number;
+  currentFile: { id: number; fileName: string };
+  selectedItem?: {
+    type: 'asset' | 'file';
+    name: string;
+    description?: string;
+    id: number;
+  };
 };
 
 class PNIDViewer extends React.Component<Props, State> {
@@ -72,13 +99,10 @@ class PNIDViewer extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      currentFiles: [
-        {
-          id: props.selectedDocument.id,
-          fileName: props.selectedDocument.name,
-        },
-      ],
-      currentIndex: 0,
+      currentFile: {
+        id: props.selectedDocument.id,
+        fileName: props.selectedDocument.name,
+      },
     };
   }
 
@@ -86,12 +110,10 @@ class PNIDViewer extends React.Component<Props, State> {
     if (prevProps.selectedDocument !== this.props.selectedDocument) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
-        currentFiles: [
-          {
-            id: this.props.selectedDocument.id,
-            fileName: this.props.selectedDocument.name,
-          },
-        ],
+        currentFile: {
+          id: this.props.selectedDocument.id,
+          fileName: this.props.selectedDocument.name,
+        },
       });
     }
     if (prevProps.assetId !== this.props.assetId) {
@@ -104,20 +126,18 @@ class PNIDViewer extends React.Component<Props, State> {
           // Workaround https://github.com/cognitedata/gearbox.js/issues/300
           await sleep(250);
           // TODO will remove, need to verify
-          // @ts-ignore
-          this.svgviewer.pinchZoomInstance.updateAspectRatio();
-          this.svgviewer.pinchZoomInstance.update();
+          if (this.svgviewer.pinchZoomInstance) {
+            // @ts-ignore
+            this.svgviewer.pinchZoomInstance.updateAspectRatio();
+            this.svgviewer.pinchZoomInstance.update();
+          }
         }
       }, 100);
     }
   }
 
   get currentFile() {
-    const { currentFiles, currentIndex } = this.state;
-    if (currentFiles.length === 0) {
-      return undefined;
-    }
-    return currentFiles[currentIndex];
+    return this.state.currentFile;
   }
 
   searchAndSelectAssetName = async (nameString: string) => {
@@ -154,12 +174,17 @@ class PNIDViewer extends React.Component<Props, State> {
     } else {
       [asset] = matches;
     }
-    this.props.onAssetClicked(asset.id);
+    this.setState({
+      selectedItem: {
+        id: asset.id,
+        name: asset.name,
+        description: asset.description,
+        type: 'asset',
+      },
+    });
   };
 
   loadNextPNID = async (nameString: string) => {
-    const { currentFiles } = this.state;
-
     let name = nameString;
 
     if (name.indexOf('<tag>') > -1) {
@@ -172,9 +197,12 @@ class PNIDViewer extends React.Component<Props, State> {
     const result = await sdk.files.list({ filter: { name } });
     const exactMatch = result.items.find(a => a.name === name);
     if (exactMatch) {
-      currentFiles.push({
-        id: exactMatch.id,
-        fileName: exactMatch.name,
+      this.setState({
+        selectedItem: {
+          id: exactMatch.id,
+          name: exactMatch.name,
+          type: 'file',
+        },
       });
       trackUsage('PNIDViewer.loadNextPNID', {
         id: exactMatch.id,
@@ -186,7 +214,6 @@ class PNIDViewer extends React.Component<Props, State> {
       return;
     }
     this.targetCurrentAsset = true;
-    this.setState({ currentFiles, currentIndex: currentFiles.length - 1 });
   };
 
   isCurrentAsset = (metadata: any) => {
@@ -202,28 +229,17 @@ class PNIDViewer extends React.Component<Props, State> {
     return getTextFromMetadataNode(metadata) === asset.name;
   };
 
+  isSelectedAsset = (metadata: any) => {
+    if (!this.state.selectedItem) {
+      return false;
+    }
+    return getTextFromMetadataNode(metadata) === this.state.selectedItem.name;
+  };
+
   renderSVGViewer() {
-    const { currentFiles, currentIndex } = this.state;
+    const { selectedItem } = this.state;
     return (
       <>
-        <Button.Group style={{ marginBottom: '12px' }}>
-          <Button
-            size="small"
-            disabled={currentIndex === 0}
-            onClick={() => this.setState({ currentIndex: currentIndex - 1 })}
-          >
-            <Icon type="left" />
-            Previous Document
-          </Button>
-          <Button
-            size="small"
-            disabled={currentIndex === currentFiles.length - 1}
-            onClick={() => this.setState({ currentIndex: currentIndex + 1 })}
-          >
-            Next Document
-            <Icon type="right" />
-          </Button>
-        </Button.Group>
         <StyledSVGViewerContainer>
           <SVGViewer
             ref={c => {
@@ -243,6 +259,10 @@ class PNIDViewer extends React.Component<Props, State> {
                 condition: this.isCurrentAsset,
                 className: 'highlighted',
               },
+              {
+                condition: this.isSelectedAsset,
+                className: 'highlighted-secondary',
+              },
             ]}
             handleItemClick={item => {
               this.targetCurrentAsset = false;
@@ -255,6 +275,31 @@ class PNIDViewer extends React.Component<Props, State> {
             }}
           />
         </StyledSVGViewerContainer>
+        {selectedItem && (
+          <BottomRightCard
+            title={selectedItem.name}
+            onClose={() => this.setState({ selectedItem: undefined })}
+          >
+            <>
+              <strong>Description</strong>
+              <p>{selectedItem.description || 'N/A'}</p>
+              <div className="button-row">
+                <Button
+                  onClick={() => {
+                    if (selectedItem.type === 'asset') {
+                      this.props.onAssetClicked(selectedItem.id);
+                    } else {
+                      this.props.onFileClicked(selectedItem.id);
+                    }
+                    this.setState({ selectedItem: undefined });
+                  }}
+                >
+                  View {selectedItem.type === 'asset' ? 'Asset' : 'File'}
+                </Button>
+              </div>
+            </>
+          </BottomRightCard>
+        )}
       </>
     );
   }

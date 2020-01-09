@@ -236,19 +236,23 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
               assetId: Number(ids[0]),
             }
           ));
-          this.props.addAssetMappingsToState(
-            mapping.modelId,
-            mapping.revisionId,
-            mapping.nodeId,
-            mapping.assetId
+          if (mapping) {
+            this.props.addAssetMappingsToState(
+              mapping.modelId,
+              mapping.revisionId,
+              mapping.nodeId,
+              mapping.assetId
+            );
+          }
+        }
+        if (mapping) {
+          this.onSelect(
+            'threed',
+            Number(search.modelId),
+            Number(search.revisionId),
+            mapping.nodeId
           );
         }
-        this.onSelect(
-          'threed',
-          Number(search.modelId),
-          Number(search.revisionId),
-          mapping.nodeId
-        );
       }
     }
     this.props.onNavigateToPage(type, ...ids);
