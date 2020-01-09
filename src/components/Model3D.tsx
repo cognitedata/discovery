@@ -245,6 +245,7 @@ class Model3D extends React.Component<Props, State> {
     if (!mapping) {
       return;
     }
+    console.log(mapping);
 
     const boundingBox = new THREE.Box3();
     // The node may not have geometries in the scene, so we need to

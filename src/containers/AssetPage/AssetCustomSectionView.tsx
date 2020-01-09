@@ -177,7 +177,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
     });
   };
 
-  onSelect = (
+  onSelect = async (
     type: 'asset' | 'timeseries' | 'file' | 'threed' | 'event',
     ...ids: number[]
   ) => {
@@ -245,8 +245,9 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             );
           }
         }
+        console.log(mapping);
         if (mapping) {
-          this.onSelect(
+          await this.onSelect(
             'threed',
             Number(search.modelId),
             Number(search.revisionId),
