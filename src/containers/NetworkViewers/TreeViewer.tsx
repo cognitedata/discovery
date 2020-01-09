@@ -139,7 +139,7 @@ const ForceViewTypes: { [key in FORCE_GRAPH_TYPES]: string } = {
   td: 'Top Down',
   bu: 'Bottom Up',
   lr: 'Left Right',
-  rl: 'Right Life',
+  rl: 'Right Left',
   radialout: 'Radial Out',
   radialin: 'Radial In',
   none: 'None',
