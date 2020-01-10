@@ -32,6 +32,21 @@ const fadeInScale = keyframes`
   }
 `;
 
+const Wrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  .react-transform-component {
+    height: 100%;
+    width: 100%;
+    overflow: scroll;
+    display: flex;
+  }
+  .react-transform-component > div {
+    align-self: center;
+    margin: 0 auto;
+  }
+`;
+
 const Container = styled.div`
   background: white;
   border-radius: 2px;
@@ -93,17 +108,33 @@ const Overlay = styled.div`
   user-select: none;
 `;
 
-const Buttons = styled.div`
-  display: flex;
-  margin-bottom: 16px;
-  .spacer {
-    flex: 1;
+const ResizeButtons = styled.div`
+  position: absolute;
+  left: 32px;
+  bottom: 34px;
+  z-index: 1000;
+  && > * > * {
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.1);
   }
-  button {
-    margin-right: 8px;
+  .ant-btn-group > .ant-btn:first-child:not(:last-child),
+  .ant-btn-group > span:first-child:not(:last-child) > .ant-btn {
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
   }
-  button:nth-last-child(1) {
-    margin-right: 0px;
+  .ant-btn-group > .ant-btn:last-child:not(:first-child),
+  .ant-btn-group > span:last-child:not(:first-child) > .ant-btn {
+    border-top-right-radius: 50px;
+    border-bottom-right-radius: 50px;
+  }
+`;
+const ImageAnnotatorButtons = styled.div`
+  position: absolute;
+  right: 32px;
+  top: 34px;
+  z-index: 1000;
+  && > * {
+    margin-left: 16px;
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -387,28 +418,34 @@ class ImagePreview extends React.Component<Props, State> {
     const { detections, annotation, disableZooming } = this.state;
     return (
       <>
-        <div className="preview">
-          <TransformWrapper
-            onZoomChange={this.updateScale}
-            options={{ limitToBounds: false, disabled: disableZooming }}
-          >
-            {({
-              zoomIn,
-              zoomOut,
-              resetTransform,
-            }: {
-              zoomIn: any;
-              zoomOut: any;
-              resetTransform: any;
-            }) => (
-              <>
-                <Buttons>
-                  <Button icon="form" onClick={this.changeEditStatus}>
-                    {disableZooming
-                      ? 'Done Adding Annotation'
-                      : 'Add Annotation'}
-                  </Button>
-                  <div className="spacer" />
+        <TransformWrapper
+          onZoomChange={this.updateScale}
+          options={{ limitToBounds: false, disabled: disableZooming }}
+        >
+          {({
+            zoomIn,
+            zoomOut,
+            resetTransform,
+          }: {
+            zoomIn: any;
+            zoomOut: any;
+            resetTransform: any;
+          }) => (
+            <Wrapper>
+              <ImageAnnotatorButtons>
+                <Button shape="round" icon="caret-down">
+                  View Options
+                </Button>
+                <Button
+                  shape="round"
+                  icon="form"
+                  onClick={this.changeEditStatus}
+                >
+                  {disableZooming ? 'Done Adding Annotation' : 'Add Annotation'}
+                </Button>
+              </ImageAnnotatorButtons>
+              <ResizeButtons>
+                <Button.Group>
                   <Button
                     icon="plus"
                     onClick={zoomIn}
@@ -424,42 +461,42 @@ class ImagePreview extends React.Component<Props, State> {
                     onClick={resetTransform}
                     disabled={disableZooming}
                   />
-                </Buttons>
-                <TransformComponent>
-                  <Annotation
-                    src={filePreviewUrl}
-                    alt={file.name}
-                    disableAnnotation={!disableZooming}
-                    annotations={detections
-                      .filter(el => el.box)
-                      .map(el => ({
-                        geometry: {
-                          type: 'RECTANGLE',
-                          x: el.box!.left,
-                          y: el.box!.top,
-                          width: el.box!.width,
-                          height: el.box!.height,
-                        },
-                        id: el.id,
-                        data: el,
-                      }))}
-                    value={annotation}
-                    onChange={this.onChange}
-                    onSubmit={this.onSubmit}
-                    renderEditor={this.renderEditor}
-                    renderSelector={this.renderSelector}
-                    renderContent={this.renderContent}
-                    renderOverlay={() =>
-                      disableZooming ? (
-                        <Overlay>Click and Drag to Annotate</Overlay>
-                      ) : null
-                    }
-                  />
-                </TransformComponent>
-              </>
-            )}
-          </TransformWrapper>
-        </div>
+                </Button.Group>
+              </ResizeButtons>
+              <TransformComponent>
+                <Annotation
+                  src={filePreviewUrl}
+                  alt={file.name}
+                  disableAnnotation={!disableZooming}
+                  annotations={detections
+                    .filter(el => el.box)
+                    .map(el => ({
+                      geometry: {
+                        type: 'RECTANGLE',
+                        x: el.box!.left,
+                        y: el.box!.top,
+                        width: el.box!.width,
+                        height: el.box!.height,
+                      },
+                      id: el.id,
+                      data: el,
+                    }))}
+                  value={annotation}
+                  onChange={this.onChange}
+                  onSubmit={this.onSubmit}
+                  renderEditor={this.renderEditor}
+                  renderSelector={this.renderSelector}
+                  renderContent={this.renderContent}
+                  renderOverlay={() =>
+                    disableZooming ? (
+                      <Overlay>Click and Drag to Annotate</Overlay>
+                    ) : null
+                  }
+                />
+              </TransformComponent>
+            </Wrapper>
+          )}
+        </TransformWrapper>
       </>
     );
   }

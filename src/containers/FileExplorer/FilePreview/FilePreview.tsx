@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Pagination, Tabs, Spin } from 'antd';
+import { Button, Pagination, Tabs, Spin, message } from 'antd';
 import moment from 'moment';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -14,6 +14,7 @@ import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
 import { sdk } from 'index';
 import { trackUsage } from 'utils/metrics';
+import LoadingWrapper from 'components/LoadingWrapper';
 import { FileExplorerTabsType } from '../FileExplorer';
 import PNIDViewer from '../PNIDViewer';
 import FilePreviewDocumentTab from './FilePreviewDocumentTab';
@@ -40,27 +41,19 @@ function saveData(blob: Blob, fileName: string) {
 
 const Wrapper = styled.div`
   display: flex;
+  position: relative;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  background-size: contain;
 
   && .current {
     background-color: #dfdfdf;
   }
-  .preview {
-    flex: 3;
-    overflow: hidden;
-    background-repeat: no-repeat;
-    background-size: contain;
-    display: flex;
-    flex-direction: column;
-  }
-  .preview img {
+  img {
     height: 100%;
     width: 100%;
-  }
-  .preview .react-transform-component {
-    height: 100%;
-    overflow: scroll;
   }
 `;
 
@@ -69,6 +62,48 @@ const StyledPDFViewer = styled(Document)`
   height: 0;
   && {
     overflow: scroll;
+    display: flex;
+    background: #fafafa;
+    align-items: center;
+  }
+
+  .react-pdf__message {
+    height: 100%;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+  }
+
+  .react-pdf__Page {
+    margin: 0 auto;
+  }
+
+  .react-pdf__Page__canvas {
+    padding: 40px;
+  }
+`;
+
+const DocumentPagination = styled(Pagination)`
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  bottom: 34px;
+  && {
+    background: #fff;
+    border-radius: 50px;
+    padding: 12px 24px;
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const PDFContextButton = styled.div`
+  position: absolute;
+  right: 32px;
+  top: 34px;
+  && > * {
+    margin-left: 16px;
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.1);
   }
 `;
 
@@ -249,75 +284,84 @@ class FilePreview extends React.Component<Props, State> {
   renderPDF = () => {
     const { filePreviewUrl, pdfState } = this.state;
 
-    if (!filePreviewUrl) {
-      return (
-        <div className="preview">
-          <p>Loading...</p>
-        </div>
-      );
-    }
     if (pdfState.isError) {
       return (
-        <div className="preview">
+        <>
           <p>Unable to Load PDF.</p>
           <Button download href={filePreviewUrl} target="_blank">
             Download File
           </Button>
-        </div>
+        </>
       );
     }
 
     return (
-      <div className="preview">
-        {filePreviewUrl ? (
-          <>
-            <StyledPDFViewer
-              file={filePreviewUrl}
-              onLoadSuccess={file => {
-                trackUsage('FilePreview.PDFLoadingSuccess', {});
-                this.setState({
-                  pdfState: {
-                    numPages: file.numPages,
-                    page: 1,
-                    isError: false,
-                  },
-                });
-              }}
-              onLoadError={async () => {
-                trackUsage('FilePreview.PDFLoadingFailed', {
-                  fileId: this.props.fileId,
-                });
-                await this.fetchFileUrl();
-                this.setState({
-                  pdfState: {
-                    numPages: 0,
-                    page: 1,
-                    isError: true,
-                  },
-                });
-              }}
-            >
-              <Page pageNumber={pdfState.page} />
-            </StyledPDFViewer>
-            <Pagination
-              onChange={page => {
-                this.setState(state => ({
-                  ...state,
-                  pdfState: {
-                    ...state.pdfState,
-                    page,
-                  },
-                }));
-              }}
-              current={pdfState.page}
-              total={pdfState.numPages}
-              pageSize={1}
-            />
-          </>
-        ) : (
-          <p>Loading...</p>
-        )}
-      </div>
+      <>
+        <StyledPDFViewer
+          file={filePreviewUrl}
+          loading={
+            <div style={{ flex: 1, alignItems: 'center', alignSelf: 'center' }}>
+              <LoadingWrapper>
+                <p>Loading File...</p>
+              </LoadingWrapper>
+            </div>
+          }
+          noData={
+            <div style={{ flex: 1, alignItems: 'center', alignSelf: 'center' }}>
+              <Placeholder componentName="No PDF Specified" />
+            </div>
+          }
+          onLoadSuccess={file => {
+            trackUsage('FilePreview.PDFLoadingSuccess', {});
+            this.setState({
+              pdfState: {
+                numPages: file.numPages,
+                page: 1,
+                isError: false,
+              },
+            });
+          }}
+          onLoadError={async () => {
+            trackUsage('FilePreview.PDFLoadingFailed', {
+              fileId: this.props.fileId,
+            });
+            await this.fetchFileUrl();
+            this.setState({
+              pdfState: {
+                numPages: 0,
+                page: 1,
+                isError: true,
+              },
+            });
+          }}
+        >
+          <Page pageNumber={pdfState.page} />
+        </StyledPDFViewer>
+        <DocumentPagination
+          onChange={page => {
+            this.setState(state => ({
+              ...state,
+              pdfState: {
+                ...state.pdfState,
+                page,
+              },
+            }));
+          }}
+          current={pdfState.page}
+          total={pdfState.numPages}
+          pageSize={1}
+          showQuickJumper
+          size="small"
+        />
+        <PDFContextButton>
+          <Button shape="round" onClick={() => message.info('Coming Soon...')}>
+            Convert to P&ID
+          </Button>
+          <Button shape="round" onClick={() => message.info('Coming Soon...')}>
+            Detect Asset
+          </Button>
+        </PDFContextButton>
+      </>
     );
   };
 
@@ -330,19 +374,22 @@ class FilePreview extends React.Component<Props, State> {
         />
       );
     }
-    return null;
+
+    return (
+      <LoadingWrapper>
+        <p>Loading Image...</p>
+      </LoadingWrapper>
+    );
   };
 
   renderPnID = () => {
     return (
-      <div className="preview">
-        <PNIDViewer
-          assetId={this.props.assetId}
-          selectedDocument={this.props.file!}
-          onAssetClicked={this.props.onAssetClicked}
-          onFileClicked={this.props.onFileClicked}
-        />
-      </div>
+      <PNIDViewer
+        assetId={this.props.assetId}
+        selectedDocument={this.props.file!}
+        onAssetClicked={this.props.onAssetClicked}
+        onFileClicked={this.props.onFileClicked}
+      />
     );
   };
 
