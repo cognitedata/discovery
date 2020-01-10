@@ -4,7 +4,7 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import queryString from 'query-string';
 import { replace } from 'connected-react-router';
-import { Layout } from 'antd';
+import { Layout, notification } from 'antd';
 import Header from 'containers/Header';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
@@ -57,12 +57,6 @@ class Auth extends React.Component<Props, State> {
     await this.verifyAuth();
   }
 
-  async componentDidUpdate() {
-    if (!this.state.auth) {
-      await this.verifyAuth();
-    }
-  }
-
   verifyAuth = async () => {
     const {
       app: { cdfEnv, tenant },
@@ -102,23 +96,35 @@ class Auth extends React.Component<Props, State> {
         project: tenant || pathTenant,
         apiKey: fromUrlApiKey,
       });
-      status = true;
+      try {
+        await sdk.login.status();
+      } catch (e) {
+        status = false;
+      }
     } else {
       await sdk.loginWithOAuth({ project: tenant || pathTenant });
       status = await sdk.authenticate();
     }
     this.setState(
       {
-        auth: status !== null,
+        auth: !!status,
       },
       async () => {
-        // clear `apikey`
-        const queryParameters = queryString.parse(window.location.hash);
-        delete queryParameters.apikey;
-        window.location.hash = queryString.stringify(queryParameters);
-        await this.props.fetchUserGroups();
-        await this.props.fetchModels();
-        await this.props.fetchTypes();
+        if (this.state.auth) {
+          // clear `apikey`
+          const queryParameters = queryString.parse(window.location.hash);
+          delete queryParameters.apikey;
+          window.location.hash = queryString.stringify(queryParameters);
+          await this.props.fetchUserGroups();
+          await this.props.fetchModels();
+          await this.props.fetchTypes();
+        } else {
+          notification.error({
+            message: 'Unable to authenticate',
+            description:
+              'Make sure that you are using the correct OAuth account or apikey. Make sure there is no apikey parameter in local storage.',
+          });
+        }
       }
     );
   };
