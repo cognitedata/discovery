@@ -13,8 +13,6 @@ import {
   setModelAndRevisionAndNode,
 } from '../../modules/app';
 import AssetSearchComponent from '../AssetSearchComponent';
-import AssetPane from './AssetPane';
-import ThreeDPane from './ThreeDPane';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { trackUsage } from '../../utils/metrics';
@@ -149,7 +147,6 @@ class Sidebar extends React.Component<Props, State> {
           <Radio.Button value="3d">3D View</Radio.Button>
         </RootSelector>
         {onboardingText}
-        {this.state.selectedPane === 'asset' ? <AssetPane /> : <ThreeDPane />}
       </Sider>
     );
   }

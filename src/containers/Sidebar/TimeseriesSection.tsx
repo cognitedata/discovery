@@ -12,7 +12,7 @@ import {
   removeAssetFromTimeseries,
   TimeseriesState,
 } from '../../modules/timeseries';
-import AddTimeseries from '../Modals/AddTimeseriesModal';
+import AddTimeseries from '../Modals/LinkTimeseriesModal';
 import { selectAssets } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { selectAppState, AppState, setTimeseriesId } from '../../modules/app';

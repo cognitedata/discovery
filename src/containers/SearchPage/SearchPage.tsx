@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
-import { Input, Icon, Button, Tabs, message } from 'antd';
+import { Input, Icon, Button, Tabs, message, notification } from 'antd';
 import Table, { ColumnProps } from 'antd/lib/table';
 import { push } from 'connected-react-router';
 import debounce from 'lodash/debounce';
@@ -10,6 +10,9 @@ import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
 import { FilesMetadata } from '@cognite/sdk';
+import AddOrEditAssetModal from 'containers/Modals/AddOrEditAssetModal';
+import AddOrEditTimseriesModal from 'containers/Modals/AddOrEditTimseriesModal';
+import FileUploadModal from '../Modals/FileUploadModal';
 import { sdk } from '../../index';
 import { trackUsage } from '../../utils/metrics';
 import { addAssetsToState, AssetsState } from '../../modules/assets';
@@ -40,8 +43,8 @@ const SearchWrapper = styled.div`
     margin-right: 24px;
   }
   .ant-btn-background-ghost.ant-btn-primary {
-    color: #000;
-    border-color: #000;
+    color: #787878;
+    border-color: #787878;
   }
 `;
 
@@ -103,7 +106,10 @@ type Props = {
   addFilesToState: typeof addFilesToState;
 } & OrigProps;
 
-type State = { query: string };
+type State = {
+  query: string;
+  showModal?: TabKeys;
+};
 
 class SearchPage extends React.Component<Props, State> {
   searchIndex = 0;
@@ -288,6 +294,75 @@ class SearchPage extends React.Component<Props, State> {
     }
   };
 
+  hideModal = () => {
+    this.setState({ showModal: undefined });
+  };
+
+  renderModal = () => {
+    const { showModal } = this.state;
+    switch (showModal) {
+      case 'files':
+        return (
+          <FileUploadModal
+            onCancel={this.hideModal}
+            onFileSelected={file => this.goToPage({ id: file.id })}
+          />
+        );
+      case 'assets':
+        return (
+          <AddOrEditAssetModal
+            onClose={asset => {
+              if (asset) {
+                this.goToPage({ id: asset.id });
+              } else {
+                this.hideModal();
+              }
+            }}
+          />
+        );
+      case 'timeseries':
+        return (
+          <AddOrEditTimseriesModal
+            onClose={timeseries => {
+              if (timeseries) {
+                this.goToPage({ id: timeseries.id });
+              } else {
+                this.hideModal();
+              }
+            }}
+          />
+        );
+    }
+    return null;
+  };
+
+  goToPage = (row: any) => {
+    switch (this.tab) {
+      case 'assets':
+        this.props.push(`/${this.props.match.params.tenant}/asset/${row.id}`);
+        break;
+      case 'timeseries':
+        this.props.push(
+          `/${this.props.match.params.tenant}/timeseries/${row.id}`
+        );
+        break;
+      case 'files':
+        this.props.push(`/${this.props.match.params.tenant}/file/${row.id}`);
+        break;
+      case 'threed': {
+        const model = row as ThreeDModel;
+        if (model.revisions && model.revisions.length > 0) {
+          this.props.push(
+            `/${this.props.match.params.tenant}/threed/${model.id}/${model.revisions[0].id}`
+          );
+        } else {
+          message.info('Unable to preview model');
+        }
+        break;
+      }
+    }
+  };
+
   render() {
     const { query } = this.state;
     const { search } = this.props;
@@ -330,7 +405,32 @@ class SearchPage extends React.Component<Props, State> {
               <p />
             </div>
             <div className="right">
-              <Button icon="plus" type="primary">
+              <Button
+                icon="plus"
+                type="primary"
+                onClick={() => {
+                  if (this.tab === 'threed') {
+                    notification.info({
+                      message: 'Please upload 3D Model in Console',
+                      description: (
+                        <p>
+                          Go to{' '}
+                          <a
+                            href={`https://console.cogniteapp.com/${this.props.match.params.tenant}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Console
+                          </a>{' '}
+                          and upload the 3D Model there!
+                        </p>
+                      ),
+                    });
+                  } else {
+                    this.setState({ showModal: this.tab });
+                  }
+                }}
+              >
                 {UploadString[this.tab]}
               </Button>
             </div>
@@ -348,39 +448,13 @@ class SearchPage extends React.Component<Props, State> {
               dataSource={this.tableData}
               onRow={(row: any) => ({
                 onClick: () => {
-                  switch (this.tab) {
-                    case 'assets':
-                      this.props.push(
-                        `/${this.props.match.params.tenant}/asset/${row.id}`
-                      );
-                      break;
-                    case 'timeseries':
-                      this.props.push(
-                        `/${this.props.match.params.tenant}/timeseries/${row.id}`
-                      );
-                      break;
-                    case 'files':
-                      this.props.push(
-                        `/${this.props.match.params.tenant}/file/${row.id}`
-                      );
-                      break;
-                    case 'threed': {
-                      const model = row as ThreeDModel;
-                      if (model.revisions && model.revisions.length > 0) {
-                        this.props.push(
-                          `/${this.props.match.params.tenant}/threed/${model.id}/${model.revisions[0].id}`
-                        );
-                      } else {
-                        message.info('Unable to preview model');
-                      }
-                      break;
-                    }
-                  }
+                  this.goToPage(row);
                 },
               })}
             />
           </FlexTableWrapper>
         </ResultWrapper>
+        {this.renderModal()}
       </>
     );
   }

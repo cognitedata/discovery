@@ -7,6 +7,7 @@ import { Button, Tabs, Descriptions, Spin } from 'antd';
 import moment from 'moment';
 import { AssetBreadcrumb, AssetTree } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
+import AddOrEditAssetModal from 'containers/Modals/AddOrEditAssetModal';
 import { ExtendedAsset } from '../../modules/assets';
 import { BetaTag } from '../../components/BetaWarning';
 import { RootState } from '../../reducers/index';
@@ -61,6 +62,7 @@ const ButtonRow = styled.div`
 type OrigProps = {
   asset?: ExtendedAsset;
   onNavigateToPage: (type: string, id: number) => void;
+  onDeleteAsset: () => void;
 };
 
 type Props = {
@@ -69,13 +71,13 @@ type Props = {
   fetchTypeForAssets: typeof fetchTypeForAssets;
 } & OrigProps;
 
-type State = {};
+type State = { showEdit: boolean };
 
 class AssetSidebar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {};
+    this.state = { showEdit: false };
   }
 
   componentDidMount() {
@@ -111,6 +113,7 @@ class AssetSidebar extends React.Component<Props, State> {
 
   render() {
     const { asset } = this.props;
+    const { showEdit } = this.state;
     if (!asset) {
       return (
         <Wrapper>
@@ -130,10 +133,19 @@ class AssetSidebar extends React.Component<Props, State> {
         />
         <h1>{asset.name}</h1>
         <ButtonRow>
-          <Button type="primary" shape="round">
+          <Button
+            type="primary"
+            shape="round"
+            onClick={() => this.setState({ showEdit: true })}
+          >
             Edit
           </Button>
-          <Button type="danger" shape="circle" icon="delete" />
+          <Button
+            type="danger"
+            shape="circle"
+            icon="delete"
+            onClick={this.props.onDeleteAsset}
+          />
           <Button type="default" shape="circle" icon="ellipsis" />
         </ButtonRow>
         <Tabs size="small" tabBarGutter={6}>
@@ -177,6 +189,12 @@ class AssetSidebar extends React.Component<Props, State> {
             <pre>{JSON.stringify(asset.metadata, null, 2)}</pre>
           </Tabs.TabPane>
         </Tabs>
+        {showEdit && (
+          <AddOrEditAssetModal
+            onClose={() => this.setState({ showEdit: false })}
+            asset={this.props.asset}
+          />
+        )}
       </Wrapper>
     );
   }

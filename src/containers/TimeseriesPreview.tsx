@@ -7,7 +7,7 @@ import moment from 'moment';
 import { selectTimeseries, TimeseriesState } from '../modules/timeseries';
 import { RootState } from '../reducers/index';
 import { selectAppState, AppState, setTimeseriesId } from '../modules/app';
-import EditTimeseriesModal from './Modals/EditTimeseriesModal';
+import EditTimeseriesModal from './Modals/AddOrEditTimseriesModal';
 
 type Props = {
   timeseries: TimeseriesState;
@@ -42,7 +42,7 @@ class TimeseriesPreview extends React.PureComponent<Props, State> {
         <>
           {editModal && timeseriesId && (
             <EditTimeseriesModal
-              timeseriesId={timeseriesId}
+              timeseries={timeseries}
               onClose={() =>
                 // Needed because the TimeseriesChartMeta does not know if we updated the timeseries or not
                 setTimeout(() => this.setState({ editModal: false }), 700)

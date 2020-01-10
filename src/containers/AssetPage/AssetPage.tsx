@@ -1,12 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Tabs, message } from 'antd';
+import { Button, Tabs, message, Modal } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
 import LoadingWrapper from 'components/LoadingWrapper';
-import { AssetsState, fetchAsset } from '../../modules/assets';
+import { AssetsState, fetchAsset, deleteAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import AssetFilesSection from './AssetFilesSection';
 import AssetSidebar from './AssetSidebar';
@@ -86,6 +86,7 @@ type OrigProps = {
 type Props = {
   assets: AssetsState;
   fetchAsset: typeof fetchAsset;
+  deleteAsset: typeof deleteAsset;
   push: typeof push;
 } & OrigProps;
 
@@ -182,6 +183,18 @@ class AssetPage extends React.Component<Props, State> {
     } else {
       this.props.push(`/${this.tenant}/${type}/${ids.join('/')}`);
     }
+  };
+
+  onDeleteAsset = () => {
+    Modal.confirm({
+      title: 'Do you want to delete this asset?',
+      content: 'This is a irreversible change',
+      onOk: async () => {
+        await this.props.deleteAsset(this.asset!.id);
+        this.onBackClicked();
+      },
+      onCancel() {},
+    });
   };
 
   renderCurrentTab = (tabKeys: AssetTabKeys) => {
@@ -309,6 +322,7 @@ class AssetPage extends React.Component<Props, State> {
           <AssetSidebar
             asset={this.asset}
             onNavigateToPage={this.onNavigateToPage}
+            onDeleteAsset={this.onDeleteAsset}
           />
           <AssetView>
             <Tabs
@@ -342,5 +356,5 @@ const mapStateToProps = (state: RootState) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchAsset }, dispatch);
+  bindActionCreators({ push, fetchAsset, deleteAsset }, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(AssetPage);
