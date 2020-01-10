@@ -6,6 +6,7 @@ import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
 import { Slider } from 'antd';
 import { Dispatch, bindActionCreators } from 'redux';
 import { SliderValue } from 'antd/lib/slider';
+import debounce from 'lodash/debounce';
 import Model3DLoadingDialog, { ProgressObject } from './Model3DLoadingDialog';
 import { selectFilteredAssets } from '../modules/filters';
 import { RootState } from '../reducers/index';
@@ -55,6 +56,12 @@ class Model3D extends React.Component<Props, State> {
     nodeId: undefined,
     cache: undefined,
   };
+
+  constructor(props: Props) {
+    super(props);
+
+    this.selectNodeIds = debounce(this.selectNodeIds, 500);
+  }
 
   componentDidMount() {
     this.selectNodeIds(this.props.nodeIds);

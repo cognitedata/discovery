@@ -81,13 +81,22 @@ class AssetThreeDSection extends Component<Props, State> {
       prevProps.revisionId !== this.props.revisionId
     ) {
       // eslint-disable-next-line react/no-did-update-set-state
-      this.setState({ nodeIds: await this.getNodeIds() });
+      this.setState({
+        nodeIds: await this.getNodeIds(),
+        selectedItem: undefined,
+      });
     } else if (asset && (!prevProps.asset || prevProps.asset.id !== asset.id)) {
       // eslint-disable-next-line react/no-did-update-set-state
-      this.setState({ nodeIds: await this.getNodeIds() });
+      this.setState({
+        nodeIds: await this.getNodeIds(),
+        selectedItem: undefined,
+      });
     } else if (nodeId !== prevProps.nodeId) {
       // eslint-disable-next-line react/no-did-update-set-state
-      this.setState({ nodeIds: await this.getNodeIds() });
+      this.setState({
+        nodeIds: await this.getNodeIds(),
+        selectedItem: undefined,
+      });
     }
   }
 
