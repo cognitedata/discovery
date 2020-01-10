@@ -5,6 +5,8 @@ import { bindActionCreators, Dispatch } from 'redux';
 import Placeholder from 'components/Placeholder';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import styled from 'styled-components';
+import BottomRightCard from 'components/BottomRightCard';
+import { Asset, RevealNode3D } from '@cognite/sdk';
 import {
   selectThreeD,
   fetchModels,
@@ -17,6 +19,7 @@ import Model3D from '../../components/Model3D';
 import { ExtendedAsset } from '../../modules/assets';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import FlexTableWrapper from '../../components/FlexTableWrapper';
+import { sdk } from '../../index';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -39,7 +42,7 @@ type OrigProps = {
   onNodeClicked: (modelId: number, revisionId: number, nodeId: number) => void;
   onRevisionClicked: (modelId: number, revisionId: number) => void;
   onClearSelection: () => void;
-  onNavigateToPage: (type: string, ...ids: number[]) => void;
+  onNavigateToPage: (type: string, ...ids: any[]) => void;
 };
 
 type Props = {
@@ -49,82 +52,199 @@ type Props = {
   selectedModel: ThreeDModel | undefined;
 } & OrigProps;
 
-type State = {};
+type State = {
+  nodeIds?: number[];
+  selectedItem?: {
+    asset?: Asset;
+    node: RevealNode3D;
+  };
+};
 class AssetThreeDSection extends Component<Props, State> {
   cache = {};
 
-  componentDidMount() {
-    const { asset } = this.props;
-    if (asset && asset.id) {
-      this.getNodeId(true);
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {};
+  }
+
+  async componentDidMount() {
+    this.setState({ nodeIds: await this.getNodeIds() });
+  }
+
+  async componentDidUpdate(prevProps: Props) {
+    const { asset, nodeId } = this.props;
+    if (
+      this.props.modelId &&
+      prevProps.modelId !== this.props.modelId &&
+      this.props.revisionId &&
+      prevProps.revisionId !== this.props.revisionId
+    ) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ nodeIds: await this.getNodeIds() });
+    } else if (asset && (!prevProps.asset || prevProps.asset.id !== asset.id)) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ nodeIds: await this.getNodeIds() });
+    } else if (nodeId !== prevProps.nodeId) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ nodeIds: await this.getNodeIds() });
     }
   }
 
-  componentDidUpdate(prevProps: Props) {
-    const { asset } = this.props;
-    if (asset && (!prevProps.asset || prevProps.asset.id !== asset.id)) {
-      this.getNodeId(true);
-    }
-  }
-
-  getNodeId = (fetchIfMissing: boolean) => {
-    const { representsAsset } = this.props.threed;
+  getNodeIds = async () => {
     const { nodeId, revisionId, modelId, asset } = this.props;
     if (nodeId) {
-      return nodeId;
+      return [nodeId];
     }
-
-    if (asset && asset.id && fetchIfMissing) {
-      if (modelId && revisionId) {
-        this.props.fetchMappingsFromAssetId(modelId, revisionId, asset.id);
-      } else if (asset.rootId && representsAsset[asset.rootId]) {
-        representsAsset[asset.rootId].map(el =>
-          this.props.fetchMappingsFromAssetId(
-            el.modelId,
-            el.revisionId,
-            asset.id
-          )
-        );
+    if (modelId && revisionId) {
+      if (asset && asset.id) {
+        const mappings = await sdk.assetMappings3D
+          .list(modelId, revisionId, {
+            assetId: asset.id,
+          })
+          .autoPagingToArray({ limit: -1 });
+        return mappings.map(el => el.nodeId);
       }
     }
 
     return undefined;
   };
 
-  render3D = () => {
+  onAssetSelected = async (assetId: number, nodeId: number) => {
+    const { modelId, revisionId } = this.props;
+    this.props.onNodeClicked(modelId!, revisionId!, nodeId);
+    const [asset] = await sdk.assets.retrieve([{ id: assetId }]);
     const {
-      nodeId: propNodeId,
-      modelId,
-      revisionId,
-      selectedModel,
-    } = this.props;
-    const nodeId = propNodeId || this.getNodeId(false);
+      items: [node],
+    } = await sdk.viewer3D.listRevealNodes3D(modelId!, revisionId!, {
+      nodeId,
+      depth: 0,
+    });
+    this.setState({
+      selectedItem: {
+        asset,
+        node,
+      },
+    });
+  };
+
+  onNodeSelected = async (nodeId: number) => {
+    const { modelId, revisionId } = this.props;
+    this.props.onNodeClicked(modelId!, revisionId!, nodeId);
+    const {
+      items: [node],
+    } = await sdk.viewer3D.listRevealNodes3D(modelId!, revisionId!, {
+      nodeId,
+      depth: 0,
+    });
+    this.setState({
+      selectedItem: {
+        node,
+      },
+    });
+  };
+
+  renderCard = () => {
+    const { selectedItem } = this.state;
+    const { modelId, revisionId } = this.props;
+    if (!selectedItem) {
+      return null;
+    }
+
+    if (this.props.nodeId) {
+      return (
+        <BottomRightCard
+          title="Selected Node"
+          onClose={() =>
+            this.setState({ selectedItem: undefined }, () =>
+              this.props.onRevisionClicked(modelId!, revisionId!)
+            )
+          }
+        >
+          <>
+            <p>{selectedItem.node.name}</p>
+            {selectedItem.asset && (
+              <>
+                <p>Linked to:</p>
+                <p>{selectedItem.asset.name}</p>
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    this.props.onNavigateToPage('asset', selectedItem.asset!.id)
+                  }
+                >
+                  View Asset
+                </Button>
+              </>
+            )}
+          </>
+        </BottomRightCard>
+      );
+    }
+
+    return (
+      <BottomRightCard
+        title="Selected Asset"
+        onClose={() =>
+          this.setState({ selectedItem: undefined }, () =>
+            this.props.onRevisionClicked(modelId!, revisionId!)
+          )
+        }
+      >
+        <>
+          {selectedItem.asset && (
+            <>
+              <p>{selectedItem.asset.name}</p>
+              <Button
+                type="primary"
+                onClick={() =>
+                  this.props.onNavigateToPage('asset', selectedItem.asset!.id)
+                }
+              >
+                View Asset
+              </Button>
+            </>
+          )}
+        </>
+      </BottomRightCard>
+    );
+  };
+
+  render3D = () => {
+    const { modelId, revisionId, selectedModel, nodeId, asset } = this.props;
+    const { nodeIds } = this.state;
     if (selectedModel && modelId && revisionId) {
       return (
         <>
           <ViewingDetailsNavBar
             name={selectedModel.name || '3D Model'}
-            onButtonClicked={() =>
-              this.props.onNavigateToPage(
-                'threed',
-                ...[modelId, revisionId, ...(nodeId ? [nodeId] : [])]
-              )
-            }
+            onButtonClicked={() => {
+              if (nodeId) {
+                this.props.onNavigateToPage(
+                  'threed',
+                  ...[modelId, revisionId, 'node', nodeId]
+                );
+              } else if (asset) {
+                this.props.onNavigateToPage(
+                  'threed',
+                  ...[modelId, revisionId, 'asset', asset.id]
+                );
+              } else {
+                this.props.onNavigateToPage('threed', ...[modelId, revisionId]);
+              }
+            }}
             onBackClicked={this.props.onClearSelection}
           />
           <div style={{ flex: 1, position: 'relative' }}>
             <Model3D
               modelId={modelId!}
               revisionId={revisionId!}
-              nodeId={nodeId}
-              onAssetIdChange={(id: number) =>
-                this.props.onNavigateToPage('asset', id)
-              }
-              onNodeIdChange={(id: number) =>
-                this.props.onNodeClicked(modelId!, revisionId!, id)
-              }
+              nodeIds={nodeIds}
+              onAssetIdChange={this.onAssetSelected}
+              onNodeIdChange={this.onNodeSelected}
               cache={this.cache}
             />
+            {this.renderCard()}
           </div>
         </>
       );

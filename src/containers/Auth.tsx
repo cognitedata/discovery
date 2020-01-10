@@ -29,7 +29,8 @@ export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
 
 export const getApiKeyFromUrl = () =>
-  queryString.parse(window.location.hash).apikey as string;
+  window.localStorage.getItem('apikey') ||
+  (queryString.parse(window.location.hash).apikey as string);
 
 type Props = {
   app: AppState;
@@ -179,7 +180,17 @@ class Auth extends React.Component<Props, State> {
                   component={FilePage}
                 />
                 <Route
-                  path="/:tenant/threed/:modelId/:revisionId/:nodeId?"
+                  path="/:tenant/threed/:modelId/:revisionId/"
+                  exact
+                  component={ThreeDPage}
+                />
+                <Route
+                  path="/:tenant/threed/:modelId/:revisionId/node/:nodeId?"
+                  exact
+                  component={ThreeDPage}
+                />
+                <Route
+                  path="/:tenant/threed/:modelId/:revisionId/asset/:assetId?"
                   exact
                   component={ThreeDPage}
                 />

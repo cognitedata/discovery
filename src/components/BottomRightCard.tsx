@@ -9,7 +9,7 @@ const StyledCard = styled(Card)`
     right: 32px;
     width: 300px;
     height: auto;
-    box-shadow: 0px 0px 8px #efefef;
+    box-shadow: 0px 0px 8px #565656;
 
     .button-row {
       margin-top: 6px;

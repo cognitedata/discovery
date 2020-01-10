@@ -23,7 +23,6 @@ import AssetTimeseriesSection from './AssetTimeseriesSection';
 import AssetFilesSection from './AssetFilesSection';
 import AssetEventsSection from './AssetEventsSection';
 import AssetThreeDSection from './AssetThreeDSection';
-import { sdk } from '../../index';
 
 export const AssetViewerTypeMap: {
   [key in AssetViewerType]: React.ReactNode | undefined;
@@ -222,40 +221,21 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
   };
 
   onNavigateToPage = async (type: string, ...ids: number[]) => {
-    if (type === 'asset') {
-      const search = this.props.search ? qs.parse(this.props.search) : {};
-      if (search.modelId && search.revisionId && ids[0]) {
-        let mapping = this.props.assetMappings.byAssetId[Number(ids[0])];
-        if (!mapping) {
-          ({
-            items: [mapping],
-          } = await sdk.assetMappings3D.list(
-            Number(search.modelId),
-            Number(search.revisionId),
-            {
-              assetId: Number(ids[0]),
-            }
-          ));
-          if (mapping) {
-            this.props.addAssetMappingsToState(
-              mapping.modelId,
-              mapping.revisionId,
-              mapping.nodeId,
-              mapping.assetId
-            );
-          }
-        }
-        if (mapping) {
-          await this.onSelect(
-            'threed',
-            Number(search.modelId),
-            Number(search.revisionId),
-            mapping.nodeId
-          );
-        }
-      }
+    if (type === 'asset' && ids[0]) {
+      await this.checkAndFixNodeId();
     }
     this.props.onNavigateToPage(type, ...ids);
+  };
+
+  checkAndFixNodeId = async () => {
+    const search = this.props.search ? qs.parse(this.props.search) : {};
+    if (search.modelId && search.revisionId) {
+      await this.onSelect(
+        'threed',
+        Number(search.modelId),
+        Number(search.revisionId)
+      );
+    }
   };
 
   renderView = (tabKey: AssetTabKeys) => {

@@ -159,7 +159,7 @@ class AssetFileSection extends React.Component<Props, State> {
           />
           <div
             style={{
-              marginTop: '24px',
+              marginTop: '12px',
               flex: 1,
             }}
           >
