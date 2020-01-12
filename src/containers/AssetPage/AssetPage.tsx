@@ -93,6 +93,8 @@ type Props = {
 type State = {};
 
 class AssetPage extends React.Component<Props, State> {
+  postDeleted = false;
+
   constructor(props: Props) {
     super(props);
 
@@ -105,12 +107,9 @@ class AssetPage extends React.Component<Props, State> {
     }
   }
 
-  componentDidUpdate(prevProps: Props) {
-    if (!this.asset) {
+  componentDidUpdate() {
+    if (!this.asset && !this.postDeleted) {
       this.props.fetchAsset(this.props.match.params.assetId);
-    }
-    if (prevProps.search !== this.props.search) {
-      this.forceUpdate();
     }
   }
 
@@ -190,6 +189,7 @@ class AssetPage extends React.Component<Props, State> {
       title: 'Do you want to delete this asset?',
       content: 'This is a irreversible change',
       onOk: async () => {
+        this.postDeleted = true;
         await this.props.deleteAsset(this.asset!.id);
         this.onBackClicked();
       },

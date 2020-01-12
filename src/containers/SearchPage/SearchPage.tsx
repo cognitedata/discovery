@@ -363,6 +363,29 @@ class SearchPage extends React.Component<Props, State> {
     }
   };
 
+  onShowAddResource = () => {
+    if (this.tab === 'threed') {
+      notification.info({
+        message: 'Please upload 3D Model in Console',
+        description: (
+          <p>
+            Go to{' '}
+            <a
+              href={`https://console.cognitedata.com/${this.props.match.params.tenant}/3d-models`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Console
+            </a>{' '}
+            and upload the 3D Model there!
+          </p>
+        ),
+      });
+    } else {
+      this.setState({ showModal: this.tab });
+    }
+  };
+
   render() {
     const { query } = this.state;
     const { search } = this.props;
@@ -408,28 +431,7 @@ class SearchPage extends React.Component<Props, State> {
               <Button
                 icon="plus"
                 type="primary"
-                onClick={() => {
-                  if (this.tab === 'threed') {
-                    notification.info({
-                      message: 'Please upload 3D Model in Console',
-                      description: (
-                        <p>
-                          Go to{' '}
-                          <a
-                            href={`https://console.cogniteapp.com/${this.props.match.params.tenant}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Console
-                          </a>{' '}
-                          and upload the 3D Model there!
-                        </p>
-                      ),
-                    });
-                  } else {
-                    this.setState({ showModal: this.tab });
-                  }
-                }}
+                onClick={this.onShowAddResource}
               >
                 {UploadString[this.tab]}
               </Button>

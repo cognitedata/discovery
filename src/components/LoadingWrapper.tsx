@@ -23,7 +23,7 @@ const LoadingWrapper = ({ children }: { children?: React.ReactNode }) => {
   return (
     <Wrapper>
       <div>
-        <Spin size="large" style={{ marginBottom: '12px' }} />
+        <Spin size="large" style={{ marginBottom: '12px', display: 'block' }} />
         {children}
       </div>
     </Wrapper>

@@ -28,6 +28,7 @@ import {
   LinkRadialLine,
 } from '@vx/shape';
 import { Select, Button } from 'antd';
+import LoadingWrapper from 'components/LoadingWrapper';
 import {
   loadParentRecurse,
   loadAssetChildren,
@@ -35,7 +36,6 @@ import {
   selectAssets,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import Placeholder from '../../components/Placeholder';
 import { trackUsage } from '../../utils/metrics';
 
 type Node = {
@@ -107,6 +107,7 @@ type State = {
   linkType: 'diagonal' | 'step' | 'curve' | 'line';
   length: number;
   data?: Node;
+  forceRerender: boolean;
 };
 
 class TreeViewer extends Component<Props, State> {
@@ -121,6 +122,7 @@ class TreeViewer extends Component<Props, State> {
       linkType: 'diagonal',
       data: undefined,
       length: 0,
+      forceRerender: false,
     };
   }
 
@@ -212,7 +214,9 @@ class TreeViewer extends Component<Props, State> {
         <strong>Layout:</strong>
         <Select
           onChange={(value: 'cartesian' | 'polar') => {
-            this.setState({ controls: value });
+            this.setState({ controls: value, forceRerender: true }, () => {
+              this.setState({ forceRerender: false });
+            });
             trackUsage('AssetVXViewer.ChangeControl', { layout: value });
           }}
           value={controls}
@@ -251,9 +255,7 @@ class TreeViewer extends Component<Props, State> {
     );
   };
 
-  render() {
-    let height = 0;
-    let width = 0;
+  renderGraph = () => {
     let origHeight = 0;
     let origWidth = 0;
     if (this.wrapperRef && this.wrapperRef.current) {
@@ -269,13 +271,10 @@ class TreeViewer extends Component<Props, State> {
       bottom: 60,
     };
 
-    width = Math.max(origWidth, origHeight, 800);
-    height = Math.max(origWidth, origHeight, 800);
-
     const { controls, orientation, linkType, data: nodeData } = this.state;
 
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
+    const innerWidth = origWidth - margin.left - margin.right;
+    const innerHeight = origHeight - margin.top - margin.bottom;
 
     let origin: {
       x: number;
@@ -286,13 +285,13 @@ class TreeViewer extends Component<Props, State> {
 
     if (controls === 'polar') {
       origin = {
-        x: innerWidth / 2,
-        y: innerHeight / 2,
+        x: innerWidth / 2 + margin.left,
+        y: innerHeight / 2 + margin.top,
       };
       sizeWidth = 2 * Math.PI;
       sizeHeight = Math.min(innerWidth, innerHeight) / 2;
     } else {
-      origin = { x: 0, y: 0 };
+      origin = { x: margin.left, y: margin.top };
       if (orientation === 'vertical') {
         sizeWidth = innerWidth;
         sizeHeight = innerHeight;
@@ -301,277 +300,281 @@ class TreeViewer extends Component<Props, State> {
         sizeHeight = innerWidth;
       }
     }
-    if (!nodeData) {
-      return (
-        <Placeholder
-          text="Loading Asset..."
-          componentName="Asset Network Explorer"
-        />
-      );
-    }
 
     return (
-      <Wrapper ref={this.wrapperRef}>
-        <Zoom
-          width={width}
-          height={height}
-          scaleXMin={1 / 2}
-          scaleXMax={4}
-          scaleYMin={1 / 2}
-          scaleYMax={4}
-          transformMatrix={{
-            scaleX: 1.27,
-            scaleY: 1.27,
-            translateX: -211.62,
-            translateY: 162.59,
-            skewX: 0,
-            skewY: 0,
-          }}
-        >
-          {(zoom: any) => {
-            return (
-              <div
-                style={{ position: 'relative', width: '100%', height: '100%' }}
+      <Zoom
+        width={origWidth}
+        height={origHeight}
+        scaleXMin={1 / 2}
+        scaleXMax={4}
+        scaleYMin={1 / 2}
+        scaleYMax={4}
+        transformMatrix={{
+          scaleX: 1.27,
+          scaleY: 1.27,
+          translateX: origin.x,
+          translateY: origin.y,
+          skewX: 0,
+          skewY: 0,
+        }}
+      >
+        {(zoom: any) => {
+          return (
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              {this.renderControlSection()}
+              <svg
+                width="100%"
+                height="100%"
+                style={{
+                  display: 'block',
+                }}
               >
-                {this.renderControlSection()}
-                <svg
+                <RectClipPath id="zoom-clip" width="100%" height="100%" />
+                <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
+                <rect width="100%" height="100%" fill="#272b4d" />
+                <rect
                   width="100%"
                   height="100%"
-                  style={{
-                    display: 'block',
+                  rx={14}
+                  fill="transparent"
+                  onWheel={zoom.handleWheel}
+                  onMouseDown={zoom.dragStart}
+                  onMouseMove={zoom.dragMove}
+                  onMouseUp={zoom.dragEnd}
+                  onMouseLeave={() => {
+                    if (!zoom.isDragging) return;
+                    zoom.dragEnd();
+                  }}
+                  onDoubleClick={event => {
+                    const point = localPoint(event);
+                    zoom.scale({ scaleX: 1.1, scaleY: 1.1, point });
+                  }}
+                />
+                <Group
+                  top={margin.top}
+                  left={margin.left}
+                  transform={zoom.toString()}
+                >
+                  <Tree
+                    root={hierarchy(nodeData!, d =>
+                      d.isExpanded ? null : d.children
+                    )}
+                    size={[sizeWidth, sizeHeight]}
+                    separation={(a: any, b: any) =>
+                      (a.parent === b.parent ? 1 : 0.5) / a.depth
+                    }
+                  >
+                    {(data: any) => (
+                      <Group top={origin.y ? 0 : 0} left={origin.x ? 0 : 0}>
+                        {data.links().map((link: any, i: number) => {
+                          let LinkComponent;
+
+                          if (controls === 'polar') {
+                            if (linkType === 'step') {
+                              LinkComponent = LinkRadialStep;
+                            } else if (linkType === 'curve') {
+                              LinkComponent = LinkRadialCurve;
+                            } else if (linkType === 'line') {
+                              LinkComponent = LinkRadialLine;
+                            } else {
+                              LinkComponent = LinkRadial;
+                            }
+                          } else if (orientation === 'vertical') {
+                            if (linkType === 'step') {
+                              LinkComponent = LinkVerticalStep;
+                            } else if (linkType === 'curve') {
+                              LinkComponent = LinkVerticalCurve;
+                            } else if (linkType === 'line') {
+                              LinkComponent = LinkVerticalLine;
+                            } else {
+                              LinkComponent = LinkVertical;
+                            }
+                          } else if (linkType === 'step') {
+                            LinkComponent = LinkHorizontalStep;
+                          } else if (linkType === 'curve') {
+                            LinkComponent = LinkHorizontalCurve;
+                          } else if (linkType === 'line') {
+                            LinkComponent = LinkHorizontalLine;
+                          } else {
+                            LinkComponent = LinkHorizontal;
+                          }
+
+                          return (
+                            <LinkComponent
+                              data={link}
+                              percent={+0.5}
+                              stroke="#374469"
+                              strokeWidth="1"
+                              fill="none"
+                              key={i}
+                            />
+                          );
+                        })}
+
+                        {data.descendants().map((node: any, key: any) => {
+                          const innerNodeWidth = 8 * node.data.node.name.length;
+                          const innerNodeHeight = 20;
+
+                          let top;
+                          let left;
+                          if (controls === 'polar') {
+                            const [radialX, radialY] = pointRadial(
+                              node.x,
+                              node.y
+                            );
+                            top = radialY;
+                            left = radialX;
+                          } else if (orientation === 'vertical') {
+                            top = node.y;
+                            left = node.x;
+                          } else {
+                            top = node.x;
+                            left = node.y;
+                          }
+
+                          let color = '#71248e';
+                          if (node.depth > 0) {
+                            if (node.children) {
+                              color = 'white';
+                            } else {
+                              color = '#26deb0';
+                            }
+                          }
+
+                          return (
+                            <Group top={top} left={left} key={key}>
+                              {node.depth === 0 && (
+                                <rect
+                                  height={innerNodeHeight}
+                                  width={innerNodeWidth}
+                                  y={-innerNodeHeight / 2}
+                                  x={-innerNodeWidth / 2}
+                                  r={12}
+                                  fill="url('#lg')"
+                                  onClick={() => {
+                                    trackUsage('AssetVXViewer.AssetClicked', {
+                                      assetId: node.data.node.id,
+                                    });
+                                    this.props.onAssetClicked(
+                                      node.data.node.id
+                                    );
+                                    this.forceUpdate();
+                                  }}
+                                />
+                              )}
+                              {node.depth !== 0 && (
+                                <rect
+                                  height={innerNodeHeight}
+                                  width={innerNodeWidth}
+                                  y={-innerNodeHeight / 2}
+                                  x={-innerNodeWidth / 2}
+                                  fill="#272b4d"
+                                  stroke={
+                                    node.data.children ? '#03c0dc' : '#26deb0'
+                                  }
+                                  strokeWidth={1}
+                                  strokeDasharray={
+                                    !node.data.children ? '2,2' : '0'
+                                  }
+                                  strokeOpacity={!node.data.children ? 0.6 : 1}
+                                  rx={!node.data.children ? 10 : 0}
+                                  onClick={() => {
+                                    // eslint-disable-next-line no-param-reassign
+                                    node.data.isExpanded = !node.data
+                                      .isExpanded;
+                                    trackUsage('AssetVXViewer.AssetClicked', {
+                                      assetId: node.data.node.id,
+                                    });
+                                    this.props.onAssetClicked(
+                                      node.data.node.id
+                                    );
+                                    this.forceUpdate();
+                                  }}
+                                />
+                              )}
+                              <Text
+                                dy=".33em"
+                                fontSize={9}
+                                textAnchor="middle"
+                                style={{ pointerEvents: 'none' }}
+                                fill={color}
+                              >
+                                {node.data.name}
+                              </Text>
+                            </Group>
+                          );
+                        })}
+                      </Group>
+                    )}
+                  </Tree>
+                </Group>
+              </svg>
+              <div className="controls">
+                <Button
+                  onClick={() => zoom.scale({ scaleX: 1.2, scaleY: 1.2 })}
+                >
+                  +
+                </Button>
+                <Button
+                  onClick={() => zoom.scale({ scaleX: 0.8, scaleY: 0.8 })}
+                >
+                  -
+                </Button>
+                <Button
+                  onClick={() => {
+                    zoom.center();
+                    trackUsage('AssetVXViewer.ControlsClicked', {
+                      center: true,
+                    });
                   }}
                 >
-                  <RectClipPath id="zoom-clip" width="100%" height="100%" />
-                  <LinearGradient id="lg" from="#fd9b93" to="#fe6e9e" />
-                  <rect width="100%" height="100%" fill="#272b4d" />
-                  <rect
-                    width="100%"
-                    height="100%"
-                    rx={14}
-                    fill="transparent"
-                    onWheel={zoom.handleWheel}
-                    onMouseDown={zoom.dragStart}
-                    onMouseMove={zoom.dragMove}
-                    onMouseUp={zoom.dragEnd}
-                    onMouseLeave={() => {
-                      if (!zoom.isDragging) return;
-                      zoom.dragEnd();
-                    }}
-                    onDoubleClick={event => {
-                      const point = localPoint(event);
-                      zoom.scale({ scaleX: 1.1, scaleY: 1.1, point });
-                    }}
-                  />
-                  <Group
-                    top={margin.top}
-                    left={margin.left}
-                    transform={zoom.toString()}
-                  >
-                    <Tree
-                      root={hierarchy(nodeData, d =>
-                        d.isExpanded ? null : d.children
-                      )}
-                      size={[sizeWidth, sizeHeight]}
-                      separation={(a: any, b: any) =>
-                        (a.parent === b.parent ? 1 : 0.5) / a.depth
-                      }
-                    >
-                      {(data: any) => (
-                        <Group top={origin.y} left={origin.x}>
-                          {data.links().map((link: any, i: number) => {
-                            let LinkComponent;
-
-                            if (controls === 'polar') {
-                              if (linkType === 'step') {
-                                LinkComponent = LinkRadialStep;
-                              } else if (linkType === 'curve') {
-                                LinkComponent = LinkRadialCurve;
-                              } else if (linkType === 'line') {
-                                LinkComponent = LinkRadialLine;
-                              } else {
-                                LinkComponent = LinkRadial;
-                              }
-                            } else if (orientation === 'vertical') {
-                              if (linkType === 'step') {
-                                LinkComponent = LinkVerticalStep;
-                              } else if (linkType === 'curve') {
-                                LinkComponent = LinkVerticalCurve;
-                              } else if (linkType === 'line') {
-                                LinkComponent = LinkVerticalLine;
-                              } else {
-                                LinkComponent = LinkVertical;
-                              }
-                            } else if (linkType === 'step') {
-                              LinkComponent = LinkHorizontalStep;
-                            } else if (linkType === 'curve') {
-                              LinkComponent = LinkHorizontalCurve;
-                            } else if (linkType === 'line') {
-                              LinkComponent = LinkHorizontalLine;
-                            } else {
-                              LinkComponent = LinkHorizontal;
-                            }
-
-                            return (
-                              <LinkComponent
-                                data={link}
-                                percent={+0.5}
-                                stroke="#374469"
-                                strokeWidth="1"
-                                fill="none"
-                                key={i}
-                              />
-                            );
-                          })}
-
-                          {data.descendants().map((node: any, key: any) => {
-                            const innerNodeWidth =
-                              8 * node.data.node.name.length;
-                            const innerNodeHeight = 20;
-
-                            let top;
-                            let left;
-                            if (controls === 'polar') {
-                              const [radialX, radialY] = pointRadial(
-                                node.x,
-                                node.y
-                              );
-                              top = radialY;
-                              left = radialX;
-                            } else if (orientation === 'vertical') {
-                              top = node.y;
-                              left = node.x;
-                            } else {
-                              top = node.x;
-                              left = node.y;
-                            }
-
-                            let color = '#71248e';
-                            if (node.depth > 0) {
-                              if (node.children) {
-                                color = 'white';
-                              } else {
-                                color = '#26deb0';
-                              }
-                            }
-
-                            return (
-                              <Group top={top} left={left} key={key}>
-                                {node.depth === 0 && (
-                                  <rect
-                                    height={innerNodeHeight}
-                                    width={innerNodeWidth}
-                                    y={-innerNodeHeight / 2}
-                                    x={-innerNodeWidth / 2}
-                                    r={12}
-                                    fill="url('#lg')"
-                                    onClick={() => {
-                                      trackUsage('AssetVXViewer.AssetClicked', {
-                                        assetId: node.data.node.id,
-                                      });
-                                      this.props.onAssetClicked(
-                                        node.data.node.id
-                                      );
-                                      this.forceUpdate();
-                                    }}
-                                  />
-                                )}
-                                {node.depth !== 0 && (
-                                  <rect
-                                    height={innerNodeHeight}
-                                    width={innerNodeWidth}
-                                    y={-innerNodeHeight / 2}
-                                    x={-innerNodeWidth / 2}
-                                    fill="#272b4d"
-                                    stroke={
-                                      node.data.children ? '#03c0dc' : '#26deb0'
-                                    }
-                                    strokeWidth={1}
-                                    strokeDasharray={
-                                      !node.data.children ? '2,2' : '0'
-                                    }
-                                    strokeOpacity={
-                                      !node.data.children ? 0.6 : 1
-                                    }
-                                    rx={!node.data.children ? 10 : 0}
-                                    onClick={() => {
-                                      // eslint-disable-next-line no-param-reassign
-                                      node.data.isExpanded = !node.data
-                                        .isExpanded;
-                                      trackUsage('AssetVXViewer.AssetClicked', {
-                                        assetId: node.data.node.id,
-                                      });
-                                      this.props.onAssetClicked(
-                                        node.data.node.id
-                                      );
-                                      this.forceUpdate();
-                                    }}
-                                  />
-                                )}
-                                <Text
-                                  dy=".33em"
-                                  fontSize={9}
-                                  textAnchor="middle"
-                                  style={{ pointerEvents: 'none' }}
-                                  fill={color}
-                                >
-                                  {node.data.name}
-                                </Text>
-                              </Group>
-                            );
-                          })}
-                        </Group>
-                      )}
-                    </Tree>
-                  </Group>
-                </svg>
-                <div className="controls">
-                  <Button
-                    onClick={() => zoom.scale({ scaleX: 1.2, scaleY: 1.2 })}
-                  >
-                    +
-                  </Button>
-                  <Button
-                    onClick={() => zoom.scale({ scaleX: 0.8, scaleY: 0.8 })}
-                  >
-                    -
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      zoom.center();
-                      trackUsage('AssetVXViewer.ControlsClicked', {
-                        center: true,
-                      });
-                    }}
-                  >
-                    Center
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      zoom.reset();
-                      trackUsage('AssetVXViewer.ControlsClicked', {
-                        reset: true,
-                      });
-                    }}
-                  >
-                    Reset
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      zoom.clear();
-                      trackUsage('AssetVXViewer.ControlsClicked', {
-                        clear: true,
-                      });
-                    }}
-                  >
-                    Clear
-                  </Button>
-                </div>
+                  Center
+                </Button>
+                <Button
+                  onClick={() => {
+                    zoom.reset();
+                    trackUsage('AssetVXViewer.ControlsClicked', {
+                      reset: true,
+                    });
+                  }}
+                >
+                  Reset
+                </Button>
+                <Button
+                  onClick={() => {
+                    zoom.clear();
+                    trackUsage('AssetVXViewer.ControlsClicked', {
+                      clear: true,
+                    });
+                  }}
+                >
+                  Clear
+                </Button>
               </div>
-            );
-          }}
-        </Zoom>
-      </Wrapper>
+            </div>
+          );
+        }}
+      </Zoom>
     );
+  };
+
+  render() {
+    const { data, forceRerender } = this.state;
+    let renderedItem = (
+      <LoadingWrapper>
+        <p>Loading Hierarchy Chart...</p>
+      </LoadingWrapper>
+    );
+    if (!forceRerender && data && this.wrapperRef.current) {
+      renderedItem = this.renderGraph();
+    }
+    return <Wrapper ref={this.wrapperRef}>{renderedItem}</Wrapper>;
   }
 }
 
