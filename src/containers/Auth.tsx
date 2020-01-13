@@ -98,6 +98,7 @@ class Auth extends React.Component<Props, State> {
       });
       try {
         await sdk.login.status();
+        status = true;
       } catch (e) {
         status = false;
       }
