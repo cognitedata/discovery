@@ -144,6 +144,7 @@ class SearchPage extends React.Component<Props, State> {
   get columns(): ColumnProps<any>[] {
     switch (this.tab) {
       case 'assets':
+      case 'timeseries':
         return [
           {
             title: 'Name',
