@@ -1,14 +1,19 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, notification } from 'antd';
+import { Button, notification, Modal } from 'antd';
 import styled from 'styled-components';
 import { push, goBack } from 'connected-react-router';
 import FilePreview from 'containers/FileExplorer/FilePreview/FilePreview';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import FileSidebar from './FileSidebar';
-import { selectFiles, FilesState, fetchFile } from '../../modules/files';
+import {
+  selectFiles,
+  FilesState,
+  fetchFile,
+  deleteFile,
+} from '../../modules/files';
 import { trackUsage } from '../../utils/metrics';
 import { sdk } from '../../index';
 
@@ -55,6 +60,7 @@ type OrigProps = {
 type Props = {
   files: FilesState;
   fetchFile: typeof fetchFile;
+  deleteFile: typeof deleteFile;
   push: typeof push;
   goBack: typeof goBack;
 } & OrigProps;
@@ -62,6 +68,8 @@ type Props = {
 type State = {};
 
 class FilePage extends React.Component<Props, State> {
+  postDeleted = false;
+
   constructor(props: Props) {
     super(props);
 
@@ -109,11 +117,21 @@ class FilePage extends React.Component<Props, State> {
     this.props.push(`/${this.tenant}/asset/${id}/files/${this.file.id}`);
   };
 
-  onDeleteFileClicked = async () => {
-    trackUsage('FilePreview.Delete', { id: this.file.id });
-    await sdk.files.delete([{ id: this.file.id }]);
-    notification.success({ message: `Successfully Deleted ${this.file.name}` });
-    this.props.goBack();
+  onDeleteClicked = async () => {
+    Modal.confirm({
+      title: 'Do you want to delete this file?',
+      content: 'This is a irreversible change',
+      onOk: async () => {
+        trackUsage('FilePreview.Delete', { id: this.file.id });
+        this.postDeleted = true;
+        await this.props.deleteFile(this.file.id);
+        notification.success({
+          message: `Successfully Deleted ${this.file.name}`,
+        });
+        this.props.goBack();
+      },
+      onCancel() {},
+    });
   };
 
   onDownloadClicked = async () => {
@@ -136,11 +154,12 @@ class FilePage extends React.Component<Props, State> {
             <FileSidebar
               file={this.file}
               onGoToAssetClicked={this.onGoToAssetClicked}
+              onDownloadClicked={this.onDownloadClicked}
+              onDeleteClicked={this.onDeleteClicked}
             />
             <FileView>
               <FilePreview
                 fileId={this.file.id}
-                deleteFile={this.onDeleteFileClicked}
                 onAssetClicked={id =>
                   this.props.push(
                     `/${this.tenant}/asset/${id}/files/${this.file.id}`
@@ -168,5 +187,5 @@ const mapStateToProps = (state: RootState) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchFile, goBack }, dispatch);
+  bindActionCreators({ push, fetchFile, goBack, deleteFile }, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(FilePage);

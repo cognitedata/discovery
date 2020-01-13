@@ -15,6 +15,7 @@ import { setTimeseriesId } from './app';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
+export const DELETE_TIMESERIES = 'timeseries/DELETE_TIMESERIES';
 export const REMOVE_ASSET_FROM_TIMESERIES =
   'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
 
@@ -25,7 +26,13 @@ interface RemoveAssetAction
   extends Action<typeof REMOVE_ASSET_FROM_TIMESERIES> {
   payload: { timeseriesId: number };
 }
-type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
+interface DeleteTimeseriesAction extends Action<typeof DELETE_TIMESERIES> {
+  payload: { timeseriesId: number };
+}
+type TimeseriesAction =
+  | SetTimeseriesAction
+  | RemoveAssetAction
+  | DeleteTimeseriesAction;
 
 // Functions
 export function fetchTimeseries(ids: IdEither[]) {
@@ -94,6 +101,36 @@ export function addTimeseriesToState(
     });
   };
 }
+
+export const deleteTimeseries = (timeseriesId: number) => async (
+  dispatch: Dispatch<DeleteTimeseriesAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(
+      getState().app.groups,
+      'timeSeriesAcl',
+      'WRITE',
+      true
+    )
+  ) {
+    return false;
+  }
+  trackUsage('Timeseries.deleteTimeseries', {
+    timeseriesId,
+  });
+  try {
+    const results = await sdk.timeseries.delete([{ id: timeseriesId }]);
+
+    if (results) {
+      dispatch({ type: DELETE_TIMESERIES, payload: { timeseriesId } });
+    }
+    return true;
+  } catch (ex) {
+    message.error(`Could not delete timeseries.`);
+    return false;
+  }
+};
 
 export const removeAssetFromTimeseries = (
   timeseriesId: number,
@@ -167,7 +204,7 @@ export const addTimeseriesToAsset = (
   }, 1000);
 };
 
-export const editTimeseries = (
+export const updateTimeseries = (
   timeseriesId: number,
   update: TimeSeriesUpdate
 ) => async (
@@ -231,6 +268,24 @@ export default function timeseries(
       return {
         ...state,
         timeseriesData,
+      };
+    }
+    case DELETE_TIMESERIES: {
+      const { timeseriesId } = action.payload;
+      const { timeseriesData, byAssetId } = state;
+      if (timeseriesData[timeseriesId]) {
+        const { assetId } = timeseriesData[timeseriesId];
+        if (assetId && byAssetId[assetId]) {
+          byAssetId[assetId] = byAssetId[assetId].filter(
+            el => el !== timeseriesId
+          );
+        }
+      }
+      delete timeseriesData[timeseriesId];
+      return {
+        ...state,
+        timeseriesData,
+        byAssetId,
       };
     }
     default:

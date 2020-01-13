@@ -47,7 +47,6 @@ const SpinWrapper = styled.div`
 
 type OrigProps = {
   selectedDocument: FilesMetadataWithDownload;
-  deleteFile: (fileId: number) => void;
   setPage: (page: number) => void;
   downloadFile: (url: string) => Promise<Blob>;
   isPnIDParsingAllowed: boolean;

@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Modal, Button, Input } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
+import AceEditor from 'react-ace';
 import AssetSelect from 'components/AssetSelect';
 import { Asset } from '@cognite/sdk';
 import styled from 'styled-components';
@@ -16,6 +17,7 @@ const FormWrapper = styled.div`
 `;
 
 type Props = {
+  parentAssetId?: number;
   asset?: ExtendedAsset;
   onClose: (asset?: Asset) => void;
   addAssetsToState: typeof addAssetsToState;
@@ -26,6 +28,7 @@ type State = {
   assetId?: number;
   description?: string;
   externalId?: string;
+  metadata?: string;
 };
 
 class AddChildAsset extends React.Component<Props, State> {
@@ -34,19 +37,25 @@ class AddChildAsset extends React.Component<Props, State> {
   };
 
   componentDidMount() {
-    const { asset } = this.props;
+    const { asset, parentAssetId } = this.props;
     if (asset) {
       this.setState({
         name: asset.name,
         assetId: asset.parentId,
         description: asset.description,
         externalId: asset.externalId,
+        metadata: asset.metadata ? JSON.stringify(asset.metadata) : undefined,
+      });
+    }
+    if (parentAssetId) {
+      this.setState({
+        assetId: parentAssetId,
       });
     }
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { asset } = this.props;
+    const { asset, parentAssetId } = this.props;
     if (asset && prevProps.asset !== asset) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
@@ -54,12 +63,19 @@ class AddChildAsset extends React.Component<Props, State> {
         assetId: asset.parentId,
         description: asset.description,
         externalId: asset.externalId,
+        metadata: asset.metadata ? JSON.stringify(asset.metadata) : undefined,
+      });
+    }
+    if (prevProps.parentAssetId !== parentAssetId) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({
+        assetId: parentAssetId,
       });
     }
   }
 
   addChild = async () => {
-    const { assetId, name, description, externalId } = this.state;
+    const { assetId, name, description, externalId, metadata } = this.state;
     if (name) {
       if (this.props.asset) {
         const [asset] = await sdk.assets.update([
@@ -84,6 +100,11 @@ class AddChildAsset extends React.Component<Props, State> {
                     set: externalId,
                   }
                 : { setNull: true },
+              ...(metadata && {
+                metadata: {
+                  set: JSON.parse(metadata),
+                },
+              }),
             },
           },
         ]);
@@ -106,7 +127,7 @@ class AddChildAsset extends React.Component<Props, State> {
   };
 
   render() {
-    const { assetId, name, description, externalId } = this.state;
+    const { assetId, name, description, externalId, metadata } = this.state;
     return (
       <Modal
         visible
@@ -146,6 +167,16 @@ class AddChildAsset extends React.Component<Props, State> {
             placeholder="Description"
             value={description}
             onChange={e => this.setState({ description: e.target.value })}
+          />
+          <p>Metadata</p>
+          <AceEditor
+            mode="json"
+            width="100%"
+            height="200px"
+            theme="github"
+            value={metadata}
+            onChange={newValue => this.setState({ metadata: newValue })}
+            editorProps={{ $blockScrolling: true }}
           />
         </FormWrapper>
       </Modal>

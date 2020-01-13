@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import { Button, Tabs, Descriptions, Spin } from 'antd';
+import { Button, Tabs, Descriptions, Spin, Dropdown, Menu } from 'antd';
 import moment from 'moment';
 import { AssetBreadcrumb, AssetTree } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
@@ -71,13 +71,13 @@ type Props = {
   fetchTypeForAssets: typeof fetchTypeForAssets;
 } & OrigProps;
 
-type State = { showEdit: boolean };
+type State = { showEdit: boolean; showAddChild: boolean };
 
 class AssetSidebar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = { showEdit: false };
+    this.state = { showEdit: false, showAddChild: false };
   }
 
   componentDidMount() {
@@ -93,6 +93,24 @@ class AssetSidebar extends React.Component<Props, State> {
     ) {
       this.props.fetchTypeForAssets([this.props.asset.id]);
     }
+  }
+
+  get dropdownMenu() {
+    if (!this.props.asset) {
+      return null;
+    }
+    return (
+      <Menu
+        onClick={item => {
+          switch (item.key) {
+            case 'add-child':
+              this.setState({ showAddChild: true });
+          }
+        }}
+      >
+        <Menu.Item key="add-child">Add Child Asset</Menu.Item>
+      </Menu>
+    );
   }
 
   renderType = () => {
@@ -113,7 +131,7 @@ class AssetSidebar extends React.Component<Props, State> {
 
   render() {
     const { asset } = this.props;
-    const { showEdit } = this.state;
+    const { showEdit, showAddChild } = this.state;
     if (!asset) {
       return (
         <Wrapper>
@@ -146,7 +164,10 @@ class AssetSidebar extends React.Component<Props, State> {
             icon="delete"
             onClick={this.props.onDeleteAsset}
           />
-          <Button type="default" shape="circle" icon="ellipsis" />
+
+          <Dropdown overlay={this.dropdownMenu}>
+            <Button type="default" shape="circle" icon="ellipsis" />
+          </Dropdown>
         </ButtonRow>
         <Tabs size="small" tabBarGutter={6}>
           <Tabs.TabPane tab="Details" key="details">
@@ -193,6 +214,12 @@ class AssetSidebar extends React.Component<Props, State> {
           <AddOrEditAssetModal
             onClose={() => this.setState({ showEdit: false })}
             asset={this.props.asset}
+          />
+        )}
+        {showAddChild && (
+          <AddOrEditAssetModal
+            onClose={() => this.setState({ showAddChild: false })}
+            parentAssetId={this.props.asset!.id}
           />
         )}
       </Wrapper>

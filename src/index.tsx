@@ -5,6 +5,8 @@ import { CogniteClient } from '@cognite/sdk';
 import { ClientSDKProvider } from '@cognite/gearbox';
 import store from './store';
 import Routes from './routes';
+import 'brace/theme/github';
+import 'brace/mode/json';
 import 'antd/dist/antd.css';
 import './styles/globalStyles.css';
 import * as serviceWorker from './utils/serviceWorker';

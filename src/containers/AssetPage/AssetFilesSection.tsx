@@ -168,7 +168,6 @@ class AssetFileSection extends React.Component<Props, State> {
               onAssetClicked={id => this.props.onNavigateToPage('asset', id)}
               onFileClicked={id => this.props.onSelect(id)}
               fileId={fileId}
-              deleteFile={() => {}}
             />
           </div>
         </>

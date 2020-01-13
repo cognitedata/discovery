@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Tabs, message, Modal } from 'antd';
+import { Button, Tabs, message, Modal, notification } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
@@ -191,6 +191,9 @@ class AssetPage extends React.Component<Props, State> {
       onOk: async () => {
         this.postDeleted = true;
         await this.props.deleteAsset(this.asset!.id);
+        notification.success({
+          message: `Successfully Deleted ${this.asset!.name}`,
+        });
         this.onBackClicked();
       },
       onCancel() {},

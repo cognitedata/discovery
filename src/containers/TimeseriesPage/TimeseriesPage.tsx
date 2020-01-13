@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button } from 'antd';
+import { Button, Modal, notification } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import { TimeseriesChart } from '@cognite/gearbox';
@@ -9,6 +9,7 @@ import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import TimeseriesSidebar from './TimeseriesSidebar';
 import {
+  deleteTimeseries,
   TimeseriesState,
   selectTimeseries,
   fetchTimeseries,
@@ -45,12 +46,15 @@ type OrigProps = {
 type Props = {
   timeseries: TimeseriesState;
   fetchTimeseries: typeof fetchTimeseries;
+  deleteTimeseries: typeof deleteTimeseries;
   push: typeof push;
 } & OrigProps;
 
 type State = {};
 
 class TimeseriesPage extends React.Component<Props, State> {
+  postDeleted = false;
+
   constructor(props: Props) {
     super(props);
 
@@ -94,6 +98,22 @@ class TimeseriesPage extends React.Component<Props, State> {
     this.props.push(`/${this.props.match.params.tenant}/search/timeseries`);
   };
 
+  onDeleteClicked = () => {
+    Modal.confirm({
+      title: 'Do you want to delete this timeseries?',
+      content: 'This is a irreversible change',
+      onOk: async () => {
+        this.postDeleted = true;
+        await this.props.deleteTimeseries(this.timeseries!.id);
+        notification.success({
+          message: `Successfully Deleted ${this.timeseries!.name}`,
+        });
+        this.onBackClicked();
+      },
+      onCancel() {},
+    });
+  };
+
   onGoToAssetClicked = (id: number) => {
     this.props.push(`/${this.tenant}/asset/${id}`);
   };
@@ -111,6 +131,7 @@ class TimeseriesPage extends React.Component<Props, State> {
             <TimeseriesSidebar
               timeseries={this.timeseries}
               onGoToAssetClicked={this.onGoToAssetClicked}
+              onDeleteClicked={this.onDeleteClicked}
             />
             <TimeseriesView>
               <TimeseriesChart
@@ -138,5 +159,5 @@ const mapStateToProps = (state: RootState) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchTimeseries }, dispatch);
+  bindActionCreators({ push, fetchTimeseries, deleteTimeseries }, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(TimeseriesPage);

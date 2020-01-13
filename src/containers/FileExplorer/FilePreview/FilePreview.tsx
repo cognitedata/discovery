@@ -8,7 +8,6 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
 import Placeholder from 'components/Placeholder';
-import EditFileModal from 'containers/Modals/EditFileModal';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
@@ -26,18 +25,6 @@ import { BetaBadge } from '../../../components/BetaWarning';
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 const { TabPane } = Tabs;
-
-function saveData(blob: Blob, fileName: string) {
-  const a = document.createElement('a');
-  document.body.appendChild(a);
-  a.style.display = 'none';
-
-  const url = window.URL.createObjectURL(blob);
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  window.URL.revokeObjectURL(url);
-}
 
 const Wrapper = styled.div`
   display: flex;
@@ -107,18 +94,8 @@ const PDFContextButton = styled.div`
   }
 `;
 
-const ButtonRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  && > * {
-    margin-right: 12px;
-    margin-top: 6px;
-  }
-`;
-
 type OrigProps = {
   fileId: number;
-  deleteFile: (fileId: number) => void;
   onAssetClicked: (id: number) => void;
   onFileClicked: (id: number) => void;
 };
@@ -133,7 +110,6 @@ type Props = {
 
 type State = {
   filePreviewUrl?: string;
-  editFileVisible: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
@@ -142,7 +118,6 @@ class FilePreview extends React.Component<Props, State> {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
-      editFileVisible: false,
       pdfState: {
         numPages: 0,
         page: 1,
@@ -202,23 +177,6 @@ class FilePreview extends React.Component<Props, State> {
     );
   };
 
-  onDownloadClicked = async () => {
-    const { fileId, file } = this.props;
-    trackUsage('FilePreview.DownloadFile', { filedId: fileId });
-    const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
-    const blob = await this.downloadFile(url.downloadUrl);
-    saveData(blob, file!.name); // saveAs is a part of FileSaver.js
-  };
-
-  onDeleteClicked = async () => {
-    const { fileId } = this.props;
-    this.props.deleteFile(fileId);
-  };
-
-  onEditClicked = async () => {
-    this.setState({ editFileVisible: true });
-  };
-
   downloadFile = async (url: string) => {
     const response = await fetch(url);
     if (!response.ok) {
@@ -233,27 +191,11 @@ class FilePreview extends React.Component<Props, State> {
     if (!file) {
       return <Spin />;
     }
-    const { pdfState, editFileVisible } = this.state;
+    const { pdfState } = this.state;
     const { name, source, mimeType, createdTime, metadata, id } = file;
     return (
       <>
-        {editFileVisible && (
-          <EditFileModal
-            file={file}
-            onClose={() => this.setState({ editFileVisible: false })}
-          />
-        )}
         <h1>Name: {name}</h1>
-        <ButtonRow>
-          <Button onClick={this.onDownloadClicked}>Download File</Button>
-          <Button onClick={this.onEditClicked}>Edit File</Button>
-          <Button
-            type="danger"
-            ghost
-            icon="delete"
-            onClick={this.onDeleteClicked}
-          />
-        </ButtonRow>
         <Tabs defaultActiveKey="1">
           <TabPane tab="Information" key="1">
             <p>Source: {source}</p>
@@ -267,7 +209,6 @@ class FilePreview extends React.Component<Props, State> {
               <FilePreviewDocumentTab
                 selectedDocument={file}
                 downloadFile={this.downloadFile}
-                deleteFile={this.props.deleteFile}
                 isPnIDParsingAllowed={pdfState.numPages === 1}
                 currentPage={pdfState.page}
                 setPage={page =>

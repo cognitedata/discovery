@@ -6,6 +6,7 @@ import { push } from 'connected-react-router';
 import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
 import { FilesMetadata } from '@cognite/sdk';
+import EditFileModal from 'containers/Modals/EditFileModal';
 import { RootState } from '../../reducers/index';
 import {
   fetchAssets,
@@ -42,6 +43,8 @@ const ButtonRow = styled.div`
 type OrigProps = {
   file: FilesMetadata;
   onGoToAssetClicked: (id: number) => void;
+  onDownloadClicked: () => void;
+  onDeleteClicked: () => void;
 };
 
 type Props = {
@@ -50,13 +53,13 @@ type Props = {
   assets: (ExtendedAsset | undefined)[];
 } & OrigProps;
 
-type State = {};
+type State = { showEditModal: boolean };
 
 class FileSidebar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {};
+    this.state = { showEditModal: false };
   }
 
   componentDidMount() {
@@ -65,24 +68,45 @@ class FileSidebar extends React.Component<Props, State> {
     }
   }
 
-  componentDidUpdate(prevProps: Props) {
+  componentDidUpdate(prevProps: Props, prevState: State) {
     if (prevProps.file.id !== this.props.file.id && this.props.file.assetIds) {
+      this.props.fetchAssets(this.props.file.assetIds.map(id => ({ id })));
+    }
+    if (
+      prevState.showEditModal &&
+      prevState.showEditModal !== this.state.showEditModal &&
+      this.props.file.assetIds
+    ) {
       this.props.fetchAssets(this.props.file.assetIds.map(id => ({ id })));
     }
   }
 
   render() {
     const { file } = this.props;
+    const { showEditModal } = this.state;
     return (
       <Wrapper>
         <h1>{file.name}</h1>
         <ButtonRow>
-          <Button type="primary" shape="round">
+          <Button
+            type="primary"
+            shape="round"
+            onClick={() => this.setState({ showEditModal: true })}
+          >
             Edit
           </Button>
-          <Button type="danger" shape="circle" icon="delete" />
-          <Button type="default" shape="circle" icon="download" />
-          <Button type="default" shape="circle" icon="ellipsis" />
+          <Button
+            type="danger"
+            shape="circle"
+            icon="delete"
+            onClick={this.props.onDeleteClicked}
+          />
+          <Button
+            type="default"
+            shape="circle"
+            icon="download"
+            onClick={this.props.onDownloadClicked}
+          />
         </ButtonRow>
         <Tabs size="small" tabBarGutter={6}>
           <Tabs.TabPane tab="Details" key="details">
@@ -109,7 +133,9 @@ class FileSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Linked Assets" key="assets">
             <>
-              <Button>Link an asset</Button>
+              <Button onClick={() => this.setState({ showEditModal: true })}>
+                Link an asset
+              </Button>
               <List
                 dataSource={
                   file.assetIds
@@ -150,6 +176,12 @@ class FileSidebar extends React.Component<Props, State> {
             <pre>{JSON.stringify(file.metadata, null, 2)}</pre>
           </Tabs.TabPane>
         </Tabs>
+        {showEditModal && (
+          <EditFileModal
+            file={this.props.file}
+            onClose={() => this.setState({ showEditModal: false })}
+          />
+        )}
       </Wrapper>
     );
   }

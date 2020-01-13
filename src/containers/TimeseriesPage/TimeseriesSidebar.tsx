@@ -6,6 +6,7 @@ import { push } from 'connected-react-router';
 import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
+import AddOrEditTimseriesModal from 'containers/Modals/AddOrEditTimseriesModal';
 import { RootState } from '../../reducers/index';
 import {
   selectAssetById,
@@ -42,6 +43,7 @@ const ButtonRow = styled.div`
 type OrigProps = {
   timeseries: GetTimeSeriesMetadataDTO;
   onGoToAssetClicked: (id: number) => void;
+  onDeleteClicked: () => void;
 };
 
 type Props = {
@@ -50,13 +52,13 @@ type Props = {
   asset: ExtendedAsset | undefined;
 } & OrigProps;
 
-type State = {};
+type State = { showEditModal: boolean };
 
 class TimeseriesSidebar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {};
+    this.state = { showEditModal: false };
   }
 
   componentDidMount() {
@@ -67,7 +69,7 @@ class TimeseriesSidebar extends React.Component<Props, State> {
 
   componentDidUpdate(prevProps: Props) {
     if (
-      prevProps.timeseries.id !== this.props.timeseries.id &&
+      prevProps.timeseries.assetId !== this.props.timeseries.assetId &&
       this.props.timeseries.assetId &&
       !this.props.asset
     ) {
@@ -77,15 +79,24 @@ class TimeseriesSidebar extends React.Component<Props, State> {
 
   render() {
     const { timeseries } = this.props;
+    const { showEditModal } = this.state;
     return (
       <Wrapper>
         <h1>{timeseries.name}</h1>
         <ButtonRow>
-          <Button type="primary" shape="round">
+          <Button
+            type="primary"
+            shape="round"
+            onClick={() => this.setState({ showEditModal: true })}
+          >
             Edit
           </Button>
-          <Button type="danger" shape="circle" icon="delete" />
-          <Button type="default" shape="circle" icon="ellipsis" />
+          <Button
+            type="danger"
+            shape="circle"
+            icon="delete"
+            onClick={this.props.onDeleteClicked}
+          />
         </ButtonRow>
         <Tabs size="small" tabBarGutter={6}>
           <Tabs.TabPane tab="Details" key="details">
@@ -116,7 +127,9 @@ class TimeseriesSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Linked Assets" key="assets">
             <>
-              <Button>Link an asset</Button>
+              <Button onClick={() => this.setState({ showEditModal: true })}>
+                Link an asset
+              </Button>
               <List
                 dataSource={
                   timeseries.assetId
@@ -161,6 +174,12 @@ class TimeseriesSidebar extends React.Component<Props, State> {
             <pre>{JSON.stringify(timeseries.metadata, null, 2)}</pre>
           </Tabs.TabPane>
         </Tabs>
+        {showEditModal && (
+          <AddOrEditTimseriesModal
+            timeseries={timeseries}
+            onClose={() => this.setState({ showEditModal: false })}
+          />
+        )}
       </Wrapper>
     );
   }

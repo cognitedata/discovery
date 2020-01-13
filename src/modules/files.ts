@@ -1,13 +1,16 @@
 import { createAction } from 'redux-actions';
 import { Dispatch, Action } from 'redux';
 import { FilesMetadata, FileChangeUpdate } from '@cognite/sdk';
+import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { checkForAccessPermission, arrayToObjectById } from '../utils/utils';
+import { trackUsage } from '../utils/metrics';
 
 // Constants
 export const ADD_FILES = 'files/SET_FILES';
 export const ADD_FILE = 'files/ADD_FILE';
+export const DELETE_FILE = 'files/DELETE_FILE';
 
 interface AddFilesAction extends Action<typeof ADD_FILES> {
   payload: {
@@ -20,8 +23,13 @@ interface AddFileAction extends Action<typeof ADD_FILE> {
     item: FilesMetadata;
   };
 }
+interface DeleteFileAction extends Action<typeof DELETE_FILE> {
+  payload: {
+    fileId: number;
+  };
+}
 
-type FilesAction = AddFilesAction | AddFileAction;
+type FilesAction = AddFilesAction | AddFileAction | DeleteFileAction;
 
 export const fetchFiles = (assetId: number) => async (
   dispatch: Dispatch,
@@ -77,6 +85,31 @@ export const updateFile = (file: FileChangeUpdate) => async (
   dispatch({ type: ADD_FILE, payload: { item } });
 };
 
+export const deleteFile = (fileId: number) => async (
+  dispatch: Dispatch<DeleteFileAction>,
+  getState: () => RootState
+) => {
+  if (
+    !checkForAccessPermission(getState().app.groups, 'filesAcl', 'WRITE', true)
+  ) {
+    return false;
+  }
+  trackUsage('Files.deleteFiles', {
+    fileId,
+  });
+  try {
+    const results = await sdk.files.delete([{ id: fileId }]);
+
+    if (results) {
+      dispatch({ type: DELETE_FILE, payload: { fileId } });
+    }
+    return true;
+  } catch (ex) {
+    message.error(`Could not delete file.`);
+    return false;
+  }
+};
+
 // Reducer
 export interface FilesState {
   files: { [key: string]: FilesMetadata };
@@ -105,6 +138,24 @@ export default function files(
       return {
         ...state,
         files: { ...state.files, ...arrayToObjectById([item]) },
+      };
+    }
+    case DELETE_FILE: {
+      const { fileId } = action.payload;
+      const { files: filesData, byAssetId } = state;
+      if (filesData[fileId]) {
+        const { assetIds } = filesData[fileId];
+        if (assetIds) {
+          assetIds.forEach(assetId => () => {
+            byAssetId[assetId] = byAssetId[assetId].filter(el => el !== fileId);
+          });
+        }
+      }
+      delete filesData[fileId];
+      return {
+        ...state,
+        files: filesData,
+        byAssetId,
       };
     }
     default:

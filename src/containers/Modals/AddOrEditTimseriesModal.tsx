@@ -9,8 +9,6 @@ import AssetSelect from 'components/AssetSelect';
 import { ExtendedAsset, fetchAsset } from '../../modules/assets';
 import { sdk } from '../../index';
 import { RootState } from '../../reducers/index';
-import 'brace/theme/github';
-import 'brace/mode/json';
 import { addTimeseriesToState } from '../../modules/timeseries';
 
 const FormDetails = styled.div`
@@ -171,6 +169,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
           </p>
           <AssetSelect
             style={{ width: '100%' }}
+            selectedAssetIds={selectedAssetId ? [selectedAssetId] : []}
             onAssetSelected={ids => this.setState({ selectedAssetId: ids[0] })}
           />
           <p>Description</p>
@@ -189,6 +188,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
           <AceEditor
             mode="json"
             width="100%"
+            height="200px"
             theme="github"
             value={metadata}
             onChange={newValue => this.setState({ metadata: newValue })}

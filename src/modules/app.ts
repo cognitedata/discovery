@@ -268,7 +268,7 @@ export const fetchUserGroups = () => async (
         if (permissions) {
           a.assetsAcl = (a.assetsAcl || []).concat(permissions.accessTypes);
           a.filesAcl = (a.filesAcl || []).concat(permissions.accessTypes);
-          a.timeseriesAcl = (a.timeseriesAcl || []).concat(
+          a.timeSeriesAcl = (a.timeSeriesAcl || []).concat(
             permissions.accessTypes
           );
         }
