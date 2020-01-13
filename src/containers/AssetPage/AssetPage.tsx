@@ -189,10 +189,11 @@ class AssetPage extends React.Component<Props, State> {
       title: 'Do you want to delete this asset?',
       content: 'This is a irreversible change',
       onOk: async () => {
+        const { name, id } = this.asset!;
         this.postDeleted = true;
-        await this.props.deleteAsset(this.asset!.id);
+        await this.props.deleteAsset(id);
         notification.success({
-          message: `Successfully Deleted ${this.asset!.name}`,
+          message: `Successfully Deleted ${name}`,
         });
         this.onBackClicked();
       },

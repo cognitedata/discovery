@@ -122,11 +122,12 @@ class FilePage extends React.Component<Props, State> {
       title: 'Do you want to delete this file?',
       content: 'This is a irreversible change',
       onOk: async () => {
-        trackUsage('FilePreview.Delete', { id: this.file.id });
+        const { id, name } = this.file!;
+        trackUsage('FilePreview.Delete', { id });
         this.postDeleted = true;
-        await this.props.deleteFile(this.file.id);
+        await this.props.deleteFile(id);
         notification.success({
-          message: `Successfully Deleted ${this.file.name}`,
+          message: `Successfully Deleted ${name}`,
         });
         this.props.goBack();
       },

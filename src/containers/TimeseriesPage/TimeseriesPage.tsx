@@ -103,10 +103,11 @@ class TimeseriesPage extends React.Component<Props, State> {
       title: 'Do you want to delete this timeseries?',
       content: 'This is a irreversible change',
       onOk: async () => {
+        const { id, name } = this.timeseries;
         this.postDeleted = true;
-        await this.props.deleteTimeseries(this.timeseries!.id);
+        await this.props.deleteTimeseries(id);
         notification.success({
-          message: `Successfully Deleted ${this.timeseries!.name}`,
+          message: `Successfully Deleted ${name}`,
         });
         this.onBackClicked();
       },
