@@ -2,7 +2,6 @@ import { createAction } from 'redux-actions';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Revision3D, Model3D } from '@cognite/sdk';
-import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
 import { sdk } from '../index';
@@ -158,9 +157,7 @@ export function setRevisionRepresentAsset(
         });
       }
     } catch (ex) {
-      message.error(
-        `Unable to create mapping, make sure you have the right permission?`
-      );
+      console.error(ex);
     }
   };
 }

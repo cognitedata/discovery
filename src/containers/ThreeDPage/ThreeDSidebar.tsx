@@ -169,7 +169,7 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
         )
       );
     })
-    .map(ii => Number(ii));
+    .map(assetId => Number(assetId));
   return {
     assetIds: representsAssets,
     assets: representsAssets

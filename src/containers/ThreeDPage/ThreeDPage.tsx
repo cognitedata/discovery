@@ -1,17 +1,24 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import Model3D from 'components/Model3D';
 import { Asset, RevealNode3D } from '@cognite/sdk';
-import BottomRightCard from 'components/BottomRightCard';
+import { deleteAssetNodeMapping } from 'modules/assetmappings';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
+import {
+  selectThreeD,
+  ThreeDState,
+  setRevisionRepresentAsset,
+} from '../../modules/threed';
 import ThreeDSidebar from './ThreeDSidebar';
 import { sdk } from '../../index';
+import { ExtendedAsset } from '../../modules/assets';
+import { createAssetNodeMapping } from '../../modules/assetmappings';
+import ThreeDCard from './ThreeDCard';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -46,14 +53,19 @@ type OrigProps = {
 
 type Props = {
   threed: ThreeDState;
+  assets: (ExtendedAsset | undefined)[];
+  assetIds: number[];
   push: typeof push;
+  deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
+  setRevisionRepresentAsset: typeof setRevisionRepresentAsset;
+  createAssetNodeMapping: typeof createAssetNodeMapping;
 } & OrigProps;
 
 type State = {
   nodeIds?: number[];
   selectedItem?: {
     asset?: Asset;
-    node: RevealNode3D;
+    node?: RevealNode3D;
   };
 };
 
@@ -67,7 +79,9 @@ class ThreeDPage extends React.Component<Props, State> {
   async componentDidMount() {
     this.setState({ nodeIds: await this.getNodeIds() });
     if (this.nodeId) {
-      this.onNodeSelected(this.nodeId);
+      this.onNodeSelected(this.nodeId, false);
+    } else if (this.assetId) {
+      this.onAssetSelected(this.assetId, false);
     }
   }
 
@@ -76,9 +90,15 @@ class ThreeDPage extends React.Component<Props, State> {
     if (prevProps.match.params.assetId !== assetId) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ nodeIds: await this.getNodeIds() });
+      if (assetId) {
+        this.onAssetSelected(Number(assetId), false);
+      }
     } else if (nodeId !== prevProps.match.params.nodeId) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ nodeIds: await this.getNodeIds() });
+      if (nodeId) {
+        this.onNodeSelected(Number(nodeId), false);
+      }
     }
   }
 
@@ -139,42 +159,107 @@ class ThreeDPage extends React.Component<Props, State> {
     this.props.push(`/${this.tenant}/asset/${id}`);
   };
 
-  onAssetSelected = async (assetId: number, nodeId: number) => {
+  onNodeSelected = async (nodeId: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props.match.params;
-    this.props.push(
-      `/${this.tenant}/threed/${modelId}/${revisionId}/node/${nodeId}`
-    );
-    const [asset] = await sdk.assets.retrieve([{ id: assetId }]);
+    if (navigateAway) {
+      this.props.push(
+        `/${this.tenant}/threed/${modelId}/${revisionId}/node/${nodeId}`
+      );
+    }
     const {
       items: [node],
     } = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
       nodeId,
       depth: 0,
     });
+    const {
+      items: [mapping],
+    } = await sdk.assetMappings3D.list(modelId, revisionId, {
+      nodeId: node.id,
+    });
+    let asset: Asset | undefined;
+    if (mapping) {
+      [asset] = await sdk.assets.retrieve([{ id: mapping.assetId }]);
+    }
     this.setState({
       selectedItem: {
-        asset,
         node,
+        asset,
       },
     });
   };
 
-  onNodeSelected = async (nodeId: number) => {
+  onAssetSelected = async (assetId: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props.match.params;
-    this.props.push(
-      `/${this.tenant}/threed/${modelId}/${revisionId}/node/${nodeId}`
-    );
+    if (navigateAway) {
+      this.props.push(
+        `/${this.tenant}/threed/${modelId}/${revisionId}/asset/${assetId}`
+      );
+    }
     const {
-      items: [node],
-    } = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
-      nodeId,
-      depth: 0,
+      items: [mapping],
+    } = await sdk.assetMappings3D.list(modelId, revisionId, {
+      assetId,
     });
+    let asset: Asset | undefined;
+    if (mapping) {
+      [asset] = await sdk.assets.retrieve([{ id: assetId }]);
+    }
     this.setState({
       selectedItem: {
-        node,
+        asset,
       },
     });
+  };
+
+  onViewParent = async () => {
+    const { selectedItem } = this.state;
+    if (selectedItem && selectedItem.node && selectedItem.node.parentId) {
+      this.onNodeSelected(selectedItem.node.parentId);
+    } else {
+      message.error('Unable to select parent');
+    }
+  };
+
+  onAddMappingClicked = async (rootId: number, assetId: number) => {
+    const { modelId, revisionId, nodeId } = this.props.match.params;
+    if (!rootId) {
+      message.error('A root asset must first be selected!');
+      return;
+    }
+    if (!this.props.assetIds.includes(rootId)) {
+      await this.props.setRevisionRepresentAsset(
+        Number(modelId),
+        Number(revisionId),
+        Number(rootId!)
+      );
+    }
+    await this.props.createAssetNodeMapping(
+      Number(modelId),
+      Number(revisionId),
+      Number(nodeId!),
+      assetId
+    );
+    this.onNodeSelected(nodeId!);
+  };
+
+  onDeleteMapping = async () => {
+    const { modelId, revisionId, nodeId } = this.props.match.params;
+    const { selectedItem } = this.state;
+    if (selectedItem && selectedItem.node && selectedItem.asset) {
+      await sdk.assetMappings3D.delete(Number(modelId), Number(revisionId), [
+        {
+          nodeId: selectedItem.node.id,
+          assetId: selectedItem.asset.id,
+        },
+      ]);
+      await this.props.deleteAssetNodeMapping(
+        Number(modelId),
+        Number(revisionId),
+        selectedItem.asset.id
+      );
+      this.onNodeSelected(nodeId!);
+    }
   };
 
   renderCard = () => {
@@ -183,86 +268,28 @@ class ThreeDPage extends React.Component<Props, State> {
     if (!selectedItem) {
       return null;
     }
-
-    if (this.nodeId) {
-      return (
-        <BottomRightCard
-          title="Selected Node"
-          onClose={() =>
-            this.setState({ selectedItem: undefined }, () =>
-              this.props.push(
-                `/${this.tenant}/threed/${modelId}/${revisionId}/`
-              )
-            )
-          }
-        >
-          <>
-            <p>{selectedItem.node.name}</p>
-            {selectedItem.asset && (
-              <>
-                <p>Linked to:</p>
-                <p>{selectedItem.asset.name}</p>
-                <Button
-                  onClick={() =>
-                    this.props.push(
-                      `/${this.tenant}/threed/${modelId}/${revisionId}/asset/${
-                        selectedItem.asset!.id
-                      }`
-                    )
-                  }
-                >
-                  View All Nodes Linked to Asset
-                </Button>
-                <br />
-                <br />
-                <Button
-                  type="primary"
-                  onClick={() =>
-                    this.props.push(
-                      `/${this.tenant}/asset/${
-                        selectedItem.asset!.id
-                      }/threed/${modelId}/${revisionId}/${selectedItem.node.id}`
-                    )
-                  }
-                >
-                  View Asset
-                </Button>
-              </>
-            )}
-          </>
-        </BottomRightCard>
-      );
-    }
-
     return (
-      <BottomRightCard
-        title="Selected Asset"
+      <ThreeDCard
+        selectedItem={selectedItem!}
+        rootId={this.props.assetIds[0]}
         onClose={() =>
           this.setState({ selectedItem: undefined }, () =>
             this.props.push(`/${this.tenant}/threed/${modelId}/${revisionId}/`)
           )
         }
-      >
-        <>
-          {selectedItem.asset && (
-            <>
-              <p>{selectedItem.asset.name}</p>
-              <Button
-                type="primary"
-                onClick={() =>
-                  this.props.push(
-                    `/${this.tenant}/asset/${
-                      selectedItem.asset!.id
-                    }/threed/${modelId}/${revisionId}`
-                  )
-                }
-              >
-                View Asset
-              </Button>
-            </>
-          )}
-        </>
-      </BottomRightCard>
+        showingAllUnderAsset={!!this.assetId}
+        onDeleteMapping={this.onDeleteMapping}
+        onAddMappingClicked={this.onAddMappingClicked}
+        onViewParent={this.onViewParent}
+        onViewAllUnderAsset={this.onAssetSelected}
+        onViewAsset={() =>
+          this.props.push(
+            `/${this.tenant}/asset/${
+              selectedItem.asset!.id
+            }/threed/${modelId}/${revisionId}`
+          )
+        }
+      />
     );
   };
 
@@ -288,7 +315,7 @@ class ThreeDPage extends React.Component<Props, State> {
                 modelId={modelId}
                 revisionId={revisionId}
                 nodeIds={this.state.nodeIds}
-                onAssetIdChange={this.onAssetSelected}
+                onAssetIdChange={(_, nodeId) => this.onNodeSelected(nodeId)}
                 onNodeIdChange={this.onNodeSelected}
               />
               {this.renderCard()}
@@ -304,11 +331,34 @@ class ThreeDPage extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
+const mapStateToProps = (state: RootState, origProps: OrigProps) => {
+  const representsAssets = Object.keys(state.threed.representsAsset)
+    .filter(id => {
+      const representations = state.threed.representsAsset[Number(id)];
+      return (
+        representations &&
+        representations.some(
+          representation =>
+            representation.modelId === Number(origProps.match.params.modelId) &&
+            representation.revisionId ===
+              Number(origProps.match.params.revisionId)
+        )
+      );
+    })
+    .map(assetId => Number(assetId));
   return {
+    assetIds: representsAssets,
     threed: selectThreeD(state),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push }, dispatch);
+  bindActionCreators(
+    {
+      push,
+      setRevisionRepresentAsset,
+      createAssetNodeMapping,
+      deleteAssetNodeMapping,
+    },
+    dispatch
+  );
 export default connect(mapStateToProps, mapDispatchToProps)(ThreeDPage);
