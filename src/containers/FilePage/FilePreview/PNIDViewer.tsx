@@ -6,12 +6,12 @@ import { SVGViewer } from '@cognite/gearbox';
 import { bindActionCreators, Dispatch } from 'redux';
 import { FilesMetadata } from '@cognite/sdk';
 import BottomRightCard from 'components/BottomRightCard';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { selectFiles, FilesState } from '../../modules/files';
-import { sleep } from '../../utils/utils';
-import { RootState } from '../../reducers';
-import { sdk } from '../../index';
-import { trackUsage } from '../../utils/metrics';
+import { sleep } from 'utils/utils';
+import { RootState } from 'reducers';
+import { sdk } from 'index';
+import { trackUsage } from 'utils/metrics';
+import { selectFiles, FilesState } from 'modules/files';
+import { selectAssets, AssetsState } from 'modules/assets';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
   (node.textContent || '').replace(/\s/g, '');
@@ -159,7 +159,9 @@ class PNIDViewer extends React.Component<Props, State> {
 
     if (matches.length === 0) {
       const result = await sdk.assets.search({ search: { name } });
-      const exactMatches = result.filter(a => a.name === name);
+      const exactMatches = result.filter(
+        a => a.name.replace(/\s+/g, ' ') === name
+      );
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
         trackUsage('PNIDViewer.searchAndSelectAssetName', {
@@ -226,14 +228,17 @@ class PNIDViewer extends React.Component<Props, State> {
       return false;
     }
 
-    return getTextFromMetadataNode(metadata) === asset.name;
+    return getTextFromMetadataNode(metadata) === asset.name.replace(/\s/g, '');
   };
 
   isSelectedAsset = (metadata: any) => {
     if (!this.state.selectedItem) {
       return false;
     }
-    return getTextFromMetadataNode(metadata) === this.state.selectedItem.name;
+    return (
+      getTextFromMetadataNode(metadata) ===
+      this.state.selectedItem.name.replace(/\s/g, '')
+    );
   };
 
   renderSVGViewer() {

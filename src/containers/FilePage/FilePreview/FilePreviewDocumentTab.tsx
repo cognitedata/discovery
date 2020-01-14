@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, message, Spin, Table, Icon, Divider } from 'antd';
 import styled from 'styled-components';
 import { BetaTag } from 'components/BetaWarning';
-import { Asset, UploadFileMetadataResponse } from '@cognite/sdk';
+import { Asset, UploadFileMetadataResponse, FilesMetadata } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
@@ -15,7 +15,6 @@ import { trackUsage } from 'utils/metrics';
 import AssetSelect from 'components/AssetSelect';
 import { GCSUploader } from 'components/FileUploader';
 import { checkForAccessPermission } from 'utils/utils';
-import { FilesMetadataWithDownload } from '../FileExplorer';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 
@@ -46,7 +45,7 @@ const SpinWrapper = styled.div`
 `;
 
 type OrigProps = {
-  selectedDocument: FilesMetadataWithDownload;
+  selectedDocument: FilesMetadata;
   setPage: (page: number) => void;
   downloadFile: (url: string) => Promise<Blob>;
   isPnIDParsingAllowed: boolean;

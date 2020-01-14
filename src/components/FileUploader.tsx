@@ -60,7 +60,7 @@ enum STATUS {
 }
 
 type Props = {
-  assetId?: number;
+  assetIds?: number[];
   validExtensions?: string[];
   onUploadSuccess: (file: UploadFileMetadataResponse) => void;
   onFileListChange: (fileList: UploadFile[]) => void;
@@ -184,7 +184,7 @@ class FileUploader extends React.Component<Props, State> {
   };
 
   startUpload = async () => {
-    const { assetId } = this.props;
+    const { assetIds } = this.props;
     if (this.state.uploadStatus !== STATUS.READY) {
       return;
     }
@@ -211,7 +211,7 @@ class FileUploader extends React.Component<Props, State> {
         name: file.name,
         mimeType,
         source: 'Discovery',
-        ...(assetId && { assetIds: [assetId] }),
+        ...(assetIds && { assetIds }),
       })) as UploadFileMetadataResponse;
       const { uploadUrl, id } = fileMetadata;
 

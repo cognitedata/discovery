@@ -9,7 +9,7 @@ import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
-import FilePreview from 'containers/FileExplorer/FilePreview/FilePreview';
+import FilePreview from 'containers/FilePage/FilePreview';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';

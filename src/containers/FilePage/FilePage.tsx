@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, notification, Modal } from 'antd';
 import styled from 'styled-components';
 import { push, goBack } from 'connected-react-router';
-import FilePreview from 'containers/FileExplorer/FilePreview/FilePreview';
+import FilePreview from './FilePreview';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import FileSidebar from './FileSidebar';
@@ -16,6 +16,7 @@ import {
 } from '../../modules/files';
 import { trackUsage } from '../../utils/metrics';
 import { sdk } from '../../index';
+import { downloadFile } from './FileUtils';
 
 function saveData(blob: Blob, fileName: string) {
   const a = document.createElement('a');
@@ -100,15 +101,6 @@ class FilePage extends React.Component<Props, State> {
     return this.props.match.params.itemId;
   }
 
-  downloadFile = async (url: string) => {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok.');
-    }
-    const blob = await response.blob();
-    return blob;
-  };
-
   onBackClicked = () => {
     this.props.push(`/${this.props.match.params.tenant}/search/files`);
   };
@@ -138,7 +130,7 @@ class FilePage extends React.Component<Props, State> {
   onDownloadClicked = async () => {
     trackUsage('FilePreview.DownloadFile', { filedId: this.file.id });
     const [url] = await sdk.files.getDownloadUrls([{ id: this.file.id }]);
-    const blob = await this.downloadFile(url.downloadUrl);
+    const blob = await downloadFile(url.downloadUrl);
     saveData(blob, this.file.name);
   };
 
@@ -167,7 +159,7 @@ class FilePage extends React.Component<Props, State> {
                   )
                 }
                 onFileClicked={id =>
-                  this.props.push(`/${this.tenant}/files/${id}`)
+                  this.props.push(`/${this.tenant}/file/${id}`)
                 }
               />
             </FileView>

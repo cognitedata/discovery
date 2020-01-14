@@ -1,8 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Pagination, Tabs, Spin, message } from 'antd';
-import moment from 'moment';
+import { Button, Pagination, message, Popover, notification, Icon } from 'antd';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
@@ -14,17 +13,16 @@ import { RootState } from 'reducers/index';
 import { sdk } from 'index';
 import { trackUsage } from 'utils/metrics';
 import LoadingWrapper from 'components/LoadingWrapper';
-import { FileExplorerTabsType } from '../FileExplorer';
-import PNIDViewer from '../PNIDViewer';
-import FilePreviewDocumentTab from './FilePreviewDocumentTab';
+import { selectFiles, fetchFile } from 'modules/files';
+import AssetSelect from 'components/AssetSelect';
+import PNIDViewer from './PNIDViewer';
 import ImageAnnotator from './ImageAnnotator';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { selectFiles, fetchFile } from '../../../modules/files';
-import { BetaBadge } from '../../../components/BetaWarning';
+import { convertPDFtoPNID } from '../FileUtils';
+import { selectAppState, AppState } from '../../../modules/app';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
-const { TabPane } = Tabs;
+export type FileType = 'all' | 'images' | 'documents' | 'pnid';
 
 const Wrapper = styled.div`
   display: flex;
@@ -102,6 +100,7 @@ type OrigProps = {
 
 type Props = {
   assetId?: number;
+  app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
   fetchFile: typeof fetchFile;
@@ -110,6 +109,9 @@ type Props = {
 
 type State = {
   filePreviewUrl?: string;
+  pnidSelectedAssetId?: number;
+  convertToPDFVisible: boolean;
+  runningPnID: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
 };
 
@@ -118,6 +120,8 @@ class FilePreview extends React.Component<Props, State> {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
+      convertToPDFVisible: false,
+      runningPnID: false,
       pdfState: {
         numPages: 0,
         page: 1,
@@ -142,7 +146,7 @@ class FilePreview extends React.Component<Props, State> {
     }
   }
 
-  get type(): FileExplorerTabsType {
+  get type(): FileType {
     const { mimeType } = this.props.file!;
     if (!mimeType) {
       return 'all';
@@ -177,48 +181,116 @@ class FilePreview extends React.Component<Props, State> {
     );
   };
 
-  downloadFile = async (url: string) => {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok.');
+  handlePnIDPopover = (visible: boolean) => {
+    if (this.state.pdfState.numPages !== 1) {
+      message.info(
+        'Sorry, this feature is only avilable for Single Page PDFs.'
+      );
+      return;
     }
-    const blob = await response.blob();
-    return blob;
+    if (this.state.runningPnID) {
+      message.info('Sorry, only 1 parsing job is allowed at a time!');
+      return;
+    }
+    this.setState({ convertToPDFVisible: visible });
   };
 
-  renderFileDetailsPane = () => {
-    const { file } = this.props;
-    if (!file) {
-      return <Spin />;
+  onConvertToPnIDClicked = async () => {
+    const CONVERT_PNID_NOTIF_KEY = 'convert-pnid';
+    const { pnidSelectedAssetId } = this.state;
+    if (this.props.file && pnidSelectedAssetId) {
+      const notifConfig = {
+        key: CONVERT_PNID_NOTIF_KEY,
+        icon: <Icon type="loading" />,
+        duration: 0,
+        message: 'Convert to Interactive P&ID',
+        description: 'Preparing...',
+      };
+      notification.open(notifConfig);
+      this.setState({ runningPnID: true, convertToPDFVisible: false });
+      convertPDFtoPNID(
+        this.props.file,
+        pnidSelectedAssetId,
+        this.props.app.groups,
+        {
+          callbackProgress: (progress: string) => {
+            notification.open({ ...notifConfig, description: progress });
+          },
+          callbackResult: (file: FilesMetadata) => {
+            notification.open({
+              ...notifConfig,
+              icon: (
+                <Icon
+                  type="check-circle"
+                  theme="twoTone"
+                  twoToneColor="#52c41a"
+                />
+              ),
+              duration: 4.5,
+              description: 'Completed',
+            });
+            this.props.onFileClicked(file.id);
+            this.setState({ runningPnID: false });
+          },
+          callbackError: (error: any) => {
+            notification.open({
+              ...notifConfig,
+              icon: (
+                <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
+              ),
+              description: error,
+              duration: 4.5,
+            });
+            this.setState({ runningPnID: false });
+          },
+        }
+      );
+    } else {
+      message.info('Please select an asset first!');
     }
-    const { pdfState } = this.state;
-    const { name, source, mimeType, createdTime, metadata, id } = file;
+  };
+
+  renderConvertPnIDButton = () => {
+    const {
+      pdfState,
+      convertToPDFVisible,
+      pnidSelectedAssetId,
+      runningPnID,
+    } = this.state;
     return (
-      <>
-        <h1>Name: {name}</h1>
-        <Tabs defaultActiveKey="1">
-          <TabPane tab="Information" key="1">
-            <p>Source: {source}</p>
-            <p>Type: {mimeType}</p>
-            <p>ID: {id}</p>
-            <p>Created Date: {moment(createdTime).format('DD/MM/YYYY')}</p>
-            <pre>{JSON.stringify(metadata, null, 2)}</pre>
-          </TabPane>
-          {this.type === 'documents' && (
-            <TabPane tab={<BetaBadge>Utilities</BetaBadge>} key="2">
-              <FilePreviewDocumentTab
-                selectedDocument={file}
-                downloadFile={this.downloadFile}
-                isPnIDParsingAllowed={pdfState.numPages === 1}
-                currentPage={pdfState.page}
-                setPage={page =>
-                  this.setState({ pdfState: { ...pdfState, page } })
-                }
-              />
-            </TabPane>
-          )}
-        </Tabs>
-      </>
+      <Popover
+        title="Convert to Interactive P&ID"
+        content={
+          <>
+            <AssetSelect
+              style={{ marginRight: '12px', width: '300px' }}
+              selectedAssetIds={
+                pnidSelectedAssetId ? [pnidSelectedAssetId] : []
+              }
+              onAssetSelected={ids =>
+                this.setState({ pnidSelectedAssetId: ids[0] })
+              }
+            />
+            <Button
+              disabled={!pnidSelectedAssetId}
+              onClick={this.onConvertToPnIDClicked}
+            >
+              Convert
+            </Button>
+          </>
+        }
+        trigger="click"
+        visible={convertToPDFVisible}
+        onVisibleChange={this.handlePnIDPopover}
+      >
+        <Button
+          shape="round"
+          disabled={pdfState.numPages !== 1}
+          loading={runningPnID}
+        >
+          Convert to Interactive P&ID
+        </Button>
+      </Popover>
     );
   };
 
@@ -295,9 +367,7 @@ class FilePreview extends React.Component<Props, State> {
           size="small"
         />
         <PDFContextButton>
-          <Button shape="round" onClick={() => message.info('Coming Soon...')}>
-            Convert to P&ID
-          </Button>
+          {this.renderConvertPnIDButton()}
           <Button shape="round" onClick={() => message.info('Coming Soon...')}>
             Detect Asset
           </Button>
@@ -356,7 +426,11 @@ class FilePreview extends React.Component<Props, State> {
     const { file } = this.props;
 
     if (!file) {
-      return <Spin />;
+      return (
+        <LoadingWrapper>
+          <p>Loading File...</p>
+        </LoadingWrapper>
+      );
     }
 
     return <Wrapper>{this.renderContent()}</Wrapper>;
@@ -365,6 +439,7 @@ class FilePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
+    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
     file: selectFiles(state).files[props.fileId],

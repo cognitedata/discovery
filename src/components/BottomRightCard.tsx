@@ -9,7 +9,7 @@ const StyledCard = styled(Card)`
     right: 32px;
     width: 300px;
     height: auto;
-    box-shadow: 0px 0px 8px #565656;
+    box-shadow: 0px 0px 8px #cdcdcd;
 
     .button-row {
       margin-top: 6px;
@@ -30,7 +30,10 @@ type Props = {
 };
 
 export default ({ children, onClose, title }: Props) => (
-  <StyledCard title={title} extra={[<Icon type="close" onClick={onClose} />]}>
+  <StyledCard
+    title={title}
+    extra={[<Icon key="close" type="close" onClick={onClose} />]}
+  >
     {children}
   </StyledCard>
 );

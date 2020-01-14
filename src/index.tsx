@@ -8,6 +8,7 @@ import Routes from './routes';
 import 'brace/theme/github';
 import 'brace/mode/json';
 import 'antd/dist/antd.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
 import './styles/globalStyles.css';
 import * as serviceWorker from './utils/serviceWorker';
 
