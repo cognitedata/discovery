@@ -11,7 +11,7 @@ script:
   - yarn build || travis_terminate 1
 deploy:
   - provider: firebase
-    on: v1
+    on: explorer
     skip_cleanup: true
     project: digital-twin-explorer
     token:
