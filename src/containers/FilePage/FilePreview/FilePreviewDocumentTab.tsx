@@ -8,7 +8,7 @@ import { Asset, UploadFileMetadataResponse, FilesMetadata } from '@cognite/sdk';
 import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
-import { selectAppState, AppState, setAssetId } from 'modules/app';
+import { selectAppState, AppState } from 'modules/app';
 import { sdk } from 'index';
 import LoaderBPSvg from 'assets/loader-bp.svg';
 import { trackUsage } from 'utils/metrics';
@@ -47,6 +47,7 @@ const SpinWrapper = styled.div`
 type OrigProps = {
   selectedDocument: FilesMetadata;
   setPage: (page: number) => void;
+  setAssetId: (assetId: number) => void;
   downloadFile: (url: string) => Promise<Blob>;
   isPnIDParsingAllowed: boolean;
   currentPage: number;
@@ -56,7 +57,6 @@ type Props = {
   app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
-  setAssetId: typeof setAssetId;
 } & OrigProps;
 
 type State = {
@@ -278,7 +278,7 @@ class MapModelToAssetForm extends React.Component<Props, State> {
     const [result] = await sdk.assets.search({
       search: { name: asset.name },
     });
-    this.props.setAssetId(result.rootId, result.id);
+    this.props.setAssetId(result.id);
     this.props.setPage(asset.page);
   };
 
@@ -392,12 +392,7 @@ const mapStateToProps = (state: RootState) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators(
-    {
-      setAssetId,
-    },
-    dispatch
-  );
+  bindActionCreators({}, dispatch);
 export default connect(
   mapStateToProps,
   mapDispatchToProps

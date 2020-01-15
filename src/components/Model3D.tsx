@@ -1,20 +1,13 @@
-// TODO is this ideal?
 import React from 'react';
-import { connect } from 'react-redux';
-import { Model3DViewer, CacheObject } from '@cognite/gearbox';
 import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
 import { Slider } from 'antd';
-import { Dispatch, bindActionCreators } from 'redux';
-import { SliderValue } from 'antd/lib/slider';
 import debounce from 'lodash/debounce';
+import { Model3DViewer, CacheObject } from '@cognite/gearbox';
+import { SliderValue } from 'antd/lib/slider';
 import Model3DLoadingDialog, { ProgressObject } from './Model3DLoadingDialog';
-import { selectFilteredAssets } from '../modules/filters';
-import { RootState } from '../reducers/index';
-import { ExtendedAsset } from '../modules/assets';
 
-import { fetchNode } from '../modules/threed';
-import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
+import { sdk } from '../index';
 
 declare global {
   interface Window {
@@ -31,8 +24,6 @@ type Props = {
   nodeIds?: number[];
   onAssetIdChange: (assetId: number, nodeId: number) => void;
   onNodeIdChange: (nodeId: number) => void;
-  doFetchNode: typeof fetchNode;
-  filteredSearch: { items: ExtendedAsset[] };
 };
 
 type State = {
@@ -314,18 +305,4 @@ class Model3D extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
-  return {
-    filteredSearch: selectFilteredAssets(state),
-  };
-};
-
-const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators(
-    {
-      doFetchNode: fetchNode,
-    },
-    dispatch
-  );
-
-export default connect(mapStateToProps, mapDispatchToProps)(Model3D);
+export default Model3D;

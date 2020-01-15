@@ -6,7 +6,6 @@ import events, { EventState } from '../modules/events';
 import assets, { AssetsState } from '../modules/assets';
 import types, { TypesState } from '../modules/types';
 import files, { FilesState } from '../modules/files';
-import filters, { FilterState } from '../modules/filters';
 import threed, { ThreeDState } from '../modules/threed';
 import assetMappings, { AssetMappingState } from '../modules/assetmappings';
 import app, { AppState } from '../modules/app';
@@ -21,7 +20,6 @@ const createRootReducer = (history: History) =>
     assetMappings,
     types,
     files,
-    filters,
     threed,
     app,
     relationships,
@@ -35,7 +33,6 @@ export interface RootState {
   assets: AssetsState;
   types: TypesState;
   files: FilesState;
-  filters: FilterState;
   threed: ThreeDState;
   relationships: RelationshipState;
   assetMappings: AssetMappingState;

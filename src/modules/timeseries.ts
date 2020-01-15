@@ -11,7 +11,6 @@ import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
 import { trackUsage } from '../utils/metrics';
-import { setTimeseriesId } from './app';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -56,13 +55,7 @@ export function fetchTimeseriesForAssetId(assetId: number) {
     });
   };
 }
-export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
-  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
-    const results = await sdk.timeseries.retrieve([{ id: timeseriesId }]);
-    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
-    dispatch(setTimeseriesId(timeseriesId, redirect));
-  };
-}
+
 let searchTimeseriesId = 0;
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {

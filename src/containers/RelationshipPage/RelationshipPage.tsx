@@ -7,12 +7,7 @@ import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
 import { RootState } from '../../reducers/index';
-import {
-  selectAssets,
-  AssetsState,
-  selectCurrentAsset,
-  ExtendedAsset,
-} from '../../modules/assets';
+import { selectAssets, AssetsState } from '../../modules/assets';
 import { selectTimeseries, TimeseriesState } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { selectTypesState, TypesState } from '../../modules/types';
@@ -57,7 +52,6 @@ type StateProps = {
   relationships: RelationshipState;
   assets: AssetsState;
   types: TypesState;
-  asset: ExtendedAsset | undefined;
   timeseries: TimeseriesState;
   threed: ThreeDState;
 };
@@ -424,13 +418,12 @@ class RelationshipViewer extends Component<Props, State> {
   };
 
   chooseRelationshipColor = (relationship: Relationship) => {
-    const { asset } = this.props;
+    const { nodeDetailsPreview } = this.state;
     switch (relationship.relationshipType) {
       case 'isParentOf': {
         if (
-          asset &&
-          (relationship.target.resourceId === asset.externalId ||
-            Number(relationship.target.resourceId) === asset.id)
+          nodeDetailsPreview &&
+          relationship.target.resourceId === `${nodeDetailsPreview.id}`
         ) {
           return 'rgba(0,255,255,0.5)';
         }
@@ -529,7 +522,6 @@ const mapStateToProps = (state: RootState): StateProps => {
   return {
     relationships: state.relationships,
     assets: selectAssets(state),
-    asset: selectCurrentAsset(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
     types: selectTypesState(state),

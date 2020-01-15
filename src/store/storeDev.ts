@@ -4,14 +4,9 @@ import { composeWithDevTools } from 'redux-devtools-extension';
 import { routerMiddleware } from 'connected-react-router';
 import createRootReducer from '../reducers';
 import { history } from '../routes/index';
-import { locationStateMiddleware } from './middleware';
 
 export default function configureStore(initialState = {}) {
-  const middlewares = [
-    ReduxThunk,
-    routerMiddleware(history),
-    locationStateMiddleware,
-  ];
+  const middlewares = [ReduxThunk, routerMiddleware(history)];
   const enhancers = [
     applyMiddleware(...middlewares),
     // other store enhancers if any

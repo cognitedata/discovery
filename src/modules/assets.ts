@@ -1,4 +1,3 @@
-import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
@@ -17,7 +16,6 @@ import { trackUsage } from '../utils/metrics';
 import { fetchTypeForAssets } from './types';
 
 // Constants
-export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
 export const UPDATE_ASSET = 'assets/UPDATE_ASSET';
 export const DELETE_ASSETS = 'assets/DELETE_ASSETS';
@@ -47,60 +45,9 @@ export interface DeleteAssetAction extends Action<typeof DELETE_ASSETS> {
   payload: { assetId: number };
 }
 
-interface SetAction extends Action<typeof SET_ASSETS> {
-  payload: { items: ExtendedAsset[] };
-}
-type AssetAction =
-  | AddAssetAction
-  | SetAction
-  | DeleteAssetAction
-  | UpdateAction;
-
-let searchCounter = 0;
+type AssetAction = AddAssetAction | DeleteAssetAction | UpdateAction;
 
 // Functions
-export function searchForAsset(query: string) {
-  return async (dispatch: Dispatch) => {
-    trackUsage('Assets.searchForAsset', {
-      query,
-    });
-    const currentCounter = searchCounter + 1;
-    searchCounter += 1;
-
-    if (query === '') {
-      dispatch({ type: SET_ASSETS, payload: { items: [] } });
-      return;
-    }
-    // const result = await sdk.Assets.search({ query, name, limit: 100 });
-    // const requestResult = await sdk.rawGet(
-    //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
-    // );
-    const result = await sdk.assets.search({
-      limit: 1000,
-      ...(query && query.length > 0 && { search: { query } }),
-    });
-
-    if (result) {
-      const assetResults = result.map((asset: Asset) => ({
-        id: asset.id,
-        name: asset.name,
-        rootId: asset.rootId,
-        description: asset.description,
-        types: [],
-        metadata: asset.metadata,
-      }));
-      if (currentCounter === searchCounter) {
-        dispatch({
-          type: ADD_ASSETS,
-          payload: arrayToObjectById(
-            result.map((asset: Asset) => slimAssetObject(asset))
-          ),
-        });
-        dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
-      }
-    }
-  };
-}
 export function addAssetsToState(assetsToAdd: Asset[]) {
   return async (dispatch: Dispatch) => {
     dispatch({
@@ -424,24 +371,16 @@ export const deleteAsset = (assetId: number) => async (
 // Reducer
 export interface AssetsState {
   all: { [key: string]: ExtendedAsset };
-  current: ExtendedAsset[];
   externalIdMap: { [key: string]: number };
 }
 
-const initialState: AssetsState = { current: [], all: {}, externalIdMap: {} };
+const initialState: AssetsState = { all: {}, externalIdMap: {} };
 
 export default function assets(
   state = initialState,
   action: AssetAction
 ): AssetsState {
   switch (action.type) {
-    case SET_ASSETS: {
-      const { items } = action.payload;
-      return {
-        ...state,
-        current: items,
-      };
-    }
     case ADD_ASSETS: {
       const all = { ...state.all, ...action.payload.items };
       return {
@@ -494,16 +433,7 @@ const slimAssetObject = (asset: Asset): ExtendedAsset => ({
   metadata: asset.metadata,
 });
 
-// Action creators
-const setAssets = createAction(SET_ASSETS);
-
-export const actions = {
-  setAssets,
-};
-
 // Selectors
 export const selectAssets = (state: RootState) => state.assets || initialState;
 export const selectAssetById = (state: RootState, id: number) =>
   state.assets.all[id];
-export const selectCurrentAsset = (state: RootState) =>
-  state.app.assetId ? selectAssets(state).all[state.app.assetId] : undefined;
