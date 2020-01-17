@@ -177,7 +177,11 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
             <p />
           </div>
           <div className="right">
-            <Button icon="plus" type="primary">
+            <Button
+              icon="plus"
+              type="primary"
+              onClick={() => message.info('Coming soon...')}
+            >
               Create New Event
             </Button>
           </div>
