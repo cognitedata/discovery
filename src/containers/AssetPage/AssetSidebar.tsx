@@ -218,7 +218,13 @@ class AssetSidebar extends React.Component<Props, State> {
         )}
         {showAddChild && (
           <AddOrEditAssetModal
-            onClose={() => this.setState({ showAddChild: false })}
+            onClose={newChild =>
+              this.setState({ showAddChild: false }, () => {
+                if (newChild) {
+                  this.props.onNavigateToPage('asset', newChild.id);
+                }
+              })
+            }
             parentAssetId={this.props.asset!.id}
           />
         )}
