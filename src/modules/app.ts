@@ -9,6 +9,8 @@ import { sdk } from '../index';
 export const SET_APP_STATE = 'app/SET_APP_STATE';
 export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
 
+export const test = { permissions: {} };
+
 export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
     tenant?: string;
@@ -61,6 +63,8 @@ export const fetchUserGroups = () => async (
       },
       { groupsAcl: ['LIST'] } as { [key: string]: string[] }
     );
+
+    test.permissions = groups;
 
     dispatch({
       type: SET_APP_STATE,

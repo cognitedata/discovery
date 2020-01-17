@@ -239,18 +239,37 @@ export default function timeseries(
   switch (action.type) {
     case SET_TIMESERIES: {
       const { items, assetId } = action.payload;
+
+      const byAssetMap = items.reduce((prev, item) => {
+        if (
+          !state.timeseriesData[item.id] ||
+          state.timeseriesData[item.id].assetId !== item.assetId
+        ) {
+          const prevId = state.timeseriesData[item.id]
+            ? state.timeseriesData[item.id].assetId
+            : undefined;
+          const currId = item.assetId;
+          if (prevId && prev[prevId]) {
+            // eslint-disable-next-line no-param-reassign
+            prev[prevId] = prev[prevId].filter(el => el !== item.id);
+          }
+          if (currId && prev[currId]) {
+            // eslint-disable-next-line no-param-reassign
+            prev[currId] = [...prev[currId], item.id];
+          }
+        }
+        return prev;
+      }, state.byAssetId);
+      if (assetId && items.length === 0) {
+        byAssetMap[assetId] = [];
+      }
       return {
         ...state,
         timeseriesData: {
           ...state.timeseriesData,
           ...arrayToObjectById(items),
         },
-        byAssetId: {
-          ...state.byAssetId,
-          ...(assetId && {
-            [assetId]: items.map(el => el.id),
-          }),
-        },
+        byAssetId: byAssetMap,
       };
     }
 

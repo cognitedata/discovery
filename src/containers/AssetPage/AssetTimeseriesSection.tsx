@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import { Button, message } from 'antd';
+import { Button } from 'antd';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
@@ -11,14 +11,17 @@ import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
 import { TimeseriesChartMeta } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
+import LinkTimeseriesModal from 'containers/Modals/LinkTimeseriesModal';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
   fetchTimeseriesForAssetId,
   selectTimeseriesByAssetId,
   selectTimeseries,
+  addTimeseriesToState,
 } from '../../modules/timeseries';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
+import { sdk } from '../../index';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -45,15 +48,18 @@ type Props = {
   selectedTimeseries: GetTimeSeriesMetadataDTO | undefined;
   push: typeof push;
   fetchTimeseriesForAssetId: typeof fetchTimeseriesForAssetId;
+  addTimeseriesToState: typeof addTimeseriesToState;
 } & OrigProps;
 
-type State = {};
+type State = {
+  linkTimeseriesModal: boolean;
+};
 
 class AssetTimeseriesSection extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {};
+    this.state = { linkTimeseriesModal: false };
   }
 
   componentDidMount() {
@@ -97,7 +103,10 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
           return (
             <>
               <Button
-                onClick={() => this.onUnlinkClicked(item.id)}
+                onClick={e => {
+                  e.stopPropagation();
+                  this.onUnlinkClicked(item.id);
+                }}
                 ghost
                 type="danger"
               >
@@ -110,8 +119,12 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
     ];
   }
 
-  onUnlinkClicked = (timeseriesId: number) => {
-    message.info(`Coming soon...${timeseriesId}`);
+  onUnlinkClicked = async (timeseriesId: number) => {
+    const timeseries = await sdk.timeseries.update([
+      { id: timeseriesId, update: { assetId: { setNull: true } } },
+    ]);
+
+    this.props.addTimeseriesToState(timeseries);
   };
 
   renderItem = () => {
@@ -159,6 +172,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
 
   render() {
     const { timeseries, timeseriesId } = this.props;
+    const { linkTimeseriesModal } = this.state;
     if (timeseriesId) {
       return this.renderItem();
     }
@@ -169,7 +183,11 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
             <p />
           </div>
           <div className="right">
-            <Button icon="plus" type="primary">
+            <Button
+              icon="plus"
+              type="primary"
+              onClick={() => this.setState({ linkTimeseriesModal: true })}
+            >
               Link Timeseries
             </Button>
           </div>
@@ -192,6 +210,12 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
             loading={!timeseries}
           />
         </FlexTableWrapper>
+        {linkTimeseriesModal && (
+          <LinkTimeseriesModal
+            asset={this.props.asset!}
+            onClose={() => this.setState({ linkTimeseriesModal: false })}
+          />
+        )}
       </Wrapper>
     );
   }
@@ -208,7 +232,10 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchTimeseriesForAssetId }, dispatch);
+  bindActionCreators(
+    { push, fetchTimeseriesForAssetId, addTimeseriesToState },
+    dispatch
+  );
 export default connect(
   mapStateToProps,
   mapDispatchToProps

@@ -5,22 +5,18 @@ import { Modal, Button } from 'antd';
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
-import { addTimeseriesToAsset } from '../../modules/timeseries';
-import { RootState } from '../../reducers/index';
-import { selectAssets, ExtendedAsset } from '../../modules/assets';
+import { addTimeseriesToState } from '../../modules/timeseries';
+import { ExtendedAsset } from '../../modules/assets';
+import { sdk } from '../../index';
 
 type OrigProps = {
-  assetId: string | number;
-  timeseries: GetTimeSeriesMetadataDTO[];
+  asset: ExtendedAsset;
+  onClose: () => void;
 };
 
 type Props = {
-  assetId: number;
-  asset: ExtendedAsset;
-  timeseries: GetTimeSeriesMetadataDTO[];
-  doAddTimeseriesToAsset: typeof addTimeseriesToAsset;
-  onClose: () => void;
-};
+  addTimeseriesToState: typeof addTimeseriesToState;
+} & OrigProps;
 
 type State = {
   selectedTimeseriesIds?: any[];
@@ -31,21 +27,26 @@ class AddTimeseries extends React.Component<Props, State> {
     this.setState({ selectedTimeseriesIds: newTimeseriesIds });
   };
 
-  addToAsset = () => {
+  addToAsset = async () => {
     if (
       this.state.selectedTimeseriesIds &&
       this.state.selectedTimeseriesIds.length > 0
     ) {
-      this.props.doAddTimeseriesToAsset(
-        this.state.selectedTimeseriesIds,
-        this.props.assetId
+      const timeseries = await sdk.timeseries.update(
+        this.state.selectedTimeseriesIds.map(id => ({
+          id,
+          update: {
+            assetId: { set: this.props.asset.id },
+          },
+        }))
       );
+      this.props.addTimeseriesToState(timeseries);
       this.props.onClose();
     }
   };
 
   timeseriesFilter = (timeseries: GetTimeSeriesMetadataDTO) => {
-    return timeseries.assetId == null;
+    return !timeseries.assetId;
   };
 
   render() {
@@ -56,7 +57,7 @@ class AddTimeseries extends React.Component<Props, State> {
         onCancel={this.props.onClose}
         footer={[
           <Button key="submit" type="primary" onClick={this.addToAsset}>
-            Add to asset
+            Link to asset
           </Button>,
         ]}
       >
@@ -72,19 +73,14 @@ class AddTimeseries extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
-  const { assetId, timeseries } = ownProps;
-  return {
-    assetId: Number(assetId),
-    asset: selectAssets(state).all[assetId],
-    timeseries,
-  };
+const mapStateToProps = () => {
+  return {};
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      doAddTimeseriesToAsset: addTimeseriesToAsset,
+      addTimeseriesToState,
     },
     dispatch
   );
