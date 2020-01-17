@@ -124,13 +124,44 @@ export default function files(
   switch (action.type) {
     case ADD_FILES: {
       const { assetId, items } = action.payload;
+      const byAssetMap = items.reduce((prev, item) => {
+        if (
+          !state.files[item.id] ||
+          state.files[item.id].assetIds !== item.assetIds
+        ) {
+          const prevIds = state.files[item.id]
+            ? state.files[item.id].assetIds
+            : undefined;
+          const currIds = item.assetIds;
+          if (prevIds) {
+            prevIds.forEach(prevId => {
+              if (prev[prevId]) {
+                // eslint-disable-next-line no-param-reassign
+                prev[prevId] = prev[prevId].filter(el => el !== item.id);
+              }
+            });
+          }
+          if (currIds) {
+            currIds.forEach(currId => {
+              if (prev[currId]) {
+                // eslint-disable-next-line no-param-reassign
+                prev[currId].push(item.id);
+              } else {
+                // eslint-disable-next-line no-param-reassign
+                prev[currId] = [item.id];
+              }
+            });
+          }
+        }
+        return prev;
+      }, state.byAssetId);
+      if (assetId && items.length === 0) {
+        byAssetMap[assetId] = [];
+      }
       return {
         ...state,
         files: { ...state.files, ...arrayToObjectById(items) },
-        byAssetId: {
-          ...state.byAssetId,
-          [assetId]: items.map(el => el.id),
-        },
+        byAssetId: byAssetMap,
       };
     }
     case ADD_FILE: {

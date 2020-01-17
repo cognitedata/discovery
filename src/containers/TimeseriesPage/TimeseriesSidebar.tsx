@@ -8,6 +8,8 @@ import moment from 'moment';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import AddOrEditTimseriesModal from 'containers/Modals/AddOrEditTimseriesModal';
 import { RootState } from '../../reducers/index';
+import { sdk } from '../../index';
+import { addTimeseriesToState } from '../../modules/timeseries';
 import {
   selectAssetById,
   ExtendedAsset,
@@ -49,6 +51,7 @@ type OrigProps = {
 type Props = {
   push: typeof push;
   fetchAsset: typeof fetchAsset;
+  addTimeseriesToState: typeof addTimeseriesToState;
   asset: ExtendedAsset | undefined;
 } & OrigProps;
 
@@ -76,6 +79,14 @@ class TimeseriesSidebar extends React.Component<Props, State> {
       this.props.fetchAsset(this.props.timeseries.assetId);
     }
   }
+
+  onUnlickClicked = async () => {
+    const timeseries = await sdk.timeseries.update([
+      { id: this.props.timeseries.id, update: { assetId: { setNull: true } } },
+    ]);
+
+    this.props.addTimeseriesToState(timeseries);
+  };
 
   render() {
     const { timeseries } = this.props;
@@ -148,7 +159,14 @@ class TimeseriesSidebar extends React.Component<Props, State> {
                 renderItem={item => (
                   <List.Item
                     actions={[
-                      <Button ghost type="danger">
+                      <Button
+                        ghost
+                        type="danger"
+                        onClick={e => {
+                          e.stopPropagation();
+                          this.onUnlickClicked();
+                        }}
+                      >
                         Unlink
                       </Button>,
                     ]}
@@ -193,5 +211,5 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchAsset }, dispatch);
+  bindActionCreators({ push, fetchAsset, addTimeseriesToState }, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(TimeseriesSidebar);

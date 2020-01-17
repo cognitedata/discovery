@@ -8,6 +8,8 @@ import moment from 'moment';
 import { FilesMetadata } from '@cognite/sdk';
 import EditFileModal from 'containers/Modals/EditFileModal';
 import { RootState } from '../../reducers/index';
+import { addFilesToState } from '../../modules/files';
+import { sdk } from '../../index';
 import {
   fetchAssets,
   selectAssetById,
@@ -50,6 +52,7 @@ type OrigProps = {
 type Props = {
   push: typeof push;
   fetchAssets: typeof fetchAssets;
+  addFilesToState: typeof addFilesToState;
   assets: (ExtendedAsset | undefined)[];
 } & OrigProps;
 
@@ -80,6 +83,14 @@ class FileSidebar extends React.Component<Props, State> {
       this.props.fetchAssets(this.props.file.assetIds.map(id => ({ id })));
     }
   }
+
+  onUnlinkClicked = async (assetId: number) => {
+    const file = await sdk.files.update([
+      { id: this.props.file.id, update: { assetIds: { remove: [assetId] } } },
+    ]);
+
+    this.props.addFilesToState(file);
+  };
 
   render() {
     const { file } = this.props;
@@ -150,7 +161,11 @@ class FileSidebar extends React.Component<Props, State> {
                 renderItem={item => (
                   <List.Item
                     actions={[
-                      <Button ghost type="danger">
+                      <Button
+                        ghost
+                        type="danger"
+                        onClick={() => this.onUnlinkClicked(item.id)}
+                      >
                         Unlink
                       </Button>,
                     ]}
@@ -195,5 +210,5 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchAssets }, dispatch);
+  bindActionCreators({ push, fetchAssets, addFilesToState }, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(FileSidebar);

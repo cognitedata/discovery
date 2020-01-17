@@ -253,9 +253,14 @@ export default function timeseries(
             // eslint-disable-next-line no-param-reassign
             prev[prevId] = prev[prevId].filter(el => el !== item.id);
           }
-          if (currId && prev[currId]) {
-            // eslint-disable-next-line no-param-reassign
-            prev[currId] = [...prev[currId], item.id];
+          if (currId) {
+            if (prev[currId]) {
+              // eslint-disable-next-line no-param-reassign
+              prev[currId] = [...prev[currId], item.id];
+            } else {
+              // eslint-disable-next-line no-param-reassign
+              prev[currId] = [item.id];
+            }
           }
         }
         return prev;

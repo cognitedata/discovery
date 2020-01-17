@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import { Button, message } from 'antd';
+import { Button } from 'antd';
 import { FilesMetadata } from '@cognite/sdk';
 import Table, { ColumnProps } from 'antd/lib/table';
 import moment from 'moment';
@@ -11,6 +11,7 @@ import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
 import FilePreview from 'containers/FilePage/FilePreview';
 import LoadingWrapper from 'components/LoadingWrapper';
+import LinkFileModal from 'containers/Modals/LinkFileModal';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
@@ -18,8 +19,10 @@ import {
   selectFilesForAsset,
   selectFiles,
   fetchFile,
+  addFilesToState,
 } from '../../modules/files';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
+import { sdk } from '../../index';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -48,15 +51,16 @@ type Props = {
   push: typeof push;
   fetchFiles: typeof fetchFiles;
   fetchFile: typeof fetchFile;
+  addFilesToState: typeof addFilesToState;
 } & OrigProps;
 
-type State = {};
+type State = { linkFileModal: boolean };
 
 class AssetFileSection extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {};
+    this.state = { linkFileModal: false };
   }
 
   componentDidMount() {
@@ -115,7 +119,10 @@ class AssetFileSection extends React.Component<Props, State> {
           return (
             <>
               <Button
-                onClick={() => this.onUnlinkClicked(item.id)}
+                onClick={e => {
+                  e.stopPropagation();
+                  this.onUnlinkClicked(item.id);
+                }}
                 ghost
                 type="danger"
               >
@@ -143,8 +150,12 @@ class AssetFileSection extends React.Component<Props, State> {
     return undefined;
   }
 
-  onUnlinkClicked = (fileId: number) => {
-    message.info(`Coming soon ${fileId}`);
+  onUnlinkClicked = async (fileId: number) => {
+    const files = await sdk.files.update([
+      { id: fileId, update: { assetIds: { remove: [this.props.asset!.id] } } },
+    ]);
+
+    this.props.addFilesToState(files);
   };
 
   renderItem = () => {
@@ -189,6 +200,7 @@ class AssetFileSection extends React.Component<Props, State> {
   };
 
   render() {
+    const { linkFileModal } = this.state;
     if (this.props.fileId) {
       return this.renderItem();
     }
@@ -199,8 +211,12 @@ class AssetFileSection extends React.Component<Props, State> {
             <p />
           </div>
           <div className="right">
-            <Button icon="plus" type="primary">
-              Upload New File
+            <Button
+              icon="plus"
+              type="primary"
+              onClick={() => this.setState({ linkFileModal: true })}
+            >
+              Link Existing File
             </Button>
           </div>
         </VerticallyCenteredRow>
@@ -222,6 +238,13 @@ class AssetFileSection extends React.Component<Props, State> {
             loading={!this.files}
           />
         </FlexTableWrapper>
+        {linkFileModal && (
+          <LinkFileModal
+            asset={this.props.asset!}
+            fileIds={this.props.files!.map(el => el.id)}
+            onClose={() => this.setState({ linkFileModal: false })}
+          />
+        )}
       </Wrapper>
     );
   }
@@ -238,5 +261,8 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators({ push, fetchFiles, fetchFile }, dispatch);
+  bindActionCreators(
+    { push, fetchFiles, fetchFile, addFilesToState },
+    dispatch
+  );
 export default connect(mapStateToProps, mapDispatchToProps)(AssetFileSection);
