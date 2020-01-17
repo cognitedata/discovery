@@ -153,11 +153,20 @@ class FilePage extends React.Component<Props, State> {
             <FileView>
               <FilePreview
                 fileId={this.file.id}
-                onAssetClicked={id =>
-                  this.props.push(
-                    `/${this.tenant}/asset/${id}/files/${this.file.id}`
-                  )
-                }
+                onAssetClicked={id => {
+                  if (
+                    this.file.mimeType &&
+                    this.file.mimeType.includes('svg')
+                  ) {
+                    this.props.push(
+                      `/${this.tenant}/asset/${id}/pnid/${this.file.id}`
+                    );
+                  } else {
+                    this.props.push(
+                      `/${this.tenant}/asset/${id}/files/${this.file.id}`
+                    );
+                  }
+                }}
                 onFileClicked={id =>
                   this.props.push(`/${this.tenant}/file/${id}`)
                 }

@@ -170,7 +170,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
           </div>
           <div className="right">
             <Button icon="plus" type="primary">
-              Create New Timeseries
+              Link Timeseries
             </Button>
           </div>
         </VerticallyCenteredRow>
