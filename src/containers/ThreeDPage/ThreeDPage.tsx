@@ -96,9 +96,7 @@ class ThreeDPage extends React.Component<Props, State> {
     } else if (nodeId !== prevProps.match.params.nodeId) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ nodeIds: await this.getNodeIds() });
-      if (nodeId) {
-        this.onNodeSelected(Number(nodeId), false);
-      }
+      this.onNodeSelected(nodeId, false);
     }
   }
 
@@ -159,34 +157,42 @@ class ThreeDPage extends React.Component<Props, State> {
     this.props.push(`/${this.tenant}/asset/${id}`);
   };
 
-  onNodeSelected = async (nodeId: number, navigateAway = true) => {
+  onNodeSelected = async (nodeId?: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props.match.params;
-    if (navigateAway) {
-      this.props.push(
-        `/${this.tenant}/threed/${modelId}/${revisionId}/node/${nodeId}`
-      );
+
+    if (nodeId) {
+      if (navigateAway) {
+        this.props.push(
+          `/${this.tenant}/threed/${modelId}/${revisionId}/node/${nodeId}`
+        );
+      }
+      const {
+        items: [node],
+      } = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
+        nodeId,
+        depth: 0,
+      });
+      const {
+        items: [mapping],
+      } = await sdk.assetMappings3D.list(modelId, revisionId, {
+        nodeId: node.id,
+      });
+      let asset: Asset | undefined;
+      if (mapping) {
+        [asset] = await sdk.assets.retrieve([{ id: mapping.assetId }]);
+      }
+      this.setState({
+        selectedItem: {
+          node,
+          asset,
+        },
+      });
+    } else if (navigateAway) {
+      this.props.push(`/${this.tenant}/threed/${modelId}/${revisionId}/`);
+      this.setState({
+        selectedItem: undefined,
+      });
     }
-    const {
-      items: [node],
-    } = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
-      nodeId,
-      depth: 0,
-    });
-    const {
-      items: [mapping],
-    } = await sdk.assetMappings3D.list(modelId, revisionId, {
-      nodeId: node.id,
-    });
-    let asset: Asset | undefined;
-    if (mapping) {
-      [asset] = await sdk.assets.retrieve([{ id: mapping.assetId }]);
-    }
-    this.setState({
-      selectedItem: {
-        node,
-        asset,
-      },
-    });
   };
 
   onAssetSelected = async (assetId: number, navigateAway = true) => {

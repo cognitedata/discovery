@@ -37,6 +37,7 @@ type Props = {
 } & OrigProps;
 
 type State = {
+  currentTab: string;
   rootId?: number;
   assetId?: number;
 };
@@ -45,7 +46,7 @@ class ThreeDCard extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {};
+    this.state = { currentTab: 'asset' };
   }
 
   componentDidMount() {
@@ -70,11 +71,16 @@ class ThreeDCard extends React.Component<Props, State> {
 
   onAddMappingClicked = () => {
     this.props.onAddMappingClicked(this.rootId!, this.state.assetId!);
+    this.onTabChange('asset');
+  };
+
+  onTabChange = (key: string) => {
+    this.setState({ currentTab: key });
   };
 
   render() {
     const { selectedItem, rootAsset, showingAllUnderAsset } = this.props;
-    const { assetId } = this.state;
+    const { assetId, currentTab } = this.state;
     const { node, asset } = selectedItem;
 
     return (
@@ -96,7 +102,7 @@ class ThreeDCard extends React.Component<Props, State> {
               </p>
             </>
           )}
-          <Tabs>
+          <Tabs activeKey={currentTab} onChange={this.onTabChange}>
             <Tabs.TabPane
               key="asset"
               tab="Asset info"
@@ -142,7 +148,9 @@ class ThreeDCard extends React.Component<Props, State> {
                   okText="Yes"
                   cancelText="No"
                 >
-                  <Button type="danger">Unmap Node</Button>
+                  <Button type="danger" style={{ marginBottom: '8px' }}>
+                    Unmap Node
+                  </Button>
                 </Popconfirm>
               )}
               {!rootAsset && (

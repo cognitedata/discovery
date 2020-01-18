@@ -11,14 +11,12 @@ const StyledCard = styled(Card)`
     height: auto;
     box-shadow: 0px 0px 8px #cdcdcd;
 
-    .button-row {
-      margin-top: 6px;
-    }
     .button-row button {
-      margin-left: 6px;
+      margin-top: 6px;
+      margin-right: 6px;
     }
-    .button-row button:nth-child(1) {
-      margin-left: 0px;
+    .button-row button:last-child() {
+      margin-right: 0px;
     }
   }
 `;

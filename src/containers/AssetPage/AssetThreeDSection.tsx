@@ -60,8 +60,6 @@ type State = {
   };
 };
 class AssetThreeDSection extends Component<Props, State> {
-  cache = {};
-
   constructor(props: Props) {
     super(props);
 
@@ -251,7 +249,6 @@ class AssetThreeDSection extends Component<Props, State> {
               nodeIds={nodeIds}
               onAssetIdChange={this.onAssetSelected}
               onNodeIdChange={this.onNodeSelected}
-              cache={this.cache}
             />
             {this.renderCard()}
           </div>

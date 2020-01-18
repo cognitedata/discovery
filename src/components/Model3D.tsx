@@ -20,7 +20,6 @@ declare global {
 type Props = {
   modelId: number;
   revisionId: number;
-  cache?: CacheObject;
   nodeIds?: number[];
   onAssetIdChange: (assetId: number, nodeId: number) => void;
   onNodeIdChange: (nodeId: number) => void;
@@ -34,6 +33,8 @@ type State = {
 class Model3D extends React.Component<Props, State> {
   viewer?: Cognite3DViewer = undefined;
 
+  cache: CacheObject = {};
+
   hasWarnedAboutNode: { [key: string]: boolean } = {};
 
   readonly state: Readonly<State> = { forceReload: false };
@@ -45,7 +46,6 @@ class Model3D extends React.Component<Props, State> {
   public static defaultProps = {
     assetMappings: { byNodeId: {}, byAssetId: {} },
     nodeId: undefined,
-    cache: undefined,
   };
 
   constructor(props: Props) {
@@ -61,21 +61,7 @@ class Model3D extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     const { nodeIds } = this.props;
 
-    // if (prevProps.assetMappings !== this.props.assetMappings) {
-    //   if (nodeId && prevProps.nodeId !== nodeId) {
-    //     const assetId = this.getAssetIdForNodeId(nodeId);
-    //     if (assetId) {
-    //       this.props.onAssetIdChange(assetId);
-    //     } else if (!this.hasWarnedAboutNode[nodeId]) {
-    //       message.info('Did not find any asset associated to this 3D object.');
-    //       setTimeout(() => {
-    //         this.hasWarnedAboutNode[nodeId] = true;
-    //       }, 10);
-    //     }
-    //   }
-    // }
-
-    if (nodeIds && prevProps.nodeIds !== nodeIds) {
+    if (prevProps.nodeIds !== nodeIds) {
       this.selectNodeIds(nodeIds);
     }
 
@@ -298,7 +284,7 @@ class Model3D extends React.Component<Props, State> {
           onReady={this.onReady}
           onProgress={this.onProgress}
           onComplete={this.onComplete}
-          cache={this.props.cache}
+          cache={this.cache}
         />
       </>
     );
