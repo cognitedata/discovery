@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
-import { Input, Icon, Button, Tabs, message, notification } from 'antd';
+import { Button, Tabs, message, notification } from 'antd';
 import Table, { ColumnProps } from 'antd/lib/table';
 import { push } from 'connected-react-router';
 import debounce from 'lodash/debounce';
@@ -31,22 +31,7 @@ import {
   TimeseriesState,
 } from '../../modules/timeseries';
 import { addFilesToState, FilesState } from '../../modules/files';
-
-const SearchWrapper = styled.div`
-  display: flex;
-  padding: 40px 55px;
-
-  .ant-input-affix-wrapper {
-    flex: 1;
-    line-height: 16px;
-    max-width: 600px;
-    margin-right: 24px;
-  }
-  .ant-btn-background-ghost.ant-btn-primary {
-    color: #787878;
-    border-color: #787878;
-  }
-`;
+import SearchBar from './SearchBar';
 
 const TabWrapper = styled.div`
   .ant-tabs-nav {
@@ -65,15 +50,15 @@ const ResultWrapper = styled.div`
   height: 0;
 `;
 
-type TabKeys = 'assets' | 'timeseries' | 'files' | 'threed';
+export type SearchPageTabKeys = 'assets' | 'timeseries' | 'files' | 'threed';
 
-const TabValues: { [key in TabKeys]: string } = {
+const TabValues: { [key in SearchPageTabKeys]: string } = {
   assets: 'Assets',
   timeseries: 'Timeseries',
   files: 'Files',
   threed: '3D Models',
 };
-const UploadString: { [key in TabKeys]: string } = {
+const UploadString: { [key in SearchPageTabKeys]: string } = {
   assets: 'Create Asset',
   timeseries: 'Create Timeseries',
   files: 'Upload a File',
@@ -83,7 +68,7 @@ const UploadString: { [key in TabKeys]: string } = {
 type OrigProps = {
   match: {
     params: {
-      tab: TabKeys;
+      tab: SearchPageTabKeys;
       tenant: string;
     };
   };
@@ -107,8 +92,7 @@ type Props = {
 } & OrigProps;
 
 type State = {
-  query: string;
-  showModal?: TabKeys;
+  showModal?: SearchPageTabKeys;
 };
 
 class SearchPage extends React.Component<Props, State> {
@@ -120,11 +104,13 @@ class SearchPage extends React.Component<Props, State> {
     super(props);
 
     this.doDebouncedSearch = debounce(this.doSearch, 700);
-    this.state = { query: '' };
+    this.state = {};
   }
 
   componentDidMount() {
-    this.doSearch();
+    if (this.props.search.loading ) {
+      this.doSearch();
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -135,9 +121,12 @@ class SearchPage extends React.Component<Props, State> {
     } else if (this.tab !== 'assets') {
       this.doSearch();
     }
+    if (this.props.search.loading && !prevProps.search.loading) {
+      this.doDebouncedSearch();
+    }
   }
 
-  get tab(): TabKeys {
+  get tab(): SearchPageTabKeys {
     return this.props.match.params.tab || 'assets';
   }
 
@@ -230,7 +219,8 @@ class SearchPage extends React.Component<Props, State> {
   doSearch = async () => {
     this.searchIndex += 1;
     const index = this.searchIndex;
-    const { query } = this.state;
+    const query = '';
+    const { assetFilter } = this.props.search;
     this.props.setSearchLoading();
     trackUsage('SearchPage.search', {
       query,
@@ -239,7 +229,7 @@ class SearchPage extends React.Component<Props, State> {
     switch (this.tab) {
       case 'assets': {
         const items = await sdk.assets.search({
-          ...(query.length > 0 && { search: { query } }),
+          ...assetFilter,
           limit: 1000,
         });
         this.props.addAssetsToState(items);
@@ -388,23 +378,10 @@ class SearchPage extends React.Component<Props, State> {
   };
 
   render() {
-    const { query } = this.state;
     const { search } = this.props;
     return (
       <>
-        <SearchWrapper>
-          <Input
-            prefix={<Icon type="search" />}
-            placeholder="Search for resources"
-            value={query}
-            onChange={ev =>
-              this.setState({ query: ev.target.value }, this.doDebouncedSearch)
-            }
-          />
-          <Button ghost icon="sliders" type="primary">
-            Filters
-          </Button>
-        </SearchWrapper>
+        <SearchBar tab={this.tab} />
         <TabWrapper>
           <Tabs
             onChange={(tab: string) => {
@@ -418,7 +395,7 @@ class SearchPage extends React.Component<Props, State> {
             {Object.keys(TabValues).map(key => (
               <Tabs.TabPane
                 key={key}
-                tab={TabValues[key as TabKeys]}
+                tab={TabValues[key as SearchPageTabKeys]}
               ></Tabs.TabPane>
             ))}
           </Tabs>

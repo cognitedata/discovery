@@ -1,5 +1,6 @@
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { AssetFilter } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 
 // Constants
@@ -12,6 +13,8 @@ interface SetSearchState extends Action<typeof SET_SEARCH_STATE> {
     timeseriesTable?: number[];
     filesTable?: number[];
     threeDTable?: number[];
+    assetFilter?: AssetFilter;
+    query?: string;
   };
 }
 
@@ -72,6 +75,36 @@ export function setThreeDTable(ids: number[]) {
     });
   };
 }
+export function setSearchQuery(query: string) {
+  return async (
+    dispatch: ThunkDispatch<any, void, SetSearchState>,
+    getState: () => RootState
+  ) => {
+    const { assetFilter } = getState().search;
+    dispatch({
+      type: SET_SEARCH_STATE,
+      payload: {
+        query,
+        assetFilter: {
+          ...assetFilter,
+          search: { query },
+        },
+        loading: true,
+      },
+    });
+  };
+}
+export function setAssetFilter(assetFilter: AssetFilter) {
+  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+    dispatch({
+      type: SET_SEARCH_STATE,
+      payload: {
+        assetFilter,
+        loading: true,
+      },
+    });
+  };
+}
 
 // Reducer
 export interface SearchState {
@@ -80,6 +113,8 @@ export interface SearchState {
   timeseriesTable: number[];
   filesTable: number[];
   threeDTable: number[];
+  assetFilter: AssetFilter;
+  query: string;
 }
 const initialState: SearchState = {
   loading: true,
@@ -87,6 +122,8 @@ const initialState: SearchState = {
   timeseriesTable: [],
   filesTable: [],
   threeDTable: [],
+  assetFilter: {},
+  query: '',
 };
 
 export default function typesReducer(
