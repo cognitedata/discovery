@@ -108,7 +108,7 @@ class SearchPage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    if (this.props.search.loading ) {
+    if (this.props.search.loading) {
       this.doSearch();
     }
   }
