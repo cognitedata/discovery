@@ -359,6 +359,8 @@ const mapStateToProps = (state: RootState) => {
     search: state.router.location.search,
   };
 };
+
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({ push, fetchAsset, deleteAsset }, dispatch);
+
 export default connect(mapStateToProps, mapDispatchToProps)(AssetPage);

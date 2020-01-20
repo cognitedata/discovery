@@ -1,7 +1,15 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Button, Pagination, message, Popover, notification, Icon } from 'antd';
+import {
+  Button,
+  Pagination,
+  message,
+  Popover,
+  notification,
+  Icon,
+  Table,
+} from 'antd';
 import styled from 'styled-components';
 import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
@@ -17,7 +25,7 @@ import { selectFiles, fetchFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
 import PNIDViewer from './PNIDViewer';
 import ImageAnnotator from './ImageAnnotator';
-import { convertPDFtoPNID } from '../FileUtils';
+import { convertPDFtoPNID, detectAssetsInDocument } from '../FileUtils';
 import { selectAppState, AppState } from '../../../modules/app';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -27,7 +35,7 @@ export type FileType = 'all' | 'images' | 'documents' | 'pnid';
 const Wrapper = styled.div`
   display: flex;
   position: relative;
-  flex-direction: column;
+  flex-direction: row;
   height: 100%;
   overflow: hidden;
   background-repeat: no-repeat;
@@ -44,8 +52,9 @@ const Wrapper = styled.div`
 
 const StyledPDFViewer = styled(Document)`
   flex: 1;
-  height: 0;
+  height: 100%;
   && {
+    position: relative;
     overflow: scroll;
     display: flex;
     background: #fafafa;
@@ -92,6 +101,27 @@ const PDFContextButton = styled.div`
   }
 `;
 
+const DetectedAssetsResultWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 300px;
+
+  && .current {
+    background-color: #dfdfdf;
+  }
+
+  .header {
+    display: flex;
+    padding: 12px 24px;
+    align-items: center;
+    p {
+      flex: 1;
+      margin-bottom: 0px;
+    }
+  }
+`;
+
 type OrigProps = {
   fileId: number;
   onAssetClicked: (id: number) => void;
@@ -110,9 +140,13 @@ type Props = {
 type State = {
   filePreviewUrl?: string;
   pnidSelectedAssetId?: number;
+  detectionSelectedAssetId?: number;
   convertToPDFVisible: boolean;
+  detectAssetsVisible: boolean;
   runningPnID: boolean;
+  runningDetectAssets: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
+  detectedAssetsResult?: { name: string; page: number }[];
 };
 
 class FilePreview extends React.Component<Props, State> {
@@ -120,8 +154,10 @@ class FilePreview extends React.Component<Props, State> {
     super(props);
     this.fetchFileUrl = debounce(this.fetchFileUrl, 200);
     this.state = {
+      detectAssetsVisible: false,
       convertToPDFVisible: false,
       runningPnID: false,
+      runningDetectAssets: false,
       pdfState: {
         numPages: 0,
         page: 1,
@@ -195,6 +231,14 @@ class FilePreview extends React.Component<Props, State> {
     this.setState({ convertToPDFVisible: visible });
   };
 
+  handleDetectAssetsPopover = (visible: boolean) => {
+    if (this.state.runningDetectAssets) {
+      message.info('Sorry, only asset detection job allowed at a time!');
+      return;
+    }
+    this.setState({ detectAssetsVisible: visible });
+  };
+
   onConvertToPnIDClicked = async () => {
     const CONVERT_PNID_NOTIF_KEY = 'convert-pnid';
     const { pnidSelectedAssetId } = this.state;
@@ -250,6 +294,124 @@ class FilePreview extends React.Component<Props, State> {
     }
   };
 
+  onDetectAssetsClicked = async () => {
+    const DETECT_ASSETS_NOTIF_KEY = 'detect-assets';
+    const { detectionSelectedAssetId } = this.state;
+    if (this.props.file && detectionSelectedAssetId) {
+      const notifConfig = {
+        key: DETECT_ASSETS_NOTIF_KEY,
+        icon: <Icon type="loading" />,
+        duration: 0,
+        message: 'Detecting Assets',
+        description: 'Preparing...',
+      };
+      notification.open(notifConfig);
+      this.setState({ runningDetectAssets: true, detectAssetsVisible: false });
+      detectAssetsInDocument(
+        this.props.file,
+        detectionSelectedAssetId,
+        this.props.app.groups,
+        {
+          callbackProgress: (progress: string) => {
+            notification.open({ ...notifConfig, description: progress });
+          },
+          callbackResult: results => {
+            notification.open({
+              ...notifConfig,
+              icon: (
+                <Icon
+                  type="check-circle"
+                  theme="twoTone"
+                  twoToneColor="#52c41a"
+                />
+              ),
+              duration: 4.5,
+              description: 'Completed',
+            });
+            this.setState({
+              runningDetectAssets: false,
+              detectedAssetsResult: results,
+            });
+          },
+          callbackError: (error: any) => {
+            notification.open({
+              ...notifConfig,
+              icon: (
+                <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
+              ),
+              description: error,
+              duration: 4.5,
+            });
+            this.setState({ runningDetectAssets: false });
+          },
+        }
+      );
+    } else {
+      message.info('Please select an asset first!');
+    }
+  };
+
+  renderDocumentAssetDetection = () => {
+    const { detectedAssetsResult, pdfState } = this.state;
+    if (!detectedAssetsResult || !pdfState) {
+      return null;
+    }
+    return (
+      <DetectedAssetsResultWrapper>
+        <div className="header">
+          <p>Detected Assets</p>
+          <Button
+            onClick={() => this.setState({ detectedAssetsResult: undefined })}
+          >
+            <Icon type="close-circle" />
+            Close
+          </Button>
+        </div>
+        <div style={{ flex: 1, marginTop: '12px' }}>
+          <Table
+            onRow={item => ({
+              onClick: () =>
+                this.setState({ pdfState: { ...pdfState, page: item.page } }),
+            })}
+            pagination={false}
+            rowClassName={item =>
+              item.page === pdfState.page ? 'current' : ''
+            }
+            columns={[
+              {
+                key: 'name',
+                title: 'Asset Name',
+                render: item => (
+                  <Button
+                    onClick={async ev => {
+                      ev.stopPropagation();
+                      const [asset] = await sdk.assets.search({
+                        search: { name: item.name },
+                        limit: 1,
+                      });
+                      if (asset) {
+                        this.props.onAssetClicked(asset.id);
+                      }
+                    }}
+                  >
+                    {item.name}
+                    <Icon type="arrow-right" />
+                  </Button>
+                ),
+              },
+              {
+                key: 'page',
+                title: 'Page',
+                dataIndex: 'page',
+              },
+            ]}
+            dataSource={detectedAssetsResult}
+          />
+        </div>
+      </DetectedAssetsResultWrapper>
+    );
+  };
+
   renderConvertPnIDButton = () => {
     const {
       pdfState,
@@ -262,21 +424,25 @@ class FilePreview extends React.Component<Props, State> {
         title="Convert to Interactive P&ID"
         content={
           <>
-            <AssetSelect
-              style={{ marginRight: '12px', width: '300px' }}
-              selectedAssetIds={
-                pnidSelectedAssetId ? [pnidSelectedAssetId] : []
-              }
-              onAssetSelected={ids =>
-                this.setState({ pnidSelectedAssetId: ids[0] })
-              }
-            />
-            <Button
-              disabled={!pnidSelectedAssetId}
-              onClick={this.onConvertToPnIDClicked}
-            >
-              Convert
-            </Button>
+            <p>Detect assets under the following asset</p>
+            <div>
+              <AssetSelect
+                rootOnly
+                style={{ marginRight: '12px', width: '300px' }}
+                selectedAssetIds={
+                  pnidSelectedAssetId ? [pnidSelectedAssetId] : []
+                }
+                onAssetSelected={ids =>
+                  this.setState({ pnidSelectedAssetId: ids[0] })
+                }
+              />
+              <Button
+                disabled={!pnidSelectedAssetId}
+                onClick={this.onConvertToPnIDClicked}
+              >
+                Convert
+              </Button>
+            </div>
           </>
         }
         trigger="click"
@@ -289,6 +455,49 @@ class FilePreview extends React.Component<Props, State> {
           loading={runningPnID}
         >
           Convert to Interactive P&ID
+        </Button>
+      </Popover>
+    );
+  };
+
+  renderDetectAssetsButton = () => {
+    const {
+      detectAssetsVisible,
+      detectionSelectedAssetId,
+      runningDetectAssets,
+    } = this.state;
+    return (
+      <Popover
+        title="Detect Assets in Document"
+        content={
+          <>
+            <p>Detect assets under the following asset</p>
+            <div>
+              <AssetSelect
+                rootOnly
+                style={{ marginRight: '12px', width: '300px' }}
+                selectedAssetIds={
+                  detectionSelectedAssetId ? [detectionSelectedAssetId] : []
+                }
+                onAssetSelected={ids =>
+                  this.setState({ detectionSelectedAssetId: ids[0] })
+                }
+              />
+              <Button
+                disabled={!detectionSelectedAssetId}
+                onClick={this.onDetectAssetsClicked}
+              >
+                Detect Assets
+              </Button>
+            </div>
+          </>
+        }
+        trigger="click"
+        visible={detectAssetsVisible}
+        onVisibleChange={this.handleDetectAssetsPopover}
+      >
+        <Button shape="round" loading={runningDetectAssets}>
+          Detect Assets
         </Button>
       </Popover>
     );
@@ -349,29 +558,28 @@ class FilePreview extends React.Component<Props, State> {
           }}
         >
           <Page pageNumber={pdfState.page} />
+          <PDFContextButton>
+            {this.renderConvertPnIDButton()}
+            {this.renderDetectAssetsButton()}
+          </PDFContextButton>
+          <DocumentPagination
+            onChange={page => {
+              this.setState(state => ({
+                ...state,
+                pdfState: {
+                  ...state.pdfState,
+                  page,
+                },
+              }));
+            }}
+            current={pdfState.page}
+            total={pdfState.numPages}
+            pageSize={1}
+            showQuickJumper
+            size="small"
+          />
         </StyledPDFViewer>
-        <DocumentPagination
-          onChange={page => {
-            this.setState(state => ({
-              ...state,
-              pdfState: {
-                ...state.pdfState,
-                page,
-              },
-            }));
-          }}
-          current={pdfState.page}
-          total={pdfState.numPages}
-          pageSize={1}
-          showQuickJumper
-          size="small"
-        />
-        <PDFContextButton>
-          {this.renderConvertPnIDButton()}
-          <Button shape="round" onClick={() => message.info('Coming Soon...')}>
-            Detect Asset
-          </Button>
-        </PDFContextButton>
+        {this.renderDocumentAssetDetection()}
       </>
     );
   };

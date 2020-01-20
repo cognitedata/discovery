@@ -13,6 +13,39 @@ export const downloadFile = async (url: string) => {
   return blob;
 };
 
+const fetchAllNamesOfAssetInRoot = async (
+  rootId: number,
+  callbackProgress?: (progress: string) => void
+) => {
+  const countRequest = await sdk.get(
+    `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${rootId}]`
+  );
+  const { count } = countRequest.data;
+  let currentCount = 0;
+  const names = new Set<string>();
+  if (callbackProgress) {
+    callbackProgress(`Loading Assets (0%)`);
+  }
+  await sdk.assets
+    .list({
+      filter: { rootIds: [{ id: rootId }] },
+      limit: 1000,
+    })
+    .autoPagingEach(asset => {
+      names.add(asset.name);
+      currentCount += 1;
+
+      if (currentCount === count || currentCount % 1000 === 0) {
+        if (callbackProgress) {
+          callbackProgress(
+            `Loading Assets (${Math.ceil((currentCount / count) * 100)}%)`
+          );
+        }
+      }
+    });
+  return names;
+};
+
 export const convertPDFtoPNID = async (
   file: FilesMetadata,
   selectedRootAssetId: number,
@@ -33,33 +66,11 @@ export const convertPDFtoPNID = async (
     return;
   }
   trackUsage('FileUtil.convertToPnIDClicked', { fileId: file.id });
-  const countRequest = await sdk.get(
-    `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${selectedRootAssetId}]`
+
+  const names = await fetchAllNamesOfAssetInRoot(
+    selectedRootAssetId,
+    callbackProgress
   );
-  const { count } = countRequest.data;
-  let currentCount = 0;
-  const names = new Set<string>();
-  if (callbackProgress) {
-    callbackProgress(`Loading Assets (0%)`);
-  }
-  await sdk.assets
-    .list({
-      filter: { rootIds: [{ id: selectedRootAssetId }] },
-      limit: 1000,
-    })
-    .autoPagingEach(asset => {
-      names.add(asset.name);
-      currentCount += 1;
-
-      if (currentCount === count || currentCount % 1000 === 0) {
-        if (callbackProgress) {
-          callbackProgress(
-            `Loading Assets (${Math.ceil((currentCount / count) * 100)}%)`
-          );
-        }
-      }
-    });
-
   if (callbackProgress) {
     callbackProgress('Processing File');
   }
@@ -157,6 +168,68 @@ export const convertPDFtoPNID = async (
   } catch (e) {
     if (callbackError) {
       callbackError('Unable to convert to P&ID, please try again');
+    }
+  }
+};
+export const detectAssetsInDocument = async (
+  file: FilesMetadata,
+  selectedRootAssetId: number,
+  permissions: { [key: string]: string[] },
+  callbacks: {
+    callbackProgress?: (progressString: string) => void;
+    callbackResult: (results: { name: string; page: number }[]) => void;
+    callbackError?: (error: any) => void;
+  }
+) => {
+  const { callbackProgress, callbackResult, callbackError } = callbacks;
+  if (!checkForAccessPermission(permissions, 'filesAcl', 'WRITE', true)) {
+    return;
+  }
+  if (
+    !checkForAccessPermission(permissions, 'relationshipsAcl', 'WRITE', true)
+  ) {
+    return;
+  }
+  trackUsage('FileUtil.detectAssetInDocument', { fileId: file.id });
+  const names = await fetchAllNamesOfAssetInRoot(
+    selectedRootAssetId,
+    callbackProgress
+  );
+  if (callbackProgress) {
+    callbackProgress('Processing File');
+  }
+
+  try {
+    trackUsage('FilePreview.DetectAsset', { fileId: file.id });
+    const response = await sdk.post(
+      `/api/playground/projects/${sdk.project}/context/entity_extraction/extract`,
+      {
+        data: {
+          fileId: file.id,
+          entities: [...names],
+        },
+      }
+    );
+
+    const foundEntities: { page: number; name: string }[] = [];
+    response.data.items.forEach(
+      (match: { entity: string; pages: number[] }) => {
+        const name = match.entity;
+        match.pages.forEach(page => {
+          foundEntities.push({ page, name });
+        });
+      }
+    );
+
+    foundEntities.sort((a, b) => {
+      if (a.page !== b.page) return a.page - b.page;
+      return a.name.localeCompare(b.name);
+    });
+
+    callbackResult(foundEntities);
+  } catch (e) {
+    if (callbackError) {
+      callbackError('Unable to process document, please try again');
     }
   }
 };
