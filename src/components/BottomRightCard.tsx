@@ -18,6 +18,11 @@ const StyledCard = styled(Card)`
     .button-row button:last-child() {
       margin-right: 0px;
     }
+
+    .ant-tabs-nav .ant-tabs-tab {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
   }
 `;
 

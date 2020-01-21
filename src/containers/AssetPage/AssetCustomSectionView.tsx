@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, bindActionCreators } from 'redux';
 import { BetaTag } from 'components/BetaWarning';
-import { message } from 'antd';
 import qs from 'query-string';
 import { push } from 'connected-react-router';
 import LoadingWrapper from 'components/LoadingWrapper';
@@ -322,9 +321,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
             modelId={this.modelId}
             revisionId={this.revisionId}
             nodeId={this.nodeId}
-            onAssetClicked={assetId =>
-              message.success(`Coming soon ${assetId}`)
-            }
+            onAssetClicked={id => this.onNavigateToPage('asset', id)}
             onRevisionClicked={(modelId, revisionId) =>
               this.onSelect('threed', modelId, revisionId)
             }

@@ -23,8 +23,8 @@ type OrigProps = {
   showingAllUnderAsset: boolean;
   onClose: () => void;
   onDeleteMapping: () => void;
-  onViewAllUnderAsset: (id: number) => void;
-  onViewAsset: () => void;
+  onViewAllUnderAsset?: (id: number) => void;
+  onViewAsset?: () => void;
   onViewParent: () => void;
   onAddMappingClicked: (rootId: number, assetId: number) => void;
 };
@@ -124,15 +124,19 @@ class ThreeDCard extends React.Component<Props, State> {
               )}
               {asset && (
                 <div className="button-row">
-                  <Button type="primary" onClick={this.props.onViewAsset}>
-                    View Asset
-                  </Button>
-                  <Button
-                    onClick={() => this.props.onViewAllUnderAsset(asset.id)}
-                    disabled={showingAllUnderAsset}
-                  >
-                    View All Nodes Linked to Asset
-                  </Button>
+                  {this.props.onViewAsset && (
+                    <Button type="primary" onClick={this.props.onViewAsset}>
+                      View Asset
+                    </Button>
+                  )}
+                  {this.props.onViewAllUnderAsset && (
+                    <Button
+                      onClick={() => this.props.onViewAllUnderAsset!(asset.id)}
+                      disabled={showingAllUnderAsset}
+                    >
+                      View All Nodes Linked to Asset
+                    </Button>
+                  )}
                 </div>
               )}
             </Tabs.TabPane>

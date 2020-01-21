@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-import { Table, Button } from 'antd';
+import { Table, Button, message } from 'antd';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import Placeholder from 'components/Placeholder';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import styled from 'styled-components';
-import BottomRightCard from 'components/BottomRightCard';
 import { Asset, RevealNode3D } from '@cognite/sdk';
+import ThreeDCard from 'containers/ThreeDPage/ThreeDCard';
+import { deleteAssetNodeMapping } from 'modules/assetmappings';
 import {
   selectThreeD,
   fetchModels,
@@ -14,7 +15,10 @@ import {
   ThreeDModel,
 } from '../../modules/threed';
 import { RootState } from '../../reducers/index';
-import { fetchMappingsFromAssetId } from '../../modules/assetmappings';
+import {
+  fetchMappingsFromAssetId,
+  createAssetNodeMapping,
+} from '../../modules/assetmappings';
 import Model3D from '../../components/Model3D';
 import { ExtendedAsset } from '../../modules/assets';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
@@ -47,6 +51,8 @@ type OrigProps = {
 
 type Props = {
   fetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
+  createAssetNodeMapping: typeof createAssetNodeMapping;
+  deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
   fetchModels: typeof fetchModels;
   threed: ThreeDState;
   selectedModel: ThreeDModel | undefined;
@@ -56,7 +62,7 @@ type State = {
   nodeIds?: number[];
   selectedItem?: {
     asset?: Asset;
-    node: RevealNode3D;
+    node?: RevealNode3D;
   };
 };
 class AssetThreeDSection extends Component<Props, State> {
@@ -68,6 +74,11 @@ class AssetThreeDSection extends Component<Props, State> {
 
   async componentDidMount() {
     this.setState({ nodeIds: await this.getNodeIds() });
+    if (this.props.nodeId) {
+      this.onNodeSelected(this.props.nodeId, false);
+    } else if (this.props.asset) {
+      this.onAssetSelected(this.props.asset.id, false);
+    }
   }
 
   async componentDidUpdate(prevProps: Props) {
@@ -89,12 +100,14 @@ class AssetThreeDSection extends Component<Props, State> {
         nodeIds: await this.getNodeIds(),
         selectedItem: undefined,
       });
+      this.onAssetSelected(asset.id, false);
     } else if (nodeId !== prevProps.nodeId) {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({
         nodeIds: await this.getNodeIds(),
         selectedItem: undefined,
       });
+      this.onNodeSelected(nodeId, false);
     }
   }
 
@@ -117,103 +130,133 @@ class AssetThreeDSection extends Component<Props, State> {
     return undefined;
   };
 
-  onAssetSelected = async (assetId: number, nodeId: number) => {
+  onAssetSelected = async (assetId: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props;
-    this.props.onNodeClicked(modelId!, revisionId!, nodeId);
-    const [asset] = await sdk.assets.retrieve([{ id: assetId }]);
-    const {
-      items: [node],
-    } = await sdk.viewer3D.listRevealNodes3D(modelId!, revisionId!, {
-      nodeId,
-      depth: 0,
-    });
-    this.setState({
-      selectedItem: {
-        asset,
-        node,
-      },
-    });
+    if (modelId && revisionId) {
+      const {
+        items: [mapping],
+      } = await sdk.assetMappings3D.list(modelId, revisionId, {
+        assetId,
+      });
+      let asset: Asset | undefined;
+      if (mapping) {
+        [asset] = await sdk.assets.retrieve([{ id: assetId }]);
+      }
+      this.setState({
+        selectedItem: {
+          asset,
+        },
+      });
+      if (navigateAway) {
+        this.props.onAssetClicked(assetId);
+      }
+    }
   };
 
-  onNodeSelected = async (nodeId: number) => {
+  onNodeSelected = async (nodeId?: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props;
-    this.props.onNodeClicked(modelId!, revisionId!, nodeId);
-    const {
-      items: [node],
-    } = await sdk.viewer3D.listRevealNodes3D(modelId!, revisionId!, {
-      nodeId,
-      depth: 0,
-    });
-    this.setState({
-      selectedItem: {
-        node,
-      },
-    });
+
+    if (modelId && revisionId) {
+      if (nodeId) {
+        if (navigateAway) {
+          this.props.onNodeClicked(modelId, revisionId, nodeId);
+        }
+        const {
+          items: [node],
+        } = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
+          nodeId,
+          depth: 0,
+        });
+        const {
+          items: [mapping],
+        } = await sdk.assetMappings3D.list(modelId, revisionId, {
+          nodeId: node.id,
+        });
+        let asset: Asset | undefined;
+        if (mapping) {
+          [asset] = await sdk.assets.retrieve([{ id: mapping.assetId }]);
+        }
+        this.setState({
+          selectedItem: {
+            node,
+            asset,
+          },
+        });
+      } else if (navigateAway) {
+        this.props.onRevisionClicked(modelId, revisionId);
+        this.setState({
+          selectedItem: undefined,
+        });
+      }
+    }
+  };
+
+  onAddMappingClicked = async (_: number, assetId: number) => {
+    const { modelId, revisionId, nodeId } = this.props;
+    await this.props.createAssetNodeMapping(
+      Number(modelId),
+      Number(revisionId),
+      Number(nodeId!),
+      assetId
+    );
+    this.onNodeSelected(nodeId!);
+  };
+
+  onDeleteMapping = async () => {
+    const { modelId, revisionId, nodeId } = this.props;
+    const { selectedItem } = this.state;
+    if (selectedItem && selectedItem.node && selectedItem.asset) {
+      await sdk.assetMappings3D.delete(Number(modelId), Number(revisionId), [
+        {
+          nodeId: selectedItem.node.id,
+          assetId: selectedItem.asset.id,
+        },
+      ]);
+      await this.props.deleteAssetNodeMapping(
+        Number(modelId),
+        Number(revisionId),
+        selectedItem.asset.id
+      );
+      this.onNodeSelected(nodeId!);
+    }
+  };
+
+  onViewParent = async () => {
+    const { selectedItem } = this.state;
+    if (selectedItem && selectedItem.node && selectedItem.node.parentId) {
+      this.onNodeSelected(selectedItem.node.parentId);
+    } else {
+      message.error('Unable to select parent');
+    }
   };
 
   renderCard = () => {
     const { selectedItem } = this.state;
-    const { modelId, revisionId } = this.props;
-    if (!selectedItem) {
+    const { modelId, revisionId, asset } = this.props;
+    if (
+      !asset ||
+      !modelId ||
+      !revisionId ||
+      !selectedItem ||
+      !this.props.nodeId
+    ) {
       return null;
     }
-
-    if (this.props.nodeId) {
-      return (
-        <BottomRightCard
-          title="Selected Node"
-          onClose={() =>
-            this.setState({ selectedItem: undefined }, () =>
-              this.props.onRevisionClicked(modelId!, revisionId!)
-            )
-          }
-        >
-          <>
-            <p>{selectedItem.node.name}</p>
-            {selectedItem.asset && (
-              <>
-                <p>Linked to:</p>
-                <p>{selectedItem.asset.name}</p>
-                <Button
-                  type="primary"
-                  onClick={() =>
-                    this.props.onNavigateToPage('asset', selectedItem.asset!.id)
-                  }
-                >
-                  View Asset
-                </Button>
-              </>
-            )}
-          </>
-        </BottomRightCard>
-      );
-    }
-
     return (
-      <BottomRightCard
-        title="Selected Asset"
+      <ThreeDCard
+        selectedItem={selectedItem!}
+        rootId={asset.rootId}
         onClose={() =>
           this.setState({ selectedItem: undefined }, () =>
-            this.props.onRevisionClicked(modelId!, revisionId!)
+            this.props.onRevisionClicked(modelId, revisionId)
           )
         }
-      >
-        <>
-          {selectedItem.asset && (
-            <>
-              <p>{selectedItem.asset.name}</p>
-              <Button
-                type="primary"
-                onClick={() =>
-                  this.props.onNavigateToPage('asset', selectedItem.asset!.id)
-                }
-              >
-                View Asset
-              </Button>
-            </>
-          )}
-        </>
-      </BottomRightCard>
+        showingAllUnderAsset={!this.props.nodeId}
+        onDeleteMapping={this.onDeleteMapping}
+        onAddMappingClicked={this.onAddMappingClicked}
+        onViewParent={this.onViewParent}
+        onViewAsset={() => this.props.onAssetClicked(selectedItem.asset!.id)}
+      />
     );
   };
 
@@ -247,7 +290,7 @@ class AssetThreeDSection extends Component<Props, State> {
               modelId={modelId!}
               revisionId={revisionId!}
               nodeIds={nodeIds}
-              onAssetIdChange={this.onAssetSelected}
+              onAssetIdChange={(_, newNodeId) => this.onNodeSelected(newNodeId)}
               onNodeIdChange={this.onNodeSelected}
             />
             {this.renderCard()}
@@ -336,6 +379,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       fetchModels,
       fetchMappingsFromAssetId,
+      createAssetNodeMapping,
+      deleteAssetNodeMapping,
     },
     dispatch
   );
