@@ -109,15 +109,15 @@ export function setSearchQuery(query: string) {
         query,
         assetFilter: {
           ...assetFilter,
-          search: { query },
+          search: { query: query.length > 0 ? query : undefined },
         },
         timeseriesFilter: {
           ...timeseriesFilter,
-          search: { query },
+          search: { query: query.length > 0 ? query : undefined },
         },
         fileFilter: {
           ...fileFilter,
-          search: { name: query },
+          search: { name: query.length > 0 ? query : undefined },
         },
         loading: true,
       },
