@@ -27,6 +27,22 @@ const Wrapper = styled.div`
     margin-top: 12px;
     margin-bottom: 0px;
   }
+
+  .ant-tabs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ant-tabs-content {
+    flex: 1;
+    position: relative;
+    height: 0;
+  }
+
+  .ant-tabs-tabpane {
+    overflow: auto;
+  }
 `;
 
 const ButtonRow = styled.div`
