@@ -89,7 +89,7 @@ class ThreeDCard extends React.Component<Props, State> {
           {node ? (
             <>
               <p>
-                <strong>{node.name}</strong>
+                Node Name: <strong>{node.name}</strong>
               </p>
               <div className="button-row">
                 <Button onClick={this.props.onViewParent}>Select Parent</Button>
@@ -107,13 +107,17 @@ class ThreeDCard extends React.Component<Props, State> {
               key="asset"
               tab="Asset info"
               disabled={!asset && !rootAsset}
+              style={{ marginBottom: '12px' }}
             >
-              {asset && (
+              {asset ? (
                 <>
+                  <p>Asset Details: </p>
                   <h4>{asset.name}</h4>
                   <strong>Description</strong>
                   <p>{asset.description || 'N/A'}</p>
                 </>
+              ) : (
+                <h4>No Asset is currently mapped to this Node.</h4>
               )}
               {rootAsset && (
                 <>

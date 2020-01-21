@@ -23,6 +23,9 @@ const StyledCard = styled(Card)`
       padding-left: 12px;
       padding-right: 12px;
     }
+    .ant-tabs-content {
+      margin-top: 8px;
+    }
   }
 `;
 
