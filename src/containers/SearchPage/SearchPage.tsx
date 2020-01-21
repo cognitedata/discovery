@@ -114,15 +114,56 @@ class SearchPage extends React.Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props) {
-    if (prevProps.match.params.tab) {
-      if (prevProps.match.params.tab !== this.tab) {
-        this.doSearch();
+    if (!this.props.search.loading) {
+      if (prevProps.match.params.tab) {
+        if (prevProps.match.params.tab !== this.tab) {
+          this.props.setSearchLoading();
+        }
+      } else if (this.tab !== 'assets') {
+        this.props.setSearchLoading();
       }
-    } else if (this.tab !== 'assets') {
-      this.doSearch();
-    }
-    if (this.props.search.loading && !prevProps.search.loading) {
+    } else if (this.props.search.loading && !prevProps.search.loading) {
       this.doDebouncedSearch();
+    }
+  }
+
+  get page() {
+    const {
+      assetsTable,
+      timeseriesTable,
+      filesTable,
+      threeDTable,
+    } = this.props.search;
+    switch (this.tab) {
+      case 'assets':
+        return assetsTable.page;
+      case 'files':
+        return filesTable.page;
+      case 'timeseries':
+        return timeseriesTable.page;
+      case 'threed':
+      default:
+        return threeDTable.page;
+    }
+  }
+
+  get pageSize() {
+    const {
+      assetsTable,
+      timeseriesTable,
+      filesTable,
+      threeDTable,
+    } = this.props.search;
+    switch (this.tab) {
+      case 'assets':
+        return assetsTable.pageSize;
+      case 'files':
+        return filesTable.pageSize;
+      case 'timeseries':
+        return timeseriesTable.pageSize;
+      case 'threed':
+      default:
+        return threeDTable.pageSize;
     }
   }
 
@@ -205,13 +246,15 @@ class SearchPage extends React.Component<Props, State> {
     const { search, assets, timeseries, files, threed } = this.props;
     switch (this.tab) {
       case 'assets':
-        return search.assetsTable.map(id => assets.all[id]);
+        return search.assetsTable.items.map(id => assets.all[id]);
       case 'timeseries':
-        return search.timeseriesTable.map(id => timeseries.timeseriesData[id]);
+        return search.timeseriesTable.items.map(
+          id => timeseries.timeseriesData[id]
+        );
       case 'files':
-        return search.filesTable.map(id => files.files[id]);
+        return search.filesTable.items.map(id => files.files[id]);
       case 'threed':
-        return search.threeDTable.map(id => threed.models[id]);
+        return search.threeDTable.items.map(id => threed.models[id]);
     }
     return [];
   }
@@ -219,10 +262,20 @@ class SearchPage extends React.Component<Props, State> {
   doSearch = async () => {
     this.searchIndex += 1;
     const index = this.searchIndex;
-    const query = '';
-    const { assetFilter } = this.props.search;
-    this.props.setSearchLoading();
+    const {
+      assetFilter,
+      timeseriesFilter,
+      fileFilter,
+      assetsTable,
+      timeseriesTable,
+      filesTable,
+      threeDTable,
+      query,
+    } = this.props.search;
     trackUsage('SearchPage.search', {
+      assetFilter,
+      timeseriesFilter,
+      fileFilter,
       query,
       tab: this.tab,
     });
@@ -232,33 +285,45 @@ class SearchPage extends React.Component<Props, State> {
           ...assetFilter,
           limit: 1000,
         });
-        this.props.addAssetsToState(items);
+        await this.props.addAssetsToState(items);
         if (this.searchIndex === index) {
-          this.props.setAssetsTable(items.map(el => el.id));
+          this.props.setAssetsTable({
+            ...assetsTable,
+            items: items.map(el => el.id),
+            page: 0,
+          });
           this.searchIndex = 0;
         }
         break;
       }
       case 'timeseries': {
         const items = await sdk.timeseries.search({
-          ...(query.length > 0 && { search: { query } }),
+          ...timeseriesFilter,
           limit: 1000,
         });
-        this.props.addTimeseriesToState(items);
+        await this.props.addTimeseriesToState(items);
         if (this.searchIndex === index) {
-          this.props.setTimeseriesTable(items.map(el => el.id));
+          this.props.setTimeseriesTable({
+            ...timeseriesTable,
+            items: items.map(el => el.id),
+            page: 0,
+          });
           this.searchIndex = 0;
         }
         break;
       }
       case 'files': {
         const items = await sdk.files.search({
-          ...(query.length > 0 && { search: { name: query } }),
+          ...fileFilter,
           limit: 1000,
         });
-        this.props.addFilesToState(items);
+        await this.props.addFilesToState(items);
         if (this.searchIndex === index) {
-          this.props.setFilesTable(items.map(el => el.id));
+          this.props.setFilesTable({
+            ...filesTable,
+            items: items.map(el => el.id),
+            page: 0,
+          });
           this.searchIndex = 0;
         }
         break;
@@ -277,7 +342,7 @@ class SearchPage extends React.Component<Props, State> {
           )
           .map(el => Number(el));
         if (this.searchIndex === index) {
-          this.props.setThreeDTable(items);
+          this.props.setThreeDTable({ ...threeDTable, items, page: 0 });
           this.searchIndex = 0;
         }
         break;
@@ -377,6 +442,44 @@ class SearchPage extends React.Component<Props, State> {
     }
   };
 
+  onPaginationChange = (page: number, pageSize?: number) => {
+    const {
+      assetsTable,
+      timeseriesTable,
+      filesTable,
+      threeDTable,
+    } = this.props.search;
+    switch (this.tab) {
+      case 'assets':
+        this.props.setAssetsTable({
+          ...assetsTable,
+          page,
+          pageSize: pageSize || 10,
+        });
+        return;
+      case 'files':
+        this.props.setFilesTable({
+          ...filesTable,
+          page,
+          pageSize: pageSize || 10,
+        });
+        return;
+      case 'timeseries':
+        this.props.setTimeseriesTable({
+          ...timeseriesTable,
+          page,
+          pageSize: pageSize || 10,
+        });
+        return;
+      case 'threed':
+        this.props.setThreeDTable({
+          ...threeDTable,
+          page,
+          pageSize: pageSize || 10,
+        });
+    }
+  };
+
   render() {
     const { search } = this.props;
     return (
@@ -423,6 +526,9 @@ class SearchPage extends React.Component<Props, State> {
                 position: 'bottom',
                 showQuickJumper: true,
                 showSizeChanger: true,
+                pageSize: this.pageSize,
+                current: this.page,
+                onChange: this.onPaginationChange,
               }}
               loading={search.loading}
               dataSource={this.tableData}

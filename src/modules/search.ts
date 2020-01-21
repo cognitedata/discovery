@@ -1,6 +1,10 @@
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { AssetFilter } from '@cognite/sdk';
+import {
+  AssetFilter,
+  TimeSeriesSearchDTO,
+  FilesSearchFilter,
+} from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 
 // Constants
@@ -9,11 +13,13 @@ export const SET_SEARCH_STATE = 'search/SET_SEARCH_STATE';
 interface SetSearchState extends Action<typeof SET_SEARCH_STATE> {
   payload: {
     loading?: boolean;
-    assetsTable?: number[];
-    timeseriesTable?: number[];
-    filesTable?: number[];
-    threeDTable?: number[];
+    assetsTable?: { items: number[]; page: number; pageSize: number };
+    timeseriesTable?: { items: number[]; page: number; pageSize: number };
+    filesTable?: { items: number[]; page: number; pageSize: number };
+    threeDTable?: { items: number[]; page: number; pageSize: number };
     assetFilter?: AssetFilter;
+    timeseriesFilter?: TimeSeriesSearchDTO;
+    fileFilter?: FilesSearchFilter;
     query?: string;
   };
 }
@@ -31,45 +37,61 @@ export function setSearchLoading() {
     });
   };
 }
-export function setAssetsTable(ids: number[]) {
+export function setAssetsTable(table: {
+  items: number[];
+  page: number;
+  pageSize: number;
+}) {
   return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
-        assetsTable: ids,
+        assetsTable: table,
         loading: false,
       },
     });
   };
 }
-export function setTimeseriesTable(ids: number[]) {
+export function setTimeseriesTable(table: {
+  items: number[];
+  page: number;
+  pageSize: number;
+}) {
   return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
-        timeseriesTable: ids,
+        timeseriesTable: table,
         loading: false,
       },
     });
   };
 }
-export function setFilesTable(ids: number[]) {
+export function setFilesTable(table: {
+  items: number[];
+  page: number;
+  pageSize: number;
+}) {
   return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
-        filesTable: ids,
+        filesTable: table,
         loading: false,
       },
     });
   };
 }
-export function setThreeDTable(ids: number[]) {
+export function setThreeDTable(table: {
+  items: number[];
+  page: number;
+  pageSize: number;
+}) {
   return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
-        threeDTable: ids,
+        threeDTable: table,
         loading: false,
       },
     });
@@ -80,7 +102,7 @@ export function setSearchQuery(query: string) {
     dispatch: ThunkDispatch<any, void, SetSearchState>,
     getState: () => RootState
   ) => {
-    const { assetFilter } = getState().search;
+    const { assetFilter, timeseriesFilter, fileFilter } = getState().search;
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
@@ -88,6 +110,14 @@ export function setSearchQuery(query: string) {
         assetFilter: {
           ...assetFilter,
           search: { query },
+        },
+        timeseriesFilter: {
+          ...timeseriesFilter,
+          search: { query },
+        },
+        fileFilter: {
+          ...fileFilter,
+          search: { name: query },
         },
         loading: true,
       },
@@ -105,24 +135,50 @@ export function setAssetFilter(assetFilter: AssetFilter) {
     });
   };
 }
+export function setTimeseriesFilter(timeseriesFilter: TimeSeriesSearchDTO) {
+  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+    dispatch({
+      type: SET_SEARCH_STATE,
+      payload: {
+        timeseriesFilter,
+        loading: true,
+      },
+    });
+  };
+}
+export function setFileFilter(fileFilter: FilesSearchFilter) {
+  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+    dispatch({
+      type: SET_SEARCH_STATE,
+      payload: {
+        fileFilter,
+        loading: true,
+      },
+    });
+  };
+}
 
 // Reducer
 export interface SearchState {
   loading: boolean;
-  assetsTable: number[];
-  timeseriesTable: number[];
-  filesTable: number[];
-  threeDTable: number[];
+  assetsTable: { items: number[]; page: number; pageSize: number };
+  timeseriesTable: { items: number[]; page: number; pageSize: number };
+  filesTable: { items: number[]; page: number; pageSize: number };
+  threeDTable: { items: number[]; page: number; pageSize: number };
   assetFilter: AssetFilter;
+  timeseriesFilter: TimeSeriesSearchDTO;
+  fileFilter: FilesSearchFilter;
   query: string;
 }
 const initialState: SearchState = {
   loading: true,
-  assetsTable: [],
-  timeseriesTable: [],
-  filesTable: [],
-  threeDTable: [],
+  assetsTable: { items: [], page: 0, pageSize: 10 },
+  timeseriesTable: { items: [], page: 0, pageSize: 10 },
+  filesTable: { items: [], page: 0, pageSize: 10 },
+  threeDTable: { items: [], page: 0, pageSize: 10 },
   assetFilter: {},
+  timeseriesFilter: {},
+  fileFilter: {},
   query: '',
 };
 

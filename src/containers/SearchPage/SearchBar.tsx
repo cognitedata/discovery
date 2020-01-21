@@ -6,20 +6,14 @@ import { push } from 'connected-react-router';
 import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import { InternalId } from '@cognite/sdk';
-import { addAssetsToState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
-  setSearchLoading,
-  setAssetsTable,
-  setTimeseriesTable,
-  setFilesTable,
-  setThreeDTable,
   SearchState,
   setAssetFilter,
   setSearchQuery,
+  setTimeseriesFilter,
+  setFileFilter,
 } from '../../modules/search';
-import { addTimeseriesToState } from '../../modules/timeseries';
-import { addFilesToState } from '../../modules/files';
 import { SearchPageTabKeys } from './SearchPage';
 
 const Wrapper = styled.div`
@@ -56,14 +50,8 @@ type Props = {
   push: typeof push;
   setSearchQuery: typeof setSearchQuery;
   setAssetFilter: typeof setAssetFilter;
-  addAssetsToState: typeof addAssetsToState;
-  setAssetsTable: typeof setAssetsTable;
-  setSearchLoading: typeof setSearchLoading;
-  setTimeseriesTable: typeof setTimeseriesTable;
-  setFilesTable: typeof setFilesTable;
-  setThreeDTable: typeof setThreeDTable;
-  addTimeseriesToState: typeof addTimeseriesToState;
-  addFilesToState: typeof addFilesToState;
+  setFileFilter: typeof setFileFilter;
+  setTimeseriesFilter: typeof setTimeseriesFilter;
 } & OrigProps;
 
 type State = {
@@ -82,82 +70,239 @@ class SearchPage extends React.Component<Props, State> {
     }
   }
 
+  renderAssetPopover = () => {
+    const { assetFilter } = this.props.search;
+    return (
+      <Wrapper>
+        <p>Root Only</p>
+        <Checkbox
+          checked={assetFilter.filter ? assetFilter.filter.root : undefined}
+          onChange={ev =>
+            this.props.setAssetFilter({
+              ...assetFilter,
+              filter: {
+                ...assetFilter.filter,
+                root: ev.target.checked || undefined,
+              },
+            })
+          }
+        />
+        <p>Root Assets</p>
+        <AssetSelect
+          style={{ width: '100%' }}
+          rootOnly
+          multiple
+          selectedAssetIds={
+            assetFilter.filter && assetFilter.filter.rootIds
+              ? assetFilter.filter.rootIds.map(el => (el as InternalId).id)
+              : []
+          }
+          onAssetSelected={ids =>
+            this.props.setAssetFilter({
+              ...assetFilter,
+              filter: {
+                ...assetFilter.filter,
+                rootIds:
+                  ids.length > 0 ? ids.map(el => ({ id: el })) : undefined,
+              },
+            })
+          }
+        />
+        <p>Parent Assets</p>
+        <AssetSelect
+          style={{ width: '100%' }}
+          multiple
+          selectedAssetIds={
+            assetFilter.filter && assetFilter.filter.parentIds
+              ? assetFilter.filter.parentIds
+              : []
+          }
+          onAssetSelected={ids =>
+            this.props.setAssetFilter({
+              ...assetFilter,
+              filter: {
+                ...assetFilter.filter,
+                parentIds: ids.length > 0 ? ids : undefined,
+              },
+            })
+          }
+        />
+        <p>Source</p>
+        <Input
+          value={assetFilter.filter ? assetFilter.filter.source : undefined}
+          onChange={ev =>
+            this.props.setAssetFilter({
+              ...assetFilter,
+              filter: {
+                ...assetFilter.filter,
+                source:
+                  ev.target.value.length > 0 ? ev.target.value : undefined,
+              },
+            })
+          }
+        />
+      </Wrapper>
+    );
+  };
+
+  renderFilePopover = () => {
+    const { fileFilter } = this.props.search;
+    return (
+      <Wrapper>
+        <p>Uploaded Only</p>
+        <Checkbox
+          checked={fileFilter.filter ? fileFilter.filter.uploaded : undefined}
+          onChange={ev =>
+            this.props.setFileFilter({
+              ...fileFilter,
+              filter: {
+                ...fileFilter.filter,
+                uploaded: ev.target.checked || undefined,
+              },
+            })
+          }
+        />
+        <p>Linked Assets</p>
+        <AssetSelect
+          style={{ width: '100%' }}
+          multiple
+          selectedAssetIds={
+            fileFilter.filter && fileFilter.filter.assetIds
+              ? fileFilter.filter.assetIds
+              : []
+          }
+          onAssetSelected={ids =>
+            this.props.setFileFilter({
+              ...fileFilter,
+              filter: {
+                ...fileFilter.filter,
+                assetIds: ids.length > 0 ? ids : undefined,
+              },
+            })
+          }
+        />
+        <p>Source</p>
+        <Input
+          value={fileFilter.filter ? fileFilter.filter.source : undefined}
+          onChange={ev =>
+            this.props.setFileFilter({
+              ...fileFilter,
+              filter: {
+                ...fileFilter.filter,
+                source:
+                  ev.target.value.length > 0 ? ev.target.value : undefined,
+              },
+            })
+          }
+        />
+        <p>Mime Type</p>
+        <Input
+          value={fileFilter.filter ? fileFilter.filter.mimeType : undefined}
+          onChange={ev =>
+            this.props.setFileFilter({
+              ...fileFilter,
+              filter: {
+                ...fileFilter.filter,
+                mimeType:
+                  ev.target.value.length > 0 ? ev.target.value : undefined,
+              },
+            })
+          }
+        />
+      </Wrapper>
+    );
+  };
+
+  renderTimeseriesPopover = () => {
+    const { timeseriesFilter } = this.props.search;
+    return (
+      <Wrapper>
+        <p>String Only</p>
+        <Checkbox
+          checked={
+            timeseriesFilter.filter
+              ? timeseriesFilter.filter.isString
+              : undefined
+          }
+          onChange={ev =>
+            this.props.setTimeseriesFilter({
+              ...timeseriesFilter,
+              filter: {
+                ...timeseriesFilter.filter,
+                isString: ev.target.checked || undefined,
+              },
+            })
+          }
+        />
+        <p>Linked to Assets</p>
+        <AssetSelect
+          style={{ width: '100%' }}
+          multiple
+          selectedAssetIds={
+            timeseriesFilter.filter && timeseriesFilter.filter.assetIds
+              ? timeseriesFilter.filter.assetIds
+              : []
+          }
+          onAssetSelected={ids =>
+            this.props.setTimeseriesFilter({
+              ...timeseriesFilter,
+              filter: {
+                ...timeseriesFilter.filter,
+                assetIds: ids.length > 0 ? ids : undefined,
+              },
+            })
+          }
+        />
+        <p>Linked to Root Assets</p>
+        <AssetSelect
+          style={{ width: '100%' }}
+          rootOnly
+          multiple
+          selectedAssetIds={
+            timeseriesFilter.filter && timeseriesFilter.filter.rootAssetIds
+              ? timeseriesFilter.filter.rootAssetIds
+              : []
+          }
+          onAssetSelected={ids =>
+            this.props.setTimeseriesFilter({
+              ...timeseriesFilter,
+              filter: {
+                ...timeseriesFilter.filter,
+                rootAssetIds: ids.length > 0 ? ids : undefined,
+              },
+            })
+          }
+        />
+        <p>Unit</p>
+        <Input
+          value={
+            timeseriesFilter.filter ? timeseriesFilter.filter.unit : undefined
+          }
+          onChange={ev =>
+            this.props.setTimeseriesFilter({
+              ...timeseriesFilter,
+              filter: {
+                ...timeseriesFilter.filter,
+                unit: ev.target.value.length > 0 ? ev.target.value : undefined,
+              },
+            })
+          }
+        />
+      </Wrapper>
+    );
+  };
+
   renderPopover = () => {
     const { tab } = this.props;
-    const { assetFilter } = this.props.search;
     switch (tab) {
       case 'assets': {
-        return (
-          <Wrapper>
-            <p>Root Only</p>
-            <Checkbox
-              checked={assetFilter.filter ? assetFilter.filter.root : undefined}
-              onChange={ev =>
-                this.props.setAssetFilter({
-                  ...assetFilter,
-                  filter: {
-                    ...assetFilter.filter,
-                    root: ev.target.checked || undefined,
-                  },
-                })
-              }
-            />
-            <p>Root Assets</p>
-            <AssetSelect
-              style={{ width: '100%' }}
-              rootOnly
-              multiple
-              selectedAssetIds={
-                assetFilter.filter && assetFilter.filter.rootIds
-                  ? assetFilter.filter.rootIds.map(el => (el as InternalId).id)
-                  : []
-              }
-              onAssetSelected={ids =>
-                this.props.setAssetFilter({
-                  ...assetFilter,
-                  filter: {
-                    ...assetFilter.filter,
-                    rootIds:
-                      ids.length > 0 ? ids.map(el => ({ id: el })) : undefined,
-                  },
-                })
-              }
-            />
-            <p>Parent Assets</p>
-            <AssetSelect
-              style={{ width: '100%' }}
-              multiple
-              selectedAssetIds={
-                assetFilter.filter && assetFilter.filter.parentIds
-                  ? assetFilter.filter.parentIds
-                  : []
-              }
-              onAssetSelected={ids =>
-                this.props.setAssetFilter({
-                  ...assetFilter,
-                  filter: {
-                    ...assetFilter.filter,
-                    parentIds: ids.length > 0 ? ids : undefined,
-                  },
-                })
-              }
-            />
-            <p>Source</p>
-            <Input
-              value={assetFilter.filter ? assetFilter.filter.source : undefined}
-              onChange={ev =>
-                this.props.setAssetFilter({
-                  ...assetFilter,
-                  filter: {
-                    ...assetFilter.filter,
-                    source:
-                      ev.target.value.length > 0 ? ev.target.value : undefined,
-                  },
-                })
-              }
-            />
-          </Wrapper>
-        );
+        return this.renderAssetPopover();
+      }
+      case 'timeseries': {
+        return this.renderTimeseriesPopover();
+      }
+      case 'files': {
+        return this.renderFilePopover();
       }
       default:
         return <Wrapper>No Filters</Wrapper>;
@@ -202,15 +347,9 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       push,
-      addAssetsToState,
-      setSearchLoading,
-      setAssetsTable,
-      setTimeseriesTable,
-      setFilesTable,
-      setThreeDTable,
-      addTimeseriesToState,
-      addFilesToState,
       setAssetFilter,
+      setTimeseriesFilter,
+      setFileFilter,
       setSearchQuery,
     },
     dispatch
