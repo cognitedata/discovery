@@ -22,6 +22,7 @@ import {
 } from '../../../utils/detectionApi';
 import { sdk } from '../../../index';
 import AssetSelect from '../../../components/AssetSelect';
+import { canReadEvents, canEditEvents } from '../../../utils/PermissionsUtils';
 
 const fadeInScale = keyframes`
   from {
@@ -200,6 +201,10 @@ class ImagePreview extends React.Component<Props, State> {
   fetchDetections = async () => {
     const { all } = this.props.assets;
 
+    if (!canReadEvents(false)) {
+      return;
+    }
+
     const [detectionsResp, moreDetectionsResp] = await Promise.all([
       this.detectionApi.list({
         filter: { fileExternalId: `${this.props.file.id}` },
@@ -241,6 +246,9 @@ class ImagePreview extends React.Component<Props, State> {
   onSubmit = async (annotation: AnnotationItem) => {
     const { all } = this.props.assets;
     const { detections } = this.state;
+    if (!canEditEvents(true)) {
+      return;
+    }
     if (annotation.data) {
       const [detection] = await this.detectionApi.create([
         {
@@ -440,6 +448,7 @@ class ImagePreview extends React.Component<Props, State> {
                   shape="round"
                   icon="form"
                   onClick={this.changeEditStatus}
+                  disabled={!canEditEvents(false)}
                 >
                   {disableZooming ? 'Done Adding Annotation' : 'Add Annotation'}
                 </Button>

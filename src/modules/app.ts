@@ -5,14 +5,16 @@ import { SingleCogniteCapability } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
+// Global Permissions
+export const PERMISSIONS: { [key: string]: string[] } = {};
+
 // Constants
 export const SET_APP_STATE = 'app/SET_APP_STATE';
 export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
 
-export const test = { permissions: {} };
-
 export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
+    loaded?: boolean;
     tenant?: string;
     cdfEnv?: string;
     groups?: { [key: string]: string[] };
@@ -64,12 +66,15 @@ export const fetchUserGroups = () => async (
       { groupsAcl: ['LIST'] } as { [key: string]: string[] }
     );
 
-    test.permissions = groups;
+    Object.keys(groups).forEach(key => {
+      PERMISSIONS[key] = groups[key];
+    });
 
     dispatch({
       type: SET_APP_STATE,
       payload: {
         groups,
+        loaded: true,
       },
     });
   } catch (e) {
@@ -129,10 +134,11 @@ export const resetAppState = () => async (
 // Reducer
 export interface AppState {
   tenant?: string;
+  loaded: boolean;
   cdfEnv?: string;
   groups: { [key: string]: string[] };
 }
-const initialState: AppState = { groups: {} };
+const initialState: AppState = { groups: {}, loaded: false };
 
 export default function app(state = initialState, action: AppAction): AppState {
   switch (action.type) {

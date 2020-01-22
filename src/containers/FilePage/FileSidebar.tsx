@@ -11,6 +11,7 @@ import { AssetIcon } from 'assets';
 import { RootState } from '../../reducers/index';
 import { addFilesToState } from '../../modules/files';
 import { sdk } from '../../index';
+import { canEditFiles } from '../../utils/PermissionsUtils';
 import {
   fetchAssets,
   selectAssetById,
@@ -119,6 +120,7 @@ class FileSidebar extends React.Component<Props, State> {
           <Button
             type="primary"
             shape="round"
+            disabled={!canEditFiles(false)}
             onClick={() => this.setState({ showEditModal: true })}
           >
             Edit
@@ -127,6 +129,7 @@ class FileSidebar extends React.Component<Props, State> {
             type="danger"
             shape="circle"
             icon="delete"
+            disabled={!canEditFiles(false)}
             onClick={this.props.onDeleteClicked}
           />
           <Button
@@ -161,7 +164,10 @@ class FileSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Linked Assets" key="assets">
             <>
-              <Button onClick={() => this.setState({ showEditModal: true })}>
+              <Button
+                disabled={!canEditFiles(false)}
+                onClick={() => this.setState({ showEditModal: true })}
+              >
                 Link an asset
               </Button>
               <List
@@ -181,6 +187,7 @@ class FileSidebar extends React.Component<Props, State> {
                       <Button
                         ghost
                         type="danger"
+                        disabled={!canEditFiles(false)}
                         onClick={() => this.onUnlinkClicked(item.id)}
                       >
                         Unlink

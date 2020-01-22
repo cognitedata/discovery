@@ -8,6 +8,7 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { ExtendedAsset } from '../../modules/assets';
 import { sdk } from '../../index';
+import { canEditTimeseries } from '../../utils/PermissionsUtils';
 
 type OrigProps = {
   asset: ExtendedAsset;
@@ -28,6 +29,9 @@ class LinktimeseriesModal extends React.Component<Props, State> {
   };
 
   addToAsset = async () => {
+    if (!canEditTimeseries()) {
+      return;
+    }
     if (
       this.state.selectedTimeseriesIds &&
       this.state.selectedTimeseriesIds.length > 0
@@ -56,7 +60,12 @@ class LinktimeseriesModal extends React.Component<Props, State> {
         title={`Link Asset (${this.props.asset.name}) to Timeseries`}
         onCancel={this.props.onClose}
         footer={[
-          <Button key="submit" type="primary" onClick={this.addToAsset}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={this.addToAsset}
+            disabled={!canEditTimeseries(false)}
+          >
             Link to asset
           </Button>,
         ]}

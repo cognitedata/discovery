@@ -1,5 +1,4 @@
 import { Asset, InternalId } from '@cognite/sdk';
-import { message } from 'antd';
 
 export function sleep(timeout: number) {
   return new Promise(resolve => setTimeout(resolve, timeout));
@@ -32,24 +31,4 @@ export function createAssetTitle(asset: Asset) {
 
   return assetTitle;
 }
-
-export const checkForAccessPermission = (
-  groups: { [key: string]: string[] },
-  key: string,
-  type: string,
-  showMessage = false
-) => {
-  if (groups.groupsAcl) {
-    if (!groups[key] || !groups[key].includes(type)) {
-      if (showMessage) {
-        message.error(`You are missing access ${key}:${type}`);
-      }
-      // eslint-disable-next-line no-console
-      console.error(`You are missing access ${key}:${type}`);
-      return false;
-    }
-  }
-  return true;
-};
-
 export const isInternalId = (p: any): p is InternalId => !!p.id;

@@ -1,7 +1,6 @@
 import { createAction } from 'redux-actions';
 import { message } from 'antd';
-import { Dispatch, Action, AnyAction } from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import { Dispatch, Action } from 'redux';
 import {
   GetTimeSeriesMetadataDTO,
   TimeSeriesUpdate,
@@ -9,8 +8,9 @@ import {
 } from '@cognite/sdk';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
-import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
+import { arrayToObjectById } from '../utils/utils';
 import { trackUsage } from '../utils/metrics';
+import { canEditTimeseries } from '../utils/PermissionsUtils';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
@@ -96,17 +96,9 @@ export function addTimeseriesToState(
 }
 
 export const deleteTimeseries = (timeseriesId: number) => async (
-  dispatch: Dispatch<DeleteTimeseriesAction>,
-  getState: () => RootState
+  dispatch: Dispatch<DeleteTimeseriesAction>
 ) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
+  if (!canEditTimeseries()) {
     return false;
   }
   trackUsage('Timeseries.deleteTimeseries', {
@@ -125,93 +117,11 @@ export const deleteTimeseries = (timeseriesId: number) => async (
   }
 };
 
-export const removeAssetFromTimeseries = (
-  timeseriesId: number,
-  assetId: number
-) => async (
-  dispatch: ThunkDispatch<any, void, AnyAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
-    return;
-  }
-  trackUsage('Timeseries.removeAssetFromTimeseries', {
-    assetId,
-    timeseriesId,
-  });
-  await sdk.timeseries.update([
-    {
-      id: timeseriesId,
-      update: {
-        assetId: { setNull: true },
-      },
-    },
-  ]);
-  dispatch({
-    type: REMOVE_ASSET_FROM_TIMESERIES,
-    payload: { timeseriesId },
-  });
-
-  message.info(`Removed 1 timeseries from asset.`);
-};
-
-export const addTimeseriesToAsset = (
-  timeseriesIds: number[],
-  assetId: number
-) => async (
-  dispatch: ThunkDispatch<any, void, AnyAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
-    return;
-  }
-  trackUsage('Timeseries.addTimeseriesToAsset', {
-    assetId,
-    timeseriesIds,
-  });
-
-  const changes = timeseriesIds.map(id => ({
-    id,
-    update: { assetId: { set: assetId } },
-  }));
-  await sdk.timeseries.update(changes);
-
-  message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
-
-  setTimeout(() => {
-    dispatch(fetchTimeseriesForAssetId(assetId));
-  }, 1000);
-};
-
 export const updateTimeseries = (
   timeseriesId: number,
   update: TimeSeriesUpdate
-) => async (
-  dispatch: Dispatch<SetTimeseriesAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
+) => async (dispatch: Dispatch<SetTimeseriesAction>) => {
+  if (!canEditTimeseries()) {
     return;
   }
   trackUsage('Timeseries.updateTimeseries', {

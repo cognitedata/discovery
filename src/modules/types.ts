@@ -2,8 +2,9 @@ import { Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
-import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
+import { arrayToObjectById } from '../utils/utils';
 import { AssetTypeInfo, ExtendedAsset } from './assets';
+import { canReadTypes } from '../utils/PermissionsUtils';
 
 // Constants
 export const RETRIEVE_TYPE = 'types/RETRIEVE_TYPE';
@@ -55,9 +56,8 @@ export function fetchTypeForAssets(assetIds: number[]) {
     try {
       const {
         types: { items },
-        app: { groups },
       } = getState();
-      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      if (!canReadTypes(false)) {
         throw new Error('Missing ACL for types');
       }
       const { project } = sdk;
@@ -110,14 +110,10 @@ export function fetchTypeForAssets(assetIds: number[]) {
 
 export function fetchTypes() {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>,
-    getState: () => RootState
+    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>
   ) => {
     try {
-      const {
-        app: { groups },
-      } = getState();
-      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      if (!canReadTypes(false)) {
         throw new Error('Missing ACL for types');
       }
       const { project } = sdk;
@@ -143,14 +139,10 @@ export function fetchTypes() {
 }
 export function fetchTypeByIds(typeIds: number[]) {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>,
-    getState: () => RootState
+    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>
   ) => {
     try {
-      const {
-        app: { groups },
-      } = getState();
-      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      if (!canReadTypes()) {
         throw new Error('Missing ACL for types');
       }
       const { project } = sdk;

@@ -8,6 +8,7 @@ import BottomRightCard from 'components/BottomRightCard';
 import AssetSelect from 'components/AssetSelect';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
+import { canEditThreeD, canDeleteThreeD } from '../../utils/PermissionsUtils';
 import {
   selectAssetById,
   ExtendedAsset,
@@ -107,7 +108,6 @@ class ThreeDCard extends React.Component<Props, State> {
               key="asset"
               tab="Asset info"
               disabled={!asset && !rootAsset}
-              style={{ marginBottom: '12px' }}
             >
               {asset ? (
                 <>
@@ -156,7 +156,11 @@ class ThreeDCard extends React.Component<Props, State> {
                   okText="Yes"
                   cancelText="No"
                 >
-                  <Button type="danger" style={{ marginBottom: '8px' }}>
+                  <Button
+                    type="danger"
+                    style={{ marginBottom: '8px' }}
+                    disabled={!canDeleteThreeD(false)}
+                  >
                     Unmap Node
                   </Button>
                 </Popconfirm>
@@ -185,7 +189,10 @@ class ThreeDCard extends React.Component<Props, State> {
                 selectedAssetIds={assetId ? [assetId] : []}
               />
               <div className="button-row">
-                <Button disabled={!assetId} onClick={this.onAddMappingClicked}>
+                <Button
+                  disabled={!assetId || !canEditThreeD(false)}
+                  onClick={this.onAddMappingClicked}
+                >
                   Confirm Mapping
                 </Button>
               </div>

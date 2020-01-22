@@ -12,6 +12,7 @@ import {
 } from '../../modules/relationships';
 import TreeViewer from './TreeViewer';
 import { sdk } from '../../index';
+import { canReadRelationships } from '../../utils/PermissionsUtils';
 
 type OwnProps = { nodes: { key: string; value: string }[] };
 
@@ -75,8 +76,11 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
     }
   };
 
-  getData = async () => {
+  getData = async (): Promise<{ nodes: any[]; links: any[] }> => {
     const { nodes: propsNodes } = this.props;
+    if (!canReadRelationships()) {
+      return { nodes: [], links: [] };
+    }
     const results = await postWithCursor(
       `/api/playground/projects/${sdk.project}/relationships/list`,
       {

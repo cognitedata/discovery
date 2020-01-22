@@ -24,6 +24,7 @@ import { ExtendedAsset } from '../../modules/assets';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import FlexTableWrapper from '../../components/FlexTableWrapper';
 import { sdk } from '../../index';
+import { canReadThreeD } from '../../utils/PermissionsUtils';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -113,6 +114,9 @@ class AssetThreeDSection extends Component<Props, State> {
 
   getNodeIds = async () => {
     const { nodeId, revisionId, modelId, asset } = this.props;
+    if (!canReadThreeD(false)) {
+      return [];
+    }
     if (nodeId) {
       return [nodeId];
     }
@@ -132,6 +136,9 @@ class AssetThreeDSection extends Component<Props, State> {
 
   onAssetSelected = async (assetId: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props;
+    if (!canReadThreeD(navigateAway)) {
+      return;
+    }
     if (modelId && revisionId) {
       const {
         items: [mapping],
@@ -155,6 +162,9 @@ class AssetThreeDSection extends Component<Props, State> {
 
   onNodeSelected = async (nodeId?: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props;
+    if (!canReadThreeD(navigateAway)) {
+      return;
+    }
 
     if (modelId && revisionId) {
       if (nodeId) {
@@ -205,6 +215,9 @@ class AssetThreeDSection extends Component<Props, State> {
   onDeleteMapping = async () => {
     const { modelId, revisionId, nodeId } = this.props;
     const { selectedItem } = this.state;
+    if (!canReadThreeD()) {
+      return;
+    }
     if (selectedItem && selectedItem.node && selectedItem.asset) {
       await sdk.assetMappings3D.delete(Number(modelId), Number(revisionId), [
         {
@@ -329,7 +342,7 @@ class AssetThreeDSection extends Component<Props, State> {
             <p />
           </div>
           <div className="right">
-            <Button icon="plus" type="primary">
+            <Button icon="plus" type="primary" disabled={!canReadThreeD(false)}>
               Create 3D Model
             </Button>
           </div>

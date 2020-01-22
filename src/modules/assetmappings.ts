@@ -6,7 +6,11 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { DELETE_ASSETS, DeleteAssetAction } from './assets';
 import { trackUsage } from '../utils/metrics';
-import { checkForAccessPermission } from '../utils/utils';
+import {
+  canEditThreeD,
+  canReadThreeD,
+  canDeleteThreeD,
+} from '../utils/PermissionsUtils';
 
 // Constants
 export const ADD_ASSET_MAPPINGS = 'assetmappings/ADD_ASSET_MAPPINGS';
@@ -80,15 +84,8 @@ export const fetchMappingsFromAssetId = (
   modelId: number,
   revisionId: number,
   assetId: number
-) => async (dispatch: Dispatch, getState: () => RootState) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'threedAcl',
-      'UPDATE',
-      true
-    )
-  ) {
+) => async (dispatch: Dispatch) => {
+  if (canEditThreeD()) {
     return;
   }
   if (currentFetching.asset[`${modelId}-${assetId}-${assetId}`]) {
@@ -146,6 +143,9 @@ export function fetchMappingsFromNodeId(
   nodeId: number
 ) {
   return async (dispatch: Dispatch) => {
+    if (!canReadThreeD()) {
+      return;
+    }
     if (currentFetching.node[nodeId]) {
       // Currently fetching this
       return;
@@ -180,6 +180,9 @@ export function createAssetNodeMapping(
   assetId: number
 ) {
   return async (dispatch: Dispatch) => {
+    if (!canEditThreeD()) {
+      return;
+    }
     trackUsage('AssetMappings.createAssetNodeMapping', {
       modelId,
       assetId,
@@ -214,6 +217,9 @@ export function deleteAssetNodeMapping(
   assetId: number
 ) {
   return async (dispatch: Dispatch, getState: () => RootState) => {
+    if (!canDeleteThreeD()) {
+      return;
+    }
     trackUsage('AssetMappings.deleteAssetNodeMapping', {
       modelId,
       assetId,

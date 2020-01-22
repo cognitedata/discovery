@@ -8,6 +8,7 @@ import { Asset } from '@cognite/sdk';
 import styled from 'styled-components';
 import { ExtendedAsset, addAssetsToState } from '../../modules/assets';
 import { sdk } from '../../index';
+import { canEditAssets } from '../../utils/PermissionsUtils';
 
 const FormWrapper = styled.div`
   p {
@@ -76,6 +77,9 @@ class AddChildAsset extends React.Component<Props, State> {
 
   addAsset = async () => {
     const { assetId, name, description, externalId, metadata } = this.state;
+    if (!canEditAssets()) {
+      return;
+    }
     try {
       JSON.parse(metadata || '{}');
     } catch (e) {
@@ -140,7 +144,12 @@ class AddChildAsset extends React.Component<Props, State> {
         title={this.props.asset ? 'Update Asset' : 'Create Asset'}
         onCancel={() => this.props.onClose()}
         footer={[
-          <Button key="submit" type="primary" onClick={this.addAsset}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={this.addAsset}
+            disabled={!canEditAssets(false)}
+          >
             {this.props.asset ? 'Update Asset' : 'Create Asset'}
           </Button>,
         ]}

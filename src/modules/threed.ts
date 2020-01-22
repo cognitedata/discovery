@@ -3,9 +3,10 @@ import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Revision3D, Model3D } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
-import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
+import { arrayToObjectById } from '../utils/utils';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
+import { canReadThreeD } from '../utils/PermissionsUtils';
 
 export interface ThreeDModel extends Model3D {
   id: number;
@@ -117,14 +118,7 @@ export function setRevisionRepresentAsset(
     dispatch: Dispatch<UpdateRevisionAction>,
     getState: () => RootState
   ) => {
-    if (
-      !checkForAccessPermission(
-        getState().app.groups,
-        'threedAcl',
-        'UPDATE',
-        true
-      )
-    ) {
+    if (!canReadThreeD()) {
       return;
     }
     trackUsage('3D.setRevisionRepresentAsset', {
@@ -170,6 +164,9 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
     modelId,
   });
   return async (dispatch: Dispatch<SetNodeAction>) => {
+    if (!canReadThreeD()) {
+      return;
+    }
     dispatch({ type: SET_NODE, payload: { currentNode: undefined } });
 
     const result = await sdk.viewer3D.listRevealNodes3D(modelId, revisionId, {
@@ -188,6 +185,9 @@ export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
 
 export function fetchModels() {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+    if (!canReadThreeD()) {
+      return;
+    }
     dispatch({
       type: LOAD_MODELS,
     });

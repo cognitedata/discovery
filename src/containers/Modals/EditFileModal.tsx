@@ -9,6 +9,7 @@ import AceEditor from 'react-ace';
 import { RootState } from '../../reducers/index';
 import { updateFile, addFilesToState } from '../../modules/files';
 import { sdk } from '../../index';
+import { canEditFiles } from '../../utils/PermissionsUtils';
 
 const FormDetails = styled.div`
   p {
@@ -53,6 +54,9 @@ class EditFileModal extends React.Component<Props, State> {
 
   saveChanges = async () => {
     const { mimeType, assetIds, metadata } = this.state;
+    if (!canEditFiles()) {
+      return;
+    }
     let metadataParsed;
     try {
       metadataParsed = metadata ? JSON.parse(metadata) : undefined;
@@ -100,7 +104,12 @@ class EditFileModal extends React.Component<Props, State> {
         title={`Edit File: ${this.props.file.name}`}
         onCancel={() => this.props.onClose()}
         footer={[
-          <Button key="submit" type="primary" onClick={this.saveChanges}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={this.saveChanges}
+            disabled={!canEditFiles(false)}
+          >
             Update File
           </Button>,
         ]}

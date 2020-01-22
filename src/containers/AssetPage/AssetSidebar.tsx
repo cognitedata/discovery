@@ -12,6 +12,7 @@ import { ExtendedAsset } from '../../modules/assets';
 import { BetaTag } from '../../components/BetaWarning';
 import { RootState } from '../../reducers/index';
 import { TypesState, fetchTypeForAssets } from '../../modules/types';
+import { canEditAssets } from '../../utils/PermissionsUtils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -136,6 +137,10 @@ class AssetSidebar extends React.Component<Props, State> {
           <Button
             type="primary"
             shape="round"
+            disabled={
+              !canEditAssets(false) ||
+              (!!asset.metadata && !!asset.metadata.SOURCE_DB)
+            }
             onClick={() => this.setState({ showEdit: true })}
           >
             Edit
@@ -144,6 +149,10 @@ class AssetSidebar extends React.Component<Props, State> {
             type="danger"
             shape="circle"
             icon="delete"
+            disabled={
+              !canEditAssets(false) ||
+              (!!asset.metadata && !!asset.metadata.SOURCE_DB)
+            }
             onClick={this.props.onDeleteAsset}
           />
         </ButtonRow>
@@ -157,6 +166,9 @@ class AssetSidebar extends React.Component<Props, State> {
                 {asset.externalId}
               </Descriptions.Item>
               <Descriptions.Item label="ID">{asset.id}</Descriptions.Item>
+              <Descriptions.Item label="Source">
+                {asset.source}
+              </Descriptions.Item>
               <Descriptions.Item label="Created Time">
                 {moment(asset.createdTime).format('YYYY-MM-DD hh:mm')}
               </Descriptions.Item>
@@ -176,6 +188,7 @@ class AssetSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Children" key="assets">
             <Button
+              disabled={!canEditAssets(false)}
               onClick={() => {
                 this.setState({ showAddChild: true });
               }}

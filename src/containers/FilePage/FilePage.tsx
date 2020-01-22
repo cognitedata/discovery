@@ -17,6 +17,7 @@ import {
 import { trackUsage } from '../../utils/metrics';
 import { sdk } from '../../index';
 import { downloadFile } from './FileUtils';
+import { canReadFiles, canEditFiles } from '../../utils/PermissionsUtils';
 
 function saveData(blob: Blob, fileName: string) {
   const a = document.createElement('a');
@@ -78,6 +79,7 @@ class FilePage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    canReadFiles();
     if (!this.file) {
       this.props.fetchFile(this.props.match.params.fileId);
     }
@@ -110,6 +112,9 @@ class FilePage extends React.Component<Props, State> {
   };
 
   onDeleteClicked = async () => {
+    if (!canEditFiles()) {
+      return;
+    }
     Modal.confirm({
       title: 'Do you want to delete this file?',
       content: 'This is a irreversible change',

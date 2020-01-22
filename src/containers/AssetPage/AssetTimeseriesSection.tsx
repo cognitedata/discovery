@@ -22,6 +22,7 @@ import {
 } from '../../modules/timeseries';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { sdk } from '../../index';
+import { canEditTimeseries } from '../../utils/PermissionsUtils';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -109,6 +110,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
                 }}
                 ghost
                 type="danger"
+                disabled={!canEditTimeseries(false)}
               >
                 Unlink
               </Button>
@@ -120,6 +122,9 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = async (timeseriesId: number) => {
+    if (!canEditTimeseries()) {
+      return;
+    }
     const timeseries = await sdk.timeseries.update([
       { id: timeseriesId, update: { assetId: { setNull: true } } },
     ]);
@@ -186,6 +191,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
             <Button
               icon="plus"
               type="primary"
+              disabled={!canEditTimeseries(false)}
               onClick={() => this.setState({ linkTimeseriesModal: true })}
             >
               Link Timeseries

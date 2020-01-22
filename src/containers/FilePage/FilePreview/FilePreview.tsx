@@ -26,7 +26,11 @@ import AssetSelect from 'components/AssetSelect';
 import PNIDViewer from './PNIDViewer';
 import ImageAnnotator from './ImageAnnotator';
 import { convertPDFtoPNID, detectAssetsInDocument } from '../FileUtils';
-import { selectAppState, AppState } from '../../../modules/app';
+import {
+  canReadFiles,
+  canEditFiles,
+  canReadAssets,
+} from '../../../utils/PermissionsUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -130,7 +134,6 @@ type OrigProps = {
 
 type Props = {
   assetId?: number;
-  app: AppState;
   assets: AssetsState;
   threed: ThreeDState;
   fetchFile: typeof fetchFile;
@@ -203,18 +206,20 @@ class FilePreview extends React.Component<Props, State> {
   }
 
   fetchFileUrl = async () => {
-    this.setState(
-      {
-        filePreviewUrl: undefined,
-      },
-      async () => {
-        const { fileId } = this.props;
-        const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
-        this.setState({
-          filePreviewUrl: url.downloadUrl,
-        });
-      }
-    );
+    if (canReadFiles()) {
+      this.setState(
+        {
+          filePreviewUrl: undefined,
+        },
+        async () => {
+          const { fileId } = this.props;
+          const [url] = await sdk.files.getDownloadUrls([{ id: fileId }]);
+          this.setState({
+            filePreviewUrl: url.downloadUrl,
+          });
+        }
+      );
+    }
   };
 
   handlePnIDPopover = (visible: boolean) => {
@@ -252,43 +257,38 @@ class FilePreview extends React.Component<Props, State> {
       };
       notification.open(notifConfig);
       this.setState({ runningPnID: true, convertToPDFVisible: false });
-      convertPDFtoPNID(
-        this.props.file,
-        pnidSelectedAssetId,
-        this.props.app.groups,
-        {
-          callbackProgress: (progress: string) => {
-            notification.open({ ...notifConfig, description: progress });
-          },
-          callbackResult: (file: FilesMetadata) => {
-            notification.open({
-              ...notifConfig,
-              icon: (
-                <Icon
-                  type="check-circle"
-                  theme="twoTone"
-                  twoToneColor="#52c41a"
-                />
-              ),
-              duration: 4.5,
-              description: 'Completed',
-            });
-            this.props.onFileClicked(file.id);
-            this.setState({ runningPnID: false });
-          },
-          callbackError: (error: any) => {
-            notification.open({
-              ...notifConfig,
-              icon: (
-                <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
-              ),
-              description: error,
-              duration: 4.5,
-            });
-            this.setState({ runningPnID: false });
-          },
-        }
-      );
+      convertPDFtoPNID(this.props.file, pnidSelectedAssetId, {
+        callbackProgress: (progress: string) => {
+          notification.open({ ...notifConfig, description: progress });
+        },
+        callbackResult: (file: FilesMetadata) => {
+          notification.open({
+            ...notifConfig,
+            icon: (
+              <Icon
+                type="check-circle"
+                theme="twoTone"
+                twoToneColor="#52c41a"
+              />
+            ),
+            duration: 4.5,
+            description: 'Completed',
+          });
+          this.props.onFileClicked(file.id);
+          this.setState({ runningPnID: false });
+        },
+        callbackError: (error: any) => {
+          notification.open({
+            ...notifConfig,
+            icon: (
+              <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
+            ),
+            description: error,
+            duration: 4.5,
+          });
+          this.setState({ runningPnID: false });
+        },
+      });
     } else {
       message.info('Please select an asset first!');
     }
@@ -307,45 +307,40 @@ class FilePreview extends React.Component<Props, State> {
       };
       notification.open(notifConfig);
       this.setState({ runningDetectAssets: true, detectAssetsVisible: false });
-      detectAssetsInDocument(
-        this.props.file,
-        detectionSelectedAssetId,
-        this.props.app.groups,
-        {
-          callbackProgress: (progress: string) => {
-            notification.open({ ...notifConfig, description: progress });
-          },
-          callbackResult: results => {
-            notification.open({
-              ...notifConfig,
-              icon: (
-                <Icon
-                  type="check-circle"
-                  theme="twoTone"
-                  twoToneColor="#52c41a"
-                />
-              ),
-              duration: 4.5,
-              description: 'Completed',
-            });
-            this.setState({
-              runningDetectAssets: false,
-              detectedAssetsResult: results,
-            });
-          },
-          callbackError: (error: any) => {
-            notification.open({
-              ...notifConfig,
-              icon: (
-                <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
-              ),
-              description: error,
-              duration: 4.5,
-            });
-            this.setState({ runningDetectAssets: false });
-          },
-        }
-      );
+      detectAssetsInDocument(this.props.file, detectionSelectedAssetId, {
+        callbackProgress: (progress: string) => {
+          notification.open({ ...notifConfig, description: progress });
+        },
+        callbackResult: results => {
+          notification.open({
+            ...notifConfig,
+            icon: (
+              <Icon
+                type="check-circle"
+                theme="twoTone"
+                twoToneColor="#52c41a"
+              />
+            ),
+            duration: 4.5,
+            description: 'Completed',
+          });
+          this.setState({
+            runningDetectAssets: false,
+            detectedAssetsResult: results,
+          });
+        },
+        callbackError: (error: any) => {
+          notification.open({
+            ...notifConfig,
+            icon: (
+              <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
+            ),
+            description: error,
+            duration: 4.5,
+          });
+          this.setState({ runningDetectAssets: false });
+        },
+      });
     } else {
       message.info('Please select an asset first!');
     }
@@ -451,7 +446,7 @@ class FilePreview extends React.Component<Props, State> {
       >
         <Button
           shape="round"
-          disabled={pdfState.numPages !== 1}
+          disabled={pdfState.numPages !== 1 || !canEditFiles(false)}
           loading={runningPnID}
         >
           Convert to Interactive P&ID
@@ -484,7 +479,7 @@ class FilePreview extends React.Component<Props, State> {
                 }
               />
               <Button
-                disabled={!detectionSelectedAssetId}
+                disabled={!detectionSelectedAssetId || !canReadAssets(false)}
                 onClick={this.onDetectAssetsClicked}
               >
                 Detect Assets
@@ -647,7 +642,6 @@ class FilePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
-    app: selectAppState(state),
     threed: selectThreeD(state),
     assets: selectAssets(state),
     file: selectFiles(state).files[props.fileId],

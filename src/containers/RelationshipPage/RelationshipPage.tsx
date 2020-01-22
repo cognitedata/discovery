@@ -22,6 +22,10 @@ import TreeViewer from '../NetworkViewers/TreeViewer';
 import { BetaTag } from '../../components/BetaWarning';
 import { sdk } from '../../index';
 import { trackUsage } from '../../utils/metrics';
+import {
+  canReadRelationships,
+  canReadAssets,
+} from '../../utils/PermissionsUtils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -84,6 +88,8 @@ class RelationshipViewer extends Component<Props, State> {
   };
 
   async componentDidMount() {
+    canReadRelationships();
+    canReadAssets();
     const assets = await sdk.assets.list({ filter: { root: true } });
     this.setState({ rootAssetIds: assets.items.map(el => el.id) });
   }

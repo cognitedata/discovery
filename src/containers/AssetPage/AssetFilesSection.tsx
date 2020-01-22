@@ -23,6 +23,7 @@ import {
 } from '../../modules/files';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { sdk } from '../../index';
+import { canEditAssets, canEditFiles } from '../../utils/PermissionsUtils';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -123,6 +124,7 @@ class AssetFileSection extends React.Component<Props, State> {
                   e.stopPropagation();
                   this.onUnlinkClicked(item.id);
                 }}
+                disabled={!canEditFiles(false)}
                 ghost
                 type="danger"
               >
@@ -151,11 +153,16 @@ class AssetFileSection extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = async (fileId: number) => {
-    const files = await sdk.files.update([
-      { id: fileId, update: { assetIds: { remove: [this.props.asset!.id] } } },
-    ]);
+    if (canEditAssets()) {
+      const files = await sdk.files.update([
+        {
+          id: fileId,
+          update: { assetIds: { remove: [this.props.asset!.id] } },
+        },
+      ]);
 
-    this.props.addFilesToState(files);
+      this.props.addFilesToState(files);
+    }
   };
 
   renderItem = () => {
@@ -214,6 +221,7 @@ class AssetFileSection extends React.Component<Props, State> {
             <Button
               icon="plus"
               type="primary"
+              disabled={!canEditFiles(false)}
               onClick={() => this.setState({ linkFileModal: true })}
             >
               Link Existing File

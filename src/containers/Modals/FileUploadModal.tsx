@@ -10,9 +10,9 @@ import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import { ExtendedAsset } from '../../modules/assets';
 import FileUploader from '../../components/FileUploader';
-import { checkForAccessPermission } from '../../utils/utils';
 import { selectAppState, AppState } from '../../modules/app';
 import { RootState } from '../../reducers/index';
+import { canEditFiles } from '../../utils/PermissionsUtils';
 
 const Wrapper = styled.div`
   .wrapper {
@@ -55,11 +55,7 @@ class FileUploadModal extends React.Component<Props, State> {
     this.state = {
       fileList: [],
       includeAssetIds: props.asset ? [props.asset.id] : undefined,
-      hasPermission: checkForAccessPermission(
-        props.app.groups,
-        'filesAcl',
-        'WRITE'
-      ),
+      hasPermission: canEditFiles(false),
       showLinkToAsset: false,
     };
   }
@@ -118,7 +114,11 @@ class FileUploadModal extends React.Component<Props, State> {
             onFileListChange={list =>
               this.setState({ showLinkToAsset: list.length !== 0 })
             }
-            beforeUploadStart={() => this.setState({ fileList: [] })}
+            beforeUploadStart={() => {
+              if (canEditFiles()) {
+                this.setState({ fileList: [] });
+              }
+            }}
             assetIds={includeAssetIds}
           >
             <>

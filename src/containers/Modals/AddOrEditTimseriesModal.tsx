@@ -10,6 +10,7 @@ import { ExtendedAsset, fetchAsset } from '../../modules/assets';
 import { sdk } from '../../index';
 import { RootState } from '../../reducers/index';
 import { addTimeseriesToState } from '../../modules/timeseries';
+import { canEditTimeseries } from '../../utils/PermissionsUtils';
 
 const FormDetails = styled.div`
   p {
@@ -66,6 +67,9 @@ class EditTimeseriesModal extends React.Component<Props, State> {
 
   saveChanges = async () => {
     const { selectedAssetId, name, description, metadata, unit } = this.state;
+    if (!canEditTimeseries()) {
+      return;
+    }
     if (name) {
       let metadataParsed;
       try {
@@ -149,7 +153,12 @@ class EditTimeseriesModal extends React.Component<Props, State> {
         title={timeseries ? 'Update Timeseries' : 'Create Timeseries'}
         onCancel={() => this.props.onClose()}
         footer={[
-          <Button key="submit" type="primary" onClick={this.saveChanges}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={this.saveChanges}
+            disabled={!canEditTimeseries(false)}
+          >
             {timeseries ? 'Update Timeseries' : 'Create Timeseries'}
           </Button>,
         ]}

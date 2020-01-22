@@ -132,7 +132,7 @@ class Auth extends React.Component<Props, State> {
 
   render() {
     // const { match } = this.props;
-    if (!this.state.auth) {
+    if (!this.props.app.loaded) {
       return <Loader />;
     }
     return (

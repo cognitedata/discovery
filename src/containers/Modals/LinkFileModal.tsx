@@ -7,6 +7,7 @@ import { ExtendedAsset } from '../../modules/assets';
 import { sdk } from '../../index';
 import FileSelect from '../../components/FileSelect';
 import { addFilesToState } from '../../modules/files';
+import { canEditFiles } from '../../utils/PermissionsUtils';
 
 type OrigProps = {
   asset: ExtendedAsset;
@@ -39,7 +40,11 @@ class LinkFileModal extends React.Component<Props, State> {
   }
 
   addToAsset = async () => {
-    if (this.state.selectedFileIds && this.state.selectedFileIds.length > 0) {
+    if (
+      this.state.selectedFileIds &&
+      this.state.selectedFileIds.length > 0 &&
+      canEditFiles()
+    ) {
       const timeseries = await sdk.files.update(
         this.state.selectedFileIds.map(id => ({
           id,
@@ -64,7 +69,12 @@ class LinkFileModal extends React.Component<Props, State> {
         title={`Link Asset (${this.props.asset.name}) to File`}
         onCancel={this.props.onClose}
         footer={[
-          <Button key="submit" type="primary" onClick={this.addToAsset}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={this.addToAsset}
+            disabled={!canEditFiles(false)}
+          >
             Link to asset
           </Button>,
         ]}

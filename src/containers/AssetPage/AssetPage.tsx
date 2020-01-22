@@ -15,6 +15,7 @@ import AssetEventsSection from './AssetEventsSection';
 import AssetRelationshipSection from './AssetRelationshipSection';
 import AssetCustomSection from './AssetCustomSection';
 import AssetThreeDSection from './AssetThreeDSection';
+import { canReadAssets, canEditAssets } from '../../utils/PermissionsUtils';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -102,6 +103,7 @@ class AssetPage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    canReadAssets();
     if (!this.asset) {
       this.props.fetchAsset(this.props.match.params.assetId);
     }
@@ -185,6 +187,9 @@ class AssetPage extends React.Component<Props, State> {
   };
 
   onDeleteAsset = () => {
+    if (!canEditAssets()) {
+      return;
+    }
     Modal.confirm({
       title: 'Do you want to delete this asset?',
       content: 'This is a irreversible change',

@@ -102,11 +102,10 @@ class TimeseriesSidebar extends React.Component<Props, State> {
       <Wrapper>
         <h1>{model.name}</h1>
         <ButtonRow>
-          <Button type="primary" shape="round">
+          <Button type="primary" shape="round" disabled>
             Edit
           </Button>
-          <Button type="danger" shape="circle" icon="delete" />
-          <Button type="default" shape="circle" icon="ellipsis" />
+          <Button type="danger" shape="circle" icon="delete" disabled />
         </ButtonRow>
         <Tabs size="small" tabBarGutter={6}>
           <Tabs.TabPane tab="Details" key="details">
@@ -132,13 +131,13 @@ class TimeseriesSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Linked Assets" key="assets">
             <>
-              <Button>Link an asset</Button>
+              <Button disabled>Link an asset</Button>
               <List
                 dataSource={this.props.assets}
                 renderItem={item => (
                   <List.Item
                     actions={[
-                      <Button ghost type="danger">
+                      <Button ghost type="danger" disabled>
                         Unlink
                       </Button>,
                     ]}

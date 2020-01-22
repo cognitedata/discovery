@@ -12,6 +12,7 @@ import { sdk } from 'index';
 import { trackUsage } from 'utils/metrics';
 import { selectFiles, FilesState } from 'modules/files';
 import { selectAssets, AssetsState } from 'modules/assets';
+import { canReadAssets } from '../../../utils/PermissionsUtils';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
   (node.textContent || '').replace(/\s/g, '');
@@ -158,6 +159,9 @@ class PNIDViewer extends React.Component<Props, State> {
       .filter(a => a.name === name);
 
     if (matches.length === 0) {
+      if (!canReadAssets()) {
+        return;
+      }
       const result = await sdk.assets.search({ search: { name } });
       const exactMatches = result.filter(
         a => a.name.replace(/\s+/g, ' ') === name

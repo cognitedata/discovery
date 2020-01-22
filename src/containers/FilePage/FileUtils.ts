@@ -1,8 +1,12 @@
 import { FilesMetadata, Asset, UploadFileMetadataResponse } from '@cognite/sdk';
-import { checkForAccessPermission } from '../../utils/utils';
 import { trackUsage } from '../../utils/metrics';
 import { sdk } from '../../index';
 import { GCSUploader } from '../../components/FileUploader';
+import {
+  canReadFiles,
+  canEditFiles,
+  canEditRelationships,
+} from '../../utils/PermissionsUtils';
 
 export const downloadFile = async (url: string) => {
   const response = await fetch(url);
@@ -49,7 +53,6 @@ const fetchAllNamesOfAssetInRoot = async (
 export const convertPDFtoPNID = async (
   file: FilesMetadata,
   selectedRootAssetId: number,
-  permissions: { [key: string]: string[] },
   callbacks: {
     callbackProgress?: (progressString: string) => void;
     callbackResult: (file: FilesMetadata) => void;
@@ -57,12 +60,7 @@ export const convertPDFtoPNID = async (
   }
 ) => {
   const { callbackProgress, callbackResult, callbackError } = callbacks;
-  if (!checkForAccessPermission(permissions, 'filesAcl', 'WRITE', true)) {
-    return;
-  }
-  if (
-    !checkForAccessPermission(permissions, 'relationshipsAcl', 'WRITE', true)
-  ) {
+  if (!canEditFiles()) {
     return;
   }
   trackUsage('FileUtil.convertToPnIDClicked', { fileId: file.id });
@@ -133,29 +131,32 @@ export const convertPDFtoPNID = async (
             (newFile as UploadFileMetadataResponse).uploadUrl!
           );
           await uploader.start();
-          await sdk.post(
-            `/api/playground/projects/${sdk.project}/relationships`,
-            {
-              data: {
-                items: [
-                  {
-                    source: {
-                      resource: 'file',
-                      resourceId: `${newFile.id}`,
+
+          if (canEditRelationships(false)) {
+            await sdk.post(
+              `/api/playground/projects/${sdk.project}/relationships`,
+              {
+                data: {
+                  items: [
+                    {
+                      source: {
+                        resource: 'file',
+                        resourceId: `${newFile.id}`,
+                      },
+                      target: {
+                        resource: 'file',
+                        resourceId: `${file.id}`,
+                      },
+                      confidence: 1,
+                      dataSet: `discovery-manual-contextualization`,
+                      externalId: `${file.id}-manual-pnid-${newFile.id}`,
+                      relationshipType: 'belongsTo',
                     },
-                    target: {
-                      resource: 'file',
-                      resourceId: `${file.id}`,
-                    },
-                    confidence: 1,
-                    dataSet: `discovery-manual-contextualization`,
-                    externalId: `${file.id}-manual-pnid-${newFile.id}`,
-                    relationshipType: 'belongsTo',
-                  },
-                ],
-              },
-            }
-          );
+                  ],
+                },
+              }
+            );
+          }
           setTimeout(() => {
             callbackResult(newFile);
           }, 1000);
@@ -174,7 +175,6 @@ export const convertPDFtoPNID = async (
 export const detectAssetsInDocument = async (
   file: FilesMetadata,
   selectedRootAssetId: number,
-  permissions: { [key: string]: string[] },
   callbacks: {
     callbackProgress?: (progressString: string) => void;
     callbackResult: (results: { name: string; page: number }[]) => void;
@@ -182,12 +182,7 @@ export const detectAssetsInDocument = async (
   }
 ) => {
   const { callbackProgress, callbackResult, callbackError } = callbacks;
-  if (!checkForAccessPermission(permissions, 'filesAcl', 'WRITE', true)) {
-    return;
-  }
-  if (
-    !checkForAccessPermission(permissions, 'relationshipsAcl', 'WRITE', true)
-  ) {
+  if (!canReadFiles()) {
     return;
   }
   trackUsage('FileUtil.detectAssetInDocument', { fileId: file.id });

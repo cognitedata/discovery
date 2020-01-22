@@ -4,7 +4,8 @@ import { message } from 'antd';
 import { Asset } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
-import { checkForAccessPermission, arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById } from '../utils/utils';
+import { canReadRelationships } from '../utils/PermissionsUtils';
 
 // Constants
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
@@ -79,12 +80,9 @@ export async function postWithCursor(url: string, data: any) {
 
 export function fetchRelationshipsForAssetId(asset: Asset) {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchRelationshipsAction>,
-    getState: () => RootState
+    dispatch: ThunkDispatch<any, void, FetchRelationshipsAction>
   ) => {
-    const { groups } = getState().app;
-
-    if (!checkForAccessPermission(groups, 'relationshipsAcl', 'READ', true)) {
+    if (!canReadRelationships()) {
       return;
     }
 

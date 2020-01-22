@@ -3,17 +3,14 @@ import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
-import {
-  arrayToObjectById,
-  checkForAccessPermission,
-  isInternalId,
-} from '../utils/utils';
+import { arrayToObjectById, isInternalId } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
 import { setRevisionRepresentAsset } from './threed';
 import { trackUsage } from '../utils/metrics';
 import { fetchTypeForAssets } from './types';
+import { canEditAssets, canReadAssets } from '../utils/PermissionsUtils';
 
 // Constants
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
@@ -70,6 +67,9 @@ export function fetchAsset(assetId: number, redirect = false) {
     dispatch: ThunkDispatch<any, any, AnyAction>,
     getState: () => RootState
   ) => {
+    if (!canReadAssets()) {
+      return;
+    }
     // Skip if we did it before
     if (requestedAssetIds[assetId]) {
       return;
@@ -104,38 +104,11 @@ export function fetchAsset(assetId: number, redirect = false) {
   };
 }
 
-export function fetchRootAssets() {
-  return async (dispatch: Dispatch) => {
-    // Skip if we did it before
-    if (requestedAssetIds.root) {
-      return;
-    }
-    requestedAssetIds.root = true;
-
-    try {
-      const { items: results } = await sdk.assets.list({
-        filter: {
-          root: true,
-        },
-      });
-
-      if (results) {
-        const items = arrayToObjectById(
-          results.map(asset => slimAssetObject(asset))
-        );
-
-        dispatch({ type: ADD_ASSETS, payload: { items } });
-      }
-    } catch (ex) {
-      message.error(`Could not fetch root assets.`);
-      return;
-    }
-    requestedAssetIds.root = false;
-  };
-}
-
 export function loadAssetChildren(assetId: number) {
   return async (dispatch: Dispatch) => {
+    if (!canReadAssets()) {
+      return;
+    }
     try {
       const results = await sdk.assets.search({
         filter: { parentIds: [assetId] },
@@ -158,6 +131,9 @@ export function loadAssetChildren(assetId: number) {
 
 export function loadParentRecurse(assetId: number, rootAssetId: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+    if (!canReadAssets()) {
+      return;
+    }
     // Skip if we did it before
     if (requestedAssetIds[assetId]) {
       return;
@@ -192,6 +168,9 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
 
 export function fetchAssets(assetIds: IdEither[], isRetry = false) {
   return async (dispatch: ThunkDispatch<AnyAction, any, any>) => {
+    if (!canReadAssets()) {
+      return;
+    }
     if (assetIds.length === 0) {
       return;
     }
@@ -257,13 +236,8 @@ export const createNewAsset = (
     nodeId?: number;
   },
   callback?: (asset: Asset) => void
-) => async (
-  dispatch: ThunkDispatch<any, any, AnyAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
-  ) {
+) => async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
+  if (!canEditAssets()) {
     return;
   }
   trackUsage('Assets.createNewAsset', {
@@ -308,18 +282,8 @@ export const createNewAsset = (
 };
 
 export function editAsset(asset: AssetChange) {
-  return async (
-    dispatch: Dispatch<UpdateAction>,
-    getState: () => RootState
-  ) => {
-    if (
-      !checkForAccessPermission(
-        getState().app.groups,
-        'assetsAcl',
-        'READ',
-        true
-      )
-    ) {
+  return async (dispatch: Dispatch<UpdateAction>) => {
+    if (!canEditAssets()) {
       return;
     }
     trackUsage('Assets.editAsset', {
@@ -344,12 +308,9 @@ export function editAsset(asset: AssetChange) {
 }
 
 export const deleteAsset = (assetId: number) => async (
-  dispatch: Dispatch<DeleteAssetAction>,
-  getState: () => RootState
+  dispatch: Dispatch<DeleteAssetAction>
 ) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
-  ) {
+  if (!canEditAssets()) {
     return;
   }
   trackUsage('Assets.deleteAsset', {

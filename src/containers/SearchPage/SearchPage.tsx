@@ -32,6 +32,14 @@ import {
 } from '../../modules/timeseries';
 import { addFilesToState, FilesState } from '../../modules/files';
 import SearchBar from './SearchBar';
+import {
+  canEditAssets,
+  canEditTimeseries,
+  canEditFiles,
+  canReadAssets,
+  canReadTimeseries,
+  canReadFiles,
+} from '../../utils/PermissionsUtils';
 
 const TabWrapper = styled.div`
   .ant-tabs-nav {
@@ -259,7 +267,20 @@ class SearchPage extends React.Component<Props, State> {
     return [];
   }
 
+  get isButtonDisabled(): boolean {
+    switch (this.tab) {
+      case 'assets':
+        return !canEditAssets(false);
+      case 'timeseries':
+        return !canEditTimeseries(false);
+      case 'files':
+        return !canEditFiles(false);
+    }
+    return true;
+  }
+
   doSearch = async () => {
+    console.log(this.tab);
     this.searchIndex += 1;
     const index = this.searchIndex;
     const {
@@ -281,6 +302,9 @@ class SearchPage extends React.Component<Props, State> {
     });
     switch (this.tab) {
       case 'assets': {
+        if (!canReadAssets()) {
+          return;
+        }
         const items = await sdk.assets.search({
           ...assetFilter,
           limit: 1000,
@@ -297,6 +321,9 @@ class SearchPage extends React.Component<Props, State> {
         break;
       }
       case 'timeseries': {
+        if (!canReadTimeseries()) {
+          return;
+        }
         const items = await sdk.timeseries.search({
           ...timeseriesFilter,
           limit: 1000,
@@ -313,6 +340,9 @@ class SearchPage extends React.Component<Props, State> {
         break;
       }
       case 'files': {
+        if (!canReadFiles()) {
+          return;
+        }
         const items = await sdk.files.search({
           ...fileFilter,
           limit: 1000,
@@ -513,6 +543,7 @@ class SearchPage extends React.Component<Props, State> {
                 icon="plus"
                 type="primary"
                 onClick={this.onShowAddResource}
+                disabled={this.isButtonDisabled}
               >
                 {UploadString[this.tab]}
               </Button>

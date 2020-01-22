@@ -9,6 +9,10 @@ import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import TimeseriesSidebar from './TimeseriesSidebar';
 import {
+  canEditTimeseries,
+  canReadTimeseries,
+} from '../../utils/PermissionsUtils';
+import {
   deleteTimeseries,
   TimeseriesState,
   selectTimeseries,
@@ -62,6 +66,7 @@ class TimeseriesPage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    canReadTimeseries();
     if (!this.timeseries) {
       this.props.fetchTimeseries([
         { id: this.props.match.params.timeseriesId },
@@ -99,6 +104,9 @@ class TimeseriesPage extends React.Component<Props, State> {
   };
 
   onDeleteClicked = () => {
+    if (!canEditTimeseries()) {
+      return;
+    }
     Modal.confirm({
       title: 'Do you want to delete this timeseries?',
       content: 'This is a irreversible change',

@@ -4,8 +4,9 @@ import { FilesMetadata, FileChangeUpdate } from '@cognite/sdk';
 import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
-import { checkForAccessPermission, arrayToObjectById } from '../utils/utils';
+import { arrayToObjectById } from '../utils/utils';
 import { trackUsage } from '../utils/metrics';
+import { canReadFiles, canEditFiles } from '../utils/PermissionsUtils';
 
 // Constants
 export const ADD_FILES = 'files/SET_FILES';
@@ -31,13 +32,8 @@ interface DeleteFileAction extends Action<typeof DELETE_FILE> {
 
 type FilesAction = AddFilesAction | AddFileAction | DeleteFileAction;
 
-export const fetchFiles = (assetId: number) => async (
-  dispatch: Dispatch,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'filesAcl', 'READ', true)
-  ) {
+export const fetchFiles = (assetId: number) => async (dispatch: Dispatch) => {
+  if (!canReadFiles()) {
     return;
   }
   const result = await sdk.files.list({
@@ -59,13 +55,8 @@ export function addFilesToState(filesToAdd: FilesMetadata[]) {
   };
 }
 
-export const fetchFile = (fileId: number) => async (
-  dispatch: Dispatch,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'filesAcl', 'READ', true)
-  ) {
+export const fetchFile = (fileId: number) => async (dispatch: Dispatch) => {
+  if (!canReadFiles()) {
     return;
   }
   const [item] = await sdk.files.retrieve([{ id: fileId }]);
@@ -73,12 +64,9 @@ export const fetchFile = (fileId: number) => async (
 };
 
 export const updateFile = (file: FileChangeUpdate) => async (
-  dispatch: Dispatch,
-  getState: () => RootState
+  dispatch: Dispatch
 ) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'filesAcl', 'WRITE', true)
-  ) {
+  if (!canEditFiles()) {
     return;
   }
   const [item] = await sdk.files.update([file]);
@@ -86,12 +74,9 @@ export const updateFile = (file: FileChangeUpdate) => async (
 };
 
 export const deleteFile = (fileId: number) => async (
-  dispatch: Dispatch<DeleteFileAction>,
-  getState: () => RootState
+  dispatch: Dispatch<DeleteFileAction>
 ) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'filesAcl', 'WRITE', true)
-  ) {
+  if (!canEditFiles()) {
     return false;
   }
   trackUsage('Files.deleteFiles', {

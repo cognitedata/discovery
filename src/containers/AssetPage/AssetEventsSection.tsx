@@ -14,6 +14,7 @@ import LoadingWrapper from 'components/LoadingWrapper';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
+import { canEditEvents } from '../../utils/PermissionsUtils';
 import {
   selectEvents,
   fetchEventsForAssetId,
@@ -180,6 +181,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
             <Button
               icon="plus"
               type="primary"
+              disabled={!canEditEvents(false)}
               onClick={() => message.info('Coming soon...')}
             >
               Create New Event

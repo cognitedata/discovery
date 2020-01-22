@@ -11,6 +11,7 @@ import { AssetIcon } from 'assets';
 import { RootState } from '../../reducers/index';
 import { sdk } from '../../index';
 import { addTimeseriesToState } from '../../modules/timeseries';
+import { canEditTimeseries } from '../../utils/PermissionsUtils';
 import {
   selectAssetById,
   ExtendedAsset,
@@ -98,6 +99,9 @@ class TimeseriesSidebar extends React.Component<Props, State> {
   }
 
   onUnlickClicked = async () => {
+    if (!canEditTimeseries()) {
+      return;
+    }
     const timeseries = await sdk.timeseries.update([
       { id: this.props.timeseries.id, update: { assetId: { setNull: true } } },
     ]);
@@ -155,7 +159,10 @@ class TimeseriesSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Linked Assets" key="assets">
             <>
-              <Button onClick={() => this.setState({ showEditModal: true })}>
+              <Button
+                onClick={() => this.setState({ showEditModal: true })}
+                disabled={!canEditTimeseries(false)}
+              >
                 Link an asset
               </Button>
               <List
@@ -183,6 +190,7 @@ class TimeseriesSidebar extends React.Component<Props, State> {
                           e.stopPropagation();
                           this.onUnlickClicked();
                         }}
+                        disabled={!canEditTimeseries(false)}
                       >
                         Unlink
                       </Button>,

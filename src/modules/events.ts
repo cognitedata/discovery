@@ -5,6 +5,7 @@ import { arrayToObjectById } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { trackUsage } from '../utils/metrics';
+import { canEditEvents, canReadEvents } from '../utils/PermissionsUtils';
 
 export interface EventFilter {
   eventType?: string;
@@ -43,6 +44,9 @@ export async function createEvent(
   assetIds?: number[],
   metadata?: { [key: string]: any }
 ) {
+  if (!canEditEvents()) {
+    return;
+  }
   trackUsage('Events.createEvent', {
     assetIds,
     subtype,
@@ -64,6 +68,9 @@ export async function createEvent(
 
 export function fetchEventsForAssetId(assetId: number) {
   return async (dispatch: Dispatch) => {
+    if (!canReadEvents()) {
+      return;
+    }
     const result = await sdk.events.list({
       filter: { assetIds: [assetId] },
       limit: 1000,
@@ -77,28 +84,11 @@ export function fetchEventsForAssetId(assetId: number) {
   };
 }
 
-export function fetchEventsByFilter(eventFilter: EventFilter) {
-  return async (dispatch: Dispatch) => {
-    const result = await sdk.events.list({
-      // TODO Clean up!
-      filter: {
-        type: eventFilter.eventType,
-        subtype: 'IAA',
-        startTime: { min: eventFilter.from, max: eventFilter.to },
-      },
-      limit: 1000,
-    });
-
-    const types = result.items.map(event => event.type);
-    const items = arrayToObjectById(result.items);
-
-    dispatch({ type: ADD_UNIQUE_EVENT_TYPES, payload: { items: types } });
-    dispatch({ type: ADD_EVENTS, payload: { items } });
-  };
-}
-
 export function deleteEvent(eventId: number) {
   return async (dispatch: Dispatch) => {
+    if (!canEditEvents()) {
+      return;
+    }
     await sdk.events.delete([{ id: eventId }]);
     dispatch({ type: REMOVE_EVENT, payload: { eventId } });
   };

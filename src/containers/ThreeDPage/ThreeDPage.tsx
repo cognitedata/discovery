@@ -19,6 +19,7 @@ import { sdk } from '../../index';
 import { ExtendedAsset } from '../../modules/assets';
 import { createAssetNodeMapping } from '../../modules/assetmappings';
 import ThreeDCard from './ThreeDCard';
+import { canReadThreeD } from '../../utils/PermissionsUtils';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -102,6 +103,9 @@ class ThreeDPage extends React.Component<Props, State> {
 
   getNodeIds = async () => {
     const { nodeId, revisionId, modelId, assetId } = this.props.match.params;
+    if (!canReadThreeD(false)) {
+      return [];
+    }
     if (nodeId) {
       return [nodeId];
     }
@@ -159,6 +163,9 @@ class ThreeDPage extends React.Component<Props, State> {
 
   onNodeSelected = async (nodeId?: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props.match.params;
+    if (!canReadThreeD()) {
+      return;
+    }
 
     if (nodeId) {
       if (navigateAway) {
@@ -197,6 +204,9 @@ class ThreeDPage extends React.Component<Props, State> {
 
   onAssetSelected = async (assetId: number, navigateAway = true) => {
     const { modelId, revisionId } = this.props.match.params;
+    if (!canReadThreeD()) {
+      return;
+    }
     if (navigateAway) {
       this.props.push(
         `/${this.tenant}/threed/${modelId}/${revisionId}/asset/${assetId}`
@@ -252,6 +262,9 @@ class ThreeDPage extends React.Component<Props, State> {
   onDeleteMapping = async () => {
     const { modelId, revisionId, nodeId } = this.props.match.params;
     const { selectedItem } = this.state;
+    if (!canReadThreeD()) {
+      return;
+    }
     if (selectedItem && selectedItem.node && selectedItem.asset) {
       await sdk.assetMappings3D.delete(Number(modelId), Number(revisionId), [
         {
