@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Modal, Button, Input } from 'antd';
+import { Modal, Button, Input, message } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import AceEditor from 'react-ace';
 import AssetSelect from 'components/AssetSelect';
@@ -74,8 +74,14 @@ class AddChildAsset extends React.Component<Props, State> {
     }
   }
 
-  addChild = async () => {
+  addAsset = async () => {
     const { assetId, name, description, externalId, metadata } = this.state;
+    try {
+      JSON.parse(metadata || '{}');
+    } catch (e) {
+      message.error('Invalid JSON');
+      return;
+    }
     if (name) {
       if (this.props.asset) {
         const [asset] = await sdk.assets.update([
@@ -134,7 +140,7 @@ class AddChildAsset extends React.Component<Props, State> {
         title={this.props.asset ? 'Update Asset' : 'Create Asset'}
         onCancel={() => this.props.onClose()}
         footer={[
-          <Button key="submit" type="primary" onClick={this.addChild}>
+          <Button key="submit" type="primary" onClick={this.addAsset}>
             {this.props.asset ? 'Update Asset' : 'Create Asset'}
           </Button>,
         ]}
