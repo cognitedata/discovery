@@ -47,6 +47,10 @@ const FlexTableWrapper = styled.div`
     .ant-empty-description {
       color: #dfdfdf;
     }
+
+    tr:hover {
+      cursor: pointer;
+    }
   }
 `;
 
