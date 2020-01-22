@@ -7,6 +7,7 @@ import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
 import { FilesMetadata } from '@cognite/sdk';
 import EditFileModal from 'containers/Modals/EditFileModal';
+import { AssetIcon } from 'assets';
 import { RootState } from '../../reducers/index';
 import { addFilesToState } from '../../modules/files';
 import { sdk } from '../../index';
@@ -189,11 +190,14 @@ class FileSidebar extends React.Component<Props, State> {
                     <List.Item.Meta
                       title={
                         <Button
-                          ghost
-                          type="primary"
-                          icon="control"
+                          type="link"
                           onClick={() => this.props.onGoToAssetClicked(item.id)}
                         >
+                          <img
+                            src={AssetIcon}
+                            alt=""
+                            style={{ marginRight: '4px' }}
+                          />
                           {item.name}
                         </Button>
                       }

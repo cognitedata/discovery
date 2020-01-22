@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { push } from 'connected-react-router';
 import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
+import { AssetIcon } from 'assets';
 import { RootState } from '../../reducers/index';
 import { ThreeDModel } from '../../modules/threed';
 import {
@@ -145,8 +146,7 @@ class TimeseriesSidebar extends React.Component<Props, State> {
                     <List.Item.Meta
                       title={
                         <Button
-                          ghost
-                          type="primary"
+                          type="link"
                           icon="control"
                           onClick={() => {
                             if (item) {
@@ -154,6 +154,11 @@ class TimeseriesSidebar extends React.Component<Props, State> {
                             }
                           }}
                         >
+                          <img
+                            src={AssetIcon}
+                            alt=""
+                            style={{ marginRight: '4px' }}
+                          />
                           {item ? item.name : 'Loading...'}
                         </Button>
                       }

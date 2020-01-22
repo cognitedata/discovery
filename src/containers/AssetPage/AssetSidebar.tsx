@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import { Button, Tabs, Descriptions, Spin, Dropdown, Menu } from 'antd';
+import { Button, Tabs, Descriptions, Spin } from 'antd';
 import moment from 'moment';
 import { AssetBreadcrumb, AssetTree } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
@@ -95,24 +95,6 @@ class AssetSidebar extends React.Component<Props, State> {
     }
   }
 
-  get dropdownMenu() {
-    if (!this.props.asset) {
-      return null;
-    }
-    return (
-      <Menu
-        onClick={item => {
-          switch (item.key) {
-            case 'add-child':
-              this.setState({ showAddChild: true });
-          }
-        }}
-      >
-        <Menu.Item key="add-child">Add Child Asset</Menu.Item>
-      </Menu>
-    );
-  }
-
   renderType = () => {
     const {
       types: { assetTypes, items, error },
@@ -164,10 +146,6 @@ class AssetSidebar extends React.Component<Props, State> {
             icon="delete"
             onClick={this.props.onDeleteAsset}
           />
-
-          <Dropdown overlay={this.dropdownMenu}>
-            <Button type="default" shape="circle" icon="ellipsis" />
-          </Dropdown>
         </ButtonRow>
         <Tabs size="small" tabBarGutter={6}>
           <Tabs.TabPane tab="Details" key="details">
@@ -197,6 +175,13 @@ class AssetSidebar extends React.Component<Props, State> {
             </Descriptions>
           </Tabs.TabPane>
           <Tabs.TabPane tab="Children" key="assets">
+            <Button
+              onClick={() => {
+                this.setState({ showAddChild: true });
+              }}
+            >
+              Add Child Asset
+            </Button>
             <AssetTree
               assetIds={[asset.id]}
               onSelect={selectedAsset => {

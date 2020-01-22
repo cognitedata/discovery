@@ -7,6 +7,7 @@ import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import AddOrEditTimseriesModal from 'containers/Modals/AddOrEditTimseriesModal';
+import { AssetIcon } from 'assets';
 import { RootState } from '../../reducers/index';
 import { sdk } from '../../index';
 import { addTimeseriesToState } from '../../modules/timeseries';
@@ -190,11 +191,15 @@ class TimeseriesSidebar extends React.Component<Props, State> {
                     <List.Item.Meta
                       title={
                         <Button
-                          ghost
-                          type="primary"
+                          type="link"
                           icon="control"
                           onClick={() => this.props.onGoToAssetClicked(item.id)}
                         >
+                          <img
+                            src={AssetIcon}
+                            alt=""
+                            style={{ marginRight: '4px' }}
+                          />
                           {item.name}
                         </Button>
                       }
