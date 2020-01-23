@@ -252,19 +252,24 @@ class SearchPage extends React.Component<Props, State> {
 
   get tableData(): any[] {
     const { search, assets, timeseries, files, threed } = this.props;
+    let items: any[] = [];
     switch (this.tab) {
       case 'assets':
-        return search.assetsTable.items.map(id => assets.all[id]);
+        items = search.assetsTable.items.map(id => assets.all[id]);
+        break;
       case 'timeseries':
-        return search.timeseriesTable.items.map(
+        items = search.timeseriesTable.items.map(
           id => timeseries.timeseriesData[id]
         );
+        break;
       case 'files':
-        return search.filesTable.items.map(id => files.files[id]);
+        items = search.filesTable.items.map(id => files.files[id]);
+        break;
       case 'threed':
-        return search.threeDTable.items.map(id => threed.models[id]);
+        items = search.threeDTable.items.map(id => threed.models[id]);
+        break;
     }
-    return [];
+    return items.filter((el: any) => !!el);
   }
 
   get isButtonDisabled(): boolean {
