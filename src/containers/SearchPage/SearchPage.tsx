@@ -280,7 +280,6 @@ class SearchPage extends React.Component<Props, State> {
   }
 
   doSearch = async () => {
-    console.log(this.tab);
     this.searchIndex += 1;
     const index = this.searchIndex;
     const {
