@@ -15,6 +15,7 @@ import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { canEditEvents } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 import {
   selectEvents,
   fetchEventsForAssetId,
@@ -126,8 +127,11 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
     ];
   }
 
-  onUnlinkClicked = (fileId: number) => {
-    message.success(`Coming soon ${fileId}`);
+  onUnlinkClicked = (eventId: number) => {
+    trackUsage('AssetPage.EventComponent.Unlink', {
+      eventId,
+    });
+    message.success(`Coming soon ${eventId}`);
   };
 
   renderItem = () => {

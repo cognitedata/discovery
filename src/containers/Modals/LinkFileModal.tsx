@@ -8,6 +8,7 @@ import { sdk } from '../../index';
 import FileSelect from '../../components/FileSelect';
 import { addFilesToState } from '../../modules/files';
 import { canEditFiles } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 type OrigProps = {
   asset: ExtendedAsset;
@@ -27,6 +28,7 @@ class LinkFileModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
+    trackUsage('LinkFileModal.Load', { assetId: this.props.asset.id });
     this.state = {
       selectedFileIds: this.props.fileIds,
     };
@@ -55,6 +57,10 @@ class LinkFileModal extends React.Component<Props, State> {
       );
       this.props.addFilesToState(timeseries);
       this.props.onClose();
+      trackUsage('LinkFileModal.LinkToFiles', {
+        assetId: this.props.asset.id,
+        mapped: this.state.selectedFileIds,
+      });
     }
   };
 

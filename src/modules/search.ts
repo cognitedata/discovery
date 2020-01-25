@@ -5,7 +5,27 @@ import {
   TimeSeriesSearchDTO,
   FilesSearchFilter,
 } from '@cognite/sdk';
+import transform from 'lodash/transform';
+import isEqual from 'lodash/isEqual';
+import isObject from 'lodash/isObject';
 import { RootState } from '../reducers/index';
+import { trackUsage } from '../utils/Metrics';
+
+const changes = (object: any, base: any) => {
+  return transform(object, (result: any, value: any, key: string) => {
+    if (!isEqual(value, base[key])) {
+      // eslint-disable-next-line no-param-reassign
+      result[key] =
+        isObject(value) && isObject(base[key])
+          ? changes(value, base[key])
+          : value;
+    }
+  });
+};
+
+const difference = (object: any, base: any) => {
+  return changes(object, base);
+};
 
 // Constants
 export const SET_SEARCH_STATE = 'search/SET_SEARCH_STATE';
@@ -102,6 +122,7 @@ export function setSearchQuery(query: string) {
     dispatch: ThunkDispatch<any, void, SetSearchState>,
     getState: () => RootState
   ) => {
+    trackUsage('Search.ChangeQuery', { query });
     const { assetFilter, timeseriesFilter, fileFilter } = getState().search;
     dispatch({
       type: SET_SEARCH_STATE,
@@ -125,7 +146,14 @@ export function setSearchQuery(query: string) {
   };
 }
 export function setAssetFilter(assetFilter: AssetFilter) {
-  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, SetSearchState>,
+    getState: () => RootState
+  ) => {
+    const { assetFilter: oldAssetFilter } = getState().search;
+    trackUsage('Search.AssetQuery', {
+      assetFilter: difference(assetFilter, oldAssetFilter),
+    });
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
@@ -136,7 +164,14 @@ export function setAssetFilter(assetFilter: AssetFilter) {
   };
 }
 export function setTimeseriesFilter(timeseriesFilter: TimeSeriesSearchDTO) {
-  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, SetSearchState>,
+    getState: () => RootState
+  ) => {
+    const { timeseriesFilter: oldFilter } = getState().search;
+    trackUsage('Search.TimeseriesFilter', {
+      assetFilter: difference(timeseriesFilter, oldFilter),
+    });
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {
@@ -147,7 +182,14 @@ export function setTimeseriesFilter(timeseriesFilter: TimeSeriesSearchDTO) {
   };
 }
 export function setFileFilter(fileFilter: FilesSearchFilter) {
-  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+  return async (
+    dispatch: ThunkDispatch<any, void, SetSearchState>,
+    getState: () => RootState
+  ) => {
+    const { fileFilter: oldFilter } = getState().search;
+    trackUsage('Search.TimeseriesFilter', {
+      assetFilter: difference(fileFilter, oldFilter),
+    });
     dispatch({
       type: SET_SEARCH_STATE,
       payload: {

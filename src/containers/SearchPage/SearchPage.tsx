@@ -11,10 +11,10 @@ import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
 import { FilesMetadata } from '@cognite/sdk';
 import AddOrEditAssetModal from 'containers/Modals/AddOrEditAssetModal';
-import AddOrEditTimseriesModal from 'containers/Modals/AddOrEditTimseriesModal';
+import AddOrEditTimeseriesModal from 'containers/Modals/AddOrEditTimeseriesModal';
 import FileUploadModal from '../Modals/FileUploadModal';
 import { sdk } from '../../index';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import { addAssetsToState, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
@@ -297,7 +297,7 @@ class SearchPage extends React.Component<Props, State> {
       threeDTable,
       query,
     } = this.props.search;
-    trackUsage('SearchPage.search', {
+    trackUsage('SearchPage.Search', {
       assetFilter,
       timeseriesFilter,
       fileFilter,
@@ -412,7 +412,7 @@ class SearchPage extends React.Component<Props, State> {
         );
       case 'timeseries':
         return (
-          <AddOrEditTimseriesModal
+          <AddOrEditTimeseriesModal
             onClose={timeseries => {
               if (timeseries) {
                 this.goToPage({ id: timeseries.id });
@@ -427,6 +427,10 @@ class SearchPage extends React.Component<Props, State> {
   };
 
   goToPage = (row: any) => {
+    trackUsage('SearchPage.GoToPage', {
+      tab: this.tab,
+      row,
+    });
     switch (this.tab) {
       case 'assets':
         this.props.push(`/${this.props.match.params.tenant}/asset/${row.id}`);
@@ -454,6 +458,9 @@ class SearchPage extends React.Component<Props, State> {
   };
 
   onShowAddResource = () => {
+    trackUsage('SearchPage.ShowAddModal', {
+      tab: this.tab,
+    });
     if (this.tab === 'threed') {
       notification.info({
         message: 'Please upload 3D Model in Console',
@@ -522,6 +529,9 @@ class SearchPage extends React.Component<Props, State> {
         <TabWrapper>
           <Tabs
             onChange={(tab: string) => {
+              trackUsage('SearchPage.ChangeTab', {
+                tab,
+              });
               this.props.push(
                 `/${this.props.match.params.tenant}/search/${tab}`
               );

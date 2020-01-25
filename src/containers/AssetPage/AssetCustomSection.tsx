@@ -21,8 +21,7 @@ import AssetCustomSectionView, {
   AssetViewerType,
   AssetViewerTypeMap,
 } from './AssetCustomSectionView';
-import { sdk } from '../../index';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import ComponentSelector from '../../components/ComponentSelector';
 
 const LAYOUT_LOCAL_STORAGE = 'layout';
@@ -143,8 +142,7 @@ class AssetCustomSection extends React.Component<Props, State> {
       localStorage.removeItem(LAYOUT_LOCAL_STORAGE);
     }
 
-    trackUsage('App Started', {
-      project: sdk.project,
+    trackUsage('AssetPage.AssetCustomSection', {
       reinitializeLayout: layout.length === 0,
     });
 
@@ -182,7 +180,7 @@ class AssetCustomSection extends React.Component<Props, State> {
   }
 
   onAddComponent = () => {
-    trackUsage('AssetCustomSection.ComponentedAdded');
+    trackUsage('AssetPage.AssetCustomSection.ComponentedAdded');
     const i =
       this.state.layout.reduce((prev, el) => Math.max(Number(el.i), prev), 0) +
       1;
@@ -205,7 +203,6 @@ class AssetCustomSection extends React.Component<Props, State> {
   };
 
   changeEdit = (edit = false) => {
-    trackUsage('AssetCustomSection.LayoutEdit', { edit });
     this.setState({
       editLayout: edit,
     });
@@ -218,7 +215,7 @@ class AssetCustomSection extends React.Component<Props, State> {
     }));
     this.setState({ layout });
     // Track usage where the size has changed.
-    trackUsage('AssetCustomSection.LayoutSizeChange', {
+    trackUsage('AssetPage.AssetCustomSection.LayoutSizeChange', {
       layoutChanged: newLayout.filter(el => {
         const orig = this.state.layout.find(it => it.i === el.i)!;
         return (
@@ -244,7 +241,7 @@ class AssetCustomSection extends React.Component<Props, State> {
     const arrayItem = newArray.find(item => item.i === index);
     if (arrayItem) {
       arrayItem.viewType = type;
-      trackUsage('AssetCustomSection.LayoutTypeChange', {
+      trackUsage('AssetPage.AssetCustomSection.LayoutTypeChange', {
         layout: arrayItem,
         type,
       });

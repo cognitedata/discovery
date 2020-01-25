@@ -4,7 +4,7 @@ import { CogniteEvent } from '@cognite/sdk';
 import { arrayToObjectById } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import { canEditEvents, canReadEvents } from '../utils/PermissionsUtils';
 
 export interface EventFilter {
@@ -47,7 +47,7 @@ export async function createEvent(
   if (!canEditEvents()) {
     return;
   }
-  trackUsage('Events.createEvent', {
+  trackUsage('Events.CreateEvent', {
     assetIds,
     subtype,
   });

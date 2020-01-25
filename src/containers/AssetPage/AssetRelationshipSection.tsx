@@ -18,7 +18,7 @@ import {
   fetchRelationshipsForAssetId,
 } from '../../modules/relationships';
 import TreeViewer from '../NetworkViewers/TreeViewer';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 
 const Wrapper = styled.div`
   display: flex;
@@ -307,6 +307,9 @@ class AssetRelationshipSection extends Component<Props, State> {
   };
 
   onNodeClicked = (node: RelationshipResource) => {
+    trackUsage('AssetPage.RelationshipSection.NodeClicked', {
+      node,
+    });
     const { visibleNodeIds } = this.state;
     switch (node.resource) {
       case 'asset': {
@@ -325,9 +328,6 @@ class AssetRelationshipSection extends Component<Props, State> {
               type: 'asset',
             },
             visibleNodeIds,
-          });
-          trackUsage('RelationshipViewer.AssetClicked', {
-            assetId: node.resourceId,
           });
         } else {
           message.error('Asset not yet loaded.');
@@ -350,9 +350,6 @@ class AssetRelationshipSection extends Component<Props, State> {
             },
             visibleNodeIds,
           });
-          trackUsage('RelationshipViewer.TimeseriesClicked', {
-            timeseries: node.resourceId,
-          });
         }
       }
     }
@@ -366,6 +363,9 @@ class AssetRelationshipSection extends Component<Props, State> {
   };
 
   removeFromVisibleNodeIds = (id: number) => {
+    trackUsage('AssetPage.RelationshipSection.RemoveNode', {
+      id,
+    });
     const { visibleNodeIds } = this.state;
     visibleNodeIds.delete(id);
     this.setState({ visibleNodeIds }, this.hideNodeDetails);
@@ -435,7 +435,10 @@ class AssetRelationshipSection extends Component<Props, State> {
             chooseNodeColor={this.chooseNodeColor}
             chooseRelationshipColor={this.chooseRelationshipColor}
             onNodeClicked={this.onNodeClicked}
-            onLinkClicked={(relationship: Relationship) =>
+            onLinkClicked={(relationship: Relationship) => {
+              trackUsage('AssetPage.RelationshipSection.LinkClicked', {
+                relationship,
+              });
               notification.info({
                 message: relationship.externalId,
                 description: (
@@ -447,8 +450,8 @@ class AssetRelationshipSection extends Component<Props, State> {
                     </Descriptions.Item>
                   </Descriptions>
                 ),
-              })
-            }
+              });
+            }}
           />
         </div>
         {nodeDetailsPreview && (

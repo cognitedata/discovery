@@ -11,6 +11,7 @@ import { sdk } from '../../index';
 import { RootState } from '../../reducers/index';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const FormDetails = styled.div`
   p {
@@ -45,6 +46,9 @@ class EditTimeseriesModal extends React.Component<Props, State> {
     super(props);
 
     const { timeseries } = props;
+    trackUsage('AddOrEditTimeseriesModal.Load', {
+      id: timeseries && timeseries.id,
+    });
     if (timeseries) {
       const { unit, name, description, metadata, assetId } = timeseries;
 
@@ -125,6 +129,9 @@ class EditTimeseriesModal extends React.Component<Props, State> {
         message.info('Updating timeseries...');
         await this.props.addTimeseriesToState([timeseries]);
         this.props.onClose(timeseries);
+        trackUsage('AddOrEditTimeseriesModal.EditTimeseries', {
+          id: timeseries && timeseries.id,
+        });
       } else {
         const [timeseries] = await sdk.timeseries.create([
           {
@@ -138,6 +145,9 @@ class EditTimeseriesModal extends React.Component<Props, State> {
 
         await this.props.addTimeseriesToState([timeseries]);
         this.props.onClose(timeseries);
+        trackUsage('AddOrEditTimeseriesModal.CreateTimeseries', {
+          id: timeseries && timeseries.id,
+        });
       }
     } else {
       message.info('A name must be valid');

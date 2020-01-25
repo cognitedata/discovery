@@ -9,6 +9,7 @@ import styled from 'styled-components';
 import { ExtendedAsset, addAssetsToState } from '../../modules/assets';
 import { sdk } from '../../index';
 import { canEditAssets } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const FormWrapper = styled.div`
   p {
@@ -39,6 +40,10 @@ class AddChildAsset extends React.Component<Props, State> {
 
   componentDidMount() {
     const { asset, parentAssetId } = this.props;
+    trackUsage('AddOrEditAssetModal.Load', {
+      id: asset && asset.id,
+      parentAssetId,
+    });
     if (asset) {
       this.setState({
         name: asset.name,
@@ -120,6 +125,9 @@ class AddChildAsset extends React.Component<Props, State> {
         ]);
         this.props.addAssetsToState([asset]);
         this.props.onClose(asset);
+        trackUsage('AddOrEditAssetModal.EditAsset', {
+          id: asset && asset.id,
+        });
       } else {
         const [asset] = await sdk.assets.create([
           {
@@ -132,6 +140,9 @@ class AddChildAsset extends React.Component<Props, State> {
         ]);
         this.props.addAssetsToState([asset]);
         this.props.onClose(asset);
+        trackUsage('AddOrEditAssetModal.CreateAsset', {
+          id: asset && asset.id,
+        });
       }
     }
   };

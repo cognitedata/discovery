@@ -25,6 +25,7 @@ import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import FlexTableWrapper from '../../components/FlexTableWrapper';
 import { sdk } from '../../index';
 import { canReadThreeD } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -135,6 +136,10 @@ class AssetThreeDSection extends Component<Props, State> {
   };
 
   onAssetSelected = async (assetId: number, navigateAway = true) => {
+    trackUsage('AssetPage.ThreeDSection.AssetClicked', {
+      assetId,
+      navigateAway,
+    });
     const { modelId, revisionId } = this.props;
     if (!canReadThreeD(navigateAway)) {
       return;
@@ -161,6 +166,10 @@ class AssetThreeDSection extends Component<Props, State> {
   };
 
   onNodeSelected = async (nodeId?: number, navigateAway = true) => {
+    trackUsage('AssetPage.ThreeDSection.NodeClicked', {
+      nodeId,
+      navigateAway,
+    });
     const { modelId, revisionId } = this.props;
     if (!canReadThreeD(navigateAway)) {
       return;
@@ -203,6 +212,12 @@ class AssetThreeDSection extends Component<Props, State> {
 
   onAddMappingClicked = async (_: number, assetId: number) => {
     const { modelId, revisionId, nodeId } = this.props;
+    trackUsage('AssetPage.ThreeDSection.AddMapping', {
+      nodeId,
+      assetId,
+      modelId,
+      revisionId,
+    });
     await this.props.createAssetNodeMapping(
       Number(modelId),
       Number(revisionId),
@@ -215,6 +230,11 @@ class AssetThreeDSection extends Component<Props, State> {
   onDeleteMapping = async () => {
     const { modelId, revisionId, nodeId } = this.props;
     const { selectedItem } = this.state;
+    trackUsage('AssetPage.ThreeDSection.DeleteMapping', {
+      nodeId,
+      modelId,
+      revisionId,
+    });
     if (!canReadThreeD()) {
       return;
     }
@@ -235,6 +255,7 @@ class AssetThreeDSection extends Component<Props, State> {
   };
 
   onViewParent = async () => {
+    trackUsage('AssetPage.ThreeDSection.ViewParent', {});
     const { selectedItem } = this.state;
     if (selectedItem && selectedItem.node && selectedItem.node.parentId) {
       this.onNodeSelected(selectedItem.node.parentId);

@@ -24,6 +24,7 @@ import FilePage from './FilePage';
 import ThreeDPage from './ThreeDPage';
 import RelationshipPage from './RelationshipPage';
 import { fetchTypes } from '../modules/types';
+import { trackUsage } from '../utils/Metrics';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -106,6 +107,10 @@ class Auth extends React.Component<Props, State> {
       await sdk.loginWithOAuth({ project: tenant || pathTenant });
       status = await sdk.authenticate();
     }
+    trackUsage('App.Load', {
+      tenant: tenant || pathTenant,
+      status: !!status,
+    });
     this.setState(
       {
         auth: !!status,

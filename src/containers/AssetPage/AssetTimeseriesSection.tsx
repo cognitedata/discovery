@@ -23,6 +23,7 @@ import {
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { sdk } from '../../index';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -122,6 +123,9 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = async (timeseriesId: number) => {
+    trackUsage('AssetPage.TimeseresSection.Unlink', {
+      timeseriesId,
+    });
     if (!canEditTimeseries()) {
       return;
     }

@@ -4,10 +4,10 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, Tabs, Modal, notification } from 'antd';
 import styled from 'styled-components';
 import { push } from 'connected-react-router';
-import AssetTreeViewerVX from 'containers/NetworkViewers/AssetTreeViewerVX';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { AssetsState, fetchAsset, deleteAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
+import AssetHierarchySection from './AssetHierarchySection';
 import AssetFilesSection from './AssetFilesSection';
 import AssetSidebar from './AssetSidebar';
 import AssetTimeseriesSection from './AssetTimeseriesSection';
@@ -16,6 +16,7 @@ import AssetRelationshipSection from './AssetRelationshipSection';
 import AssetCustomSection from './AssetCustomSection';
 import AssetThreeDSection from './AssetThreeDSection';
 import { canReadAssets, canEditAssets } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -103,6 +104,9 @@ class AssetPage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    trackUsage('AssetPage.Load', {
+      id: this.props.match.params.assetId,
+    });
     canReadAssets();
     if (!this.asset) {
       this.props.fetchAsset(this.props.match.params.assetId);
@@ -158,12 +162,22 @@ class AssetPage extends React.Component<Props, State> {
   };
 
   onClearSelection = () => {
+    trackUsage('AssetPage.LoadSection', {
+      id: this.props.match.params.assetId,
+      clear: true,
+      tab: this.currentTab,
+    });
     this.props.push(
       `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}`
     );
   };
 
   onSelect = (...ids: number[]) => {
+    trackUsage('AssetPage.LoadSection', {
+      id: this.props.match.params.assetId,
+      tab: this.currentTab,
+      ids,
+    });
     this.props.push(
       `/${this.tenant}/asset/${this.asset.id}/${this.currentTab}/${ids.join(
         '/'
@@ -172,6 +186,11 @@ class AssetPage extends React.Component<Props, State> {
   };
 
   onNavigateToPage = (type: string, ...ids: number[]) => {
+    trackUsage('AssetPage.GoToPage', {
+      id: this.props.match.params.assetId,
+      type,
+      ids,
+    });
     if (type === 'asset') {
       const { itemId, itemId2, itemId3 } = this.props.match.params;
       const secondaryIds = [itemId, itemId2, itemId3].filter(el => !!el);
@@ -194,6 +213,9 @@ class AssetPage extends React.Component<Props, State> {
       title: 'Do you want to delete this asset?',
       content: 'This is a irreversible change',
       onOk: async () => {
+        trackUsage('AssetPage.DeleteAsset', {
+          id: this.props.match.params.assetId,
+        });
         const { name, id } = this.asset!;
         this.postDeleted = true;
         await this.props.deleteAsset(id);
@@ -202,7 +224,12 @@ class AssetPage extends React.Component<Props, State> {
         });
         this.onBackClicked();
       },
-      onCancel() {},
+      onCancel: () => {
+        trackUsage('AssetPage.DeleteAsset', {
+          id: this.props.match.params.assetId,
+          cancel: true,
+        });
+      },
     });
   };
 
@@ -242,7 +269,7 @@ class AssetPage extends React.Component<Props, State> {
           );
         }
         return (
-          <AssetTreeViewerVX
+          <AssetHierarchySection
             asset={this.asset}
             onAssetClicked={id => this.onNavigateToPage('asset', id)}
           />
@@ -336,6 +363,10 @@ class AssetPage extends React.Component<Props, State> {
               tabBarGutter={0}
               activeKey={this.currentTab}
               onChange={key => {
+                trackUsage('AssetPage.LoadSection', {
+                  id: this.props.match.params.assetId,
+                  tab: key,
+                });
                 this.props.push(`/${tenant}/asset/${assetId}/${key}`);
               }}
             >

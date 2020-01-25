@@ -9,7 +9,12 @@ export const trackUsage = (
   event: string,
   metadata?: { [key: string]: any }
 ) => {
-  mixpanel.track(event, { ...metadata, project: sdk.project });
+  mixpanel.track(event, {
+    ...metadata,
+    project: sdk.project,
+    version: 1,
+    appVersion: process.env.REACT_APP_VERSION,
+  });
 };
 export const trackSearchUsage = (
   location: string,

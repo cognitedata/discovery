@@ -19,7 +19,7 @@ import { selectThreeD, ThreeDState } from 'modules/threed';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
 import { sdk } from 'index';
-import { trackUsage } from 'utils/metrics';
+import { trackUsage } from 'utils/Metrics';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { selectFiles, fetchFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
@@ -170,6 +170,9 @@ class FilePreview extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    trackUsage('FilePage.FilePreview.Load', {
+      id: this.props.fileId,
+    });
     if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
     }
@@ -223,6 +226,9 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   handlePnIDPopover = (visible: boolean) => {
+    trackUsage('FilePage.FilePreview.P&IDPopover', {
+      visible,
+    });
     if (this.state.pdfState.numPages !== 1) {
       message.info(
         'Sorry, this feature is only avilable for Single Page PDFs.'
@@ -237,6 +243,9 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   handleDetectAssetsPopover = (visible: boolean) => {
+    trackUsage('FilePage.FilePreview.DetectAssetPopover', {
+      visible,
+    });
     if (this.state.runningDetectAssets) {
       message.info('Sorry, only asset detection job allowed at a time!');
       return;
@@ -245,6 +254,9 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   onConvertToPnIDClicked = async () => {
+    trackUsage('FilePage.FilePreview.ConvertToP&ID', {
+      id: this.props.fileId,
+    });
     const CONVERT_PNID_NOTIF_KEY = 'convert-pnid';
     const { pnidSelectedAssetId } = this.state;
     if (this.props.file && pnidSelectedAssetId) {
@@ -295,6 +307,9 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   onDetectAssetsClicked = async () => {
+    trackUsage('FilePage.FilePreview.DetectAsset', {
+      id: this.props.fileId,
+    });
     const DETECT_ASSETS_NOTIF_KEY = 'detect-assets';
     const { detectionSelectedAssetId } = this.state;
     if (this.props.file && detectionSelectedAssetId) {
@@ -385,6 +400,13 @@ class FilePreview extends React.Component<Props, State> {
                         limit: 1,
                       });
                       if (asset) {
+                        trackUsage(
+                          'FilePage.FilePreview.DetectAsset.ViewAsset',
+                          {
+                            id: this.props.fileId,
+                            assetId: asset.id,
+                          }
+                        );
                         this.props.onAssetClicked(asset.id);
                       }
                     }}

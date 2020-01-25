@@ -9,6 +9,7 @@ import AssetSelect from 'components/AssetSelect';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { canEditThreeD, canDeleteThreeD } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 import {
   selectAssetById,
   ExtendedAsset,
@@ -76,6 +77,7 @@ class ThreeDCard extends React.Component<Props, State> {
   };
 
   onTabChange = (key: string) => {
+    trackUsage('ThreeDCard.ChangeTab', {});
     this.setState({ currentTab: key });
   };
 

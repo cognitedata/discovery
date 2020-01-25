@@ -8,7 +8,7 @@ import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
 import { setRevisionRepresentAsset } from './threed';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import { fetchTypeForAssets } from './types';
 import { canEditAssets, canReadAssets } from '../utils/PermissionsUtils';
 
@@ -240,7 +240,7 @@ export const createNewAsset = (
   if (!canEditAssets()) {
     return;
   }
-  trackUsage('Assets.createNewAsset', {
+  trackUsage('Assets.CreateNewAsset', {
     mappedTo3D: !!mappingInfo,
   });
   try {
@@ -286,9 +286,7 @@ export function editAsset(asset: AssetChange) {
     if (!canEditAssets()) {
       return;
     }
-    trackUsage('Assets.editAsset', {
-      assetd: asset.update.externalId,
-    });
+    trackUsage('Assets.EditAsset', {});
     try {
       const results = await sdk.assets.update([asset]);
 
@@ -313,8 +311,8 @@ export const deleteAsset = (assetId: number) => async (
   if (!canEditAssets()) {
     return;
   }
-  trackUsage('Assets.deleteAsset', {
-    assetId,
+  trackUsage('Assets.DeleteAsset', {
+    id: assetId,
   });
   try {
     const results = await sdk.assets.delete([{ id: assetId }], {

@@ -14,7 +14,7 @@ import {
   fetchFile,
   deleteFile,
 } from '../../modules/files';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import { sdk } from '../../index';
 import { downloadFile } from './FileUtils';
 import { canReadFiles, canEditFiles } from '../../utils/PermissionsUtils';
@@ -79,6 +79,9 @@ class FilePage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    trackUsage('FilePage.Load', {
+      id: this.props.match.params.fileId,
+    });
     canReadFiles();
     if (!this.file) {
       this.props.fetchFile(this.props.match.params.fileId);
@@ -108,6 +111,10 @@ class FilePage extends React.Component<Props, State> {
   };
 
   onGoToAssetClicked = (id: number) => {
+    trackUsage('FilePage.GoToAsset', {
+      id: this.props.match.params.fileId,
+      assetId: id,
+    });
     this.props.push(`/${this.tenant}/asset/${id}/files/${this.file.id}`);
   };
 
@@ -119,6 +126,9 @@ class FilePage extends React.Component<Props, State> {
       title: 'Do you want to delete this file?',
       content: 'This is a irreversible change',
       onOk: async () => {
+        trackUsage('FilePage.DeleteFile', {
+          id: this.props.match.params.fileId,
+        });
         const { id, name } = this.file!;
         trackUsage('FilePreview.Delete', { id });
         this.postDeleted = true;
@@ -128,12 +138,19 @@ class FilePage extends React.Component<Props, State> {
         });
         this.props.goBack();
       },
-      onCancel() {},
+      onCancel: () => {
+        trackUsage('FilePage.DeleteFile', {
+          id: this.props.match.params.fileId,
+          cancel: true,
+        });
+      },
     });
   };
 
   onDownloadClicked = async () => {
-    trackUsage('FilePreview.DownloadFile', { filedId: this.file.id });
+    trackUsage('FilePage.DownloadFile', {
+      id: this.props.match.params.fileId,
+    });
     const [url] = await sdk.files.getDownloadUrls([{ id: this.file.id }]);
     const blob = await downloadFile(url.downloadUrl);
     saveData(blob, this.file.name);

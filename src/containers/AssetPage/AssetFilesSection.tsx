@@ -24,6 +24,7 @@ import {
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { sdk } from '../../index';
 import { canEditAssets, canEditFiles } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -153,6 +154,9 @@ class AssetFileSection extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = async (fileId: number) => {
+    trackUsage('AssetPage.FilesSection.Unlink', {
+      fileId,
+    });
     if (canEditAssets()) {
       const files = await sdk.files.update([
         {

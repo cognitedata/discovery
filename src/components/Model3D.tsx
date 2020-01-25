@@ -6,7 +6,7 @@ import { Model3DViewer, CacheObject } from '@cognite/gearbox';
 import { SliderValue } from 'antd/lib/slider';
 import Model3DLoadingDialog, { ProgressObject } from './Model3DLoadingDialog';
 
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import { sdk } from '../index';
 
 declare global {

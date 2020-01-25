@@ -12,6 +12,7 @@ import { RootState } from '../../reducers/index';
 import { addFilesToState } from '../../modules/files';
 import { sdk } from '../../index';
 import { canEditFiles } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 import {
   fetchAssets,
   selectAssetById,
@@ -103,6 +104,10 @@ class FileSidebar extends React.Component<Props, State> {
   }
 
   onUnlinkClicked = async (assetId: number) => {
+    trackUsage('FilePage.FileSidebar.Unlink', {
+      id: this.props.file.id,
+      assetId,
+    });
     const file = await sdk.files.update([
       { id: this.props.file.id, update: { assetIds: { remove: [assetId] } } },
     ]);

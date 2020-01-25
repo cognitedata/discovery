@@ -9,7 +9,7 @@ import BottomRightCard from 'components/BottomRightCard';
 import { sleep } from 'utils/utils';
 import { RootState } from 'reducers';
 import { sdk } from 'index';
-import { trackUsage } from 'utils/metrics';
+import { trackUsage } from 'utils/Metrics';
 import { selectFiles, FilesState } from 'modules/files';
 import { selectAssets, AssetsState } from 'modules/assets';
 import { canReadAssets } from '../../../utils/PermissionsUtils';
@@ -168,13 +168,15 @@ class PNIDViewer extends React.Component<Props, State> {
       );
       if (exactMatches.length > 0) {
         [asset] = exactMatches;
-        trackUsage('PNIDViewer.searchAndSelectAssetName', {
+        trackUsage('FilePage.PNIDViewer.searchAndSelectAssetName', {
           id: asset.id,
           query: name,
         });
       } else {
         message.info('Did not find any asset associated to this object.');
-        trackUsage('PNIDViewer.searchAndSelectAssetNameError', { query: name });
+        trackUsage('FilePage.PNIDViewer.searchAndSelectAssetNameError', {
+          query: name,
+        });
         return;
       }
     } else {
@@ -210,13 +212,13 @@ class PNIDViewer extends React.Component<Props, State> {
           type: 'file',
         },
       });
-      trackUsage('PNIDViewer.loadNextPNID', {
+      trackUsage('FilePage.PNIDViewer.loadNextPNID', {
         id: exactMatch.id,
         fromParsedPNID: true,
       });
     } else {
       message.info('Did not find next pnid graph');
-      trackUsage('PNIDViewer.loadNextPNIDError', { query: name });
+      trackUsage('FilePage.PNIDViewer.loadNextPNIDError', { query: name });
       return;
     }
     this.targetCurrentAsset = true;

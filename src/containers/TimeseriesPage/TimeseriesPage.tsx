@@ -8,6 +8,7 @@ import { TimeseriesChart } from '@cognite/gearbox';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import TimeseriesSidebar from './TimeseriesSidebar';
+import { trackUsage } from '../../utils/Metrics';
 import {
   canEditTimeseries,
   canReadTimeseries,
@@ -66,6 +67,9 @@ class TimeseriesPage extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    trackUsage('TimeseriesPage.Load', {
+      id: this.props.match.params.timeseriesId,
+    });
     canReadTimeseries();
     if (!this.timeseries) {
       this.props.fetchTimeseries([
@@ -111,6 +115,9 @@ class TimeseriesPage extends React.Component<Props, State> {
       title: 'Do you want to delete this timeseries?',
       content: 'This is a irreversible change',
       onOk: async () => {
+        trackUsage('TimeseriesPage.DeleteTimeseries', {
+          id: this.props.match.params.timeseriesId,
+        });
         const { id, name } = this.timeseries;
         this.postDeleted = true;
         await this.props.deleteTimeseries(id);
@@ -119,11 +126,20 @@ class TimeseriesPage extends React.Component<Props, State> {
         });
         this.onBackClicked();
       },
-      onCancel() {},
+      onCancel: () => {
+        trackUsage('TimeseriesPage.DeleteTimeseries', {
+          id: this.props.match.params.timeseriesId,
+          cancel: true,
+        });
+      },
     });
   };
 
   onGoToAssetClicked = (id: number) => {
+    trackUsage('TimeseriesPage.GoToAsset', {
+      id: this.props.match.params.timeseriesId,
+      assetId: id,
+    });
     this.props.push(`/${this.tenant}/asset/${id}`);
   };
 

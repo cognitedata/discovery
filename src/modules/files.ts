@@ -5,7 +5,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import { canReadFiles, canEditFiles } from '../utils/PermissionsUtils';
 
 // Constants
@@ -79,7 +79,7 @@ export const deleteFile = (fileId: number) => async (
   if (!canEditFiles()) {
     return false;
   }
-  trackUsage('Files.deleteFiles', {
+  trackUsage('Files.DeleteFiles', {
     fileId,
   });
   try {

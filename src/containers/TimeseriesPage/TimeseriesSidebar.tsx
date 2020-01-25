@@ -6,12 +6,13 @@ import { push } from 'connected-react-router';
 import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
-import AddOrEditTimseriesModal from 'containers/Modals/AddOrEditTimseriesModal';
+import AddOrEditTimeseriesModal from 'containers/Modals/AddOrEditTimeseriesModal';
 import { AssetIcon } from 'assets';
 import { RootState } from '../../reducers/index';
 import { sdk } from '../../index';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 import {
   selectAssetById,
   ExtendedAsset,
@@ -99,6 +100,9 @@ class TimeseriesSidebar extends React.Component<Props, State> {
   }
 
   onUnlickClicked = async () => {
+    trackUsage('TimeseriesPage.TimeseriesSidebar.Unlink', {
+      id: this.props.timeseries.id,
+    });
     if (!canEditTimeseries()) {
       return;
     }
@@ -222,7 +226,7 @@ class TimeseriesSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
         </Tabs>
         {showEditModal && (
-          <AddOrEditTimseriesModal
+          <AddOrEditTimeseriesModal
             timeseries={timeseries}
             onClose={() => this.setState({ showEditModal: false })}
           />

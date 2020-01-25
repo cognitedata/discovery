@@ -10,6 +10,7 @@ import { RootState } from '../../reducers/index';
 import { updateFile, addFilesToState } from '../../modules/files';
 import { sdk } from '../../index';
 import { canEditFiles } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const FormDetails = styled.div`
   p {
@@ -38,6 +39,9 @@ class EditFileModal extends React.Component<Props, State> {
     super(props);
 
     const { file } = props;
+    trackUsage('EditFileModal.Load', {
+      id: file && file.id,
+    });
     const { assetIds, mimeType, metadata } = file;
 
     if (metadata && metadata.COGNITE__SOURCE) {
@@ -87,6 +91,9 @@ class EditFileModal extends React.Component<Props, State> {
         },
       },
     ]);
+    trackUsage('EditFileModal.EditFile', {
+      id: file && file.id,
+    });
     message.success('File Updated');
     this.props.addFilesToState([file]);
     this.props.onClose(file);

@@ -9,7 +9,7 @@ import {
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import { canEditTimeseries } from '../utils/PermissionsUtils';
 
 // Constants
@@ -42,9 +42,6 @@ export function fetchTimeseries(ids: IdEither[]) {
 }
 export function fetchTimeseriesForAssetId(assetId: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
-      assetId,
-    });
     const results = await sdk.timeseries.list({
       assetIds: [assetId],
       limit: 1000,
@@ -59,10 +56,6 @@ export function fetchTimeseriesForAssetId(assetId: number) {
 let searchTimeseriesId = 0;
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
-      assetId,
-      query,
-    });
     searchTimeseriesId += 1;
     const id = searchTimeseriesId;
     const results = await sdk.timeseries.search({
@@ -101,8 +94,8 @@ export const deleteTimeseries = (timeseriesId: number) => async (
   if (!canEditTimeseries()) {
     return false;
   }
-  trackUsage('Timeseries.deleteTimeseries', {
-    timeseriesId,
+  trackUsage('Timeseries.DeleteTimeseries', {
+    id: timeseriesId,
   });
   try {
     const results = await sdk.timeseries.delete([{ id: timeseriesId }]);
@@ -124,7 +117,7 @@ export const updateTimeseries = (
   if (!canEditTimeseries()) {
     return;
   }
-  trackUsage('Timeseries.updateTimeseries', {
+  trackUsage('Timeseries.UpdateTimeseries', {
     id: timeseriesId,
   });
 

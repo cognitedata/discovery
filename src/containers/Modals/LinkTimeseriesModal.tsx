@@ -9,6 +9,7 @@ import { addTimeseriesToState } from '../../modules/timeseries';
 import { ExtendedAsset } from '../../modules/assets';
 import { sdk } from '../../index';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 type OrigProps = {
   asset: ExtendedAsset;
@@ -24,6 +25,14 @@ type State = {
 };
 
 class LinktimeseriesModal extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    trackUsage('LinkTimeseriesModal.Load', {
+      assetId: this.props.asset.id,
+    });
+    this.state = {};
+  }
+
   onTimeserieSelectionChange = (newTimeseriesIds: number[]) => {
     this.setState({ selectedTimeseriesIds: newTimeseriesIds });
   };
@@ -46,6 +55,10 @@ class LinktimeseriesModal extends React.Component<Props, State> {
       );
       this.props.addTimeseriesToState(timeseries);
       this.props.onClose();
+      trackUsage('LinkTimeseriesModal.LinkToFiles', {
+        assetId: this.props.asset.id,
+        mapped: this.state.selectedTimeseriesIds,
+      });
     }
   };
 

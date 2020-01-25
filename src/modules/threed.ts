@@ -5,7 +5,7 @@ import { Revision3D, Model3D } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById } from '../utils/utils';
 import { sdk } from '../index';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import { canReadThreeD } from '../utils/PermissionsUtils';
 
 export interface ThreeDModel extends Model3D {
@@ -121,7 +121,7 @@ export function setRevisionRepresentAsset(
     if (!canReadThreeD()) {
       return;
     }
-    trackUsage('3D.setRevisionRepresentAsset', {
+    trackUsage('3D.SetRevisionRepresentsAsset', {
       assetId,
       revisionId,
       modelId,
@@ -158,11 +158,6 @@ export function setRevisionRepresentAsset(
 }
 
 export function fetchNode(modelId: number, revisionId: number, nodeId: number) {
-  trackUsage('3D.fetchNode', {
-    nodeId,
-    revisionId,
-    modelId,
-  });
   return async (dispatch: Dispatch<SetNodeAction>) => {
     if (!canReadThreeD()) {
       return;

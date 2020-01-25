@@ -20,6 +20,7 @@ import { ExtendedAsset } from '../../modules/assets';
 import { createAssetNodeMapping } from '../../modules/assetmappings';
 import ThreeDCard from './ThreeDCard';
 import { canReadThreeD } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const BackSection = styled.div`
   padding: 22px 26px;
@@ -78,6 +79,12 @@ class ThreeDPage extends React.Component<Props, State> {
   }
 
   async componentDidMount() {
+    trackUsage('ThreeDPage.Load', {
+      nodeId: this.props.match.params.nodeId,
+      modelId: this.props.match.params.modelId,
+      revisionId: this.props.match.params.revisionId,
+      assetId: this.props.match.params.assetId,
+    });
     this.setState({ nodeIds: await this.getNodeIds() });
     if (this.nodeId) {
       this.onNodeSelected(this.nodeId, false);
@@ -158,10 +165,12 @@ class ThreeDPage extends React.Component<Props, State> {
   };
 
   onGoToAssetClicked = (id: number) => {
+    trackUsage('ThreeDPage.GoToAsset', { id });
     this.props.push(`/${this.tenant}/asset/${id}`);
   };
 
   onNodeSelected = async (nodeId?: number, navigateAway = true) => {
+    trackUsage('ThreeDPage.NodeSelected', { nodeId, navigateAway });
     const { modelId, revisionId } = this.props.match.params;
     if (!canReadThreeD()) {
       return;
@@ -203,6 +212,7 @@ class ThreeDPage extends React.Component<Props, State> {
   };
 
   onAssetSelected = async (assetId: number, navigateAway = true) => {
+    trackUsage('ThreeDPage.AssetSelected', { assetId, navigateAway });
     const { modelId, revisionId } = this.props.match.params;
     if (!canReadThreeD()) {
       return;
@@ -229,6 +239,7 @@ class ThreeDPage extends React.Component<Props, State> {
   };
 
   onViewParent = async () => {
+    trackUsage('ThreeDPage.ViewParent', {});
     const { selectedItem } = this.state;
     if (selectedItem && selectedItem.node && selectedItem.node.parentId) {
       this.onNodeSelected(selectedItem.node.parentId);
@@ -239,6 +250,12 @@ class ThreeDPage extends React.Component<Props, State> {
 
   onAddMappingClicked = async (rootId: number, assetId: number) => {
     const { modelId, revisionId, nodeId } = this.props.match.params;
+    trackUsage('ThreeDPage.AddMapping', {
+      nodeId,
+      assetId,
+      modelId,
+      revisionId,
+    });
     if (!rootId) {
       message.error('A root asset must first be selected!');
       return;
@@ -261,6 +278,11 @@ class ThreeDPage extends React.Component<Props, State> {
 
   onDeleteMapping = async () => {
     const { modelId, revisionId, nodeId } = this.props.match.params;
+    trackUsage('ThreeDPage.DeleteMapping', {
+      nodeId,
+      modelId,
+      revisionId,
+    });
     const { selectedItem } = this.state;
     if (!canReadThreeD()) {
       return;

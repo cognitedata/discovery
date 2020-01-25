@@ -5,7 +5,7 @@ import { message } from 'antd';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { DELETE_ASSETS, DeleteAssetAction } from './assets';
-import { trackUsage } from '../utils/metrics';
+import { trackUsage } from '../utils/Metrics';
 import {
   canEditThreeD,
   canReadThreeD,
@@ -183,7 +183,7 @@ export function createAssetNodeMapping(
     if (!canEditThreeD()) {
       return;
     }
-    trackUsage('AssetMappings.createAssetNodeMapping', {
+    trackUsage('AssetMappings.CreateAssetNodeMapping', {
       modelId,
       assetId,
     });
@@ -220,7 +220,7 @@ export function deleteAssetNodeMapping(
     if (!canDeleteThreeD()) {
       return;
     }
-    trackUsage('AssetMappings.deleteAssetNodeMapping', {
+    trackUsage('AssetMappings.DeleteAssetNodeMapping', {
       modelId,
       assetId,
     });

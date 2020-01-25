@@ -23,6 +23,7 @@ import {
 import { sdk } from '../../../index';
 import AssetSelect from '../../../components/AssetSelect';
 import { canReadEvents, canEditEvents } from '../../../utils/PermissionsUtils';
+import { trackUsage } from '../../../utils/Metrics';
 
 const fadeInScale = keyframes`
   from {
@@ -244,6 +245,9 @@ class ImagePreview extends React.Component<Props, State> {
   };
 
   onSubmit = async (annotation: AnnotationItem) => {
+    trackUsage('FilePage.FilePreview.ImageAnnotation.Create', {
+      annotation,
+    });
     const { all } = this.props.assets;
     const { detections } = this.state;
     if (!canEditEvents(true)) {

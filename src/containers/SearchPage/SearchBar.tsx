@@ -15,6 +15,7 @@ import {
   setFileFilter,
 } from '../../modules/search';
 import { SearchPageTabKeys } from './SearchPage';
+import { trackUsage } from '../../utils/Metrics';
 
 const Wrapper = styled.div`
   display: block;
@@ -325,7 +326,11 @@ class SearchPage extends React.Component<Props, State> {
           trigger="click"
           placement="bottomRight"
           onVisibleChange={visible =>
-            this.setState({ popoverVisible: visible })
+            this.setState({ popoverVisible: visible }, () => {
+              trackUsage('SearchPage.SearchBar.PopoverToggle', {
+                visible,
+              });
+            })
           }
           content={this.renderPopover()}
         >

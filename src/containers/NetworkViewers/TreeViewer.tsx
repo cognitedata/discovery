@@ -10,7 +10,7 @@ import { IdEither } from '@cognite/sdk';
 import { withResizeDetector } from 'react-resize-detector';
 import TypeBadge from 'containers/TypeBadge';
 import { RootState } from '../../reducers/index';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import { fetchAssets, selectAssets, AssetsState } from '../../modules/assets';
 import {
   fetchTimeseries,

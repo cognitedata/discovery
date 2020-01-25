@@ -21,7 +21,7 @@ import {
 import TreeViewer from '../NetworkViewers/TreeViewer';
 import { BetaTag } from '../../components/BetaWarning';
 import { sdk } from '../../index';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import {
   canReadRelationships,
   canReadAssets,
@@ -88,6 +88,7 @@ class RelationshipViewer extends Component<Props, State> {
   };
 
   async componentDidMount() {
+    trackUsage('RelationshipPage.Load');
     canReadRelationships();
     canReadAssets();
     const assets = await sdk.assets.list({ filter: { root: true } });
@@ -351,7 +352,7 @@ class RelationshipViewer extends Component<Props, State> {
             },
             visibleNodeIds,
           });
-          trackUsage('RelationshipViewer.AssetClicked', {
+          trackUsage('RelationshipPage.AssetClicked', {
             assetId: node.resourceId,
           });
         } else {
@@ -375,7 +376,7 @@ class RelationshipViewer extends Component<Props, State> {
             },
             visibleNodeIds,
           });
-          trackUsage('RelationshipViewer.TimeseriesClicked', {
+          trackUsage('RelationshipPage.TimeseriesClicked', {
             timeseries: node.resourceId,
           });
         }
@@ -391,6 +392,9 @@ class RelationshipViewer extends Component<Props, State> {
   };
 
   removeFromVisibleNodeIds = (id: number) => {
+    trackUsage('RelationshipPage.RemoveFromVisibleNode', {
+      id,
+    });
     const { visibleNodeIds } = this.state;
     visibleNodeIds.delete(id);
     this.setState({ visibleNodeIds }, this.hideNodeDetails);
@@ -398,6 +402,9 @@ class RelationshipViewer extends Component<Props, State> {
 
   onGoToPreviewNodeClicked = () => {
     const { nodeDetailsPreview } = this.state;
+    trackUsage('RelationshipPage.GoToResource', {
+      nodeDetailsPreview,
+    });
     if (nodeDetailsPreview) {
       this.props.push(
         `/${this.tenant}/${nodeDetailsPreview.type}/${nodeDetailsPreview.id}`

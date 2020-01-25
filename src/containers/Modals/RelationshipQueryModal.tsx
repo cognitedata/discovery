@@ -5,6 +5,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import RelationshipQueryTreeViewer from 'containers/NetworkViewers/RelationshipQueryTreeViewer';
 import { sdk } from '../../index';
+import { trackUsage } from '../../utils/Metrics';
 
 const Content = styled.div`
   height: 60vh;
@@ -46,6 +47,10 @@ class RelationshipQueryModal extends React.Component<Props, State> {
     query: '',
   };
 
+  componentDidMount() {
+    trackUsage('RelationshipQueryModal.Load', {});
+  }
+
   runQuery = async () => {
     const { query } = this.state;
     if (query.length > 0) {
@@ -63,6 +68,7 @@ class RelationshipQueryModal extends React.Component<Props, State> {
           }
         );
         this.setState({ result: response.data, loading: false });
+        trackUsage('RelationshipQueryModal.RunQuery', { query });
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error(e);

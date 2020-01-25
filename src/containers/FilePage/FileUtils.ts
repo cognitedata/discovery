@@ -1,5 +1,5 @@
 import { FilesMetadata, Asset, UploadFileMetadataResponse } from '@cognite/sdk';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import { sdk } from '../../index';
 import { GCSUploader } from '../../components/FileUploader';
 import {
@@ -63,7 +63,7 @@ export const convertPDFtoPNID = async (
   if (!canEditFiles()) {
     return;
   }
-  trackUsage('FileUtil.convertToPnIDClicked', { fileId: file.id });
+  trackUsage('FileUtil.ConvertToP&ID', { fileId: file.id });
 
   const names = await fetchAllNamesOfAssetInRoot(
     selectedRootAssetId,
@@ -185,7 +185,7 @@ export const detectAssetsInDocument = async (
   if (!canReadFiles()) {
     return;
   }
-  trackUsage('FileUtil.detectAssetInDocument', { fileId: file.id });
+  trackUsage('FileUtil.DetectAssets', { fileId: file.id });
   const names = await fetchAllNamesOfAssetInRoot(
     selectedRootAssetId,
     callbackProgress

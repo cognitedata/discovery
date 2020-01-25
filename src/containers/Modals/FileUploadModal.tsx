@@ -13,6 +13,7 @@ import FileUploader from '../../components/FileUploader';
 import { selectAppState, AppState } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import { canEditFiles } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const Wrapper = styled.div`
   .wrapper {
@@ -51,6 +52,7 @@ type State = {
 class FileUploadModal extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
+    trackUsage('FileUploadModal.Load', {});
 
     this.state = {
       fileList: [],
@@ -109,12 +111,14 @@ class FileUploadModal extends React.Component<Props, State> {
         <Wrapper>
           <FileUploader
             onUploadSuccess={file => {
+              trackUsage('FileUploadModal.UploadSuccess', { id: file.id });
               this.setState({ fileList: [...fileList, file] });
             }}
             onFileListChange={list =>
               this.setState({ showLinkToAsset: list.length !== 0 })
             }
             beforeUploadStart={() => {
+              trackUsage('FileUploadModal.StartUpload', {});
               if (canEditFiles()) {
                 this.setState({ fileList: [] });
               }

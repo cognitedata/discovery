@@ -36,7 +36,7 @@ import {
   selectAssets,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 
 type Node = {
   name: string;
@@ -217,7 +217,9 @@ class TreeViewer extends Component<Props, State> {
             this.setState({ controls: value, forceRerender: true }, () => {
               this.setState({ forceRerender: false });
             });
-            trackUsage('AssetVXViewer.ChangeControl', { layout: value });
+            trackUsage('AssetPage.HerarchySection.ChangeControl', {
+              layout: value,
+            });
           }}
           value={controls}
         >
@@ -229,7 +231,9 @@ class TreeViewer extends Component<Props, State> {
         <Select
           onChange={(value: 'vertical' | 'horizontal') => {
             this.setState({ orientation: value });
-            trackUsage('AssetVXViewer.ChangeControl', { orientation: value });
+            trackUsage('AssetPage.HerarchySection.ChangeControl', {
+              orientation: value,
+            });
           }}
           value={orientation}
           disabled={controls === 'polar'}
@@ -242,7 +246,9 @@ class TreeViewer extends Component<Props, State> {
         <Select
           onChange={(value: 'diagonal' | 'step' | 'curve' | 'line') => {
             this.setState({ linkType: value });
-            trackUsage('AssetVXViewer.ChangeControl', { linkType: value });
+            trackUsage('AssetPage.HerarchySection.ChangeControl', {
+              linkType: value,
+            });
           }}
           value={linkType}
         >
@@ -458,9 +464,12 @@ class TreeViewer extends Component<Props, State> {
                                   r={12}
                                   fill="url('#lg')"
                                   onClick={() => {
-                                    trackUsage('AssetVXViewer.AssetClicked', {
-                                      assetId: node.data.node.id,
-                                    });
+                                    trackUsage(
+                                      'AssetPage.HerarchySection.AssetClicked',
+                                      {
+                                        assetId: node.data.node.id,
+                                      }
+                                    );
                                     this.props.onAssetClicked(
                                       node.data.node.id
                                     );
@@ -488,9 +497,12 @@ class TreeViewer extends Component<Props, State> {
                                     // eslint-disable-next-line no-param-reassign
                                     node.data.isExpanded = !node.data
                                       .isExpanded;
-                                    trackUsage('AssetVXViewer.AssetClicked', {
-                                      assetId: node.data.node.id,
-                                    });
+                                    trackUsage(
+                                      'AssetPage.HerarchySection.AssetClicked',
+                                      {
+                                        assetId: node.data.node.id,
+                                      }
+                                    );
                                     this.props.onAssetClicked(
                                       node.data.node.id
                                     );
@@ -529,7 +541,7 @@ class TreeViewer extends Component<Props, State> {
                 <Button
                   onClick={() => {
                     zoom.center();
-                    trackUsage('AssetVXViewer.ControlsClicked', {
+                    trackUsage('AssetPage.HerarchySection.ControlsClicked', {
                       center: true,
                     });
                   }}
@@ -539,7 +551,7 @@ class TreeViewer extends Component<Props, State> {
                 <Button
                   onClick={() => {
                     zoom.reset();
-                    trackUsage('AssetVXViewer.ControlsClicked', {
+                    trackUsage('AssetPage.HerarchySection.ControlsClicked', {
                       reset: true,
                     });
                   }}
@@ -549,7 +561,7 @@ class TreeViewer extends Component<Props, State> {
                 <Button
                   onClick={() => {
                     zoom.clear();
-                    trackUsage('AssetVXViewer.ControlsClicked', {
+                    trackUsage('AssetPage.HerarchySection.ControlsClicked', {
                       clear: true,
                     });
                   }}

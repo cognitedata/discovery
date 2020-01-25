@@ -13,14 +13,14 @@ import {
 } from '../../modules/assetmappings';
 import { RootState } from '../../reducers/index';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
-import AssetTreeViewerVX from '../NetworkViewers/AssetTreeViewerVX';
-import { trackUsage } from '../../utils/metrics';
+import { trackUsage } from '../../utils/Metrics';
 import ComponentSelector from '../../components/ComponentSelector';
 import { AssetTabKeys } from './AssetPage';
 import AssetRelationshipSection from './AssetRelationshipSection';
 import AssetTimeseriesSection from './AssetTimeseriesSection';
 import AssetFilesSection from './AssetFilesSection';
 import AssetEventsSection from './AssetEventsSection';
+import AssetHierarchySection from './AssetHierarchySection';
 import AssetThreeDSection from './AssetThreeDSection';
 
 export const AssetViewerTypeMap: {
@@ -69,14 +69,14 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
   readonly state: Readonly<State> = {};
 
   componentDidMount() {
-    trackUsage('AssetCustomSectionView.ComponentMounted', {
+    trackUsage('AssetPage.AssetCustomSection.LayoutMounted', {
       type: this.props.type,
     });
   }
 
   componentDidUpdate(prevProps: Props) {
     if (prevProps.type !== this.props.type) {
-      trackUsage('AssetCustomSectionView.ComponentMounted', {
+      trackUsage('AssetPage.AssetCustomSection.LayoutMounted', {
         type: this.props.type,
       });
     }
@@ -179,6 +179,10 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
     type: 'asset' | 'timeseries' | 'file' | 'threed' | 'event',
     ...ids: number[]
   ) => {
+    trackUsage('AssetPage.AssetCustomSection.ViewNavigation', {
+      type,
+      ids,
+    });
     const search = this.props.search ? qs.parse(this.props.search) : {};
     switch (type) {
       case 'asset': {
@@ -263,7 +267,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
           );
         }
         return (
-          <AssetTreeViewerVX
+          <AssetHierarchySection
             asset={this.props.asset}
             onAssetClicked={id => this.onNavigateToPage('asset', id)}
           />
