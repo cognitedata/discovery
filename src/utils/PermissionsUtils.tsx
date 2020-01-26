@@ -34,7 +34,7 @@ export const checkForAccessPermission = (
   }
   if (showMessage) {
     // eslint-disable-next-line no-console
-    console.error(`You are missing access to Group:ACL to read permissions`);
+    console.warn(`You are missing access to Group:ACL to read permissions`);
   }
   return false;
 };

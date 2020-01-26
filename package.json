@@ -15,6 +15,7 @@
     "@cognite/sdk": "2.15.0",
     "@emotion/core": "^10.0.9",
     "@emotion/styled": "^10.0.23",
+    "@sentry/browser": "^5.11.1",
     "@types/d3": "^5.7.2",
     "@types/force-graph": "^1.15.0",
     "@types/jest": "^24.0.23",

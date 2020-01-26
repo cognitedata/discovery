@@ -76,29 +76,24 @@ export function fetchAsset(assetId: number, redirect = false) {
     }
     requestedAssetIds[assetId] = true;
 
-    try {
-      const results = await sdk.assets.retrieve([{ id: assetId }]);
+    const results = await sdk.assets.retrieve([{ id: assetId }]);
 
-      if (results) {
-        const items = arrayToObjectById(
-          results.map(asset => slimAssetObject(asset))
+    if (results) {
+      const items = arrayToObjectById(
+        results.map(asset => slimAssetObject(asset))
+      );
+
+      dispatch({ type: ADD_ASSETS, payload: { items } });
+      if (redirect) {
+        const {
+          app: { tenant },
+        } = getState();
+        dispatch(
+          push(
+            `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.search}${window.location.hash}`
+          )
         );
-
-        dispatch({ type: ADD_ASSETS, payload: { items } });
-        if (redirect) {
-          const {
-            app: { tenant },
-          } = getState();
-          dispatch(
-            push(
-              `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.search}${window.location.hash}`
-            )
-          );
-        }
       }
-    } catch (ex) {
-      message.error(`Could not fetch asset.`);
-      return;
     }
     requestedAssetIds[assetId] = false;
   };
