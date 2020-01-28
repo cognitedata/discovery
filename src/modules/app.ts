@@ -5,9 +5,6 @@ import { SingleCogniteCapability } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
-// Global Permissions
-export const PERMISSIONS: { [key: string]: string[] } = {};
-
 // Constants
 export const SET_APP_STATE = 'app/SET_APP_STATE';
 export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
@@ -16,6 +13,7 @@ export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
     loaded?: boolean;
     tenant?: string;
+    user?: string;
     cdfEnv?: string;
     groups?: { [key: string]: string[] };
   };
@@ -66,15 +64,6 @@ export const fetchUserGroups = () => async (
       { groupsAcl: ['LIST'] } as { [key: string]: string[] }
     );
 
-    Object.keys(groups).forEach(key => {
-      PERMISSIONS[key] = groups[key];
-    });
-
-    const status = await sdk.login.status();
-    if (status) {
-      PERMISSIONS.email = [status.user];
-    }
-
     dispatch({
       type: SET_APP_STATE,
       payload: {
@@ -87,6 +76,20 @@ export const fetchUserGroups = () => async (
     console.error(
       'Unable to load user permissions (missing permission groupsAcl:LIST)'
     );
+  }
+};
+
+export const fetchUserDetails = () => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction>
+) => {
+  const response = await sdk.login.status();
+  if (response) {
+    dispatch({
+      type: SET_APP_STATE,
+      payload: {
+        user: response.user,
+      },
+    });
   }
 };
 
@@ -105,6 +108,7 @@ export const setTenant = (tenant: string, redirect = false) => async (
     );
   }
 };
+
 export const setCdfEnv = (env?: string) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
@@ -141,6 +145,7 @@ export interface AppState {
   tenant?: string;
   loaded: boolean;
   cdfEnv?: string;
+  user?: string;
   groups: { [key: string]: string[] };
 }
 const initialState: AppState = { groups: {}, loaded: false };

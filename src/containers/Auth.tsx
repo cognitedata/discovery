@@ -14,6 +14,7 @@ import {
   AppState,
   setCdfEnv,
   fetchUserGroups,
+  fetchUserDetails,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
 import { fetchModels } from '../modules/threed';
@@ -41,6 +42,7 @@ type Props = {
   setCdfEnv: typeof setCdfEnv;
   setTenant: typeof setTenant;
   fetchUserGroups: typeof fetchUserGroups;
+  fetchUserDetails: typeof fetchUserDetails;
   fetchModels: typeof fetchModels;
   fetchTypes: typeof fetchTypes;
   replace: typeof replace;
@@ -123,6 +125,7 @@ class Auth extends React.Component<Props, State> {
           delete queryParameters.apikey;
           window.location.hash = queryString.stringify(queryParameters);
           await this.props.fetchUserGroups();
+          await this.props.fetchUserDetails();
           await this.props.fetchModels();
           await this.props.fetchTypes();
         } else {
@@ -230,6 +233,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setCdfEnv,
       fetchUserGroups,
       fetchModels,
+      fetchUserDetails,
       fetchTypes,
       replace,
     },
