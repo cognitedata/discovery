@@ -1,6 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Button } from 'antd';
+import { bindActionCreators, Dispatch } from 'redux';
+import { connect } from 'react-redux';
+import { selectAppState, setTrackingEnabled } from '../../modules/app';
+import { RootState } from '../../reducers/index';
 
 const Footer = styled.div`
   width: 100vw;
@@ -22,15 +26,19 @@ const Footer = styled.div`
     margin-right: 12px;
   }
 `;
+type StateProps = {
+  trackingEnabled: boolean | null;
+};
+type DispatchProps = {
+  setTrackingEnabled: typeof setTrackingEnabled;
+};
+type Props = StateProps & DispatchProps;
 
-export const PRIVACY_ACCEPT = 'acceptPrivacy';
-
-class PrivacyDisclaimer extends React.Component {
+class PrivacyDisclaimer extends React.Component<Props> {
   componentDidMount() {
-    if (localStorage.getItem(PRIVACY_ACCEPT) === null) {
+    if (this.props.trackingEnabled === null) {
       setTimeout(() => {
-        localStorage.setItem(PRIVACY_ACCEPT, 'true');
-        this.forceUpdate();
+        this.props.setTrackingEnabled(true);
       }, 30000);
     } else if (navigator.doNotTrack === '1') {
       // eslint-disable-next-line no-console
@@ -41,10 +49,7 @@ class PrivacyDisclaimer extends React.Component {
   }
 
   render() {
-    if (
-      localStorage.getItem(PRIVACY_ACCEPT) === 'true' ||
-      localStorage.getItem(PRIVACY_ACCEPT) === 'false'
-    ) {
+    if (this.props.trackingEnabled !== null) {
       return null;
     }
     return (
@@ -57,8 +62,7 @@ class PrivacyDisclaimer extends React.Component {
         </p>
         <Button
           onClick={() => {
-            localStorage.setItem(PRIVACY_ACCEPT, 'false');
-            this.forceUpdate();
+            this.props.setTrackingEnabled(false);
           }}
         >
           Opt Out
@@ -67,8 +71,7 @@ class PrivacyDisclaimer extends React.Component {
           ghost
           type="primary"
           onClick={() => {
-            localStorage.setItem(PRIVACY_ACCEPT, 'true');
-            this.forceUpdate();
+            this.props.setTrackingEnabled(true);
           }}
         >
           Dismiss
@@ -78,4 +81,18 @@ class PrivacyDisclaimer extends React.Component {
   }
 }
 
-export default PrivacyDisclaimer;
+const mapStateToProps = (state: RootState): StateProps => {
+  return {
+    trackingEnabled: selectAppState(state).trackingEnabled,
+  };
+};
+
+const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
+  bindActionCreators(
+    {
+      setTrackingEnabled,
+    },
+    dispatch
+  );
+
+export default connect(mapStateToProps, mapDispatchToProps)(PrivacyDisclaimer);

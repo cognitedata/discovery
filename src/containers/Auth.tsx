@@ -26,7 +26,7 @@ import ThreeDPage from './ThreeDPage';
 import RelationshipPage from './RelationshipPage';
 import { fetchTypes } from '../modules/types';
 import { trackUsage } from '../utils/Metrics';
-import PrivacyDisclaimer from '../components/PrivacyDisclaimer';
+import PrivacyDisclaimer from './PrivacyDisclaimer/PrivacyDisclaimer';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;

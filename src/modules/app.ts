@@ -6,12 +6,14 @@ import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 
 // Constants
+export const PRIVACY_ACCEPT = 'acceptPrivacy';
 export const SET_APP_STATE = 'app/SET_APP_STATE';
 export const CLEAR_APP_STATE = 'app/CLEAR_APP_STATE';
 
 export interface SetAppStateAction extends Action<typeof SET_APP_STATE> {
   payload: {
     loaded?: boolean;
+    trackingEnabled?: boolean;
     tenant?: string;
     user?: string;
     cdfEnv?: string;
@@ -93,6 +95,18 @@ export const fetchUserDetails = () => async (
   }
 };
 
+export const setTrackingEnabled = (trackingEnabled: boolean) => async (
+  dispatch: ThunkDispatch<any, any, SetAppStateAction>
+) => {
+  localStorage.setItem(PRIVACY_ACCEPT, trackingEnabled ? 'true' : 'false');
+  dispatch({
+    type: SET_APP_STATE,
+    payload: {
+      trackingEnabled,
+    },
+  });
+};
+
 export const setTenant = (tenant: string, redirect = false) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
@@ -144,11 +158,18 @@ export const resetAppState = () => async (
 export interface AppState {
   tenant?: string;
   loaded: boolean;
+  trackingEnabled: boolean | null;
   cdfEnv?: string;
   user?: string;
   groups: { [key: string]: string[] };
 }
-const initialState: AppState = { groups: {}, loaded: false };
+const initialState: AppState = {
+  groups: {},
+  loaded: false,
+  trackingEnabled: localStorage.getItem(PRIVACY_ACCEPT)
+    ? localStorage.getItem(PRIVACY_ACCEPT) === 'true'
+    : null,
+};
 
 export default function app(state = initialState, action: AppAction): AppState {
   switch (action.type) {
