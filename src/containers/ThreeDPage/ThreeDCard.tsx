@@ -55,6 +55,9 @@ class ThreeDCard extends React.Component<Props, State> {
     if (!this.props.rootAsset && this.props.rootId) {
       this.props.fetchAsset(this.props.rootId);
     }
+    if (!this.props.selectedItem.asset) {
+      this.onTabChange('node');
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
@@ -64,6 +67,9 @@ class ThreeDCard extends React.Component<Props, State> {
       this.props.rootId
     ) {
       this.props.fetchAsset(this.props.rootId);
+    }
+    if (!this.props.selectedItem.asset && prevProps.selectedItem.asset) {
+      this.onTabChange('node');
     }
   }
 
@@ -105,7 +111,7 @@ class ThreeDCard extends React.Component<Props, State> {
               </p>
             </>
           )}
-          <Tabs activeKey={currentTab} onChange={this.onTabChange}>
+          <Tabs activeKey={currentTab} onChange={this.onTabChange} type="card">
             <Tabs.TabPane
               key="asset"
               tab="Asset info"
