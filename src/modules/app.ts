@@ -70,6 +70,11 @@ export const fetchUserGroups = () => async (
       PERMISSIONS[key] = groups[key];
     });
 
+    const status = await sdk.login.status();
+    if (status) {
+      PERMISSIONS.email = [status.user];
+    }
+
     dispatch({
       type: SET_APP_STATE,
       payload: {
