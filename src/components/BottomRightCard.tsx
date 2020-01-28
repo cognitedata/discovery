@@ -19,6 +19,9 @@ const StyledCard = styled(Card)`
       margin-right: 0px;
     }
 
+    .ant-tabs {
+      margin-top: 12px;
+    }
     .ant-tabs-nav .ant-tabs-tab {
       padding-left: 12px;
       padding-right: 12px;
