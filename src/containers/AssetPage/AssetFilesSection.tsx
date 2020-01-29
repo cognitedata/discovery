@@ -183,6 +183,7 @@ class AssetFileSection extends React.Component<Props, State> {
             style={{
               marginTop: '12px',
               flex: 1,
+              height: 0,
             }}
           >
             <FilePreview
