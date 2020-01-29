@@ -4,6 +4,8 @@ import { sdk } from 'index';
 import store from '../store/index';
 import { AppState } from '../modules/app';
 
+const SHOW_INITIAL_MESSAGE = 'shownMissingGroup';
+
 export const checkForAccessPermission = (
   key: string,
   type: string,
@@ -35,10 +37,30 @@ export const checkForAccessPermission = (
     return true;
   }
   if (showMessage) {
+    if (sessionStorage.getItem(SHOW_INITIAL_MESSAGE) === null) {
+      notification.error({
+        key: 'group-acl-warning',
+        message: `You are missing access to Group:ACL to read permissions`,
+        description: (
+          <p>
+            Go to{' '}
+            <a
+              href={`https://console.cognitedata.com/${sdk.project}/iam`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Console
+            </a>{' '}
+            and set up any missing permissions or contact your administrator!
+          </p>
+        ),
+      });
+      sessionStorage.setItem(SHOW_INITIAL_MESSAGE, 'true');
+    }
     // eslint-disable-next-line no-console
     console.warn(`You are missing access to Group:ACL to read permissions`);
   }
-  return false;
+  return true;
 };
 
 // Assets

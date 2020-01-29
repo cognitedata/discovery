@@ -15,6 +15,7 @@ import * as serviceWorker from './utils/serviceWorker';
 
 if (window.location.host.indexOf('localhost') === -1) {
   Sentry.init({
+    release: process.env.REACT_APP_VERSION,
     dsn: 'https://e173405d5cc140bdb23cd631fdaa1482@sentry.io/1965634',
   });
 }
