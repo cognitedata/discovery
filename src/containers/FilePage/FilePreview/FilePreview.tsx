@@ -312,7 +312,7 @@ class FilePreview extends React.Component<Props, State> {
     });
     const DETECT_ASSETS_NOTIF_KEY = 'detect-assets';
     const { detectionSelectedAssetId } = this.state;
-    if (this.props.file && detectionSelectedAssetId) {
+    if (this.props.file) {
       const notifConfig = {
         key: DETECT_ASSETS_NOTIF_KEY,
         icon: <Icon type="loading" />,
@@ -322,40 +322,44 @@ class FilePreview extends React.Component<Props, State> {
       };
       notification.open(notifConfig);
       this.setState({ runningDetectAssets: true, detectAssetsVisible: false });
-      detectAssetsInDocument(this.props.file, detectionSelectedAssetId, {
-        callbackProgress: (progress: string) => {
-          notification.open({ ...notifConfig, description: progress });
+      detectAssetsInDocument(
+        this.props.file,
+        {
+          callbackProgress: (progress: string) => {
+            notification.open({ ...notifConfig, description: progress });
+          },
+          callbackResult: results => {
+            notification.open({
+              ...notifConfig,
+              icon: (
+                <Icon
+                  type="check-circle"
+                  theme="twoTone"
+                  twoToneColor="#52c41a"
+                />
+              ),
+              duration: 4.5,
+              description: 'Completed',
+            });
+            this.setState({
+              runningDetectAssets: false,
+              detectedAssetsResult: results,
+            });
+          },
+          callbackError: (error: any) => {
+            notification.open({
+              ...notifConfig,
+              icon: (
+                <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
+              ),
+              description: error,
+              duration: 4.5,
+            });
+            this.setState({ runningDetectAssets: false });
+          },
         },
-        callbackResult: results => {
-          notification.open({
-            ...notifConfig,
-            icon: (
-              <Icon
-                type="check-circle"
-                theme="twoTone"
-                twoToneColor="#52c41a"
-              />
-            ),
-            duration: 4.5,
-            description: 'Completed',
-          });
-          this.setState({
-            runningDetectAssets: false,
-            detectedAssetsResult: results,
-          });
-        },
-        callbackError: (error: any) => {
-          notification.open({
-            ...notifConfig,
-            icon: (
-              <Icon type="warning" theme="twoTone" twoToneColor="#eb2f96" />
-            ),
-            description: error,
-            duration: 4.5,
-          });
-          this.setState({ runningDetectAssets: false });
-        },
-      });
+        detectionSelectedAssetId
+      );
     } else {
       message.info('Please select an asset first!');
     }
@@ -377,7 +381,7 @@ class FilePreview extends React.Component<Props, State> {
             Close
           </Button>
         </div>
-        <div style={{ flex: 1, marginTop: '12px' }}>
+        <div style={{ flex: 1, marginTop: '12px', overflow: 'auto' }}>
           <Table
             onRow={item => ({
               onClick: () =>
@@ -501,7 +505,7 @@ class FilePreview extends React.Component<Props, State> {
                 }
               />
               <Button
-                disabled={!detectionSelectedAssetId || !canReadAssets(false)}
+                disabled={!canReadAssets(false)}
                 onClick={this.onDetectAssetsClicked}
               >
                 Detect Assets

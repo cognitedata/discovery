@@ -18,11 +18,13 @@ export const downloadFile = async (url: string) => {
 };
 
 const fetchAllNamesOfAssetInRoot = async (
-  rootId: number,
+  rootId?: number,
   callbackProgress?: (progress: string) => void
 ) => {
   const countRequest = await sdk.get(
-    `/api/playground/projects/${sdk.project}/assets/count?rootIds=[${rootId}]`
+    `/api/playground/projects/${sdk.project}/assets/count?${
+      rootId ? `rootIds=[${rootId}]` : ''
+    }`
   );
   const { count } = countRequest.data;
   let currentCount = 0;
@@ -32,7 +34,7 @@ const fetchAllNamesOfAssetInRoot = async (
   }
   await sdk.assets
     .list({
-      filter: { rootIds: [{ id: rootId }] },
+      ...(rootId && { filter: { rootIds: [{ id: rootId }] } }),
       limit: 1000,
     })
     .autoPagingEach(asset => {
@@ -174,12 +176,12 @@ export const convertPDFtoPNID = async (
 };
 export const detectAssetsInDocument = async (
   file: FilesMetadata,
-  selectedRootAssetId: number,
   callbacks: {
     callbackProgress?: (progressString: string) => void;
     callbackResult: (results: { name: string; page: number }[]) => void;
     callbackError?: (error: any) => void;
-  }
+  },
+  selectedRootAssetId?: number
 ) => {
   const { callbackProgress, callbackResult, callbackError } = callbacks;
   if (!canReadFiles()) {
