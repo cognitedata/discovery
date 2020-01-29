@@ -82,6 +82,12 @@ export const fetchUserGroups = () => async (
     console.error(
       'Unable to load user permissions (missing permission groupsAcl:LIST)'
     );
+    dispatch({
+      type: SET_APP_STATE,
+      payload: {
+        loaded: true,
+      },
+    });
   }
 };
 

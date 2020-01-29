@@ -186,59 +186,67 @@ export function fetchModels() {
     dispatch({
       type: LOAD_MODELS,
     });
-    const requestResult = await sdk.models3D.list({ limit: 200 });
-    if (requestResult) {
-      dispatch({
-        type: SET_MODELS,
-        payload: { models: arrayToObjectById(requestResult.items) },
-      });
-
-      const results = await Promise.all(
-        requestResult.items.map(model =>
-          sdk.revisions3D.list(model.id, {
-            limit: 1000,
-          })
-        )
-      );
-
-      let cumulativeRepresentsAsset: {
-        [key: number]: { modelId: number; revisionId: number }[];
-      } = {};
-
-      results.forEach((revisionResults, i) => {
-        const modelId = requestResult.items[i].id;
-        const { items } = revisionResults;
-        cumulativeRepresentsAsset = items.reduce(
-          (prev, revision: TBDRevision) => {
-            if (revision.metadata!.representsAsset) {
-              const { representsAsset } = revision.metadata!;
-              // eslint-disable-next-line no-param-reassign
-              prev[Number(representsAsset)] = [
-                ...(prev[Number(representsAsset)] || []),
-                {
-                  modelId,
-                  revisionId: revision.id,
-                },
-              ];
-            }
-            return prev;
-          },
-          cumulativeRepresentsAsset
-        );
+    try {
+      const requestResult = await sdk.models3D.list({ limit: 200 });
+      if (requestResult) {
         dispatch({
-          type: ADD_REVISIONS,
-          payload: {
-            modelId,
-            revisions: items,
-            representsAsset:
-              i === results.length - 1 ? cumulativeRepresentsAsset : {},
-          },
+          type: SET_MODELS,
+          payload: { models: arrayToObjectById(requestResult.items) },
         });
+
+        const results = await Promise.all(
+          requestResult.items.map(model =>
+            sdk.revisions3D.list(model.id, {
+              limit: 1000,
+            })
+          )
+        );
+
+        let cumulativeRepresentsAsset: {
+          [key: number]: { modelId: number; revisionId: number }[];
+        } = {};
+
+        results.forEach((revisionResults, i) => {
+          const modelId = requestResult.items[i].id;
+          const { items } = revisionResults;
+          cumulativeRepresentsAsset = items.reduce(
+            (prev, revision: TBDRevision) => {
+              if (revision.metadata!.representsAsset) {
+                const { representsAsset } = revision.metadata!;
+                // eslint-disable-next-line no-param-reassign
+                prev[Number(representsAsset)] = [
+                  ...(prev[Number(representsAsset)] || []),
+                  {
+                    modelId,
+                    revisionId: revision.id,
+                  },
+                ];
+              }
+              return prev;
+            },
+            cumulativeRepresentsAsset
+          );
+          dispatch({
+            type: ADD_REVISIONS,
+            payload: {
+              modelId,
+              revisions: items,
+              representsAsset:
+                i === results.length - 1 ? cumulativeRepresentsAsset : {},
+            },
+          });
+        });
+      }
+      dispatch({
+        type: LOADED_MODELS,
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      dispatch({
+        type: LOADED_MODELS,
       });
     }
-    dispatch({
-      type: LOADED_MODELS,
-    });
   };
 }
 
