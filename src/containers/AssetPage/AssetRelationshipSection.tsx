@@ -9,7 +9,7 @@ import { RootState } from '../../reducers/index';
 import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
 import { selectTimeseries, TimeseriesState } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypesState, TypesState } from '../../modules/types';
+import { TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -481,7 +481,7 @@ const mapStateToProps = (state: RootState): StateProps => {
     assets: selectAssets(state),
     timeseries: selectTimeseries(state),
     threed: selectThreeD(state),
-    types: selectTypesState(state),
+    types: state.types,
   };
 };
 

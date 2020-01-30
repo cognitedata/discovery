@@ -175,9 +175,10 @@ export interface TypesState {
   items: Type[];
   assetTypes: { [key: number]: AssetTypeInfo[] };
 }
+
 const initialState: TypesState = { assetTypes: {}, items: [], error: false };
 
-export default function typesReducer(
+export default function reducer(
   state = initialState,
   action: TypeAction
 ): TypesState {
@@ -207,6 +208,4 @@ export default function typesReducer(
       return state;
   }
 }
-
 // Selectors
-export const selectTypesState = (state: RootState) => state.types;
