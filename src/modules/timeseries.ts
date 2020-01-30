@@ -1,4 +1,3 @@
-import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action } from 'redux';
 import {
@@ -32,6 +31,92 @@ type TimeseriesAction =
   | SetTimeseriesAction
   | RemoveAssetAction
   | DeleteTimeseriesAction;
+
+// Reducer
+export interface TimeseriesState {
+  items: { [key: number]: GetTimeSeriesMetadataDTO };
+  byAssetId: { [key: number]: number[] };
+}
+
+const initialState: TimeseriesState = { items: {}, byAssetId: {} };
+
+export default function reducer(
+  state = initialState,
+  action: TimeseriesAction
+): TimeseriesState {
+  switch (action.type) {
+    case SET_TIMESERIES: {
+      const { items, assetId } = action.payload;
+
+      const byAssetMap = items.reduce((prev, item) => {
+        if (
+          !state.items[item.id] ||
+          state.items[item.id].assetId !== item.assetId
+        ) {
+          const prevId = state.items[item.id]
+            ? state.items[item.id].assetId
+            : undefined;
+          const currId = item.assetId;
+          if (prevId && prev[prevId]) {
+            // eslint-disable-next-line no-param-reassign
+            prev[prevId] = prev[prevId].filter(el => el !== item.id);
+          }
+          if (currId) {
+            if (prev[currId]) {
+              // eslint-disable-next-line no-param-reassign
+              prev[currId] = [...prev[currId], item.id];
+            } else {
+              // eslint-disable-next-line no-param-reassign
+              prev[currId] = [item.id];
+            }
+          }
+        }
+        return prev;
+      }, state.byAssetId);
+      if (assetId && items.length === 0) {
+        byAssetMap[assetId] = [];
+      }
+      return {
+        ...state,
+        items: {
+          ...state.items,
+          ...arrayToObjectById(items),
+        },
+        byAssetId: byAssetMap,
+      };
+    }
+
+    case REMOVE_ASSET_FROM_TIMESERIES: {
+      const { timeseriesId } = action.payload;
+      const { items } = state;
+      delete items[timeseriesId];
+      return {
+        ...state,
+        items,
+      };
+    }
+    case DELETE_TIMESERIES: {
+      const { timeseriesId } = action.payload;
+      const { items, byAssetId } = state;
+      if (items[timeseriesId]) {
+        const { assetId } = items[timeseriesId];
+        if (assetId && byAssetId[assetId]) {
+          byAssetId[assetId] = byAssetId[assetId].filter(
+            el => el !== timeseriesId
+          );
+        }
+      }
+      delete items[timeseriesId];
+      return {
+        ...state,
+        items,
+        byAssetId,
+      };
+    }
+    default:
+      return state;
+  }
+}
 
 // Functions
 export function fetchTimeseries(ids: IdEither[]) {
@@ -128,109 +213,20 @@ export const updateTimeseries = (
   });
 };
 
-// Reducer
-export interface TimeseriesState {
-  timeseriesData: { [key: number]: GetTimeSeriesMetadataDTO };
-  byAssetId: { [key: number]: number[] };
-}
-const initialState: TimeseriesState = { timeseriesData: {}, byAssetId: {} };
-
-export default function timeseries(
-  state = initialState,
-  action: TimeseriesAction
-): TimeseriesState {
-  switch (action.type) {
-    case SET_TIMESERIES: {
-      const { items, assetId } = action.payload;
-
-      const byAssetMap = items.reduce((prev, item) => {
-        if (
-          !state.timeseriesData[item.id] ||
-          state.timeseriesData[item.id].assetId !== item.assetId
-        ) {
-          const prevId = state.timeseriesData[item.id]
-            ? state.timeseriesData[item.id].assetId
-            : undefined;
-          const currId = item.assetId;
-          if (prevId && prev[prevId]) {
-            // eslint-disable-next-line no-param-reassign
-            prev[prevId] = prev[prevId].filter(el => el !== item.id);
-          }
-          if (currId) {
-            if (prev[currId]) {
-              // eslint-disable-next-line no-param-reassign
-              prev[currId] = [...prev[currId], item.id];
-            } else {
-              // eslint-disable-next-line no-param-reassign
-              prev[currId] = [item.id];
-            }
-          }
-        }
-        return prev;
-      }, state.byAssetId);
-      if (assetId && items.length === 0) {
-        byAssetMap[assetId] = [];
-      }
-      return {
-        ...state,
-        timeseriesData: {
-          ...state.timeseriesData,
-          ...arrayToObjectById(items),
-        },
-        byAssetId: byAssetMap,
-      };
-    }
-
-    case REMOVE_ASSET_FROM_TIMESERIES: {
-      const { timeseriesId } = action.payload;
-      const { timeseriesData } = state;
-      delete timeseriesData[timeseriesId];
-      return {
-        ...state,
-        timeseriesData,
-      };
-    }
-    case DELETE_TIMESERIES: {
-      const { timeseriesId } = action.payload;
-      const { timeseriesData, byAssetId } = state;
-      if (timeseriesData[timeseriesId]) {
-        const { assetId } = timeseriesData[timeseriesId];
-        if (assetId && byAssetId[assetId]) {
-          byAssetId[assetId] = byAssetId[assetId].filter(
-            el => el !== timeseriesId
-          );
-        }
-      }
-      delete timeseriesData[timeseriesId];
-      return {
-        ...state,
-        timeseriesData,
-        byAssetId,
-      };
-    }
-    default:
-      return state;
-  }
-}
-
-// Action creators
-const setTimeseries = createAction(SET_TIMESERIES);
-
-export const actions = {
-  setTimeseries,
-};
-
 // Selectors
-export const selectTimeseries = (state: RootState) => state.timeseries;
 export const selectTimeseriesByAssetId = (
   state: RootState,
   assetId: number
 ) => {
   const tsForAsset = state.timeseries.byAssetId[assetId];
   if (tsForAsset) {
-    return tsForAsset
-      .map(id => state.timeseries.timeseriesData[id])
-      .filter(el => !!el);
+    return tsForAsset.map(id => state.timeseries.items[id]).filter(el => !!el);
   }
   return tsForAsset;
+};
+export const selectTimeseriesById = (
+  state: RootState,
+  timeseriesId?: number
+) => {
+  return timeseriesId ? state.timeseries.items[timeseriesId] : undefined;
 };

@@ -7,10 +7,10 @@ import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
 import { RootState } from '../../reducers/index';
-import { selectAssets, AssetsState } from '../../modules/assets';
-import { selectTimeseries, TimeseriesState } from '../../modules/timeseries';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypesState, TypesState } from '../../modules/types';
+import { AssetsState } from '../../modules/assets';
+import { TimeseriesState } from '../../modules/timeseries';
+import { ThreeDState } from '../../modules/threed';
+import { TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -104,7 +104,7 @@ class RelationshipViewer extends Component<Props, State> {
       };
     };
   } {
-    const { externalIdMap } = this.props.assets;
+    const { byExternalId } = this.props.assets;
     const { items, assetTypes } = this.props.types;
     return {
       Resource: {
@@ -164,7 +164,7 @@ class RelationshipViewer extends Component<Props, State> {
             filterNode: (node: RelationshipResource) => {
               const nodeTypes =
                 assetTypes[
-                  externalIdMap[node.resourceId] || Number(node.resourceId)
+                  byExternalId[node.resourceId] || Number(node.resourceId)
                 ];
               if (
                 nodeTypes &&
@@ -186,8 +186,8 @@ class RelationshipViewer extends Component<Props, State> {
 
   get data() {
     const {
-      relationships: { items, assetRelationshipMap },
-      assets: { externalIdMap, all },
+      relationships: { items: relationshipItems, byAssetId },
+      assets: { byExternalId, items: assetItems },
     } = this.props;
     const { visibleNodeIds, rootAssetIds, query } = this.state;
     // TODO fix this is a mix across resource type! unsafe!
@@ -197,9 +197,9 @@ class RelationshipViewer extends Component<Props, State> {
     const visibleIds =
       visibleNodeIds.size === 0 ? rootAssetIds : Array.from(visibleNodeIds);
     visibleIds.forEach(id => {
-      if (assetRelationshipMap[id]) {
-        assetRelationshipMap[id].forEach(relationshipId => {
-          if (items[relationshipId]) {
+      if (byAssetId[id]) {
+        byAssetId[id].forEach(relationshipId => {
+          if (relationshipItems[relationshipId]) {
             relationshipIds.add(relationshipId);
           }
         });
@@ -219,9 +219,8 @@ class RelationshipViewer extends Component<Props, State> {
           // String Filter
           return (resource: RelationshipResource) => {
             const node =
-              all[
-                externalIdMap[resource.resourceId] ||
-                  Number(resource.resourceId)
+              assetItems[
+                byExternalId[resource.resourceId] || Number(resource.resourceId)
               ];
             if (node) {
               return node.name.toLowerCase().indexOf(el.toLowerCase()) > -1;
@@ -245,7 +244,7 @@ class RelationshipViewer extends Component<Props, State> {
     // Run if visible node id is turned on (not just showing all root)
     if (visibleNodeIds.size !== 0) {
       Array.from(relationshipIds)
-        .map(id => items[id])
+        .map(id => relationshipItems[id])
         .forEach((relationship: Relationship) => {
           const sourcePassFilter = nodeFilters.some(filter =>
             filter(relationship.source)
@@ -258,13 +257,13 @@ class RelationshipViewer extends Component<Props, State> {
               (sourcePassFilter &&
                 // only if in selected ids
                 visibleNodeIds.has(
-                  externalIdMap[relationship.target.resourceId] ||
+                  byExternalId[relationship.target.resourceId] ||
                     Number(relationship.target.resourceId)
                 )) ||
               (targetPassFilter &&
                 // only if in selected ids
                 visibleNodeIds.has(
-                  externalIdMap[relationship.source.resourceId] ||
+                  byExternalId[relationship.source.resourceId] ||
                     Number(relationship.source.resourceId)
                 ))) &&
             (linkFilters.length === 0 ||
@@ -301,14 +300,14 @@ class RelationshipViewer extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { all, externalIdMap },
+      assets: { items: assetItems, byExternalId },
       threed: { models },
-      timeseries: { timeseriesData },
+      timeseries: { items: timeseriesItems },
     } = this.props;
     switch (node.resource) {
       case 'asset': {
         const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+          assetItems[byExternalId[node.resourceId] || Number(node.resourceId)];
         return asset ? asset.name : 'Loading...';
       }
       case 'threeDRevision':
@@ -321,7 +320,7 @@ class RelationshipViewer extends Component<Props, State> {
         return `Linked to ${model ? model.name : 'Loading...'}`;
       }
       case 'timeSeries': {
-        const timeseries = timeseriesData[Number(node.resourceId)];
+        const timeseries = timeseriesItems[Number(node.resourceId)];
         if (timeseries) {
           return timeseries.name || `${timeseries.id}`;
         }
@@ -336,10 +335,10 @@ class RelationshipViewer extends Component<Props, State> {
     switch (node.resource) {
       case 'asset': {
         const {
-          assets: { all, externalIdMap },
+          assets: { items, byExternalId },
         } = this.props;
         const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+          items[byExternalId[node.resourceId] || Number(node.resourceId)];
         if (asset) {
           this.props.fetchRelationshipsForAssetId(asset);
           visibleNodeIds.add(asset.id);
@@ -362,9 +361,9 @@ class RelationshipViewer extends Component<Props, State> {
       }
       case 'timeSeries': {
         const {
-          timeseries: { timeseriesData },
+          timeseries: { items },
         } = this.props;
-        const timeseries = timeseriesData[Number(node.resourceId)];
+        const timeseries = items[Number(node.resourceId)];
         if (timeseries) {
           visibleNodeIds.add(timeseries.id);
           this.setState({
@@ -534,10 +533,10 @@ class RelationshipViewer extends Component<Props, State> {
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     relationships: state.relationships,
-    assets: selectAssets(state),
-    timeseries: selectTimeseries(state),
-    threed: selectThreeD(state),
-    types: selectTypesState(state),
+    assets: state.assets,
+    timeseries: state.timeseries,
+    threed: state.threed,
+    types: state.types,
   };
 };
 

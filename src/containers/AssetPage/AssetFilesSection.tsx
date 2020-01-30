@@ -17,9 +17,9 @@ import { RootState } from '../../reducers/index';
 import {
   fetchFiles,
   selectFilesForAsset,
-  selectFiles,
   fetchFile,
   addFilesToState,
+  selectFileById,
 } from '../../modules/files';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { sdk } from '../../index';
@@ -183,6 +183,7 @@ class AssetFileSection extends React.Component<Props, State> {
             style={{
               marginTop: '12px',
               flex: 1,
+              height: 0,
             }}
           >
             <FilePreview
@@ -267,9 +268,7 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
     files: origProps.asset
       ? selectFilesForAsset(state, origProps.asset.id)
       : undefined,
-    selectedFile: origProps.fileId
-      ? selectFiles(state).files[origProps.fileId]
-      : undefined,
+    selectedFile: selectFileById(state, origProps.fileId),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

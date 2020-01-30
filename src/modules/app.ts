@@ -24,6 +24,29 @@ interface ClearAppStateAction extends Action<typeof CLEAR_APP_STATE> {}
 
 type AppAction = SetAppStateAction | ClearAppStateAction;
 
+// Reducer
+export interface AppState {
+  tenant?: string;
+  loaded: boolean;
+  cdfEnv?: string;
+  groups: { [key: string]: string[] };
+}
+
+const initialState: AppState = { groups: {}, loaded: false };
+
+export default function reducer(
+  state = initialState,
+  action: AppAction
+): AppState {
+  switch (action.type) {
+    case SET_APP_STATE:
+      // needed to trigger states properly
+      return { ...state, ...action.payload };
+    default:
+      return state;
+  }
+}
+
 export const fetchUserGroups = () => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
@@ -113,7 +136,7 @@ export const setTrackingEnabled = (trackingEnabled: boolean) => async (
   });
 };
 
-export const setTenant = (tenant: string, redirect = false) => async (
+export const updateTenant = (tenant: string, redirect = false) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
   dispatch({
@@ -129,7 +152,7 @@ export const setTenant = (tenant: string, redirect = false) => async (
   }
 };
 
-export const setCdfEnv = (env?: string) => async (
+export const updateCdfEnv = (env?: string) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
   if (env) {
@@ -160,32 +183,4 @@ export const resetAppState = () => async (
   dispatch(push(`/${tenant}${window.location.search}${window.location.hash}`));
 };
 
-// Reducer
-export interface AppState {
-  tenant?: string;
-  loaded: boolean;
-  trackingEnabled: boolean | null;
-  cdfEnv?: string;
-  user?: string;
-  groups: { [key: string]: string[] };
-}
-const initialState: AppState = {
-  groups: {},
-  loaded: false,
-  trackingEnabled: localStorage.getItem(PRIVACY_ACCEPT)
-    ? localStorage.getItem(PRIVACY_ACCEPT) === 'true'
-    : null,
-};
-
-export default function app(state = initialState, action: AppAction): AppState {
-  switch (action.type) {
-    case SET_APP_STATE:
-      // needed to trigger states properly
-      return { ...state, ...action.payload };
-    default:
-      return state;
-  }
-}
-
 // Selectors
-export const selectAppState = (state: RootState) => state.app || {};

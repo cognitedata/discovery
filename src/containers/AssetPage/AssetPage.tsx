@@ -130,7 +130,7 @@ class AssetPage extends React.Component<Props, State> {
   }
 
   get asset() {
-    return this.props.assets.all[this.props.match.params.assetId];
+    return this.props.assets.items[this.props.match.params.assetId];
   }
 
   get fileId() {

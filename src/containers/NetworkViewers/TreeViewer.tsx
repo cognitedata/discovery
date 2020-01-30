@@ -11,14 +11,10 @@ import { withResizeDetector } from 'react-resize-detector';
 import TypeBadge from 'containers/TypeBadge';
 import { RootState } from '../../reducers/index';
 import { trackUsage } from '../../utils/Metrics';
-import { fetchAssets, selectAssets, AssetsState } from '../../modules/assets';
-import {
-  fetchTimeseries,
-  selectTimeseries,
-  TimeseriesState,
-} from '../../modules/timeseries';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypesState, TypesState } from '../../modules/types';
+import { fetchAssets, AssetsState } from '../../modules/assets';
+import { fetchTimeseries, TimeseriesState } from '../../modules/timeseries';
+import { ThreeDState } from '../../modules/threed';
+import { TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -359,10 +355,10 @@ class RelationshipTreeViewer extends Component<Props, State> {
     switch (node.resource) {
       case 'asset': {
         const {
-          assets: { all, externalIdMap },
+          assets: { items, byExternalId },
         } = this.props;
         const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+          items[byExternalId[node.resourceId] || Number(node.resourceId)];
         if (asset) {
           const { assetSelection } = this.props;
           if (assetSelection) {
@@ -502,13 +498,13 @@ class RelationshipTreeViewer extends Component<Props, State> {
       return null;
     }
     const { selectedAsset } = this.state;
-    const { all, externalIdMap } = this.props.assets;
+    const { items, byExternalId } = this.props.assets;
     if (!selectedAsset || selectedAsset.resource !== 'asset') {
       return null;
     }
     const asset =
-      all[
-        externalIdMap[selectedAsset.resourceId] ||
+      items[
+        byExternalId[selectedAsset.resourceId] ||
           Number(selectedAsset.resourceId)
       ];
 
@@ -588,7 +584,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
   render() {
     const { controls, loading, data, selectedAsset } = this.state;
     const { assetSelection } = this.props;
-    const { externalIdMap } = this.props.assets;
+    const { byExternalId } = this.props.assets;
     return (
       <Wrapper ref={this.wrapperRef}>
         <LoadingWrapper visible={loading ? 'true' : 'false'}>
@@ -637,7 +633,7 @@ class RelationshipTreeViewer extends Component<Props, State> {
             } else if (
               assetSelection &&
               assetSelection.visibleAssetIds.includes(
-                externalIdMap[node.resourceId] || Number(node.resourceId)
+                byExternalId[node.resourceId] || Number(node.resourceId)
               )
             ) {
               ctx.fillStyle = 'rgba(255, 255, 200, 0.8)';
@@ -699,10 +695,10 @@ class RelationshipTreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    assets: selectAssets(state),
-    timeseries: selectTimeseries(state),
-    threed: selectThreeD(state),
-    types: selectTypesState(state),
+    assets: state.assets,
+    timeseries: state.timeseries,
+    threed: state.threed,
+    types: state.types,
   };
 };
 

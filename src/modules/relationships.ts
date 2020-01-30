@@ -2,7 +2,6 @@ import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { Asset } from '@cognite/sdk';
-import { RootState } from '../reducers/index';
 import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
 import { canReadRelationships } from '../utils/PermissionsUtils';
@@ -35,28 +34,43 @@ interface FetchRelationshipsAction extends Action<typeof GET_RELATIONSHIPS> {
 
 type RelationshipActions = FetchRelationshipsAction;
 
-// Functions
-// export function fetchRelationships() {
-//   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
-//     const { project } = sdk;
-//     try {
-//       const response = await sdk.get(
-//         `/api/playground/projects/${project}/relationships`
-//       );
+// Reducer
+export interface RelationshipState {
+  items: { [key: string]: Relationship };
+  byAssetId: { [key: string]: string[] };
+}
 
-//       if (response.status === 200) {
-//         dispatch({
-//           type: GET_RELATIONSHIPS,
-//           payload: { items: response.data.items },
-//         });
-//       } else {
-//         throw new Error('Unable to fetch relationships');
-//       }
-//     } catch (ex) {
-//       message.error('unable to retrieve relationship data');
-//     }
-//   };
-// }
+const initialState: RelationshipState = {
+  items: {},
+  byAssetId: {},
+};
+
+export default function reducer(
+  state = initialState,
+  action: RelationshipActions
+): RelationshipState {
+  switch (action.type) {
+    case GET_RELATIONSHIPS: {
+      const { items, assetId } = action.payload;
+      return {
+        ...state,
+        items: {
+          ...state.items,
+          ...arrayToObjectById(items.map(el => ({ ...el, id: el.externalId }))),
+        },
+        byAssetId: {
+          ...state.byAssetId,
+          [assetId]: items.map(el => el.externalId),
+        },
+      };
+    }
+
+    default:
+      return state;
+  }
+}
+
+// Functions
 
 export async function postWithCursor(url: string, data: any) {
   const result = await sdk.post(url, {
@@ -156,41 +170,4 @@ export function fetchRelationshipsForAssetId(asset: Asset) {
   };
 }
 
-// Reducer
-export interface RelationshipState {
-  items: { [key: string]: Relationship };
-  assetRelationshipMap: { [key: string]: string[] };
-}
-const initialState: RelationshipState = {
-  items: {},
-  assetRelationshipMap: {},
-};
-
-export default function relationships(
-  state = initialState,
-  action: RelationshipActions
-): RelationshipState {
-  switch (action.type) {
-    case GET_RELATIONSHIPS: {
-      const { items, assetId } = action.payload;
-      return {
-        ...state,
-        items: {
-          ...state.items,
-          ...arrayToObjectById(items.map(el => ({ ...el, id: el.externalId }))),
-        },
-        assetRelationshipMap: {
-          ...state.assetRelationshipMap,
-          [assetId]: items.map(el => el.externalId),
-        },
-      };
-    }
-
-    default:
-      return state;
-  }
-}
-
 // Selectors
-export const selectRelationships = (state: RootState) =>
-  state.relationships || initialState;

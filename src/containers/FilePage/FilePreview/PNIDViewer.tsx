@@ -10,8 +10,8 @@ import { sleep } from 'utils/utils';
 import { RootState } from 'reducers';
 import { sdk } from 'index';
 import { trackUsage } from 'utils/Metrics';
-import { selectFiles, FilesState } from 'modules/files';
-import { selectAssets, AssetsState } from 'modules/assets';
+import { FilesState } from 'modules/files';
+import { AssetsState } from 'modules/assets';
 import { canReadAssets } from '../../../utils/PermissionsUtils';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
@@ -154,8 +154,8 @@ class PNIDViewer extends React.Component<Props, State> {
       );
     }
 
-    const matches = Object.keys(this.props.assets.all)
-      .map(id => this.props.assets.all[id])
+    const matches = Object.keys(this.props.assets.items)
+      .map(id => this.props.assets.items[id])
       .filter(a => a.name === name);
 
     if (matches.length === 0) {
@@ -229,7 +229,7 @@ class PNIDViewer extends React.Component<Props, State> {
       return false;
     }
 
-    const asset = this.props.assets.all[this.props.assetId];
+    const asset = this.props.assets.items[this.props.assetId];
     if (!asset) {
       return false;
     }
@@ -326,8 +326,8 @@ class PNIDViewer extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    files: selectFiles(state),
-    assets: selectAssets(state),
+    files: state.files,
+    assets: state.assets,
   };
 };
 
