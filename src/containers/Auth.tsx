@@ -9,10 +9,9 @@ import Header from 'containers/Header';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
 import {
-  selectAppState,
-  setTenant,
+  updateTenant,
   AppState,
-  setCdfEnv,
+  updateCdfEnv,
   fetchUserGroups,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
@@ -37,8 +36,8 @@ type Props = {
   app: AppState;
   match: { params: { tenant: string }; path: string };
   history: any;
-  setCdfEnv: typeof setCdfEnv;
-  setTenant: typeof setTenant;
+  updateCdfEnv: typeof updateCdfEnv;
+  updateTenant: typeof updateTenant;
   fetchUserGroups: typeof fetchUserGroups;
   fetchModels: typeof fetchModels;
   fetchTypes: typeof fetchTypes;
@@ -65,7 +64,7 @@ class Auth extends React.Component<Props, State> {
     const fromUrlCdfEnv = getCdfEnvFromUrl();
     const fromUrlApiKey = getApiKeyFromUrl();
     if (!cdfEnv && fromUrlCdfEnv) {
-      this.props.setCdfEnv(fromUrlCdfEnv);
+      this.props.updateCdfEnv(fromUrlCdfEnv);
     }
     if (cdfEnv && !fromUrlCdfEnv) {
       if (tenant) {
@@ -77,7 +76,7 @@ class Auth extends React.Component<Props, State> {
             ${fromUrlApiKey ? `#apikey=${fromUrlApiKey}` : ''}`,
         });
       } else {
-        this.props.setCdfEnv(undefined);
+        this.props.updateCdfEnv(undefined);
       }
     }
     const {
@@ -87,7 +86,7 @@ class Auth extends React.Component<Props, State> {
     } = this.props;
 
     if (!tenant && pathTenant) {
-      this.props.setTenant(pathTenant);
+      this.props.updateTenant(pathTenant);
     }
 
     let status;
@@ -217,15 +216,15 @@ class Auth extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectAppState(state),
+    app: state.app,
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      setTenant,
-      setCdfEnv,
+      updateTenant,
+      updateCdfEnv,
       fetchUserGroups,
       fetchModels,
       fetchTypes,

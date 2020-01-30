@@ -6,10 +6,10 @@ import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
 import { RootState } from '../../reducers/index';
-import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
-import { selectTimeseries, TimeseriesState } from '../../modules/timeseries';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
-import { selectTypesState, TypesState } from '../../modules/types';
+import { AssetsState, ExtendedAsset } from '../../modules/assets';
+import { TimeseriesState } from '../../modules/timeseries';
+import { ThreeDState } from '../../modules/threed';
+import { TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -85,7 +85,7 @@ class AssetRelationshipSection extends Component<Props, State> {
       };
     };
   } {
-    const { externalIdMap } = this.props.assets;
+    const { byExternalId } = this.props.assets;
     const { items, assetTypes } = this.props.types;
     return {
       Resource: {
@@ -145,7 +145,7 @@ class AssetRelationshipSection extends Component<Props, State> {
             filterNode: (node: RelationshipResource) => {
               const nodeTypes =
                 assetTypes[
-                  externalIdMap[node.resourceId] || Number(node.resourceId)
+                  byExternalId[node.resourceId] || Number(node.resourceId)
                 ];
               if (
                 nodeTypes &&
@@ -163,8 +163,11 @@ class AssetRelationshipSection extends Component<Props, State> {
 
   getData = () => {
     const {
-      relationships: { items, assetRelationshipMap },
-      assets: { externalIdMap, all },
+      relationships: {
+        items: relationshipItems,
+        byAssetId: relationshipsByAssetId,
+      },
+      assets: { byExternalId, items: assetsItems },
     } = this.props;
     const { visibleNodeIds, query } = this.state;
     // TODO fix this is a mix across resource type! unsafe!
@@ -172,9 +175,9 @@ class AssetRelationshipSection extends Component<Props, State> {
     const links: any[] = [];
     const relationshipIds: Set<string> = new Set();
     visibleNodeIds.forEach(id => {
-      if (assetRelationshipMap[id]) {
-        assetRelationshipMap[id].forEach(relationshipId => {
-          if (items[relationshipId]) {
+      if (relationshipsByAssetId[id]) {
+        relationshipsByAssetId[id].forEach(relationshipId => {
+          if (relationshipItems[relationshipId]) {
             relationshipIds.add(relationshipId);
           }
         });
@@ -194,9 +197,8 @@ class AssetRelationshipSection extends Component<Props, State> {
           // String Filter
           return (resource: RelationshipResource) => {
             const node =
-              all[
-                externalIdMap[resource.resourceId] ||
-                  Number(resource.resourceId)
+              assetsItems[
+                byExternalId[resource.resourceId] || Number(resource.resourceId)
               ];
             if (node) {
               return node.name.toLowerCase().indexOf(el.toLowerCase()) > -1;
@@ -220,7 +222,7 @@ class AssetRelationshipSection extends Component<Props, State> {
     // Run if visible node id is turned on (not just showing all root)
     if (visibleNodeIds.size !== 0) {
       Array.from(relationshipIds)
-        .map(id => items[id])
+        .map(id => relationshipItems[id])
         .forEach((relationship: Relationship) => {
           const sourcePassFilter = nodeFilters.some(filter =>
             filter(relationship.source)
@@ -233,13 +235,13 @@ class AssetRelationshipSection extends Component<Props, State> {
               (sourcePassFilter &&
                 // only if in selected ids
                 visibleNodeIds.has(
-                  externalIdMap[relationship.target.resourceId] ||
+                  byExternalId[relationship.target.resourceId] ||
                     Number(relationship.target.resourceId)
                 )) ||
               (targetPassFilter &&
                 // only if in selected ids
                 visibleNodeIds.has(
-                  externalIdMap[relationship.source.resourceId] ||
+                  byExternalId[relationship.source.resourceId] ||
                     Number(relationship.source.resourceId)
                 ))) &&
             (linkFilters.length === 0 ||
@@ -276,14 +278,14 @@ class AssetRelationshipSection extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { all, externalIdMap },
+      assets: { items: assetItems, byExternalId },
       threed: { models },
-      timeseries: { timeseriesData },
+      timeseries: { items: timeseriesData },
     } = this.props;
     switch (node.resource) {
       case 'asset': {
         const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+          assetItems[byExternalId[node.resourceId] || Number(node.resourceId)];
         return asset ? asset.name : 'Loading...';
       }
       case 'threeDRevision':
@@ -314,10 +316,10 @@ class AssetRelationshipSection extends Component<Props, State> {
     switch (node.resource) {
       case 'asset': {
         const {
-          assets: { all, externalIdMap },
+          assets: { items, byExternalId },
         } = this.props;
         const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+          items[byExternalId[node.resourceId] || Number(node.resourceId)];
         if (asset) {
           visibleNodeIds.add(asset.id);
           this.setState({
@@ -336,9 +338,9 @@ class AssetRelationshipSection extends Component<Props, State> {
       }
       case 'timeSeries': {
         const {
-          timeseries: { timeseriesData },
+          timeseries: { items },
         } = this.props;
-        const timeseries = timeseriesData[Number(node.resourceId)];
+        const timeseries = items[Number(node.resourceId)];
         if (timeseries) {
           visibleNodeIds.add(timeseries.id);
           this.setState({
@@ -478,10 +480,10 @@ class AssetRelationshipSection extends Component<Props, State> {
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     relationships: state.relationships,
-    assets: selectAssets(state),
-    timeseries: selectTimeseries(state),
-    threed: selectThreeD(state),
-    types: selectTypesState(state),
+    assets: state.assets,
+    timeseries: state.timeseries,
+    threed: state.threed,
+    types: state.types,
   };
 };
 

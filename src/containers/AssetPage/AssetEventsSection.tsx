@@ -17,7 +17,6 @@ import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { canEditEvents } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 import {
-  selectEvents,
   fetchEventsForAssetId,
   selectEventsByAssetId,
 } from '../../modules/events';
@@ -221,7 +220,7 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
       ? selectEventsByAssetId(state, origProps.asset.id)
       : undefined,
     selectedEvent: origProps.eventId
-      ? selectEvents(state).items[origProps.eventId]
+      ? state.events.items[origProps.eventId]
       : undefined,
   };
 };

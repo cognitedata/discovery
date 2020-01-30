@@ -10,9 +10,8 @@ import { deleteAssetNodeMapping } from 'modules/assetmappings';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import {
-  selectThreeD,
   ThreeDState,
-  setRevisionRepresentAsset,
+  updateRevisionRepresentAsset,
 } from '../../modules/threed';
 import ThreeDSidebar from './ThreeDSidebar';
 import { sdk } from '../../index';
@@ -59,7 +58,7 @@ type Props = {
   assetIds: number[];
   push: typeof push;
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
-  setRevisionRepresentAsset: typeof setRevisionRepresentAsset;
+  updateRevisionRepresentAsset: typeof updateRevisionRepresentAsset;
   createAssetNodeMapping: typeof createAssetNodeMapping;
 } & OrigProps;
 
@@ -261,7 +260,7 @@ class ThreeDPage extends React.Component<Props, State> {
       return;
     }
     if (!this.props.assetIds.includes(rootId)) {
-      await this.props.setRevisionRepresentAsset(
+      await this.props.updateRevisionRepresentAsset(
         Number(modelId),
         Number(revisionId),
         Number(rootId!)
@@ -373,9 +372,9 @@ class ThreeDPage extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
-  const representsAssets = Object.keys(state.threed.representsAsset)
+  const byAssetIds = Object.keys(state.threed.byAssetId)
     .filter(id => {
-      const representations = state.threed.representsAsset[Number(id)];
+      const representations = state.threed.byAssetId[Number(id)];
       return (
         representations &&
         representations.some(
@@ -388,15 +387,15 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
     })
     .map(assetId => Number(assetId));
   return {
-    assetIds: representsAssets,
-    threed: selectThreeD(state),
+    assetIds: byAssetIds,
+    threed: state.threed,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       push,
-      setRevisionRepresentAsset,
+      updateRevisionRepresentAsset,
       createAssetNodeMapping,
       deleteAssetNodeMapping,
     },

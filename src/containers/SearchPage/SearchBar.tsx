@@ -9,10 +9,10 @@ import { InternalId } from '@cognite/sdk';
 import { RootState } from '../../reducers/index';
 import {
   SearchState,
-  setAssetFilter,
-  setSearchQuery,
-  setTimeseriesFilter,
-  setFileFilter,
+  updateAssetFilter,
+  updateSearchQuery,
+  updateTimeseriesFilter,
+  updateFileFilter,
 } from '../../modules/search';
 import { SearchPageTabKeys } from './SearchPage';
 import { trackUsage } from '../../utils/Metrics';
@@ -49,10 +49,10 @@ type OrigProps = {
 type Props = {
   search: SearchState;
   push: typeof push;
-  setSearchQuery: typeof setSearchQuery;
-  setAssetFilter: typeof setAssetFilter;
-  setFileFilter: typeof setFileFilter;
-  setTimeseriesFilter: typeof setTimeseriesFilter;
+  updateSearchQuery: typeof updateSearchQuery;
+  updateAssetFilter: typeof updateAssetFilter;
+  updateFileFilter: typeof updateFileFilter;
+  updateTimeseriesFilter: typeof updateTimeseriesFilter;
 } & OrigProps;
 
 type State = {
@@ -79,7 +79,7 @@ class SearchPage extends React.Component<Props, State> {
         <Checkbox
           checked={assetFilter.filter ? assetFilter.filter.root : undefined}
           onChange={ev =>
-            this.props.setAssetFilter({
+            this.props.updateAssetFilter({
               ...assetFilter,
               filter: {
                 ...assetFilter.filter,
@@ -99,7 +99,7 @@ class SearchPage extends React.Component<Props, State> {
               : []
           }
           onAssetSelected={ids =>
-            this.props.setAssetFilter({
+            this.props.updateAssetFilter({
               ...assetFilter,
               filter: {
                 ...assetFilter.filter,
@@ -119,7 +119,7 @@ class SearchPage extends React.Component<Props, State> {
               : []
           }
           onAssetSelected={ids =>
-            this.props.setAssetFilter({
+            this.props.updateAssetFilter({
               ...assetFilter,
               filter: {
                 ...assetFilter.filter,
@@ -132,7 +132,7 @@ class SearchPage extends React.Component<Props, State> {
         <Input
           value={assetFilter.filter ? assetFilter.filter.source : undefined}
           onChange={ev =>
-            this.props.setAssetFilter({
+            this.props.updateAssetFilter({
               ...assetFilter,
               filter: {
                 ...assetFilter.filter,
@@ -154,7 +154,7 @@ class SearchPage extends React.Component<Props, State> {
         <Checkbox
           checked={fileFilter.filter ? fileFilter.filter.uploaded : undefined}
           onChange={ev =>
-            this.props.setFileFilter({
+            this.props.updateFileFilter({
               ...fileFilter,
               filter: {
                 ...fileFilter.filter,
@@ -173,7 +173,7 @@ class SearchPage extends React.Component<Props, State> {
               : []
           }
           onAssetSelected={ids =>
-            this.props.setFileFilter({
+            this.props.updateFileFilter({
               ...fileFilter,
               filter: {
                 ...fileFilter.filter,
@@ -186,7 +186,7 @@ class SearchPage extends React.Component<Props, State> {
         <Input
           value={fileFilter.filter ? fileFilter.filter.source : undefined}
           onChange={ev =>
-            this.props.setFileFilter({
+            this.props.updateFileFilter({
               ...fileFilter,
               filter: {
                 ...fileFilter.filter,
@@ -200,7 +200,7 @@ class SearchPage extends React.Component<Props, State> {
         <Input
           value={fileFilter.filter ? fileFilter.filter.mimeType : undefined}
           onChange={ev =>
-            this.props.setFileFilter({
+            this.props.updateFileFilter({
               ...fileFilter,
               filter: {
                 ...fileFilter.filter,
@@ -226,7 +226,7 @@ class SearchPage extends React.Component<Props, State> {
               : undefined
           }
           onChange={ev =>
-            this.props.setTimeseriesFilter({
+            this.props.updateTimeseriesFilter({
               ...timeseriesFilter,
               filter: {
                 ...timeseriesFilter.filter,
@@ -245,7 +245,7 @@ class SearchPage extends React.Component<Props, State> {
               : []
           }
           onAssetSelected={ids =>
-            this.props.setTimeseriesFilter({
+            this.props.updateTimeseriesFilter({
               ...timeseriesFilter,
               filter: {
                 ...timeseriesFilter.filter,
@@ -265,7 +265,7 @@ class SearchPage extends React.Component<Props, State> {
               : []
           }
           onAssetSelected={ids =>
-            this.props.setTimeseriesFilter({
+            this.props.updateTimeseriesFilter({
               ...timeseriesFilter,
               filter: {
                 ...timeseriesFilter.filter,
@@ -280,7 +280,7 @@ class SearchPage extends React.Component<Props, State> {
             timeseriesFilter.filter ? timeseriesFilter.filter.unit : undefined
           }
           onChange={ev =>
-            this.props.setTimeseriesFilter({
+            this.props.updateTimeseriesFilter({
               ...timeseriesFilter,
               filter: {
                 ...timeseriesFilter.filter,
@@ -319,7 +319,7 @@ class SearchPage extends React.Component<Props, State> {
           prefix={<Icon type="search" />}
           placeholder="Search for resources"
           value={query}
-          onChange={ev => this.props.setSearchQuery(ev.target.value)}
+          onChange={ev => this.props.updateSearchQuery(ev.target.value)}
         />
         <Popover
           visible={popoverVisible}
@@ -352,10 +352,10 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       push,
-      setAssetFilter,
-      setTimeseriesFilter,
-      setFileFilter,
-      setSearchQuery,
+      updateAssetFilter,
+      updateTimeseriesFilter,
+      updateFileFilter,
+      updateSearchQuery,
     },
     dispatch
   );

@@ -7,13 +7,8 @@ import { Button, Input, Tag } from 'antd';
 import styled, { keyframes } from 'styled-components';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
-import {
-  selectAssets,
-  fetchAssets,
-  AssetsState,
-} from '../../../modules/assets';
+import { fetchAssets, AssetsState } from '../../../modules/assets';
 import { RootState } from '../../../reducers/index';
-import { selectAppState } from '../../../modules/app';
 import {
   DetectionsAPI,
   ExternalDetection,
@@ -200,7 +195,7 @@ class ImagePreview extends React.Component<Props, State> {
   }
 
   fetchDetections = async () => {
-    const { all } = this.props.assets;
+    const { items } = this.props.assets;
 
     if (!canReadEvents(false)) {
       return;
@@ -228,7 +223,7 @@ class ImagePreview extends React.Component<Props, State> {
     const assetIds = detections.reduce(
       (prev: Set<number>, el: ExternalDetection) => {
         (el.assetIds || []).forEach(id => {
-          if (!all[id]) {
+          if (!items[id]) {
             prev.add(id);
           }
         });
@@ -248,7 +243,7 @@ class ImagePreview extends React.Component<Props, State> {
     trackUsage('FilePage.FilePreview.ImageAnnotation.Create', {
       annotation,
     });
-    const { all } = this.props.assets;
+    const { items } = this.props.assets;
     const { detections } = this.state;
     if (!canEditEvents(true)) {
       return;
@@ -269,7 +264,9 @@ class ImagePreview extends React.Component<Props, State> {
       ]);
 
       // load missing asset information
-      const assetIds = (annotation.data.assetIds || []).filter(id => !!all[id]);
+      const assetIds = (annotation.data.assetIds || []).filter(
+        id => !!items[id]
+      );
       if (assetIds.length !== 0) {
         this.props.fetchAssets(assetIds.map(id => ({ id })));
       }
@@ -390,7 +387,7 @@ class ImagePreview extends React.Component<Props, State> {
   };
 
   renderContent = ({ annotation }: { annotation: AnnotationItem }) => {
-    const { all } = this.props.assets;
+    const { items } = this.props.assets;
     const { geometry } = annotation;
     if (!geometry) return null;
 
@@ -408,7 +405,7 @@ class ImagePreview extends React.Component<Props, State> {
         </p>
         <p>{annotation.data.description}</p>
         {(annotation.data.assetIds || []).map(id => (
-          <Tag key={id}>{all[id] ? all[id].name : 'Loading...'}</Tag>
+          <Tag key={id}>{items[id] ? items[id].name : 'Loading...'}</Tag>
         ))}
       </ContentOverlay>
     );
@@ -517,8 +514,8 @@ class ImagePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectAppState(state),
-    assets: selectAssets(state),
+    app: state.app,
+    assets: state.assets,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
