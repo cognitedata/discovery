@@ -9,7 +9,10 @@ import { Asset, RevealNode3D } from '@cognite/sdk';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
-import { ThreeDState, setRevisionRepresentAsset } from '../../modules/threed';
+import {
+  ThreeDState,
+  updateRevisionRepresentAsset,
+} from '../../modules/threed';
 import ThreeDSidebar from './ThreeDSidebar';
 import { sdk } from '../../index';
 import { ExtendedAsset } from '../../modules/assets';
@@ -55,7 +58,7 @@ type Props = {
   assetIds: number[];
   push: typeof push;
   deleteAssetNodeMapping: typeof deleteAssetNodeMapping;
-  setRevisionRepresentAsset: typeof setRevisionRepresentAsset;
+  updateRevisionRepresentAsset: typeof updateRevisionRepresentAsset;
   createAssetNodeMapping: typeof createAssetNodeMapping;
 } & OrigProps;
 
@@ -257,7 +260,7 @@ class ThreeDPage extends React.Component<Props, State> {
       return;
     }
     if (!this.props.assetIds.includes(rootId)) {
-      await this.props.setRevisionRepresentAsset(
+      await this.props.updateRevisionRepresentAsset(
         Number(modelId),
         Number(revisionId),
         Number(rootId!)
@@ -392,7 +395,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       push,
-      setRevisionRepresentAsset,
+      updateRevisionRepresentAsset,
       createAssetNodeMapping,
       deleteAssetNodeMapping,
     },

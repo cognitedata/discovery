@@ -191,7 +191,7 @@ export function fetchRevisions(modelId: number) {
   };
 }
 
-export function setRevisionRepresentAsset(
+export function updateRevisionRepresentAsset(
   modelId: number,
   revisionId: number,
   assetId: number
