@@ -7,7 +7,7 @@ import { arrayToObjectById, isInternalId } from '../utils/utils';
 import { RootState } from '../reducers';
 import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
-import { setRevisionRepresentAsset } from './threed';
+import { updateRevisionRepresentAsset } from './threed';
 import { trackUsage } from '../utils/Metrics';
 import { fetchTypeForAssets } from './types';
 import { canEditAssets, canReadAssets } from '../utils/PermissionsUtils';
@@ -314,7 +314,7 @@ export const createNewAsset = (
             createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
           );
         } else if (modelId && revisionId) {
-          dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
+          dispatch(updateRevisionRepresentAsset(modelId, revisionId, assetId));
         }
       }
       if (callback) {

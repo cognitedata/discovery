@@ -114,7 +114,7 @@ export const fetchUserGroups = () => async (
   }
 };
 
-export const setTenant = (tenant: string, redirect = false) => async (
+export const updateTenant = (tenant: string, redirect = false) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
   dispatch({
@@ -130,7 +130,7 @@ export const setTenant = (tenant: string, redirect = false) => async (
   }
 };
 
-export const setCdfEnv = (env?: string) => async (
+export const updateCdfEnv = (env?: string) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction | CallHistoryMethodAction>
 ) => {
   if (env) {

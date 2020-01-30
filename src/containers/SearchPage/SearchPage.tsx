@@ -19,11 +19,11 @@ import { addAssetsToState, AssetsState } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
   SearchState,
-  setSearchLoading,
-  setAssetsTable,
-  setTimeseriesTable,
-  setFilesTable,
-  setThreeDTable,
+  updateSearchLoading,
+  updateAssetsTable,
+  updateTimeseriesTable,
+  updateFilesTable,
+  updateThreeDTable,
 } from '../../modules/search';
 import { ThreeDState, ThreeDModel } from '../../modules/threed';
 import {
@@ -90,11 +90,11 @@ type Props = {
   search: SearchState;
   push: typeof push;
   addAssetsToState: typeof addAssetsToState;
-  setAssetsTable: typeof setAssetsTable;
-  setSearchLoading: typeof setSearchLoading;
-  setTimeseriesTable: typeof setTimeseriesTable;
-  setFilesTable: typeof setFilesTable;
-  setThreeDTable: typeof setThreeDTable;
+  updateAssetsTable: typeof updateAssetsTable;
+  updateSearchLoading: typeof updateSearchLoading;
+  updateTimeseriesTable: typeof updateTimeseriesTable;
+  updateFilesTable: typeof updateFilesTable;
+  updateThreeDTable: typeof updateThreeDTable;
   addTimeseriesToState: typeof addTimeseriesToState;
   addFilesToState: typeof addFilesToState;
 } & OrigProps;
@@ -125,10 +125,10 @@ class SearchPage extends React.Component<Props, State> {
     if (!this.props.search.loading) {
       if (prevProps.match.params.tab) {
         if (prevProps.match.params.tab !== this.tab) {
-          this.props.setSearchLoading();
+          this.props.updateSearchLoading();
         }
       } else if (this.tab !== 'assets') {
-        this.props.setSearchLoading();
+        this.props.updateSearchLoading();
       }
     } else if (this.props.search.loading && !prevProps.search.loading) {
       this.doDebouncedSearch();
@@ -313,7 +313,7 @@ class SearchPage extends React.Component<Props, State> {
         });
         await this.props.addAssetsToState(items);
         if (this.searchIndex === index) {
-          this.props.setAssetsTable({
+          this.props.updateAssetsTable({
             ...assetsTable,
             items: items.map(el => el.id),
             page: 0,
@@ -332,7 +332,7 @@ class SearchPage extends React.Component<Props, State> {
         });
         await this.props.addTimeseriesToState(items);
         if (this.searchIndex === index) {
-          this.props.setTimeseriesTable({
+          this.props.updateTimeseriesTable({
             ...timeseriesTable,
             items: items.map(el => el.id),
             page: 0,
@@ -351,7 +351,7 @@ class SearchPage extends React.Component<Props, State> {
         });
         await this.props.addFilesToState(items);
         if (this.searchIndex === index) {
-          this.props.setFilesTable({
+          this.props.updateFilesTable({
             ...filesTable,
             items: items.map(el => el.id),
             page: 0,
@@ -374,7 +374,7 @@ class SearchPage extends React.Component<Props, State> {
           )
           .map(el => Number(el));
         if (this.searchIndex === index) {
-          this.props.setThreeDTable({ ...threeDTable, items, page: 0 });
+          this.props.updateThreeDTable({ ...threeDTable, items, page: 0 });
           this.searchIndex = 0;
         }
         break;
@@ -490,28 +490,28 @@ class SearchPage extends React.Component<Props, State> {
     } = this.props.search;
     switch (this.tab) {
       case 'assets':
-        this.props.setAssetsTable({
+        this.props.updateAssetsTable({
           ...assetsTable,
           page,
           pageSize: pageSize || 10,
         });
         return;
       case 'files':
-        this.props.setFilesTable({
+        this.props.updateFilesTable({
           ...filesTable,
           page,
           pageSize: pageSize || 10,
         });
         return;
       case 'timeseries':
-        this.props.setTimeseriesTable({
+        this.props.updateTimeseriesTable({
           ...timeseriesTable,
           page,
           pageSize: pageSize || 10,
         });
         return;
       case 'threed':
-        this.props.setThreeDTable({
+        this.props.updateThreeDTable({
           ...threeDTable,
           page,
           pageSize: pageSize || 10,
@@ -603,11 +603,11 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       push,
       addAssetsToState,
-      setSearchLoading,
-      setAssetsTable,
-      setTimeseriesTable,
-      setFilesTable,
-      setThreeDTable,
+      updateSearchLoading,
+      updateAssetsTable,
+      updateTimeseriesTable,
+      updateFilesTable,
+      updateThreeDTable,
       addTimeseriesToState,
       addFilesToState,
     },

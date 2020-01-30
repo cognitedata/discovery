@@ -4,7 +4,7 @@ import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
 import { sdk } from 'index';
-import { setTenant, setCdfEnv } from '../modules/app';
+import { updateCdfEnv, updateTenant } from '../modules/app';
 
 const Wrapper = styled.div`
   display: flex;
@@ -20,11 +20,11 @@ const TenantSelectorContainer = styled.div`
 `;
 
 type Props = {
-  doSetTenant: typeof setTenant;
-  doSetCdfEnv: typeof setCdfEnv;
+  doUpdateCdfEnv: typeof updateCdfEnv;
+  doUpdateTenant: typeof updateTenant;
 };
 
-const Login = ({ doSetTenant, doSetCdfEnv }: Props) => {
+const Login = ({ doUpdateCdfEnv, doUpdateTenant }: Props) => {
   const initialTenant =
     window.localStorage.getItem('tenant') !== null
       ? (window.localStorage.getItem('tenant') as string)
@@ -41,9 +41,9 @@ const Login = ({ doSetTenant, doSetCdfEnv }: Props) => {
             if (cdfEnv) {
               sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
             }
-            doSetCdfEnv(cdfEnv);
+            doUpdateCdfEnv(cdfEnv);
             window.localStorage.setItem('tenant', tenant);
-            doSetTenant(tenant, true);
+            doUpdateTenant(tenant, true);
           }}
           header="Cognite Data Fusion project name"
           validateTenant={(tenant, advancedOptions) => {
@@ -73,9 +73,8 @@ const mapStateToProps = () => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      doSetTenant: setTenant,
-      doSetCdfEnv: setCdfEnv,
-      doSet: setTenant,
+      doUpdateCdfEnv: updateCdfEnv,
+      doUpdateTenant: updateTenant,
     },
     dispatch
   );
