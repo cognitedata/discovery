@@ -13,6 +13,7 @@ import {
   AppState,
   updateCdfEnv,
   fetchUserGroups,
+  fetchUserDetails,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
 import { fetchModels } from '../modules/threed';
@@ -24,6 +25,7 @@ import ThreeDPage from './ThreeDPage';
 import RelationshipPage from './RelationshipPage';
 import { fetchTypes } from '../modules/types';
 import { trackUsage } from '../utils/Metrics';
+import PrivacyDisclaimer from '../components/PrivacyDisclaimer/PrivacyDisclaimer';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
@@ -39,6 +41,7 @@ type Props = {
   updateCdfEnv: typeof updateCdfEnv;
   updateTenant: typeof updateTenant;
   fetchUserGroups: typeof fetchUserGroups;
+  fetchUserDetails: typeof fetchUserDetails;
   fetchModels: typeof fetchModels;
   fetchTypes: typeof fetchTypes;
   replace: typeof replace;
@@ -121,6 +124,7 @@ class Auth extends React.Component<Props, State> {
           delete queryParameters.apikey;
           window.location.hash = queryString.stringify(queryParameters);
           await this.props.fetchUserGroups();
+          await this.props.fetchUserDetails();
           await this.props.fetchModels();
           await this.props.fetchTypes();
         } else {
@@ -207,6 +211,7 @@ class Auth extends React.Component<Props, State> {
                 />
               </Switch>
             </Layout.Content>
+            <PrivacyDisclaimer />
           </Layout>
         </Layout>
       </>
@@ -227,6 +232,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       updateCdfEnv,
       fetchUserGroups,
       fetchModels,
+      fetchUserDetails,
       fetchTypes,
       replace,
     },

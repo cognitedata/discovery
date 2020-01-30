@@ -1,7 +1,8 @@
 import React from 'react';
 import { notification } from 'antd';
 import { sdk } from 'index';
-import { PERMISSIONS } from '../modules/app';
+import store from '../store/index';
+import { AppState } from '../modules/app';
 
 const SHOW_INITIAL_MESSAGE = 'shownMissingGroup';
 
@@ -10,8 +11,9 @@ export const checkForAccessPermission = (
   type: string,
   showMessage = false
 ) => {
-  if (PERMISSIONS.groupsAcl) {
-    if (!PERMISSIONS[key] || !PERMISSIONS[key].includes(type)) {
+  const { groups } = store.getState().app as AppState;
+  if (groups.groupsAcl) {
+    if (!groups[key] || !groups[key].includes(type)) {
       if (showMessage) {
         notification.error({
           message: `You are missing access ${key}:${type}`,
