@@ -15,13 +15,13 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
 import Placeholder from 'components/Placeholder';
-import { selectThreeD, ThreeDState } from 'modules/threed';
-import { selectAssets, AssetsState } from 'modules/assets';
+import { ThreeDState } from 'modules/threed';
+import { AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
 import { sdk } from 'index';
 import { trackUsage } from 'utils/Metrics';
 import LoadingWrapper from 'components/LoadingWrapper';
-import { selectFiles, fetchFile } from 'modules/files';
+import { fetchFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
 import PNIDViewer from './PNIDViewer';
 import ImageAnnotator from './ImageAnnotator';
@@ -668,9 +668,9 @@ class FilePreview extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, props: OrigProps) => {
   return {
-    threed: selectThreeD(state),
-    assets: selectAssets(state),
-    file: selectFiles(state).files[props.fileId],
+    threed: state.threed,
+    assets: state.assets,
+    file: state.files.items[props.fileId],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

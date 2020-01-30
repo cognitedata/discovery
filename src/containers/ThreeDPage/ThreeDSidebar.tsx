@@ -177,9 +177,9 @@ class TimeseriesSidebar extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
-  const representsAssets = Object.keys(state.threed.representsAsset)
+  const byAssetIds = Object.keys(state.threed.byAssetId)
     .filter(id => {
-      const representations = state.threed.representsAsset[Number(id)];
+      const representations = state.threed.byAssetId[Number(id)];
       return (
         representations &&
         representations.some(
@@ -191,10 +191,8 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
     })
     .map(assetId => Number(assetId));
   return {
-    assetIds: representsAssets,
-    assets: representsAssets
-      ? representsAssets.map(id => selectAssetById(state, id))
-      : [],
+    assetIds: byAssetIds,
+    assets: byAssetIds ? byAssetIds.map(id => selectAssetById(state, id)) : [],
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

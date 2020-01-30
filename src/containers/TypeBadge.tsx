@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { Tag } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../reducers/index';
-import { selectAppState } from '../modules/app';
 import { BetaBadge } from '../components/BetaWarning';
 import { fetchTypeForAssets, TypesState } from '../modules/types';
 
@@ -65,7 +64,7 @@ class TypeBadge extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    asset: selectAppState(state),
+    asset: state.app,
     types: state.types,
   };
 };

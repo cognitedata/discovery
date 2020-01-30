@@ -255,15 +255,13 @@ class SearchPage extends React.Component<Props, State> {
     let items: any[] = [];
     switch (this.tab) {
       case 'assets':
-        items = search.assetsTable.items.map(id => assets.all[id]);
+        items = search.assetsTable.items.map(id => assets.items[id]);
         break;
       case 'timeseries':
-        items = search.timeseriesTable.items.map(
-          id => timeseries.timeseriesData[id]
-        );
+        items = search.timeseriesTable.items.map(id => timeseries.items[id]);
         break;
       case 'files':
-        items = search.filesTable.items.map(id => files.files[id]);
+        items = search.filesTable.items.map(id => files.items[id]);
         break;
       case 'threed':
         items = search.threeDTable.items.map(id => threed.models[id]);

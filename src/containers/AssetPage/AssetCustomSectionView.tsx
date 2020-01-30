@@ -11,7 +11,7 @@ import {
   addAssetMappingsToState,
 } from '../../modules/assetmappings';
 import { RootState } from '../../reducers/index';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
+import { ThreeDState } from '../../modules/threed';
 import { trackUsage } from '../../utils/Metrics';
 import ComponentSelector from '../../components/ComponentSelector';
 import { AssetTabKeys } from './AssetPage';
@@ -355,7 +355,7 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    threed: selectThreeD(state),
+    threed: state.threed,
     assets: state.assets,
     assetMappings: state.assetMappings,
   };

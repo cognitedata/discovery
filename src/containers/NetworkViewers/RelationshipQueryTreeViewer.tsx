@@ -3,7 +3,7 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { message } from 'antd';
 import { RootState } from '../../reducers/index';
-import { selectAssets, AssetsState } from '../../modules/assets';
+import { AssetsState } from '../../modules/assets';
 
 import {
   RelationshipResource,
@@ -41,12 +41,12 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { all, externalIdMap },
+      assets: { items, byExternalId },
     } = this.props;
     switch (node.resource) {
       case 'asset': {
         const asset =
-          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
+          items[byExternalId[node.resourceId] || Number(node.resourceId)];
         return asset ? asset.name : 'Loading...';
       }
     }
@@ -210,7 +210,7 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    assets: selectAssets(state),
+    assets: state.assets,
   };
 };
 

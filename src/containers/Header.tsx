@@ -5,7 +5,7 @@ import { push } from 'connected-react-router';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import Logo from 'assets/discovery.svg';
-import { selectAppState, AppState } from 'modules/app';
+import { AppState } from 'modules/app';
 import { RootState } from 'reducers/index';
 
 const { Header } = Layout;
@@ -90,7 +90,7 @@ class DiscoveryHeader extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectAppState(state),
+    app: state.app,
     pathname: state.router.location.pathname,
   };
 };

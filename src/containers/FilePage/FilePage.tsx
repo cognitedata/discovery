@@ -8,12 +8,7 @@ import FilePreview from './FilePreview';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import FileSidebar from './FileSidebar';
-import {
-  selectFiles,
-  FilesState,
-  fetchFile,
-  deleteFile,
-} from '../../modules/files';
+import { FilesState, fetchFile, deleteFile } from '../../modules/files';
 import { trackUsage } from '../../utils/Metrics';
 import { sdk } from '../../index';
 import { downloadFile } from './FileUtils';
@@ -99,7 +94,7 @@ class FilePage extends React.Component<Props, State> {
   }
 
   get file() {
-    return this.props.files.files[this.props.match.params.fileId];
+    return this.props.files.items[this.props.match.params.fileId];
   }
 
   get itemId() {
@@ -207,7 +202,7 @@ class FilePage extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    files: selectFiles(state),
+    files: state.files,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

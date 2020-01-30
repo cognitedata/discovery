@@ -163,11 +163,11 @@ class TreeViewer extends Component<Props, State> {
     let currentAssetId: number | undefined = asset.id;
     let currentAssetNode: Node | undefined;
     do {
-      if (currentAssetId && all[currentAssetId]) {
+      if (currentAssetId && items[currentAssetId]) {
         length += 1;
         nodes = {
-          name: all[currentAssetId].name || `${all[currentAssetId].id}`,
-          node: all[currentAssetId],
+          name: items[currentAssetId].name || `${items[currentAssetId].id}`,
+          node: items[currentAssetId],
           children: nodes ? [nodes] : undefined,
         };
         if (!nodes.children) {
@@ -177,7 +177,7 @@ class TreeViewer extends Component<Props, State> {
         if (currentAssetId === asset.rootId) {
           break;
         }
-        currentAssetId = all[currentAssetId!].parentId;
+        currentAssetId = items[currentAssetId!].parentId;
       } else {
         return {
           nodes: undefined,

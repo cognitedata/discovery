@@ -6,12 +6,12 @@ import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import styled from 'styled-components';
 import AceEditor from 'react-ace';
 import AssetSelect from 'components/AssetSelect';
-import { ExtendedAsset, fetchAsset } from '../../modules/assets';
+import { fetchAsset, AssetsState } from '../../modules/assets';
 import { sdk } from '../../index';
-import { RootState } from '../../reducers/index';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
+import { RootState } from '../../reducers/index';
 
 const FormDetails = styled.div`
   p {
@@ -26,8 +26,8 @@ type OwnProps = {
 };
 
 type Props = {
+  assets: AssetsState;
   fetchAsset: typeof fetchAsset;
-  assets: { [key: number]: ExtendedAsset };
   addTimeseriesToState: typeof addTimeseriesToState;
 } & OwnProps;
 
@@ -182,8 +182,8 @@ class EditTimeseriesModal extends React.Component<Props, State> {
           />
           <p>
             Linked Asset:{' '}
-            {selectedAssetId && assets[selectedAssetId!]
-              ? assets[selectedAssetId!].name
+            {selectedAssetId && assets.items[selectedAssetId!]
+              ? assets.items[selectedAssetId!].name
               : 'N/A'}
           </p>
           <AssetSelect
@@ -220,9 +220,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState) => {
-  return {
-    assets: state.assets.all,
-  };
+  return { assets: state.assets };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>

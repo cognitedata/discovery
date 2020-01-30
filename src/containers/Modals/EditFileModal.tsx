@@ -6,7 +6,6 @@ import { FilesMetadata } from '@cognite/sdk';
 import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import AceEditor from 'react-ace';
-import { RootState } from '../../reducers/index';
 import { updateFile, addFilesToState } from '../../modules/files';
 import { sdk } from '../../index';
 import { canEditFiles } from '../../utils/PermissionsUtils';
@@ -151,8 +150,8 @@ class EditFileModal extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
-  return { assets: state.assets.all };
+const mapStateToProps = () => {
+  return {};
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
