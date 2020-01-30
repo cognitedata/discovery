@@ -47,6 +47,46 @@ type TypeAction =
   | FetchTypeAction
   | FetchTypeFailedAction;
 
+// Reducer
+export interface TypesState {
+  error: boolean;
+  items: Type[];
+  assetTypes: { [key: number]: AssetTypeInfo[] };
+}
+
+const initialState: TypesState = { assetTypes: {}, items: [], error: false };
+
+export default function reducer(
+  state = initialState,
+  action: TypeAction
+): TypesState {
+  switch (action.type) {
+    case RETRIEVE_TYPE: {
+      const { types } = action.payload;
+      return {
+        ...state,
+        items: { ...state.items, ...arrayToObjectById(types) },
+      };
+    }
+    case RETRIEVE_TYPE_FOR_ASSETS: {
+      const { assetTypes } = action.payload;
+      return {
+        ...state,
+        assetTypes: { ...state.assetTypes, ...assetTypes },
+      };
+    }
+    case RETRIEVE_TYPE_FAILED: {
+      return {
+        ...state,
+        error: true,
+      };
+    }
+
+    default:
+      return state;
+  }
+}
+
 // Functions
 export function fetchTypeForAssets(assetIds: number[]) {
   return async (
@@ -167,45 +207,5 @@ export function fetchTypeByIds(typeIds: number[]) {
       });
     }
   };
-}
-
-// Reducer
-export interface TypesState {
-  error: boolean;
-  items: Type[];
-  assetTypes: { [key: number]: AssetTypeInfo[] };
-}
-
-const initialState: TypesState = { assetTypes: {}, items: [], error: false };
-
-export default function reducer(
-  state = initialState,
-  action: TypeAction
-): TypesState {
-  switch (action.type) {
-    case RETRIEVE_TYPE: {
-      const { types } = action.payload;
-      return {
-        ...state,
-        items: { ...state.items, ...arrayToObjectById(types) },
-      };
-    }
-    case RETRIEVE_TYPE_FOR_ASSETS: {
-      const { assetTypes } = action.payload;
-      return {
-        ...state,
-        assetTypes: { ...state.assetTypes, ...assetTypes },
-      };
-    }
-    case RETRIEVE_TYPE_FAILED: {
-      return {
-        ...state,
-        error: true,
-      };
-    }
-
-    default:
-      return state;
-  }
 }
 // Selectors
