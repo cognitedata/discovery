@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Button } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { connect } from 'react-redux';
-import { selectAppState, setTrackingEnabled } from '../../modules/app';
+import { updateTrackingEnabled } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 
 const Footer = styled.div`
@@ -30,7 +30,7 @@ type StateProps = {
   trackingEnabled: boolean | null;
 };
 type DispatchProps = {
-  setTrackingEnabled: typeof setTrackingEnabled;
+  updateTrackingEnabled: typeof updateTrackingEnabled;
 };
 type Props = StateProps & DispatchProps;
 
@@ -60,7 +60,7 @@ class PrivacyDisclaimer extends React.Component<Props> {
           ghost
           type="danger"
           onClick={() => {
-            this.props.setTrackingEnabled(false);
+            this.props.updateTrackingEnabled(false);
           }}
         >
           Accept
@@ -69,7 +69,7 @@ class PrivacyDisclaimer extends React.Component<Props> {
           ghost
           type="primary"
           onClick={() => {
-            this.props.setTrackingEnabled(true);
+            this.props.updateTrackingEnabled(true);
           }}
         >
           Dismiss
@@ -81,14 +81,14 @@ class PrivacyDisclaimer extends React.Component<Props> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    trackingEnabled: selectAppState(state).trackingEnabled,
+    trackingEnabled: state.app.trackingEnabled,
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch): DispatchProps =>
   bindActionCreators(
     {
-      setTrackingEnabled,
+      updateTrackingEnabled,
     },
     dispatch
   );

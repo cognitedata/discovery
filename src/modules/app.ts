@@ -28,11 +28,19 @@ type AppAction = SetAppStateAction | ClearAppStateAction;
 export interface AppState {
   tenant?: string;
   loaded: boolean;
+  trackingEnabled: boolean | null;
   cdfEnv?: string;
+  user?: string;
   groups: { [key: string]: string[] };
 }
 
-const initialState: AppState = { groups: {}, loaded: false };
+const initialState: AppState = {
+  groups: {},
+  loaded: false,
+  trackingEnabled: localStorage.getItem(PRIVACY_ACCEPT)
+    ? localStorage.getItem(PRIVACY_ACCEPT) === 'true'
+    : null,
+};
 
 export default function reducer(
   state = initialState,
@@ -124,7 +132,7 @@ export const fetchUserDetails = () => async (
   }
 };
 
-export const setTrackingEnabled = (trackingEnabled: boolean) => async (
+export const updateTrackingEnabled = (trackingEnabled: boolean) => async (
   dispatch: ThunkDispatch<any, any, SetAppStateAction>
 ) => {
   localStorage.setItem(PRIVACY_ACCEPT, trackingEnabled ? 'true' : 'false');
