@@ -5,9 +5,8 @@ import { BetaTag } from 'components/BetaWarning';
 import qs from 'query-string';
 import { push } from 'connected-react-router';
 import LoadingWrapper from 'components/LoadingWrapper';
-import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
+import { AssetsState, ExtendedAsset } from '../../modules/assets';
 import {
-  selectAssetMappings,
   AssetMappingState,
   addAssetMappingsToState,
 } from '../../modules/assetmappings';
@@ -357,8 +356,8 @@ export class AssetCustomSectionView extends React.Component<Props, State> {
 const mapStateToProps = (state: RootState): StateProps => {
   return {
     threed: selectThreeD(state),
-    assets: selectAssets(state),
-    assetMappings: selectAssetMappings(state),
+    assets: state.assets,
+    assetMappings: state.assetMappings,
   };
 };
 

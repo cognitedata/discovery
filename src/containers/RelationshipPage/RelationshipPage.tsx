@@ -301,7 +301,7 @@ class RelationshipViewer extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { all, externalIdMap },
+      assets: { items: assetItems, byExternalId },
       threed: { models },
       timeseries: { timeseriesData },
     } = this.props;
@@ -336,7 +336,7 @@ class RelationshipViewer extends Component<Props, State> {
     switch (node.resource) {
       case 'asset': {
         const {
-          assets: { all, externalIdMap },
+          assets: { items, byExternalId },
         } = this.props;
         const asset =
           all[externalIdMap[node.resourceId] || Number(node.resourceId)];

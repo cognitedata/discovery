@@ -6,10 +6,10 @@ import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
 import { RootState } from '../../reducers/index';
-import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
 import { selectTimeseries, TimeseriesState } from '../../modules/timeseries';
 import { selectThreeD, ThreeDState } from '../../modules/threed';
 import { TypesState } from '../../modules/types';
+import { AssetsState, ExtendedAsset } from '../../modules/assets';
 
 import {
   RelationshipResource,
@@ -85,7 +85,7 @@ class AssetRelationshipSection extends Component<Props, State> {
       };
     };
   } {
-    const { externalIdMap } = this.props.assets;
+    const { byExternalId } = this.props.assets;
     const { items, assetTypes } = this.props.types;
     return {
       Resource: {
@@ -164,7 +164,7 @@ class AssetRelationshipSection extends Component<Props, State> {
   getData = () => {
     const {
       relationships: { items, assetRelationshipMap },
-      assets: { externalIdMap, all },
+      assets: { byExternalId, items: assetsItems },
     } = this.props;
     const { visibleNodeIds, query } = this.state;
     // TODO fix this is a mix across resource type! unsafe!
@@ -276,7 +276,7 @@ class AssetRelationshipSection extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { all, externalIdMap },
+      assets: { items: assetItems, byExternalId },
       threed: { models },
       timeseries: { timeseriesData },
     } = this.props;

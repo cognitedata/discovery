@@ -33,7 +33,6 @@ import {
   loadParentRecurse,
   loadAssetChildren,
   AssetsState,
-  selectAssets,
 } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import { trackUsage } from '../../utils/Metrics';
@@ -156,7 +155,7 @@ class TreeViewer extends Component<Props, State> {
 
   getData = () => {
     const {
-      assets: { all },
+      assets: { items },
       asset,
     } = this.props;
     let nodes: Node | undefined;
@@ -192,7 +191,7 @@ class TreeViewer extends Component<Props, State> {
         length: 0,
       };
     }
-    Object.values(all)
+    Object.values(items)
       .filter(el => el.parentId === asset.id)
       .forEach(el => {
         length += 1;
@@ -592,7 +591,7 @@ class TreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    assets: selectAssets(state),
+    assets: state.assets,
   };
 };
 
