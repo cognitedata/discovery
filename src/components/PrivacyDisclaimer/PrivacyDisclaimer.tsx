@@ -11,8 +11,8 @@ const Footer = styled.div`
   overflow: hidden;
   padding: 12px 40px;
   display: flex;
-  border-top: 1px solid #efefef;
-  background-color: #fff;
+  border-top: 1px solid #ffc933;
+  background-color: #fff1cc;
   align-items: center;
   p {
     flex: 1;
@@ -36,11 +36,7 @@ type Props = StateProps & DispatchProps;
 
 class PrivacyDisclaimer extends React.Component<Props> {
   componentDidMount() {
-    if (this.props.trackingEnabled === null) {
-      setTimeout(() => {
-        this.props.setTrackingEnabled(true);
-      }, 30000);
-    } else if (navigator.doNotTrack === '1') {
+    if (navigator.doNotTrack === '1') {
       // eslint-disable-next-line no-console
       console.warn(
         "Your browser's Do Not Track is turned on. Go to https://allaboutdnt.com/ to learn how you can turn it off."
@@ -55,17 +51,19 @@ class PrivacyDisclaimer extends React.Component<Props> {
     return (
       <Footer>
         <p>
-          Just a heads up that we are tracking your email and usage in
+          Just a heads up that we are using Mixpanel to track your usage of
           Discovery. We do not share this information with any other party and
           it is simply used to improve Discovery and provide a better experience
           overall!
         </p>
         <Button
+          ghost
+          type="danger"
           onClick={() => {
             this.props.setTrackingEnabled(false);
           }}
         >
-          Opt Out
+          Accept
         </Button>
         <Button
           ghost
