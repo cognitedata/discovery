@@ -9,11 +9,7 @@ import { Asset, RevealNode3D } from '@cognite/sdk';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
-import {
-  selectThreeD,
-  ThreeDState,
-  setRevisionRepresentAsset,
-} from '../../modules/threed';
+import { ThreeDState, setRevisionRepresentAsset } from '../../modules/threed';
 import ThreeDSidebar from './ThreeDSidebar';
 import { sdk } from '../../index';
 import { ExtendedAsset } from '../../modules/assets';
@@ -373,9 +369,9 @@ class ThreeDPage extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
-  const representsAssets = Object.keys(state.threed.representsAsset)
+  const byAssetIds = Object.keys(state.threed.byAssetId)
     .filter(id => {
-      const representations = state.threed.representsAsset[Number(id)];
+      const representations = state.threed.byAssetId[Number(id)];
       return (
         representations &&
         representations.some(
@@ -388,8 +384,8 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
     })
     .map(assetId => Number(assetId));
   return {
-    assetIds: representsAssets,
-    threed: selectThreeD(state),
+    assetIds: byAssetIds,
+    threed: state.threed,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

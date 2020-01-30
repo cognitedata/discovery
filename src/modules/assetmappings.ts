@@ -1,4 +1,3 @@
-import { createAction } from 'redux-actions';
 import { Dispatch, Action } from 'redux';
 import { AssetMapping3D } from '@cognite/sdk';
 import { message } from 'antd';
@@ -38,6 +37,62 @@ type AssetMappingAction =
   | AddNodeAssetMappingAction
   | DeleteAssetMappingAction
   | DeleteAssetAction;
+
+// Reducer
+export interface AssetMappingState {
+  byNodeId: { [key: string]: any };
+  byAssetId: { [key: string]: any };
+}
+
+const initialState: AssetMappingState = { byNodeId: {}, byAssetId: {} };
+
+export default function reducer(
+  state: AssetMappingState = initialState,
+  action: AssetMappingAction
+): AssetMappingState {
+  switch (action.type) {
+    case ADD_ASSET_MAPPINGS: {
+      const { mapping, nodeId } = action.payload;
+
+      return {
+        ...state,
+        byNodeId: {
+          ...state.byNodeId,
+          [mapping.nodeId]: mapping,
+          ...(nodeId && { [nodeId]: mapping }),
+        },
+        byAssetId: {
+          ...state.byAssetId,
+          [mapping.assetId]: mapping,
+        },
+      };
+    }
+
+    case DELETE_ASSETS:
+    case DELETE_ASSET_MAPPING: {
+      const {
+        [action.payload.assetId]: assetMapping,
+        ...remainingAssetMapping
+      } = state.byAssetId;
+
+      if (assetMapping) {
+        const {
+          [assetMapping.nodeId]: nodeMapping,
+          ...remainingNodeMapping
+        } = state.byNodeId;
+        return {
+          ...state,
+          byAssetId: remainingAssetMapping,
+          byNodeId: remainingNodeMapping,
+        };
+      }
+      return state;
+    }
+
+    default:
+      return state;
+  }
+}
 
 export function findBestMappingForNodeId(
   nodeId: number,
@@ -244,68 +299,4 @@ export function deleteAssetNodeMapping(
   };
 }
 
-// Reducer
-export interface AssetMappingState {
-  byNodeId: { [key: string]: any };
-  byAssetId: { [key: string]: any };
-}
-const initialState: AssetMappingState = { byNodeId: {}, byAssetId: {} };
-
-export default function assetmappings(
-  state: AssetMappingState = initialState,
-  action: AssetMappingAction
-): AssetMappingState {
-  switch (action.type) {
-    case ADD_ASSET_MAPPINGS: {
-      const { mapping, nodeId } = action.payload;
-
-      return {
-        ...state,
-        byNodeId: {
-          ...state.byNodeId,
-          [mapping.nodeId]: mapping,
-          ...(nodeId && { [nodeId]: mapping }),
-        },
-        byAssetId: {
-          ...state.byAssetId,
-          [mapping.assetId]: mapping,
-        },
-      };
-    }
-
-    case DELETE_ASSETS:
-    case DELETE_ASSET_MAPPING: {
-      const {
-        [action.payload.assetId]: assetMapping,
-        ...remainingAssetMapping
-      } = state.byAssetId;
-
-      if (assetMapping) {
-        const {
-          [assetMapping.nodeId]: nodeMapping,
-          ...remainingNodeMapping
-        } = state.byNodeId;
-        return {
-          ...state,
-          byAssetId: remainingAssetMapping,
-          byNodeId: remainingNodeMapping,
-        };
-      }
-      return state;
-    }
-
-    default:
-      return state;
-  }
-}
-
-// Action creators
-const addAssetMappings = createAction(ADD_ASSET_MAPPINGS);
-
-export const actions = {
-  addAssetMappings,
-};
-
 // Selectors
-export const selectAssetMappings = (state: RootState) =>
-  state.assetMappings || { byNodeId: {}, byAssetId: {} };

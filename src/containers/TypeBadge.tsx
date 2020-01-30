@@ -3,13 +3,8 @@ import { connect } from 'react-redux';
 import { Tag } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../reducers/index';
-import { selectAppState } from '../modules/app';
 import { BetaBadge } from '../components/BetaWarning';
-import {
-  fetchTypeForAssets,
-  selectTypesState,
-  TypesState,
-} from '../modules/types';
+import { fetchTypeForAssets, TypesState } from '../modules/types';
 
 type OrigProps = { assetId: number };
 
@@ -69,8 +64,8 @@ class TypeBadge extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    asset: selectAppState(state),
-    types: selectTypesState(state),
+    asset: state.app,
+    types: state.types,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

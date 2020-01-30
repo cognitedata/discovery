@@ -8,12 +8,7 @@ import styled from 'styled-components';
 import { Asset, RevealNode3D } from '@cognite/sdk';
 import ThreeDCard from 'containers/ThreeDPage/ThreeDCard';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
-import {
-  selectThreeD,
-  fetchModels,
-  ThreeDState,
-  ThreeDModel,
-} from '../../modules/threed';
+import { fetchModels, ThreeDState, ThreeDModel } from '../../modules/threed';
 import { RootState } from '../../reducers/index';
 import {
   fetchMappingsFromAssetId,
@@ -348,7 +343,7 @@ class AssetThreeDSection extends Component<Props, State> {
 
   render() {
     const {
-      threed: { models, representsAsset, loading },
+      threed: { models, byAssetId, loading },
       modelId,
       revisionId,
       asset,
@@ -370,7 +365,7 @@ class AssetThreeDSection extends Component<Props, State> {
         </VerticallyCenteredRow>
         <FlexTableWrapper>
           <Table
-            dataSource={asset ? representsAsset[asset.rootId!] : undefined}
+            dataSource={asset ? byAssetId[asset.rootId!] : undefined}
             loading={loading}
             pagination={false}
             rowKey="modelId"
@@ -401,9 +396,9 @@ class AssetThreeDSection extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState, origProps: OrigProps) => {
   return {
-    threed: selectThreeD(state),
+    threed: state.threed,
     selectedModel: origProps.modelId
-      ? selectThreeD(state).models[origProps.modelId]
+      ? state.threed.models[origProps.modelId]
       : undefined,
   };
 };

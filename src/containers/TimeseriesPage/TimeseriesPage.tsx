@@ -16,7 +16,6 @@ import {
 import {
   deleteTimeseries,
   TimeseriesState,
-  selectTimeseries,
   fetchTimeseries,
 } from '../../modules/timeseries';
 
@@ -94,9 +93,7 @@ class TimeseriesPage extends React.Component<Props, State> {
   }
 
   get timeseries() {
-    return this.props.timeseries.timeseriesData[
-      this.props.match.params.timeseriesId
-    ];
+    return this.props.timeseries.items[this.props.match.params.timeseriesId];
   }
 
   get itemId() {
@@ -180,7 +177,7 @@ class TimeseriesPage extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    timeseries: selectTimeseries(state),
+    timeseries: state.timeseries,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

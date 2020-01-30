@@ -7,7 +7,7 @@ import { Asset, RevealNode3D } from '@cognite/sdk';
 import BottomRightCard from 'components/BottomRightCard';
 import AssetSelect from 'components/AssetSelect';
 import { RootState } from '../../reducers/index';
-import { selectThreeD, ThreeDState } from '../../modules/threed';
+import { ThreeDState } from '../../modules/threed';
 import { canEditThreeD, canDeleteThreeD } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 import {
@@ -214,7 +214,7 @@ class ThreeDCard extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState, ownProps: OrigProps) => {
   return {
-    threed: selectThreeD(state),
+    threed: state.threed,
     rootAsset: ownProps.rootId
       ? selectAssetById(state, ownProps.rootId)
       : undefined,

@@ -9,13 +9,8 @@ import {
   Layout as GridLayout,
 } from 'react-grid-layout';
 import { fetchTypes } from '../../modules/types';
-import {
-  selectThreeD,
-  ThreeDState,
-  fetchRevisions,
-  fetchModels,
-} from '../../modules/threed';
-import { selectAssets, AssetsState, ExtendedAsset } from '../../modules/assets';
+import { ThreeDState, fetchRevisions, fetchModels } from '../../modules/threed';
+import { AssetsState, ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import AssetCustomSectionView, {
   AssetViewerType,
@@ -357,8 +352,8 @@ class AssetCustomSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    threed: selectThreeD(state),
-    assets: selectAssets(state),
+    threed: state.threed,
+    assets: state.assets,
   };
 };
 

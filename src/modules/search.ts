@@ -46,6 +46,48 @@ interface SetSearchState extends Action<typeof SET_SEARCH_STATE> {
 
 type SearchAction = SetSearchState;
 
+// Reducer
+export interface SearchState {
+  loading: boolean;
+  assetsTable: { items: number[]; page: number; pageSize: number };
+  timeseriesTable: { items: number[]; page: number; pageSize: number };
+  filesTable: { items: number[]; page: number; pageSize: number };
+  threeDTable: { items: number[]; page: number; pageSize: number };
+  assetFilter: AssetFilter;
+  timeseriesFilter: TimeSeriesSearchDTO;
+  fileFilter: FilesSearchFilter;
+  query: string;
+}
+
+const initialState: SearchState = {
+  loading: true,
+  assetsTable: { items: [], page: 0, pageSize: 10 },
+  timeseriesTable: { items: [], page: 0, pageSize: 10 },
+  filesTable: { items: [], page: 0, pageSize: 10 },
+  threeDTable: { items: [], page: 0, pageSize: 10 },
+  assetFilter: {},
+  timeseriesFilter: {},
+  fileFilter: {},
+  query: '',
+};
+
+export default function reducer(
+  state = initialState,
+  action: SearchAction
+): SearchState {
+  switch (action.type) {
+    case SET_SEARCH_STATE: {
+      return {
+        ...state,
+        ...action.payload,
+      };
+    }
+
+    default:
+      return state;
+  }
+}
+
 // Functions
 export function setSearchLoading() {
   return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
@@ -200,46 +242,4 @@ export function setFileFilter(fileFilter: FilesSearchFilter) {
   };
 }
 
-// Reducer
-export interface SearchState {
-  loading: boolean;
-  assetsTable: { items: number[]; page: number; pageSize: number };
-  timeseriesTable: { items: number[]; page: number; pageSize: number };
-  filesTable: { items: number[]; page: number; pageSize: number };
-  threeDTable: { items: number[]; page: number; pageSize: number };
-  assetFilter: AssetFilter;
-  timeseriesFilter: TimeSeriesSearchDTO;
-  fileFilter: FilesSearchFilter;
-  query: string;
-}
-const initialState: SearchState = {
-  loading: true,
-  assetsTable: { items: [], page: 0, pageSize: 10 },
-  timeseriesTable: { items: [], page: 0, pageSize: 10 },
-  filesTable: { items: [], page: 0, pageSize: 10 },
-  threeDTable: { items: [], page: 0, pageSize: 10 },
-  assetFilter: {},
-  timeseriesFilter: {},
-  fileFilter: {},
-  query: '',
-};
-
-export default function typesReducer(
-  state = initialState,
-  action: SearchAction
-): SearchState {
-  switch (action.type) {
-    case SET_SEARCH_STATE: {
-      return {
-        ...state,
-        ...action.payload,
-      };
-    }
-
-    default:
-      return state;
-  }
-}
-
 // Selectors
-export const selectSearchState = (state: RootState) => state.search;

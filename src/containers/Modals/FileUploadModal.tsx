@@ -10,7 +10,7 @@ import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import { ExtendedAsset } from '../../modules/assets';
 import FileUploader from '../../components/FileUploader';
-import { selectAppState, AppState } from '../../modules/app';
+import { AppState } from '../../modules/app';
 import { RootState } from '../../reducers/index';
 import { canEditFiles } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
@@ -155,7 +155,7 @@ class FileUploadModal extends React.Component<Props, State> {
 }
 
 const mapStateToProps = (state: RootState) => {
-  return { app: selectAppState(state) };
+  return { app: state.app };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>

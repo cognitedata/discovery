@@ -9,7 +9,6 @@ import Header from 'containers/Header';
 import { sdk } from '../index';
 import Loader from '../components/Loader';
 import {
-  selectAppState,
   setTenant,
   AppState,
   setCdfEnv,
@@ -217,7 +216,7 @@ class Auth extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: selectAppState(state),
+    app: state.app,
   };
 };
 

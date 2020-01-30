@@ -17,8 +17,8 @@ import { RootState } from '../../reducers/index';
 import {
   fetchTimeseriesForAssetId,
   selectTimeseriesByAssetId,
-  selectTimeseries,
   addTimeseriesToState,
+  selectTimeseriesById,
 } from '../../modules/timeseries';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import { sdk } from '../../index';
@@ -236,9 +236,7 @@ const mapStateToProps = (state: RootState, origProps: OrigProps) => {
     timeseries: origProps.asset
       ? selectTimeseriesByAssetId(state, origProps.asset.id)
       : undefined,
-    selectedTimeseries: origProps.timeseriesId
-      ? selectTimeseries(state).timeseriesData[origProps.timeseriesId]
-      : undefined,
+    selectedTimeseries: selectTimeseriesById(state, origProps.timeseriesId),
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>

@@ -44,6 +44,58 @@ export interface DeleteAssetAction extends Action<typeof DELETE_ASSETS> {
 
 type AssetAction = AddAssetAction | DeleteAssetAction | UpdateAction;
 
+// Reducer
+export interface AssetsState {
+  items: { [key: string]: ExtendedAsset };
+  byExternalId: { [key: string]: number };
+}
+
+const initialState: AssetsState = { items: {}, byExternalId: {} };
+
+export default function reducer(
+  state = initialState,
+  action: AssetAction
+): AssetsState {
+  switch (action.type) {
+    case ADD_ASSETS: {
+      const items = { ...state.items, ...action.payload.items };
+      return {
+        ...state,
+        items,
+        byExternalId: {
+          ...state.byExternalId,
+          ...Object.values(action.payload.items).reduce((prev, el) => {
+            if (el.externalId) {
+              // eslint-disable-next-line no-param-reassign
+              prev[el.externalId] = el.id;
+            }
+            return prev;
+          }, {} as { [key: string]: number }),
+        },
+      };
+    }
+    case UPDATE_ASSET: {
+      return {
+        ...state,
+        items: {
+          ...state.items,
+          [action.payload.assetId]: action.payload.item,
+        },
+      };
+    }
+    case DELETE_ASSETS: {
+      const items = { ...state.items };
+      delete items[action.payload.assetId];
+      return {
+        ...state,
+        items,
+      };
+    }
+    default:
+      return state;
+  }
+}
+
 // Functions
 export function addAssetsToState(assetsToAdd: Asset[]) {
   return async (dispatch: Dispatch) => {
@@ -322,58 +374,6 @@ export const deleteAsset = (assetId: number) => async (
   }
 };
 
-// Reducer
-export interface AssetsState {
-  all: { [key: string]: ExtendedAsset };
-  externalIdMap: { [key: string]: number };
-}
-
-const initialState: AssetsState = { all: {}, externalIdMap: {} };
-
-export default function assets(
-  state = initialState,
-  action: AssetAction
-): AssetsState {
-  switch (action.type) {
-    case ADD_ASSETS: {
-      const all = { ...state.all, ...action.payload.items };
-      return {
-        ...state,
-        all,
-        externalIdMap: {
-          ...state.externalIdMap,
-          ...Object.values(action.payload.items).reduce((prev, el) => {
-            if (el.externalId) {
-              // eslint-disable-next-line no-param-reassign
-              prev[el.externalId] = el.id;
-            }
-            return prev;
-          }, {} as { [key: string]: number }),
-        },
-      };
-    }
-    case UPDATE_ASSET: {
-      return {
-        ...state,
-        all: {
-          ...state.all,
-          [action.payload.assetId]: action.payload.item,
-        },
-      };
-    }
-    case DELETE_ASSETS: {
-      const all = { ...state.all };
-      delete all[action.payload.assetId];
-      return {
-        ...state,
-        all,
-      };
-    }
-    default:
-      return state;
-  }
-}
-
 const slimAssetObject = (asset: Asset): ExtendedAsset => ({
   id: asset.id,
   externalId: asset.externalId,
@@ -388,6 +388,5 @@ const slimAssetObject = (asset: Asset): ExtendedAsset => ({
 });
 
 // Selectors
-export const selectAssets = (state: RootState) => state.assets || initialState;
 export const selectAssetById = (state: RootState, id: number) =>
-  state.assets.all[id];
+  state.assets.items[id];

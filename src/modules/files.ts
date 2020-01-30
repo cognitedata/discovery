@@ -1,4 +1,3 @@
-import { createAction } from 'redux-actions';
 import { Dispatch, Action } from 'redux';
 import { FilesMetadata, FileChangeUpdate } from '@cognite/sdk';
 import { message } from 'antd';
@@ -31,6 +30,90 @@ interface DeleteFileAction extends Action<typeof DELETE_FILE> {
 }
 
 type FilesAction = AddFilesAction | AddFileAction | DeleteFileAction;
+
+// Reducer
+export interface FilesState {
+  items: { [key: string]: FilesMetadata };
+  byAssetId: { [key: string]: number[] };
+}
+const initialState: FilesState = { byAssetId: {}, items: {} };
+
+export default function reducer(
+  state = initialState,
+  action: FilesAction
+): FilesState {
+  switch (action.type) {
+    case ADD_FILES: {
+      const { assetId, items } = action.payload;
+      const byAssetMap = items.reduce((prev, item) => {
+        if (
+          !state.items[item.id] ||
+          state.items[item.id].assetIds !== item.assetIds
+        ) {
+          const prevIds = state.items[item.id]
+            ? state.items[item.id].assetIds
+            : undefined;
+          const currIds = item.assetIds;
+          if (prevIds) {
+            prevIds.forEach(prevId => {
+              if (prev[prevId]) {
+                // eslint-disable-next-line no-param-reassign
+                prev[prevId] = prev[prevId].filter(el => el !== item.id);
+              }
+            });
+          }
+          if (currIds) {
+            currIds.forEach(currId => {
+              if (prev[currId]) {
+                // eslint-disable-next-line no-param-reassign
+                prev[currId].push(item.id);
+              } else {
+                // eslint-disable-next-line no-param-reassign
+                prev[currId] = [item.id];
+              }
+            });
+          }
+        }
+        return prev;
+      }, state.byAssetId);
+      if (assetId && items.length === 0) {
+        byAssetMap[assetId] = [];
+      }
+      return {
+        ...state,
+        items: { ...state.items, ...arrayToObjectById(items) },
+        byAssetId: byAssetMap,
+      };
+    }
+    case ADD_FILE: {
+      const { item } = action.payload;
+      return {
+        ...state,
+        items: { ...state.items, ...arrayToObjectById([item]) },
+      };
+    }
+    case DELETE_FILE: {
+      const { fileId } = action.payload;
+      const { items: filesData, byAssetId } = state;
+      if (filesData[fileId]) {
+        const { assetIds } = filesData[fileId];
+        if (assetIds) {
+          assetIds.forEach(assetId => () => {
+            byAssetId[assetId] = byAssetId[assetId].filter(el => el !== fileId);
+          });
+        }
+      }
+      delete filesData[fileId];
+      return {
+        ...state,
+        items: filesData,
+        byAssetId,
+      };
+    }
+    default:
+      return state;
+  }
+}
 
 export const fetchFiles = (assetId: number) => async (dispatch: Dispatch) => {
   if (!canReadFiles()) {
@@ -95,105 +178,14 @@ export const deleteFile = (fileId: number) => async (
   }
 };
 
-// Reducer
-export interface FilesState {
-  files: { [key: string]: FilesMetadata };
-  byAssetId: { [key: string]: number[] };
-}
-const initialState: FilesState = { byAssetId: {}, files: {} };
-
-export default function files(
-  state = initialState,
-  action: FilesAction
-): FilesState {
-  switch (action.type) {
-    case ADD_FILES: {
-      const { assetId, items } = action.payload;
-      const byAssetMap = items.reduce((prev, item) => {
-        if (
-          !state.files[item.id] ||
-          state.files[item.id].assetIds !== item.assetIds
-        ) {
-          const prevIds = state.files[item.id]
-            ? state.files[item.id].assetIds
-            : undefined;
-          const currIds = item.assetIds;
-          if (prevIds) {
-            prevIds.forEach(prevId => {
-              if (prev[prevId]) {
-                // eslint-disable-next-line no-param-reassign
-                prev[prevId] = prev[prevId].filter(el => el !== item.id);
-              }
-            });
-          }
-          if (currIds) {
-            currIds.forEach(currId => {
-              if (prev[currId]) {
-                // eslint-disable-next-line no-param-reassign
-                prev[currId].push(item.id);
-              } else {
-                // eslint-disable-next-line no-param-reassign
-                prev[currId] = [item.id];
-              }
-            });
-          }
-        }
-        return prev;
-      }, state.byAssetId);
-      if (assetId && items.length === 0) {
-        byAssetMap[assetId] = [];
-      }
-      return {
-        ...state,
-        files: { ...state.files, ...arrayToObjectById(items) },
-        byAssetId: byAssetMap,
-      };
-    }
-    case ADD_FILE: {
-      const { item } = action.payload;
-      return {
-        ...state,
-        files: { ...state.files, ...arrayToObjectById([item]) },
-      };
-    }
-    case DELETE_FILE: {
-      const { fileId } = action.payload;
-      const { files: filesData, byAssetId } = state;
-      if (filesData[fileId]) {
-        const { assetIds } = filesData[fileId];
-        if (assetIds) {
-          assetIds.forEach(assetId => () => {
-            byAssetId[assetId] = byAssetId[assetId].filter(el => el !== fileId);
-          });
-        }
-      }
-      delete filesData[fileId];
-      return {
-        ...state,
-        files: filesData,
-        byAssetId,
-      };
-    }
-    default:
-      return state;
-  }
-}
-
-// Action creators
-const addFiles = createAction(ADD_FILES);
-
-export const actions = {
-  addFiles,
-};
-
 // Selectors
-export const selectFiles = (state: RootState) =>
-  state.files || { byAssetId: {} };
-
 export const selectFilesForAsset = (state: RootState, assetId: number) => {
   const filesForAsset = state.files.byAssetId[assetId];
   if (filesForAsset) {
-    return filesForAsset.map(id => state.files.files[id]);
+    return filesForAsset.map(id => state.files.items[id]);
   }
   return undefined;
+};
+export const selectFileById = (state: RootState, fileId?: number) => {
+  return fileId ? state.files.items[fileId] : undefined;
 };
