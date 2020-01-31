@@ -44,6 +44,7 @@ export const SET_SEARCH_STATE = 'search/SET_SEARCH_STATE';
 interface SetSearchState extends Action<typeof SET_SEARCH_STATE> {
   payload: {
     loading?: boolean;
+    searchByAnnotation?: boolean;
     assetsTable?: { items: number[]; page: number; pageSize: number };
     timeseriesTable?: { items: number[]; page: number; pageSize: number };
     filesTable?: { items: number[]; page: number; pageSize: number };
@@ -60,6 +61,7 @@ type SearchAction = SetSearchState;
 // Reducer
 export interface SearchState {
   loading: boolean;
+  searchByAnnotation: boolean;
   assetsTable: { items: number[]; page: number; pageSize: number };
   timeseriesTable: { items: number[]; page: number; pageSize: number };
   filesTable: { items: number[]; page: number; pageSize: number };
@@ -72,6 +74,7 @@ export interface SearchState {
 
 const initialState: SearchState = {
   loading: true,
+  searchByAnnotation: false,
   assetsTable: { items: [], page: 0, pageSize: 10 },
   timeseriesTable: { items: [], page: 0, pageSize: 10 },
   filesTable: { items: [], page: 0, pageSize: 10 },
@@ -247,6 +250,17 @@ export function updateFileFilter(fileFilter: FilesSearchFilter) {
       type: SET_SEARCH_STATE,
       payload: {
         fileFilter,
+        loading: true,
+      },
+    });
+  };
+}
+export function updateSearchByAnnotation(searchByAnnotation: boolean) {
+  return async (dispatch: ThunkDispatch<any, void, SetSearchState>) => {
+    dispatch({
+      type: SET_SEARCH_STATE,
+      payload: {
+        searchByAnnotation,
         loading: true,
       },
     });
