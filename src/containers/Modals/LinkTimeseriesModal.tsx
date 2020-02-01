@@ -5,9 +5,9 @@ import { Modal, Button } from 'antd';
 import { TimeseriesSearch } from '@cognite/gearbox';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
+import { sdk } from 'utils/SDK';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { ExtendedAsset } from '../../modules/assets';
-import { sdk } from '../../index';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 

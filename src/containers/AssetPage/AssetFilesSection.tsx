@@ -12,6 +12,7 @@ import FlexTableWrapper from 'components/FlexTableWrapper';
 import FilePreview from 'containers/FilePage/FilePreview';
 import LoadingWrapper from 'components/LoadingWrapper';
 import LinkFileModal from 'containers/Modals/LinkFileModal';
+import { sdk } from 'utils/SDK';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
@@ -22,7 +23,6 @@ import {
   selectFileById,
 } from '../../modules/files';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
-import { sdk } from '../../index';
 import { canEditAssets, canEditFiles } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 

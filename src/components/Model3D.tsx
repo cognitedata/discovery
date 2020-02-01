@@ -4,10 +4,10 @@ import { Slider } from 'antd';
 import debounce from 'lodash/debounce';
 import { Model3DViewer, CacheObject } from '@cognite/gearbox';
 import { SliderValue } from 'antd/lib/slider';
+import { sdk } from 'utils/SDK';
 import Model3DLoadingDialog, { ProgressObject } from './Model3DLoadingDialog';
 
 import { trackUsage } from '../utils/Metrics';
-import { sdk } from '../index';
 
 declare global {
   interface Window {

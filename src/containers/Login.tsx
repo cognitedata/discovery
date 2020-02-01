@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
-import { sdk } from 'index';
+import { sdk } from 'utils/SDK';
 import { updateCdfEnv, updateTenant } from '../modules/app';
 
 const Wrapper = styled.div`

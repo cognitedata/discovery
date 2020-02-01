@@ -1,6 +1,6 @@
 import React from 'react';
 import { notification } from 'antd';
-import { sdk } from 'index';
+import { sdk } from 'utils/SDK';
 import store from '../store/index';
 import { AppState } from '../modules/app';
 

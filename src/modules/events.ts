@@ -1,8 +1,8 @@
 import { Dispatch, Action } from 'redux';
 import { CogniteEvent } from '@cognite/sdk';
+import { sdk } from 'utils/SDK';
 import { arrayToObjectById } from '../utils/utils';
 import { RootState } from '../reducers';
-import { sdk } from '../index';
 import { trackUsage } from '../utils/Metrics';
 import { canEditEvents, canReadEvents } from '../utils/PermissionsUtils';
 

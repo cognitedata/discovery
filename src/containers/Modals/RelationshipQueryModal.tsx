@@ -4,7 +4,7 @@ import { Modal, Button, Input, message } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import styled from 'styled-components';
 import RelationshipQueryTreeViewer from 'containers/NetworkViewers/RelationshipQueryTreeViewer';
-import { sdk } from '../../index';
+import { sdk } from 'utils/SDK';
 import { trackUsage } from '../../utils/Metrics';
 
 const Content = styled.div`
