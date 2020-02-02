@@ -208,8 +208,3 @@ export function fetchTypeByIds(typeIds: number[]) {
     }
   };
 }
-
-// Selectors
-  (state: RootState) => state.types.items,
-  items => Object.values(items)
-);
