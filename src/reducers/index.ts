@@ -1,16 +1,16 @@
 import { combineReducers } from 'redux';
 import { History } from 'history';
-import { connectRouter } from 'connected-react-router';
-import timeseries from '../modules/timeseries';
-import events from '../modules/events';
-import assets from '../modules/assets';
-import types from '../modules/types';
-import files from '../modules/files';
-import threed from '../modules/threed';
-import assetMappings from '../modules/assetmappings';
-import app from '../modules/app';
-import search from '../modules/search';
-import relationships from '../modules/relationships';
+import { connectRouter, RouterState } from 'connected-react-router';
+import timeseries, { TimeseriesState } from '../modules/timeseries';
+import events, { EventState } from '../modules/events';
+import assets, { AssetsState } from '../modules/assets';
+import types, { TypesState } from '../modules/types';
+import files, { FilesState } from '../modules/files';
+import threed, { ThreeDState } from '../modules/threed';
+import assetMappings, { AssetMappingState } from '../modules/assetmappings';
+import app, { AppState } from '../modules/app';
+import search, { SearchState } from '../modules/search';
+import relationships, { RelationshipState } from '../modules/relationships';
 
 const createRootReducer = (history: History) =>
   combineReducers({
@@ -27,6 +27,18 @@ const createRootReducer = (history: History) =>
     router: connectRouter(history),
   });
 
-export type RootState = ReturnType<ReturnType<typeof createRootReducer>>;
+export interface RootState {
+  timeseries: TimeseriesState;
+  events: EventState;
+  assets: AssetsState;
+  types: TypesState;
+  files: FilesState;
+  threed: ThreeDState;
+  relationships: RelationshipState;
+  assetMappings: AssetMappingState;
+  app: AppState;
+  search: SearchState;
+  router: RouterState;
+}
 
 export default createRootReducer;
