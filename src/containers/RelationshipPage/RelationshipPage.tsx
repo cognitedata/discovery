@@ -105,7 +105,7 @@ class RelationshipViewer extends Component<Props, State> {
     };
   } {
     const { byExternalId } = this.props.assets;
-    const { items, assetTypes } = this.props.types;
+    const { items, byAssetId } = this.props.types;
     return {
       Resource: {
         asset: {
@@ -163,7 +163,7 @@ class RelationshipViewer extends Component<Props, State> {
             name: typeSchema ? typeSchema.name : 'Loading...',
             filterNode: (node: RelationshipResource) => {
               const nodeTypes =
-                assetTypes[
+                byAssetId[
                   byExternalId[node.resourceId] || Number(node.resourceId)
                 ];
               if (
