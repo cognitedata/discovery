@@ -103,7 +103,8 @@
   "scripts": {
     "start": "env HTTPS=true react-app-rewired --max_old_space_size=8192 start",
     "build": "react-app-rewired --max_old_space_size=8192 build",
-    "test": "react-app-rewired test --env=jsdom ",
+    "test": "react-app-rewired test",
+    "test:once": "react-app-rewired test --watchAll=false",
     "eject": "react-app-rewired eject",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .jsx,.js,.tsx,.ts --fix"
@@ -112,6 +113,15 @@
     "hooks": {
       "pre-commit": "yarn run lint:fix"
     }
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!<rootDir>/node_modules/"
+    ],
+    "coverageReporters": [
+      "text-summary"
+    ]
   },
   "resolutions": {
     "debug@ngokevin/debug#noTimestamp": "4.1.1",

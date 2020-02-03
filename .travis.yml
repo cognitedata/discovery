@@ -8,6 +8,7 @@ install:
   - yarn
 script:
   - yarn lint --max-warnings 0 || travis_terminate 1
+  - yarn test --coverage || travis_terminate 1
   - yarn build || travis_terminate 1
 deploy:
   - provider: firebase
