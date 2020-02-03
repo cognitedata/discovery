@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { message } from 'antd';
+import { sdk } from 'modules/app';
 import { RootState } from '../../reducers/index';
 import { AssetsState } from '../../modules/assets';
 
@@ -11,7 +12,6 @@ import {
   postWithCursor,
 } from '../../modules/relationships';
 import TreeViewer from './TreeViewer';
-import { sdk } from '../../index';
 import { canReadRelationships } from '../../utils/PermissionsUtils';
 
 type OwnProps = { nodes: { key: string; value: string }[] };

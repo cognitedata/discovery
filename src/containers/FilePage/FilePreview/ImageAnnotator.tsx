@@ -7,6 +7,7 @@ import { Button, Input, Tag } from 'antd';
 import styled, { keyframes } from 'styled-components';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
+import { sdk } from 'modules/app';
 import { fetchAssets, AssetsState } from '../../../modules/assets';
 import { RootState } from '../../../reducers/index';
 import {
@@ -15,7 +16,6 @@ import {
   CogniteDetection,
   ManualVerificationState,
 } from '../../../utils/detectionApi';
-import { sdk } from '../../../index';
 import AssetSelect from '../../../components/AssetSelect';
 import { canReadEvents, canEditEvents } from '../../../utils/PermissionsUtils';
 import { trackUsage } from '../../../utils/Metrics';

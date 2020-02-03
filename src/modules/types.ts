@@ -1,7 +1,7 @@
 import { Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { sdk } from 'modules/app';
 import { RootState } from '../reducers/index';
-import { sdk } from '../index';
 import { arrayToObjectById } from '../utils/utils';
 import { AssetTypeInfo, ExtendedAsset } from './assets';
 import { canReadTypes } from '../utils/PermissionsUtils';

@@ -6,7 +6,7 @@ import queryString from 'query-string';
 import { replace } from 'connected-react-router';
 import { Layout, notification } from 'antd';
 import Header from 'containers/Header';
-import { sdk } from '../index';
+import { sdk } from 'modules/app';
 import Loader from '../components/Loader';
 import {
   updateTenant,

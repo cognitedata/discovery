@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Select, Spin } from 'antd';
 import { Asset as CogniteAsset, AssetSearchFilter } from '@cognite/sdk';
-import { sdk } from '../index';
+import { sdk } from 'modules/app';
 
 type Props = {
   style: React.CSSProperties;

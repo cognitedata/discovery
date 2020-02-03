@@ -1,6 +1,5 @@
 import React from 'react';
 import { notification } from 'antd';
-import { sdk } from 'index';
 import store from '../store/index';
 import { AppState } from '../modules/app';
 
@@ -19,15 +18,8 @@ export const checkForAccessPermission = (
           message: `You are missing access ${key}:${type}`,
           description: (
             <p>
-              Go to{' '}
-              <a
-                href={`https://console.cognitedata.com/${sdk.project}/iam`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Console
-              </a>{' '}
-              and set up any missing permissions or contact your administrator!
+              Go to Console and set up any missing permissions or contact your
+              administrator!
             </p>
           ),
         });
@@ -43,15 +35,8 @@ export const checkForAccessPermission = (
         message: `You are missing access to Group:ACL to read permissions`,
         description: (
           <p>
-            Go to{' '}
-            <a
-              href={`https://console.cognitedata.com/${sdk.project}/iam`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Console
-            </a>{' '}
-            and set up any missing permissions or contact your administrator!
+            Go to Console and set up any missing permissions or contact your
+            administrator!
           </p>
         ),
       });

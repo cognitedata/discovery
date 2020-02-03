@@ -4,13 +4,13 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, notification, Modal } from 'antd';
 import styled from 'styled-components';
 import { push, goBack } from 'connected-react-router';
+import { sdk } from 'modules/app';
 import FilePreview from './FilePreview';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import FileSidebar from './FileSidebar';
 import { FilesState, fetchFile, deleteFile } from '../../modules/files';
 import { trackUsage } from '../../utils/Metrics';
-import { sdk } from '../../index';
 import { downloadFile } from './FileUtils';
 import { canReadFiles, canEditFiles } from '../../utils/PermissionsUtils';
 

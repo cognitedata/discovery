@@ -1,9 +1,10 @@
 import { Action } from 'redux';
 import { push, CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
-import { SingleCogniteCapability } from '@cognite/sdk';
+import { SingleCogniteCapability, CogniteClient } from '@cognite/sdk';
 import { RootState } from '../reducers/index';
-import { sdk } from '../index';
+
+export const sdk = new CogniteClient({ appId: 'Discovery' });
 
 // Constants
 export const PRIVACY_ACCEPT = 'acceptPrivacy';

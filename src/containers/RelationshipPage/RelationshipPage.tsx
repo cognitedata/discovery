@@ -6,6 +6,7 @@ import RelationshipQueryModal from 'containers/Modals/RelationshipQueryModal';
 import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
+import { sdk } from 'modules/app';
 import { RootState } from '../../reducers/index';
 import { AssetsState } from '../../modules/assets';
 import { TimeseriesState } from '../../modules/timeseries';
@@ -20,7 +21,6 @@ import {
 } from '../../modules/relationships';
 import TreeViewer from '../NetworkViewers/TreeViewer';
 import { BetaTag } from '../../components/BetaWarning';
-import { sdk } from '../../index';
 import { trackUsage } from '../../utils/Metrics';
 import {
   canReadRelationships,

@@ -1,6 +1,6 @@
 import { FilesMetadata, Asset, UploadFileMetadataResponse } from '@cognite/sdk';
+import { sdk } from 'modules/app';
 import { trackUsage } from '../../utils/Metrics';
-import { sdk } from '../../index';
 import { GCSUploader } from '../../components/FileUploader';
 import {
   canReadFiles,

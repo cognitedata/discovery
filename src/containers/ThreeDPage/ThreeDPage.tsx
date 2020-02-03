@@ -7,6 +7,7 @@ import { push } from 'connected-react-router';
 import Model3D from 'components/Model3D';
 import { Asset, RevealNode3D } from '@cognite/sdk';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
+import { sdk } from 'modules/app';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import {
@@ -14,7 +15,6 @@ import {
   updateRevisionRepresentAsset,
 } from '../../modules/threed';
 import ThreeDSidebar from './ThreeDSidebar';
-import { sdk } from '../../index';
 import { ExtendedAsset } from '../../modules/assets';
 import { createAssetNodeMapping } from '../../modules/assetmappings';
 import ThreeDCard from './ThreeDCard';

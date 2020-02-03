@@ -6,7 +6,7 @@ import mime from 'mime-types';
 import { UploadFileMetadataResponse } from '@cognite/sdk';
 import styled from 'styled-components';
 import { UploadFile } from 'antd/lib/upload/interface';
-import { sdk } from '../index';
+import { sdk } from 'modules/app';
 
 export const GCSUploader = (
   file: Blob | UploadFile,

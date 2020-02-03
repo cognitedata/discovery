@@ -1,5 +1,5 @@
 import * as mixpanelConfig from 'mixpanel-browser';
-import { sdk } from '../index';
+import { sdk } from 'modules/app';
 import store from '../store/index';
 import { AppState } from '../modules/app';
 
