@@ -27,10 +27,13 @@ const TypeSelect = ({
   const setSelectedValue = (ids?: number | number[]) => {
     if (!ids) {
       setCurrentSelection([]);
+      onTypeSelected([]);
     } else if (multiple) {
       setCurrentSelection(ids as number[]);
+      onTypeSelected(ids as number[]);
     } else {
       setCurrentSelection([ids as number]);
+      onTypeSelected([ids as number]);
     }
     setQuery('');
   };
@@ -54,10 +57,6 @@ const TypeSelect = ({
       setCurrentSelection(selectedTypeIds);
     }
   }, [selectedTypeIds]);
-
-  useEffect(() => {
-    onTypeSelected(currentSelection);
-  }, [currentSelection, onTypeSelected]);
 
   if (!canReadTypes(false)) {
     return (

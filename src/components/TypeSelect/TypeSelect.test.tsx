@@ -10,6 +10,8 @@ import Adapter from 'enzyme-adapter-react-16';
 import { Select, Popover } from 'antd';
 import TypeSelect from './TypeSelect';
 
+jest.mock('utils/PermissionsUtils');
+
 configure({ adapter: new Adapter() });
 
 const initialStoreState: Partial<RootState> = {
@@ -59,10 +61,6 @@ const initialStoreState: Partial<RootState> = {
 };
 
 const store = configureStore([thunk])(initialStoreState);
-
-beforeEach(() => {
-  jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(true);
-});
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -143,7 +141,7 @@ it('if typesAcl is missing', () => {
 });
 
 it('if disabled', () => {
-  // should be disabled
+  jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(true);
   // Test first render and effect
   const mockFunction = jest.fn();
   const container = mount(

@@ -1,7 +1,7 @@
 import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import {
-  AssetFilter,
+  AssetSearchFilter,
   TimeSeriesSearchDTO,
   FilesSearchFilter,
 } from '@cognite/sdk';
@@ -27,6 +27,17 @@ const difference = (object: any, base: any) => {
   return changes(object, base);
 };
 
+type AssetSearchFilterWithTypes = AssetSearchFilter & {
+  extendedFilter?: {
+    types?: {
+      type: {
+        id: number;
+        version: number;
+      };
+    }[];
+  };
+};
+
 // Constants
 export const SET_SEARCH_STATE = 'search/SET_SEARCH_STATE';
 
@@ -37,7 +48,7 @@ interface SetSearchState extends Action<typeof SET_SEARCH_STATE> {
     timeseriesTable?: { items: number[]; page: number; pageSize: number };
     filesTable?: { items: number[]; page: number; pageSize: number };
     threeDTable?: { items: number[]; page: number; pageSize: number };
-    assetFilter?: AssetFilter;
+    assetFilter?: AssetSearchFilterWithTypes;
     timeseriesFilter?: TimeSeriesSearchDTO;
     fileFilter?: FilesSearchFilter;
     query?: string;
@@ -53,7 +64,7 @@ export interface SearchState {
   timeseriesTable: { items: number[]; page: number; pageSize: number };
   filesTable: { items: number[]; page: number; pageSize: number };
   threeDTable: { items: number[]; page: number; pageSize: number };
-  assetFilter: AssetFilter;
+  assetFilter: AssetSearchFilterWithTypes;
   timeseriesFilter: TimeSeriesSearchDTO;
   fileFilter: FilesSearchFilter;
   query: string;
@@ -187,7 +198,7 @@ export function updateSearchQuery(query: string) {
     });
   };
 }
-export function updateAssetFilter(assetFilter: AssetFilter) {
+export function updateAssetFilter(assetFilter: AssetSearchFilterWithTypes) {
   return async (
     dispatch: ThunkDispatch<any, void, SetSearchState>,
     getState: () => RootState
