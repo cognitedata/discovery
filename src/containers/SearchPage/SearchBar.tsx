@@ -151,7 +151,7 @@ class SearchPage extends React.Component<Props, State> {
             })
           }
         />
-        <SearchBarTypingFilters />
+        <SearchBarTypingFilters disabled={isDisabled} />
         <SearchBarAnnotationsFilter />
       </Wrapper>
     );

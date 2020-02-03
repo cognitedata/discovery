@@ -1,23 +1,16 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import { bindActionCreators, Dispatch } from 'redux';
 import { Checkbox } from 'antd';
-import { RootState } from '../../reducers/index';
-import { SearchState, updateSearchByAnnotation } from '../../modules/search';
+import { updateSearchByAnnotation } from '../../modules/search';
 import { BetaTag } from '../../components/BetaWarning';
+import { useDispatch, useSelector } from '../../utils/ReduxUtils';
 
-type OrigProps = {};
+export const SearchBarAnnotationsFilter = () => {
+  const dispatch = useDispatch();
 
-type Props = {
-  search: SearchState;
-  doUpdateSearchByAnnotation: typeof updateSearchByAnnotation;
-} & OrigProps;
+  const searchByAnnotation = useSelector(
+    state => state.search.searchByAnnotation
+  );
 
-export const SearchBarAnnotationsFilter = ({
-  search,
-  doUpdateSearchByAnnotation,
-}: Props) => {
-  const { searchByAnnotation } = search;
   return (
     <>
       <p>
@@ -25,26 +18,11 @@ export const SearchBarAnnotationsFilter = ({
       </p>
       <Checkbox
         checked={searchByAnnotation}
-        onChange={ev => doUpdateSearchByAnnotation(ev.target.checked)}
+        onChange={ev => {
+          dispatch(updateSearchByAnnotation(ev.target.checked));
+        }}
       />
     </>
   );
 };
-
-const mapStateToProps = (state: RootState) => {
-  return {
-    search: state.search,
-  };
-};
-const mapDispatchToProps = (dispatch: Dispatch) =>
-  bindActionCreators(
-    {
-      doUpdateSearchByAnnotation: updateSearchByAnnotation,
-    },
-    dispatch
-  );
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(SearchBarAnnotationsFilter);
+export default SearchBarAnnotationsFilter;
