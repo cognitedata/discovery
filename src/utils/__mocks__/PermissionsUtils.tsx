@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const checkForAccessPermission = (..._ignore) => {
+export const checkForAccessPermission = (..._ignore: any[]) => {
   return true;
 };
 
