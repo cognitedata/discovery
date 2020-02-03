@@ -56,7 +56,7 @@ const initialStoreState: Partial<RootState> = {
       },
     },
     error: false,
-    assetTypes: {},
+    byAssetId: {},
   },
 };
 
