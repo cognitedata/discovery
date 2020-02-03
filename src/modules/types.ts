@@ -35,7 +35,7 @@ export interface Type {
 
 interface FetchTypeForAssetsAction
   extends Action<typeof RETRIEVE_TYPE_FOR_ASSETS> {
-  payload: { assetTypes: { [key: number]: AssetTypeInfo[] } };
+  payload: { byAssetId: { [key: number]: AssetTypeInfo[] } };
 }
 interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
   payload: { types: Type[] };
@@ -50,11 +50,11 @@ type TypeAction =
 // Reducer
 export interface TypesState {
   error: boolean;
-  items: Type[];
-  assetTypes: { [key: number]: AssetTypeInfo[] };
+  items: { [key: number]: Type };
+  byAssetId: { [key: number]: AssetTypeInfo[] };
 }
 
-const initialState: TypesState = { assetTypes: {}, items: [], error: false };
+const initialState: TypesState = { byAssetId: {}, items: {}, error: false };
 
 export default function reducer(
   state = initialState,
@@ -69,10 +69,10 @@ export default function reducer(
       };
     }
     case RETRIEVE_TYPE_FOR_ASSETS: {
-      const { assetTypes } = action.payload;
+      const { byAssetId } = action.payload;
       return {
         ...state,
-        assetTypes: { ...state.assetTypes, ...assetTypes },
+        byAssetId: { ...state.byAssetId, ...byAssetId },
       };
     }
     case RETRIEVE_TYPE_FAILED: {
@@ -131,7 +131,7 @@ export function fetchTypeForAssets(assetIds: number[]) {
         dispatch({
           type: RETRIEVE_TYPE_FOR_ASSETS,
           payload: {
-            assetTypes: response.data.items.reduce(
+            byAssetId: response.data.items.reduce(
               (prev: { [key: number]: AssetTypeInfo[] }, el: ExtendedAsset) => {
                 return { ...prev, [el.id]: el.types || [] };
               },

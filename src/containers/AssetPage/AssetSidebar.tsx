@@ -82,7 +82,7 @@ class AssetSidebar extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    if (this.props.asset && !this.props.types.assetTypes[this.props.asset.id]) {
+    if (this.props.asset && !this.props.types.items[this.props.asset.id]) {
       this.props.fetchTypeForAssets([this.props.asset.id]);
     }
   }
@@ -98,16 +98,16 @@ class AssetSidebar extends React.Component<Props, State> {
 
   renderType = () => {
     const {
-      types: { assetTypes, items, error },
+      types: { byAssetId, items, error },
     } = this.props;
 
     if (error) {
       return <span>Unable To Load Schema</span>;
     }
-    if (!assetTypes[this.props.asset!.id]) {
+    if (!byAssetId[this.props.asset!.id]) {
       return <Spin />;
     }
-    return assetTypes[this.props.asset!.id]
+    return byAssetId[this.props.asset!.id]
       .map(el => items[el.type.id].name)
       .map(type => <Button type="link">{type}</Button>);
   };

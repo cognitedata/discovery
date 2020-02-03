@@ -14,7 +14,6 @@ import { trackUsage } from '../../utils/Metrics';
 import { fetchAssets, AssetsState } from '../../modules/assets';
 import { fetchTimeseries, TimeseriesState } from '../../modules/timeseries';
 import { ThreeDState } from '../../modules/threed';
-import { TypesState } from '../../modules/types';
 
 import {
   RelationshipResource,
@@ -193,7 +192,6 @@ type OwnProps = {
 
 type StateProps = {
   assets: AssetsState;
-  types: TypesState;
   timeseries: TimeseriesState;
   threed: ThreeDState;
 };
@@ -698,7 +696,6 @@ const mapStateToProps = (state: RootState): StateProps => {
     assets: state.assets,
     timeseries: state.timeseries,
     threed: state.threed,
-    types: state.types,
   };
 };
 
