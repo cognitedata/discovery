@@ -292,7 +292,7 @@ export function fetchModels() {
             payload: {
               modelId,
               revisions: items,
-              representsAsset:
+              byAssetId:
                 i === results.length - 1 ? cumulativeRepresentsAsset : {},
             },
           });
