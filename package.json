@@ -130,7 +130,9 @@
     "coverageReporters": [
       "text-summary",
       "text"
-    ]
+    ],
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
   },
   "resolutions": {
     "debug@ngokevin/debug#noTimestamp": "4.1.1",
