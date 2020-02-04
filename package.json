@@ -128,9 +128,14 @@
       "!<rootDir>/node_modules/"
     ],
     "coverageReporters": [
-      "text-summary",
-      "text"
-    ]
+      "html",
+      "json",
+      "lcov",
+      "text",
+      "clover"
+    ],
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
   },
   "resolutions": {
     "debug@ngokevin/debug#noTimestamp": "4.1.1",
