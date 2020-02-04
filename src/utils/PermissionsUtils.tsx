@@ -5,6 +5,7 @@ import { AppState } from '../modules/app';
 
 const SHOW_INITIAL_MESSAGE = 'shownMissingGroup';
 
+// TODO: We can change this to be a selector
 export const checkForAccessPermission = (
   key: string,
   type: string,
