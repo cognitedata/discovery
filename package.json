@@ -128,8 +128,11 @@
       "!<rootDir>/node_modules/"
     ],
     "coverageReporters": [
+      "html",
       "json",
-      "text"
+      "lcov",
+      "text",
+      "clover"
     ],
     "coverageDirectory": "./coverage/",
     "collectCoverage": true
