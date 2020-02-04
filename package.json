@@ -128,7 +128,7 @@
       "!<rootDir>/node_modules/"
     ],
     "coverageReporters": [
-      "text-summary",
+      "json",
       "text"
     ],
     "coverageDirectory": "./coverage/",
