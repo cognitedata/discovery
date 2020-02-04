@@ -13,10 +13,12 @@ import {
   updateSearchQuery,
   updateTimeseriesFilter,
   updateFileFilter,
+  updateSearchByAnnotation,
 } from '../../modules/search';
 import { SearchPageTabKeys } from './SearchPage';
 import { trackUsage } from '../../utils/Metrics';
 import SearchBarTypingFilters from './SearchBarTypingFilter';
+import SearchBarAnnotationsFilter from './SearchBarAnnotationsFilter';
 
 const Wrapper = styled.div`
   display: block;
@@ -54,6 +56,7 @@ type Props = {
   updateAssetFilter: typeof updateAssetFilter;
   updateFileFilter: typeof updateFileFilter;
   updateTimeseriesFilter: typeof updateTimeseriesFilter;
+  updateSearchByAnnotation: typeof updateSearchByAnnotation;
 } & OrigProps;
 
 type State = {
@@ -73,11 +76,13 @@ class SearchPage extends React.Component<Props, State> {
   }
 
   renderAssetPopover = () => {
-    const { assetFilter } = this.props.search;
+    const { assetFilter, searchByAnnotation } = this.props.search;
+    const isDisabled = searchByAnnotation;
     return (
       <Wrapper>
         <p>Root Only</p>
         <Checkbox
+          disabled={isDisabled}
           checked={assetFilter.filter ? assetFilter.filter.root : undefined}
           onChange={ev =>
             this.props.updateAssetFilter({
@@ -91,6 +96,7 @@ class SearchPage extends React.Component<Props, State> {
         />
         <p>Root Assets</p>
         <AssetSelect
+          disabled={isDisabled}
           style={{ width: '100%' }}
           rootOnly
           multiple
@@ -112,6 +118,7 @@ class SearchPage extends React.Component<Props, State> {
         />
         <p>Parent Assets</p>
         <AssetSelect
+          disabled={isDisabled}
           style={{ width: '100%' }}
           multiple
           selectedAssetIds={
@@ -131,6 +138,7 @@ class SearchPage extends React.Component<Props, State> {
         />
         <p>Source</p>
         <Input
+          disabled={isDisabled}
           value={assetFilter.filter ? assetFilter.filter.source : undefined}
           onChange={ev =>
             this.props.updateAssetFilter({
@@ -143,17 +151,20 @@ class SearchPage extends React.Component<Props, State> {
             })
           }
         />
-        <SearchBarTypingFilters />
+        <SearchBarTypingFilters disabled={isDisabled} />
+        <SearchBarAnnotationsFilter />
       </Wrapper>
     );
   };
 
   renderFilePopover = () => {
-    const { fileFilter } = this.props.search;
+    const { fileFilter, searchByAnnotation } = this.props.search;
+    const isDisabled = searchByAnnotation;
     return (
       <Wrapper>
         <p>Uploaded Only</p>
         <Checkbox
+          disabled={isDisabled}
           checked={fileFilter.filter ? fileFilter.filter.uploaded : undefined}
           onChange={ev =>
             this.props.updateFileFilter({
@@ -167,6 +178,7 @@ class SearchPage extends React.Component<Props, State> {
         />
         <p>Linked Assets</p>
         <AssetSelect
+          disabled={isDisabled}
           style={{ width: '100%' }}
           multiple
           selectedAssetIds={
@@ -186,6 +198,7 @@ class SearchPage extends React.Component<Props, State> {
         />
         <p>Source</p>
         <Input
+          disabled={isDisabled}
           value={fileFilter.filter ? fileFilter.filter.source : undefined}
           onChange={ev =>
             this.props.updateFileFilter({
@@ -200,6 +213,7 @@ class SearchPage extends React.Component<Props, State> {
         />
         <p>Mime Type</p>
         <Input
+          disabled={isDisabled}
           value={fileFilter.filter ? fileFilter.filter.mimeType : undefined}
           onChange={ev =>
             this.props.updateFileFilter({
@@ -212,6 +226,8 @@ class SearchPage extends React.Component<Props, State> {
             })
           }
         />
+
+        <SearchBarAnnotationsFilter />
       </Wrapper>
     );
   };
@@ -358,6 +374,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       updateTimeseriesFilter,
       updateFileFilter,
       updateSearchQuery,
+      updateSearchByAnnotation,
     },
     dispatch
   );

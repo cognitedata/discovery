@@ -4,7 +4,11 @@ import TypeSelect from '../../components/TypeSelect/TypeSelect';
 import { useDispatch, useSelector } from '../../utils/ReduxUtils';
 import { updateAssetFilter } from '../../modules/search';
 
-const SearchBarTypingFilters = () => {
+const SearchBarTypingFilters = ({
+  disabled = false,
+}: {
+  disabled?: boolean;
+}) => {
   const assetFilter = useSelector(state => state.search.assetFilter);
   const types = useSelector(state => state.types.items);
   const dispatch = useDispatch();
@@ -44,6 +48,7 @@ const SearchBarTypingFilters = () => {
       </p>
       <TypeSelect
         multiple
+        disabled={disabled}
         style={{ width: '100%' }}
         selectedTypeIds={selectedIds}
         onTypeSelected={onTypeSelected}

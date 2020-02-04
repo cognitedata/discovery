@@ -8,6 +8,8 @@ import { configure, mount } from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import TypeSelect from 'components/TypeSelect/TypeSelect';
 import SearchBarTypingFilter from '../SearchBarTypingFilter';
+import { TypesState } from '../../../modules/types';
+import { SearchState } from '../../../modules/search';
 
 jest.mock('utils/PermissionsUtils');
 jest.mock('utils/Metrics');
@@ -57,10 +59,10 @@ const initialStoreState: any = {
     },
     error: false,
     assetTypes: {},
-  },
+  } as Partial<TypesState>,
   search: {
     assetFilter: {},
-  },
+  } as Partial<SearchState>,
 };
 
 const store = configureStore([thunk])(initialStoreState);
@@ -93,4 +95,23 @@ it('can select option', () => {
   options.at(0).simulate('click');
   expect(mockFunction).toBeCalled();
   expect(wrapper.text()).toContain('David');
+});
+
+it('cannot select option if disabled', () => {
+  // Test first render and effect
+  const container = mount(
+    <Provider store={store}>
+      <MemoryRouter>
+        <SearchBarTypingFilter disabled />
+      </MemoryRouter>
+    </Provider>
+  );
+  const wrapper = container.find(TypeSelect);
+
+  // Test second render and effect
+  expect(container.find('li[role="option"]').length).toBe(0);
+
+  wrapper.simulate('click');
+  const options = container.find('li[role="option"]');
+  expect(options.length).toBe(0);
 });

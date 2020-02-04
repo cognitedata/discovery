@@ -32,6 +32,7 @@ import {
 } from '../../modules/timeseries';
 import { addFilesToState, FilesState } from '../../modules/files';
 import SearchBar from './SearchBar';
+import { DetectionsAPI } from '../../utils/detectionApi';
 import {
   canEditAssets,
   canEditTimeseries,
@@ -107,6 +108,8 @@ class SearchPage extends React.Component<Props, State> {
   searchIndex = 0;
 
   doDebouncedSearch: any;
+
+  detectionsApi: DetectionsAPI = new DetectionsAPI(sdk);
 
   constructor(props: Props) {
     super(props);
@@ -293,6 +296,7 @@ class SearchPage extends React.Component<Props, State> {
       filesTable,
       threeDTable,
       query,
+      searchByAnnotation,
     } = this.props.search;
     switch (this.tab) {
       case 'assets': {
@@ -334,10 +338,29 @@ class SearchPage extends React.Component<Props, State> {
         if (!canReadFiles()) {
           return;
         }
-        const items = await sdk.files.search({
-          ...fileFilter,
-          limit: 1000,
-        });
+        let items: FilesMetadata[] = [];
+        if (searchByAnnotation) {
+          const eventsByDescription = await this.detectionsApi.search({
+            search: { description: query },
+          });
+          const eventsByLabel = query
+            ? await this.detectionsApi.search({
+                filter: { label: query },
+              })
+            : [];
+          const fileIds = new Set<number>();
+          eventsByDescription.concat(eventsByLabel).forEach(el => {
+            if (el.fileExternalId) {
+              fileIds.add(Number(el.fileExternalId));
+            }
+          });
+          items = await sdk.files.retrieve([...fileIds].map(id => ({ id })));
+        } else {
+          items = await sdk.files.search({
+            ...fileFilter,
+            limit: 1000,
+          });
+        }
         await this.props.addFilesToState(items);
         if (this.searchIndex === index) {
           this.props.updateFilesTable({
@@ -372,44 +395,62 @@ class SearchPage extends React.Component<Props, State> {
   };
 
   doSearchForAssets = async () => {
-    const { assetFilter } = this.props.search;
+    const { assetFilter, searchByAnnotation, query } = this.props.search;
     let items: Asset[] = [];
     let hasFetched = false;
-    if (
-      assetFilter.extendedFilter &&
-      assetFilter.extendedFilter.types &&
-      assetFilter.extendedFilter.types.length > 0
-    ) {
-      try {
-        const response = await sdk.post(
-          `/api/playground/projects/${sdk.project}/assets/search`,
-          {
-            data: {
-              ...(assetFilter.search && { search: assetFilter.search }),
-              filter: {
-                ...assetFilter.filter,
-                ...assetFilter.extendedFilter,
-              },
-              limit: 1000,
-            },
-          }
-        );
-        if (response.status === 200) {
-          hasFetched = true;
-          items = response.data.items;
-        }
-      } catch (e) {
-        message.error(
-          'Types filter failed, will ignore for this search query.'
-        );
-      }
-    }
-    if (!hasFetched) {
-      items = await sdk.assets.search({
-        ...(assetFilter.search && { search: assetFilter.search }),
-        ...(assetFilter.filter && { filter: assetFilter.filter }),
-        limit: 1000,
+    if (searchByAnnotation) {
+      const eventsByDescription = await this.detectionsApi.search({
+        search: { description: query },
       });
+      const eventsByLabel = query
+        ? await this.detectionsApi.search({
+            filter: { label: query },
+          })
+        : [];
+      const assetIds = new Set<number>();
+      eventsByDescription.concat(eventsByLabel).forEach(el => {
+        if (el.assetIds) {
+          el.assetIds.forEach(id => assetIds.add(id));
+        }
+      });
+      items = await sdk.assets.retrieve([...assetIds].map(id => ({ id })));
+    } else {
+      if (
+        assetFilter.extendedFilter &&
+        assetFilter.extendedFilter.types &&
+        assetFilter.extendedFilter.types.length > 0
+      ) {
+        try {
+          const response = await sdk.post(
+            `/api/playground/projects/${sdk.project}/assets/search`,
+            {
+              data: {
+                ...(assetFilter.search && { search: assetFilter.search }),
+                filter: {
+                  ...assetFilter.filter,
+                  ...assetFilter.extendedFilter,
+                },
+                limit: 1000,
+              },
+            }
+          );
+          if (response.status === 200) {
+            hasFetched = true;
+            items = response.data.items;
+          }
+        } catch (e) {
+          message.error(
+            'Types filter failed, will ignore for this search query.'
+          );
+        }
+      }
+      if (!hasFetched) {
+        items = await sdk.assets.search({
+          ...(assetFilter.search && { search: assetFilter.search }),
+          ...(assetFilter.filter && { filter: assetFilter.filter }),
+          limit: 1000,
+        });
+      }
     }
     return items;
   };
