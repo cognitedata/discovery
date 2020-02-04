@@ -6,7 +6,7 @@ import { FilesMetadata } from '@cognite/sdk';
 import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import AceEditor from 'react-ace';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { updateFile, addFilesToState } from '../../modules/files';
 import { canEditFiles } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';

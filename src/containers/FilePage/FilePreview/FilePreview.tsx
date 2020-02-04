@@ -18,7 +18,7 @@ import Placeholder from 'components/Placeholder';
 import { ThreeDState } from 'modules/threed';
 import { AssetsState } from 'modules/assets';
 import { RootState } from 'reducers/index';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { trackUsage } from 'utils/Metrics';
 import LoadingWrapper from 'components/LoadingWrapper';
 import { fetchFile } from 'modules/files';

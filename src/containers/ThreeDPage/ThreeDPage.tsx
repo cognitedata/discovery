@@ -7,7 +7,7 @@ import { push } from 'connected-react-router';
 import Model3D from 'components/Model3D';
 import { Asset, RevealNode3D } from '@cognite/sdk';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';
 import {

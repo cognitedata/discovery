@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import { Asset, RevealNode3D } from '@cognite/sdk';
 import ThreeDCard from 'containers/ThreeDPage/ThreeDCard';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { fetchModels, ThreeDState, ThreeDModel } from '../../modules/threed';
 import { RootState } from '../../reducers/index';
 import {

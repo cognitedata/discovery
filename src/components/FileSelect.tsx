@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Select, Spin } from 'antd';
 import { FilesSearchFilter, FilesMetadata } from '@cognite/sdk';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 
 type Props = {
   style: React.CSSProperties;

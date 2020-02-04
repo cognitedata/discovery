@@ -6,7 +6,7 @@ import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import styled from 'styled-components';
 import AceEditor from 'react-ace';
 import AssetSelect from 'components/AssetSelect';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { fetchAsset, AssetsState } from '../../modules/assets';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';

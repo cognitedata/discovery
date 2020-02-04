@@ -8,7 +8,7 @@ import moment from 'moment';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import AddOrEditTimeseriesModal from 'containers/Modals/AddOrEditTimeseriesModal';
 import { AssetIcon } from 'assets';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../../reducers/index';
 import { addTimeseriesToState } from '../../modules/timeseries';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';

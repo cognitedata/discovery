@@ -5,7 +5,7 @@ import {
   TimeSeriesUpdate,
   IdEither,
 } from '@cognite/sdk';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../reducers';
 import { arrayToObjectById } from '../utils/utils';
 import { trackUsage } from '../utils/Metrics';

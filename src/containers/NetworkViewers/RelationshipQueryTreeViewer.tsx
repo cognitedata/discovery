@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { message } from 'antd';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../../reducers/index';
 import { AssetsState } from '../../modules/assets';
 

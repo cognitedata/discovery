@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Modal, Button } from 'antd';
 import { GetTimeSeriesMetadataDTO } from '@cognite/sdk';
 import { Dispatch, bindActionCreators } from 'redux';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { ExtendedAsset } from '../../modules/assets';
 import FileSelect from '../../components/FileSelect';
 import { addFilesToState } from '../../modules/files';

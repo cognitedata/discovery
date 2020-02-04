@@ -3,7 +3,7 @@ import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { arrayToObjectById, isInternalId } from '../utils/utils';
 import { RootState } from '../reducers';
 import { createAssetNodeMapping } from './assetmappings';

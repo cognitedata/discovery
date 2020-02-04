@@ -6,7 +6,7 @@ import RelationshipQueryModal from 'containers/Modals/RelationshipQueryModal';
 import styled from 'styled-components';
 import BottomRightCard from 'components/BottomRightCard';
 import { push } from 'connected-react-router';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../../reducers/index';
 import { AssetsState } from '../../modules/assets';
 import { TimeseriesState } from '../../modules/timeseries';

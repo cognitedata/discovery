@@ -1,7 +1,7 @@
 import { Dispatch, Action } from 'redux';
 import { AssetMapping3D } from '@cognite/sdk';
 import { message } from 'antd';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../reducers/index';
 import { DELETE_ASSETS, DeleteAssetAction } from './assets';
 import { trackUsage } from '../utils/Metrics';

@@ -1,7 +1,7 @@
 import { Dispatch, Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Revision3D, Model3D } from '@cognite/sdk';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById } from '../utils/utils';
 import { trackUsage } from '../utils/Metrics';

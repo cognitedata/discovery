@@ -12,7 +12,7 @@ import FlexTableWrapper from 'components/FlexTableWrapper';
 import { FilesMetadata } from '@cognite/sdk';
 import AddOrEditAssetModal from 'containers/Modals/AddOrEditAssetModal';
 import AddOrEditTimeseriesModal from 'containers/Modals/AddOrEditTimeseriesModal';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import FileUploadModal from '../Modals/FileUploadModal';
 import { trackUsage } from '../../utils/Metrics';
 import { addAssetsToState, AssetsState } from '../../modules/assets';

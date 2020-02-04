@@ -8,7 +8,7 @@ import { FilesMetadata } from '@cognite/sdk';
 import BottomRightCard from 'components/BottomRightCard';
 import { sleep } from 'utils/utils';
 import { RootState } from 'reducers';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { trackUsage } from 'utils/Metrics';
 import { FilesState } from 'modules/files';
 import { AssetsState } from 'modules/assets';

@@ -6,7 +6,7 @@ import AceEditor from 'react-ace';
 import AssetSelect from 'components/AssetSelect';
 import { Asset } from '@cognite/sdk';
 import styled from 'styled-components';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { ExtendedAsset, addAssetsToState } from '../../modules/assets';
 import { canEditAssets } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';

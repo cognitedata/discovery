@@ -12,7 +12,7 @@ import FlexTableWrapper from 'components/FlexTableWrapper';
 import FilePreview from 'containers/FilePage/FilePreview';
 import LoadingWrapper from 'components/LoadingWrapper';
 import LinkFileModal from 'containers/Modals/LinkFileModal';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {

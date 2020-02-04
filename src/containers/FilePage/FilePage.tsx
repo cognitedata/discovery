@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { Button, notification, Modal } from 'antd';
 import styled from 'styled-components';
 import { push, goBack } from 'connected-react-router';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import FilePreview from './FilePreview';
 import { RootState } from '../../reducers/index';
 import LoadingWrapper from '../../components/LoadingWrapper';

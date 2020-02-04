@@ -7,7 +7,7 @@ import { Button, Input, Tag } from 'antd';
 import styled, { keyframes } from 'styled-components';
 import debounce from 'lodash/debounce';
 import { FilesMetadata } from '@cognite/sdk';
-import { sdk } from 'modules/app';
+import { sdk } from 'utils/SDK';
 import { fetchAssets, AssetsState } from '../../../modules/assets';
 import { RootState } from '../../../reducers/index';
 import {
