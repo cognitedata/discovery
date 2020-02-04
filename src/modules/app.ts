@@ -2,8 +2,8 @@ import { Action } from 'redux';
 import { push, CallHistoryMethodAction } from 'connected-react-router';
 import { ThunkDispatch } from 'redux-thunk';
 import { SingleCogniteCapability } from '@cognite/sdk';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../reducers/index';
-import { sdk } from '../index';
 
 // Constants
 export const PRIVACY_ACCEPT = 'acceptPrivacy';

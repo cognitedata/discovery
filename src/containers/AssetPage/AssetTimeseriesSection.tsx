@@ -12,6 +12,7 @@ import FlexTableWrapper from 'components/FlexTableWrapper';
 import { TimeseriesChartMeta } from '@cognite/gearbox';
 import LoadingWrapper from 'components/LoadingWrapper';
 import LinkTimeseriesModal from 'containers/Modals/LinkTimeseriesModal';
+import { sdk } from 'utils/SDK';
 import { ExtendedAsset } from '../../modules/assets';
 import { RootState } from '../../reducers/index';
 import {
@@ -21,7 +22,6 @@ import {
   selectTimeseriesById,
 } from '../../modules/timeseries';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
-import { sdk } from '../../index';
 import { canEditTimeseries } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 

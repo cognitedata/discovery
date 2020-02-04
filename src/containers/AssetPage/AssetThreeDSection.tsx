@@ -8,6 +8,7 @@ import styled from 'styled-components';
 import { Asset, RevealNode3D } from '@cognite/sdk';
 import ThreeDCard from 'containers/ThreeDPage/ThreeDCard';
 import { deleteAssetNodeMapping } from 'modules/assetmappings';
+import { sdk } from 'utils/SDK';
 import { fetchModels, ThreeDState, ThreeDModel } from '../../modules/threed';
 import { RootState } from '../../reducers/index';
 import {
@@ -18,7 +19,6 @@ import Model3D from '../../components/Model3D';
 import { ExtendedAsset } from '../../modules/assets';
 import ViewingDetailsNavBar from '../../components/ViewingDetailsNavBar';
 import FlexTableWrapper from '../../components/FlexTableWrapper';
-import { sdk } from '../../index';
 import { canReadThreeD } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 

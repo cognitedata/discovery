@@ -2,7 +2,7 @@ import { Action } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { message } from 'antd';
 import { Asset } from '@cognite/sdk';
-import { sdk } from '../index';
+import { sdk } from 'utils/SDK';
 import { arrayToObjectById } from '../utils/utils';
 import { canReadRelationships } from '../utils/PermissionsUtils';
 

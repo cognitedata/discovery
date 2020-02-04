@@ -8,9 +8,9 @@ import moment from 'moment';
 import { FilesMetadata } from '@cognite/sdk';
 import EditFileModal from 'containers/Modals/EditFileModal';
 import { AssetIcon } from 'assets';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../../reducers/index';
 import { addFilesToState } from '../../modules/files';
-import { sdk } from '../../index';
 import { canEditFiles } from '../../utils/PermissionsUtils';
 import { trackUsage } from '../../utils/Metrics';
 import {
