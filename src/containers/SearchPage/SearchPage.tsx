@@ -9,7 +9,7 @@ import debounce from 'lodash/debounce';
 import moment from 'moment';
 import VerticallyCenteredRow from 'components/VerticallyCenteredRow';
 import FlexTableWrapper from 'components/FlexTableWrapper';
-import { FilesMetadata } from '@cognite/sdk';
+import { FilesMetadata, Asset } from '@cognite/sdk';
 import AddOrEditAssetModal from 'containers/Modals/AddOrEditAssetModal';
 import AddOrEditTimeseriesModal from 'containers/Modals/AddOrEditTimeseriesModal';
 import { sdk } from 'utils/SDK';
@@ -286,7 +286,6 @@ class SearchPage extends React.Component<Props, State> {
     this.searchIndex += 1;
     const index = this.searchIndex;
     const {
-      assetFilter,
       timeseriesFilter,
       fileFilter,
       assetsTable,
@@ -295,22 +294,12 @@ class SearchPage extends React.Component<Props, State> {
       threeDTable,
       query,
     } = this.props.search;
-    trackUsage('SearchPage.Search', {
-      assetFilter,
-      timeseriesFilter,
-      fileFilter,
-      query,
-      tab: this.tab,
-    });
     switch (this.tab) {
       case 'assets': {
         if (!canReadAssets()) {
           return;
         }
-        const items = await sdk.assets.search({
-          ...assetFilter,
-          limit: 1000,
-        });
+        const items = await this.doSearchForAssets();
         await this.props.addAssetsToState(items);
         if (this.searchIndex === index) {
           this.props.updateAssetsTable({
@@ -380,6 +369,49 @@ class SearchPage extends React.Component<Props, State> {
         break;
       }
     }
+  };
+
+  doSearchForAssets = async () => {
+    const { assetFilter } = this.props.search;
+    let items: Asset[] = [];
+    let hasFetched = false;
+    if (
+      assetFilter.extendedFilter &&
+      assetFilter.extendedFilter.types &&
+      assetFilter.extendedFilter.types.length > 0
+    ) {
+      try {
+        const response = await sdk.post(
+          `/api/playground/projects/${sdk.project}/assets/search`,
+          {
+            data: {
+              ...(assetFilter.search && { search: assetFilter.search }),
+              filter: {
+                ...assetFilter.filter,
+                ...assetFilter.extendedFilter,
+              },
+              limit: 1000,
+            },
+          }
+        );
+        if (response.status === 200) {
+          hasFetched = true;
+          items = response.data.items;
+        }
+      } catch (e) {
+        message.error(
+          'Types filter failed, will ignore for this search query.'
+        );
+      }
+    }
+    if (!hasFetched) {
+      items = await sdk.assets.search({
+        ...(assetFilter.search && { search: assetFilter.search }),
+        ...(assetFilter.filter && { filter: assetFilter.filter }),
+        limit: 1000,
+      });
+    }
+    return items;
   };
 
   hideModal = () => {

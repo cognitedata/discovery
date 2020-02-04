@@ -16,6 +16,7 @@ import {
 } from '../../modules/search';
 import { SearchPageTabKeys } from './SearchPage';
 import { trackUsage } from '../../utils/Metrics';
+import SearchBarTypingFilters from './SearchBarTypingFilter';
 
 const Wrapper = styled.div`
   display: block;
@@ -142,6 +143,7 @@ class SearchPage extends React.Component<Props, State> {
             })
           }
         />
+        <SearchBarTypingFilters />
       </Wrapper>
     );
   };

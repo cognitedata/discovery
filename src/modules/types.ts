@@ -1,6 +1,7 @@
 import { Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { sdk } from 'utils/SDK';
+import { createSelector } from 'reselect';
 import { RootState } from '../reducers/index';
 import { arrayToObjectById } from '../utils/utils';
 import { AssetTypeInfo, ExtendedAsset } from './assets';
@@ -13,24 +14,23 @@ export const RETRIEVE_TYPE_FOR_ASSETS = 'types/RETRIEVE_TYPE_FOR_ASSETS';
 
 export interface Type {
   name: string;
-  description: string;
-  properties: [
-    {
-      propertyId: string;
-      name: string;
-      description: string;
-      type: string;
-    }
-  ];
-  parentType: {
+  description?: string;
+  properties: {
+    propertyId: string;
+    name: string;
+    description: string;
+    type: string;
+  }[];
+  parentType?: {
     id: number;
     version: number;
+    externalId?: string;
   };
   id: number;
-  externalId?: number;
+  externalId?: string;
   version: number;
-  createdTime: number;
-  lastUpdatedTime: number;
+  createdTime: string;
+  lastUpdatedTime: string;
 }
 
 interface FetchTypeForAssetsAction
@@ -210,3 +210,7 @@ export function fetchTypeByIds(typeIds: number[]) {
 }
 
 // Selectors
+export const getAllTypes = createSelector(
+  (state: RootState) => state.types.items,
+  types => Object.values(types)
+);
