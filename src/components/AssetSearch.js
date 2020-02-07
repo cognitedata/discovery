@@ -119,7 +119,7 @@ class AssetSearch extends React.Component {
 
   onEventTypeChange = change => {
     const { eventFilter } = this.state;
-    const newFilter = Object.assign({ type: 'event' }, eventFilter);
+    const newFilter = { type: 'event', ...eventFilter };
 
     if (change === 'none') {
       newFilter.eventType = undefined;
@@ -134,7 +134,7 @@ class AssetSearch extends React.Component {
 
   onRangeChange = change => {
     const { eventFilter } = this.state;
-    const newFilter = Object.assign({ type: 'event' }, eventFilter);
+    const newFilter = { type: 'event', ...eventFilter };
 
     if (change.length < 2) {
       this.removeEventFilter();
