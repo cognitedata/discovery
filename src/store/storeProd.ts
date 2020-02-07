@@ -2,14 +2,9 @@ import { createStore, applyMiddleware } from 'redux';
 import ReduxThunk from 'redux-thunk';
 import { routerMiddleware } from 'connected-react-router';
 import createRootReducer from '../reducers';
-import { history } from '../routes/index';
-import { locationStateMiddleware } from './middleware';
+import { history } from './index';
 
-const middlewares = [
-  ReduxThunk,
-  routerMiddleware(history),
-  locationStateMiddleware,
-];
+const middlewares = [ReduxThunk, routerMiddleware(history)];
 const enhancer = [applyMiddleware(...middlewares)];
 
 export default function configureStore(initialState = {}) {

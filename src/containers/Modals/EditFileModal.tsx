@@ -6,10 +6,10 @@ import { FilesMetadata } from '@cognite/sdk';
 import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import AceEditor from 'react-ace';
-import { RootState } from '../../reducers/index';
-import 'brace/theme/github';
-import 'brace/mode/json';
-import { updateFile } from '../../modules/files';
+import { sdk } from 'utils/SDK';
+import { updateFile, addFilesToState } from '../../modules/files';
+import { canEditFiles } from '../../utils/PermissionsUtils';
+import { trackUsage } from '../../utils/Metrics';
 
 const FormDetails = styled.div`
   p {
@@ -20,8 +20,9 @@ const FormDetails = styled.div`
 
 type Props = {
   file: FilesMetadata;
-  onClose: (e?: any) => void;
+  onClose: (file?: FilesMetadata) => void;
   updateFile: typeof updateFile;
+  addFilesToState: typeof addFilesToState;
 };
 
 type State = {
@@ -37,6 +38,9 @@ class EditFileModal extends React.Component<Props, State> {
     super(props);
 
     const { file } = props;
+    trackUsage('EditFileModal.Load', {
+      id: file && file.id,
+    });
     const { assetIds, mimeType, metadata } = file;
 
     if (metadata && metadata.COGNITE__SOURCE) {
@@ -51,8 +55,11 @@ class EditFileModal extends React.Component<Props, State> {
     };
   }
 
-  saveChanges = () => {
+  saveChanges = async () => {
     const { mimeType, assetIds, metadata } = this.state;
+    if (!canEditFiles()) {
+      return;
+    }
     let metadataParsed;
     try {
       metadataParsed = metadata ? JSON.parse(metadata) : undefined;
@@ -60,29 +67,35 @@ class EditFileModal extends React.Component<Props, State> {
       message.error('Invalid metadata JSON');
       return;
     }
-    this.props.updateFile({
-      id: this.props.file.id,
-      update: {
-        assetIds: {
-          set: assetIds,
-        },
-        ...(mimeType && {
-          mimeType: {
-            set: mimeType,
+    const [file] = await sdk.files.update([
+      {
+        id: this.props.file.id,
+        update: {
+          assetIds: {
+            set: assetIds,
           },
-        }),
-        ...(metadata && {
-          metadata: {
-            set: {
-              ...(this.source && { COGNITE__SOURCE: this.source }),
-              ...metadataParsed,
+          ...(mimeType && {
+            mimeType: {
+              set: mimeType,
             },
-          },
-        }),
+          }),
+          ...(metadata && {
+            metadata: {
+              set: {
+                ...(this.source && { COGNITE__SOURCE: this.source }),
+                ...metadataParsed,
+              },
+            },
+          }),
+        },
       },
+    ]);
+    trackUsage('EditFileModal.EditFile', {
+      id: file && file.id,
     });
-    message.info('Updating file...');
-    this.props.onClose();
+    message.success('File Updated');
+    this.props.addFilesToState([file]);
+    this.props.onClose(file);
   };
 
   updateAssetIds = (assetIds: number[]) => {
@@ -95,9 +108,14 @@ class EditFileModal extends React.Component<Props, State> {
       <Modal
         visible
         title={`Edit File: ${this.props.file.name}`}
-        onCancel={this.props.onClose}
+        onCancel={() => this.props.onClose()}
         footer={[
-          <Button key="submit" type="primary" onClick={this.saveChanges}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={this.saveChanges}
+            disabled={!canEditFiles(false)}
+          >
             Update File
           </Button>,
         ]}
@@ -105,6 +123,8 @@ class EditFileModal extends React.Component<Props, State> {
         <FormDetails>
           <p>Linked Assets</p>
           <AssetSelect
+            multiple
+            style={{ width: '100%' }}
             onAssetSelected={this.updateAssetIds}
             selectedAssetIds={assetIds}
           />
@@ -118,6 +138,7 @@ class EditFileModal extends React.Component<Props, State> {
           <AceEditor
             mode="json"
             width="100%"
+            height="200px"
             theme="github"
             value={metadata}
             onChange={newValue => this.setState({ metadata: newValue })}
@@ -129,14 +150,15 @@ class EditFileModal extends React.Component<Props, State> {
   }
 }
 
-const mapStateToProps = (state: RootState) => {
-  return { assets: state.assets.all };
+const mapStateToProps = () => {
+  return {};
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       updateFile,
+      addFilesToState,
     },
     dispatch
   );

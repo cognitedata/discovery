@@ -3,9 +3,8 @@ import { connect } from 'react-redux';
 import { Tag } from 'antd';
 import { bindActionCreators, Dispatch } from 'redux';
 import { RootState } from '../reducers/index';
-import { selectApp } from '../modules/app';
 import { BetaBadge } from '../components/BetaWarning';
-import { fetchTypeForAssets, selectTypes, TypesState } from '../modules/types';
+import { fetchTypeForAssets, TypesState } from '../modules/types';
 
 type OrigProps = { assetId: number };
 
@@ -16,7 +15,7 @@ type Props = {
 
 type State = {};
 
-class EventsSection extends React.Component<Props, State> {
+class TypeBadge extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {};
@@ -24,7 +23,7 @@ class EventsSection extends React.Component<Props, State> {
 
   componentDidMount() {
     const { assetId } = this.props;
-    if (assetId && !this.props.types.assetTypes[assetId]) {
+    if (assetId && !this.props.types.byAssetId[assetId]) {
       this.props.fetchTypeForAssets([assetId]);
     }
   }
@@ -34,7 +33,7 @@ class EventsSection extends React.Component<Props, State> {
     if (
       assetId &&
       assetId !== prevProps.assetId &&
-      !this.props.types.assetTypes[assetId]
+      !this.props.types.byAssetId[assetId]
     ) {
       this.props.fetchTypeForAssets([assetId]);
     }
@@ -43,14 +42,14 @@ class EventsSection extends React.Component<Props, State> {
   render() {
     const {
       assetId,
-      types: { assetTypes, items },
+      types: { byAssetId, items },
     } = this.props;
 
-    if (assetId && assetTypes[assetId] && assetTypes[assetId].length > 0) {
+    if (assetId && byAssetId[assetId] && byAssetId[assetId].length > 0) {
       return (
         <p>
           <BetaBadge>Type</BetaBadge>
-          {assetTypes[assetId].map(el => {
+          {byAssetId[assetId].map(el => {
             if (items[el.type.id]) {
               return <Tag key={el.type.id}>{items[el.type.id].name}</Tag>;
             }
@@ -65,10 +64,10 @@ class EventsSection extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    asset: selectApp(state),
-    types: selectTypes(state),
+    asset: state.app,
+    types: state.types,
   };
 };
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators({ fetchTypeForAssets }, dispatch);
-export default connect(mapStateToProps, mapDispatchToProps)(EventsSection);
+export default connect(mapStateToProps, mapDispatchToProps)(TypeBadge);

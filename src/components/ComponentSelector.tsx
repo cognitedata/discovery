@@ -1,33 +1,15 @@
 import React from 'react';
 import { Select } from 'antd';
-import { ViewerTypeMap, ViewerType } from '../containers/AssetViewer';
-
-export const ViewerTypeCategory: { [key in ViewerType]: string } = {
-  none: 'None',
-  threed: '3D',
-  vx: 'Asset',
-  network: 'Asset',
-  relationship: 'Beta',
-  file: 'Files',
-};
+import {
+  AssetViewerType,
+  AssetViewerTypeMap,
+} from '../containers/AssetPage/AssetCustomSectionView';
 
 const ComponentSelector = ({
   onComponentChange,
 }: {
-  onComponentChange: (viewType: ViewerType) => void;
+  onComponentChange: (viewType: AssetViewerType) => void;
 }) => {
-  const views = Object.keys(ViewerTypeMap).reduce(
-    (prev: { [key: string]: ViewerType[] }, key: string) => {
-      const viewKey = key as ViewerType;
-      if (!prev[ViewerTypeCategory[viewKey]]) {
-        // eslint-disable-next-line no-param-reassign
-        prev[ViewerTypeCategory[viewKey]] = [];
-      }
-      prev[ViewerTypeCategory[viewKey]].push(viewKey);
-      return prev;
-    },
-    {} as { [key: string]: ViewerType[] }
-  );
   return (
     <>
       <h3>Select a Component</h3>
@@ -36,16 +18,13 @@ const ComponentSelector = ({
         placeholder="Choose a View"
         onChange={onComponentChange}
       >
-        {Object.keys(views)
+        {Object.keys(AssetViewerTypeMap)
+          .filter(el => !!el)
           .sort()
           .map(key => (
-            <Select.OptGroup label={key} key={key}>
-              {views[key].map(viewType => (
-                <Select.Option key={viewType} value={viewType}>
-                  {ViewerTypeMap[viewType as ViewerType]}
-                </Select.Option>
-              ))}
-            </Select.OptGroup>
+            <Select.Option key={key} value={key}>
+              {AssetViewerTypeMap[key as AssetViewerType]}
+            </Select.Option>
           ))}
       </Select>
     </>
