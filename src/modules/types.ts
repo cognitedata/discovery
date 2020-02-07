@@ -1,9 +1,11 @@
 import { Action, AnyAction } from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { sdk } from 'utils/SDK';
+import { createSelector } from 'reselect';
 import { RootState } from '../reducers/index';
-import { sdk } from '../index';
-import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
+import { arrayToObjectById } from '../utils/utils';
 import { AssetTypeInfo, ExtendedAsset } from './assets';
+import { canReadTypes } from '../utils/PermissionsUtils';
 
 // Constants
 export const RETRIEVE_TYPE = 'types/RETRIEVE_TYPE';
@@ -12,29 +14,28 @@ export const RETRIEVE_TYPE_FOR_ASSETS = 'types/RETRIEVE_TYPE_FOR_ASSETS';
 
 export interface Type {
   name: string;
-  description: string;
-  properties: [
-    {
-      propertyId: string;
-      name: string;
-      description: string;
-      type: string;
-    }
-  ];
-  parentType: {
+  description?: string;
+  properties: {
+    propertyId: string;
+    name: string;
+    description: string;
+    type: string;
+  }[];
+  parentType?: {
     id: number;
     version: number;
+    externalId?: string;
   };
   id: number;
-  externalId?: number;
+  externalId?: string;
   version: number;
-  createdTime: number;
-  lastUpdatedTime: number;
+  createdTime: string;
+  lastUpdatedTime: string;
 }
 
 interface FetchTypeForAssetsAction
   extends Action<typeof RETRIEVE_TYPE_FOR_ASSETS> {
-  payload: { assetTypes: { [key: number]: AssetTypeInfo[] } };
+  payload: { byAssetId: { [key: number]: AssetTypeInfo[] } };
 }
 interface FetchTypeAction extends Action<typeof RETRIEVE_TYPE> {
   payload: { types: Type[] };
@@ -46,6 +47,46 @@ type TypeAction =
   | FetchTypeAction
   | FetchTypeFailedAction;
 
+// Reducer
+export interface TypesState {
+  error: boolean;
+  items: { [key: number]: Type };
+  byAssetId: { [key: number]: AssetTypeInfo[] };
+}
+
+const initialState: TypesState = { byAssetId: {}, items: {}, error: false };
+
+export default function reducer(
+  state = initialState,
+  action: TypeAction
+): TypesState {
+  switch (action.type) {
+    case RETRIEVE_TYPE: {
+      const { types } = action.payload;
+      return {
+        ...state,
+        items: { ...state.items, ...arrayToObjectById(types) },
+      };
+    }
+    case RETRIEVE_TYPE_FOR_ASSETS: {
+      const { byAssetId } = action.payload;
+      return {
+        ...state,
+        byAssetId: { ...state.byAssetId, ...byAssetId },
+      };
+    }
+    case RETRIEVE_TYPE_FAILED: {
+      return {
+        ...state,
+        error: true,
+      };
+    }
+
+    default:
+      return state;
+  }
+}
+
 // Functions
 export function fetchTypeForAssets(assetIds: number[]) {
   return async (
@@ -55,9 +96,8 @@ export function fetchTypeForAssets(assetIds: number[]) {
     try {
       const {
         types: { items },
-        app: { groups },
       } = getState();
-      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      if (!canReadTypes(false)) {
         throw new Error('Missing ACL for types');
       }
       const { project } = sdk;
@@ -91,9 +131,9 @@ export function fetchTypeForAssets(assetIds: number[]) {
         dispatch({
           type: RETRIEVE_TYPE_FOR_ASSETS,
           payload: {
-            assetTypes: response.data.items.reduce(
+            byAssetId: response.data.items.reduce(
               (prev: { [key: number]: AssetTypeInfo[] }, el: ExtendedAsset) => {
-                return { ...prev, [el.id]: el.types };
+                return { ...prev, [el.id]: el.types || [] };
               },
               {}
             ),
@@ -110,14 +150,10 @@ export function fetchTypeForAssets(assetIds: number[]) {
 
 export function fetchTypes() {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>,
-    getState: () => RootState
+    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>
   ) => {
     try {
-      const {
-        app: { groups },
-      } = getState();
-      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      if (!canReadTypes(false)) {
         throw new Error('Missing ACL for types');
       }
       const { project } = sdk;
@@ -143,14 +179,10 @@ export function fetchTypes() {
 }
 export function fetchTypeByIds(typeIds: number[]) {
   return async (
-    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>,
-    getState: () => RootState
+    dispatch: ThunkDispatch<any, void, FetchTypeAction | FetchTypeFailedAction>
   ) => {
     try {
-      const {
-        app: { groups },
-      } = getState();
-      if (!checkForAccessPermission(groups, 'typesAcl', 'READ', false)) {
+      if (!canReadTypes()) {
         throw new Error('Missing ACL for types');
       }
       const { project } = sdk;
@@ -177,44 +209,8 @@ export function fetchTypeByIds(typeIds: number[]) {
   };
 }
 
-// Reducer
-export interface TypesState {
-  error: boolean;
-  items: Type[];
-  assetTypes: { [key: number]: AssetTypeInfo[] };
-}
-const initialState: TypesState = { assetTypes: {}, items: [], error: false };
-
-export default function typesReducer(
-  state = initialState,
-  action: TypeAction
-): TypesState {
-  switch (action.type) {
-    case RETRIEVE_TYPE: {
-      const { types } = action.payload;
-      return {
-        ...state,
-        items: { ...state.items, ...arrayToObjectById(types) },
-      };
-    }
-    case RETRIEVE_TYPE_FOR_ASSETS: {
-      const { assetTypes } = action.payload;
-      return {
-        ...state,
-        assetTypes: { ...state.assetTypes, ...assetTypes },
-      };
-    }
-    case RETRIEVE_TYPE_FAILED: {
-      return {
-        ...state,
-        error: true,
-      };
-    }
-
-    default:
-      return state;
-  }
-}
-
 // Selectors
-export const selectTypes = (state: RootState) => state.types;
+export const getAllTypes = createSelector(
+  (state: RootState) => state.types.items,
+  types => Object.values(types)
+);

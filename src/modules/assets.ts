@@ -1,23 +1,18 @@
-import { createAction } from 'redux-actions';
 import { message } from 'antd';
 import { Dispatch, Action, AnyAction } from 'redux';
 import { Asset, ExternalAssetItem, AssetChange, IdEither } from '@cognite/sdk';
 import { ThunkDispatch } from 'redux-thunk';
 import { push } from 'connected-react-router';
-import {
-  arrayToObjectById,
-  checkForAccessPermission,
-  isInternalId,
-} from '../utils/utils';
+import { sdk } from 'utils/SDK';
+import { arrayToObjectById, isInternalId } from '../utils/utils';
 import { RootState } from '../reducers';
-import { sdk } from '../index';
 import { createAssetNodeMapping } from './assetmappings';
-import { setRevisionRepresentAsset } from './threed';
-import { trackUsage } from '../utils/metrics';
+import { updateRevisionRepresentAsset } from './threed';
+import { trackUsage } from '../utils/Metrics';
 import { fetchTypeForAssets } from './types';
+import { canEditAssets, canReadAssets } from '../utils/PermissionsUtils';
 
 // Constants
-export const SET_ASSETS = 'assets/SET_ASSETS';
 export const ADD_ASSETS = 'assets/ADD_ASSETS';
 export const UPDATE_ASSET = 'assets/UPDATE_ASSET';
 export const DELETE_ASSETS = 'assets/DELETE_ASSETS';
@@ -47,62 +42,71 @@ export interface DeleteAssetAction extends Action<typeof DELETE_ASSETS> {
   payload: { assetId: number };
 }
 
-interface SetAction extends Action<typeof SET_ASSETS> {
-  payload: { items: ExtendedAsset[] };
-}
-type AssetAction =
-  | AddAssetAction
-  | SetAction
-  | DeleteAssetAction
-  | UpdateAction;
+type AssetAction = AddAssetAction | DeleteAssetAction | UpdateAction;
 
-let searchCounter = 0;
+// Reducer
+export interface AssetsState {
+  items: { [key: string]: ExtendedAsset };
+  byExternalId: { [key: string]: number };
+}
+
+const initialState: AssetsState = { items: {}, byExternalId: {} };
+
+export default function reducer(
+  state = initialState,
+  action: AssetAction
+): AssetsState {
+  switch (action.type) {
+    case ADD_ASSETS: {
+      const items = { ...state.items, ...action.payload.items };
+      return {
+        ...state,
+        items,
+        byExternalId: {
+          ...state.byExternalId,
+          ...Object.values(action.payload.items).reduce((prev, el) => {
+            if (el.externalId) {
+              // eslint-disable-next-line no-param-reassign
+              prev[el.externalId] = el.id;
+            }
+            return prev;
+          }, {} as { [key: string]: number }),
+        },
+      };
+    }
+    case UPDATE_ASSET: {
+      return {
+        ...state,
+        items: {
+          ...state.items,
+          [action.payload.assetId]: action.payload.item,
+        },
+      };
+    }
+    case DELETE_ASSETS: {
+      const items = { ...state.items };
+      delete items[action.payload.assetId];
+      return {
+        ...state,
+        items,
+      };
+    }
+    default:
+      return state;
+  }
+}
 
 // Functions
-export function searchForAsset(query: string) {
+export function addAssetsToState(assetsToAdd: Asset[]) {
   return async (dispatch: Dispatch) => {
-    trackUsage('Assets.searchForAsset', {
-      query,
+    dispatch({
+      type: ADD_ASSETS,
+      payload: {
+        items: arrayToObjectById(
+          assetsToAdd.map((asset: Asset) => slimAssetObject(asset))
+        ),
+      },
     });
-    const currentCounter = searchCounter + 1;
-    searchCounter += 1;
-
-    if (query === '') {
-      dispatch({ type: SET_ASSETS, payload: { items: [] } });
-      return;
-    }
-    // const result = await sdk.Assets.search({ query, name, limit: 100 });
-    // const requestResult = await sdk.rawGet(
-    //   `https://api.cognitedata.com/api/0.6/projects/${project}/assets/search?query=${query}&limit=100&assetSubtrees=[7793176078609329]`
-    // );
-    const result = (
-      await sdk.post(`/api/playground/projects/${sdk.project}/assets/search`, {
-        data: {
-          limit: 1000,
-          ...(query && query.length > 0 && { search: { query } }),
-        },
-      })
-    ).data.items;
-
-    if (result) {
-      const assetResults = result.map((asset: Asset) => ({
-        id: asset.id,
-        name: asset.name,
-        rootId: asset.rootId,
-        description: asset.description,
-        types: [],
-        metadata: asset.metadata,
-      }));
-      if (currentCounter === searchCounter) {
-        dispatch({
-          type: ADD_ASSETS,
-          payload: arrayToObjectById(
-            result.map((asset: Asset) => slimAssetObject(asset))
-          ),
-        });
-        dispatch({ type: SET_ASSETS, payload: { items: assetResults } });
-      }
-    }
   };
 }
 
@@ -115,72 +119,43 @@ export function fetchAsset(assetId: number, redirect = false) {
     dispatch: ThunkDispatch<any, any, AnyAction>,
     getState: () => RootState
   ) => {
+    if (!canReadAssets()) {
+      return;
+    }
     // Skip if we did it before
     if (requestedAssetIds[assetId]) {
       return;
     }
     requestedAssetIds[assetId] = true;
 
-    try {
-      const results = await sdk.assets.retrieve([{ id: assetId }]);
+    const results = await sdk.assets.retrieve([{ id: assetId }]);
 
-      if (results) {
-        const items = arrayToObjectById(
-          results.map(asset => slimAssetObject(asset))
+    if (results) {
+      const items = arrayToObjectById(
+        results.map(asset => slimAssetObject(asset))
+      );
+
+      dispatch({ type: ADD_ASSETS, payload: { items } });
+      if (redirect) {
+        const {
+          app: { tenant },
+        } = getState();
+        dispatch(
+          push(
+            `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.search}${window.location.hash}`
+          )
         );
-
-        dispatch({ type: ADD_ASSETS, payload: { items } });
-        if (redirect) {
-          const {
-            app: { tenant },
-          } = getState();
-          dispatch(
-            push(
-              `/${tenant}/asset/${items[assetId].rootId}/${assetId}${window.location.search}${window.location.hash}`
-            )
-          );
-        }
       }
-    } catch (ex) {
-      message.error(`Could not fetch asset.`);
-      return;
     }
     requestedAssetIds[assetId] = false;
   };
 }
 
-export function fetchRootAssets() {
-  return async (dispatch: Dispatch) => {
-    // Skip if we did it before
-    if (requestedAssetIds.root) {
-      return;
-    }
-    requestedAssetIds.root = true;
-
-    try {
-      const { items: results } = await sdk.assets.list({
-        filter: {
-          root: true,
-        },
-      });
-
-      if (results) {
-        const items = arrayToObjectById(
-          results.map(asset => slimAssetObject(asset))
-        );
-
-        dispatch({ type: ADD_ASSETS, payload: { items } });
-      }
-    } catch (ex) {
-      message.error(`Could not fetch root assets.`);
-      return;
-    }
-    requestedAssetIds.root = false;
-  };
-}
-
 export function loadAssetChildren(assetId: number) {
   return async (dispatch: Dispatch) => {
+    if (!canReadAssets()) {
+      return;
+    }
     try {
       const results = await sdk.assets.search({
         filter: { parentIds: [assetId] },
@@ -203,6 +178,9 @@ export function loadAssetChildren(assetId: number) {
 
 export function loadParentRecurse(assetId: number, rootAssetId: number) {
   return async (dispatch: ThunkDispatch<any, void, AnyAction>) => {
+    if (!canReadAssets()) {
+      return;
+    }
     // Skip if we did it before
     if (requestedAssetIds[assetId]) {
       return;
@@ -237,6 +215,9 @@ export function loadParentRecurse(assetId: number, rootAssetId: number) {
 
 export function fetchAssets(assetIds: IdEither[], isRetry = false) {
   return async (dispatch: ThunkDispatch<AnyAction, any, any>) => {
+    if (!canReadAssets()) {
+      return;
+    }
     if (assetIds.length === 0) {
       return;
     }
@@ -302,16 +283,11 @@ export const createNewAsset = (
     nodeId?: number;
   },
   callback?: (asset: Asset) => void
-) => async (
-  dispatch: ThunkDispatch<any, any, AnyAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
-  ) {
+) => async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
+  if (!canEditAssets()) {
     return;
   }
-  trackUsage('Assets.createNewAsset', {
+  trackUsage('Assets.CreateNewAsset', {
     mappedTo3D: !!mappingInfo,
   });
   try {
@@ -338,7 +314,7 @@ export const createNewAsset = (
             createAssetNodeMapping(modelId, revisionId, nodeId, assetId)
           );
         } else if (modelId && revisionId) {
-          dispatch(setRevisionRepresentAsset(modelId, revisionId, assetId));
+          dispatch(updateRevisionRepresentAsset(modelId, revisionId, assetId));
         }
       }
       if (callback) {
@@ -353,23 +329,11 @@ export const createNewAsset = (
 };
 
 export function editAsset(asset: AssetChange) {
-  return async (
-    dispatch: Dispatch<UpdateAction>,
-    getState: () => RootState
-  ) => {
-    if (
-      !checkForAccessPermission(
-        getState().app.groups,
-        'assetsAcl',
-        'READ',
-        true
-      )
-    ) {
+  return async (dispatch: Dispatch<UpdateAction>) => {
+    if (!canEditAssets()) {
       return;
     }
-    trackUsage('Assets.editAsset', {
-      assetd: asset.update.externalId,
-    });
+    trackUsage('Assets.EditAsset', {});
     try {
       const results = await sdk.assets.update([asset]);
 
@@ -389,16 +353,13 @@ export function editAsset(asset: AssetChange) {
 }
 
 export const deleteAsset = (assetId: number) => async (
-  dispatch: Dispatch<DeleteAssetAction>,
-  getState: () => RootState
+  dispatch: Dispatch<DeleteAssetAction>
 ) => {
-  if (
-    !checkForAccessPermission(getState().app.groups, 'assetsAcl', 'READ', true)
-  ) {
+  if (!canEditAssets()) {
     return;
   }
-  trackUsage('Assets.deleteAsset', {
-    assetId,
+  trackUsage('Assets.DeleteAsset', {
+    id: assetId,
   });
   try {
     const results = await sdk.assets.delete([{ id: assetId }], {
@@ -413,66 +374,6 @@ export const deleteAsset = (assetId: number) => async (
   }
 };
 
-// Reducer
-export interface AssetsState {
-  all: { [key: string]: ExtendedAsset };
-  current: ExtendedAsset[];
-  externalIdMap: { [key: string]: number };
-}
-
-const initialState: AssetsState = { current: [], all: {}, externalIdMap: {} };
-
-export default function assets(
-  state = initialState,
-  action: AssetAction
-): AssetsState {
-  switch (action.type) {
-    case SET_ASSETS: {
-      const { items } = action.payload;
-      return {
-        ...state,
-        current: items,
-      };
-    }
-    case ADD_ASSETS: {
-      const all = { ...state.all, ...action.payload.items };
-      return {
-        ...state,
-        all,
-        externalIdMap: {
-          ...state.externalIdMap,
-          ...Object.values(action.payload.items).reduce((prev, el) => {
-            if (el.externalId) {
-              // eslint-disable-next-line no-param-reassign
-              prev[el.externalId] = el.id;
-            }
-            return prev;
-          }, {} as { [key: string]: number }),
-        },
-      };
-    }
-    case UPDATE_ASSET: {
-      return {
-        ...state,
-        all: {
-          ...state.all,
-          [action.payload.assetId]: action.payload.item,
-        },
-      };
-    }
-    case DELETE_ASSETS: {
-      const all = { ...state.all };
-      delete all[action.payload.assetId];
-      return {
-        ...state,
-        all,
-      };
-    }
-    default:
-      return state;
-  }
-}
-
 const slimAssetObject = (asset: Asset): ExtendedAsset => ({
   id: asset.id,
   externalId: asset.externalId,
@@ -486,14 +387,6 @@ const slimAssetObject = (asset: Asset): ExtendedAsset => ({
   metadata: asset.metadata,
 });
 
-// Action creators
-const setAssets = createAction(SET_ASSETS);
-
-export const actions = {
-  setAssets,
-};
-
 // Selectors
-export const selectAssets = (state: RootState) => state.assets || initialState;
-export const selectCurrentAsset = (state: RootState) =>
-  state.app.assetId ? selectAssets(state).all[state.app.assetId] : undefined;
+export const selectAssetById = (state: RootState, id: number) =>
+  state.assets.items[id];

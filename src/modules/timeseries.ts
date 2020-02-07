@@ -1,32 +1,122 @@
-import { createAction } from 'redux-actions';
 import { message } from 'antd';
-import { Dispatch, Action, AnyAction } from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import { Dispatch, Action } from 'redux';
 import {
   GetTimeSeriesMetadataDTO,
   TimeSeriesUpdate,
   IdEither,
 } from '@cognite/sdk';
-import { fetchEvents } from './events';
+import { sdk } from 'utils/SDK';
 import { RootState } from '../reducers';
-import { sdk } from '../index';
-import { arrayToObjectById, checkForAccessPermission } from '../utils/utils';
-import { trackUsage } from '../utils/metrics';
-import { setTimeseriesId } from './app';
+import { arrayToObjectById } from '../utils/utils';
+import { trackUsage } from '../utils/Metrics';
+import { canEditTimeseries } from '../utils/PermissionsUtils';
 
 // Constants
 export const SET_TIMESERIES = 'timeseries/SET_TIMESERIES';
+export const DELETE_TIMESERIES = 'timeseries/DELETE_TIMESERIES';
 export const REMOVE_ASSET_FROM_TIMESERIES =
   'timeseries/REMOVE_ASSET_FROM_TIMESERIES';
 
 interface SetTimeseriesAction extends Action<typeof SET_TIMESERIES> {
-  payload: { items: GetTimeSeriesMetadataDTO[] };
+  payload: { items: GetTimeSeriesMetadataDTO[]; assetId?: number };
 }
 interface RemoveAssetAction
   extends Action<typeof REMOVE_ASSET_FROM_TIMESERIES> {
   payload: { timeseriesId: number };
 }
-type TimeseriesAction = SetTimeseriesAction | RemoveAssetAction;
+interface DeleteTimeseriesAction extends Action<typeof DELETE_TIMESERIES> {
+  payload: { timeseriesId: number };
+}
+type TimeseriesAction =
+  | SetTimeseriesAction
+  | RemoveAssetAction
+  | DeleteTimeseriesAction;
+
+// Reducer
+export interface TimeseriesState {
+  items: { [key: number]: GetTimeSeriesMetadataDTO };
+  byAssetId: { [key: number]: number[] };
+}
+
+const initialState: TimeseriesState = { items: {}, byAssetId: {} };
+
+export default function reducer(
+  state = initialState,
+  action: TimeseriesAction
+): TimeseriesState {
+  switch (action.type) {
+    case SET_TIMESERIES: {
+      const { items, assetId } = action.payload;
+
+      const byAssetMap = items.reduce((prev, item) => {
+        if (
+          !state.items[item.id] ||
+          state.items[item.id].assetId !== item.assetId
+        ) {
+          const prevId = state.items[item.id]
+            ? state.items[item.id].assetId
+            : undefined;
+          const currId = item.assetId;
+          if (prevId && prev[prevId]) {
+            // eslint-disable-next-line no-param-reassign
+            prev[prevId] = prev[prevId].filter(el => el !== item.id);
+          }
+          if (currId) {
+            if (prev[currId]) {
+              // eslint-disable-next-line no-param-reassign
+              prev[currId] = [...prev[currId], item.id];
+            } else {
+              // eslint-disable-next-line no-param-reassign
+              prev[currId] = [item.id];
+            }
+          }
+        }
+        return prev;
+      }, state.byAssetId);
+      if (assetId && items.length === 0) {
+        byAssetMap[assetId] = [];
+      }
+      return {
+        ...state,
+        items: {
+          ...state.items,
+          ...arrayToObjectById(items),
+        },
+        byAssetId: byAssetMap,
+      };
+    }
+
+    case REMOVE_ASSET_FROM_TIMESERIES: {
+      const { timeseriesId } = action.payload;
+      const { items } = state;
+      delete items[timeseriesId];
+      return {
+        ...state,
+        items,
+      };
+    }
+    case DELETE_TIMESERIES: {
+      const { timeseriesId } = action.payload;
+      const { items, byAssetId } = state;
+      if (items[timeseriesId]) {
+        const { assetId } = items[timeseriesId];
+        if (assetId && byAssetId[assetId]) {
+          byAssetId[assetId] = byAssetId[assetId].filter(
+            el => el !== timeseriesId
+          );
+        }
+      }
+      delete items[timeseriesId];
+      return {
+        ...state,
+        items,
+        byAssetId,
+      };
+    }
+    default:
+      return state;
+  }
+}
 
 // Functions
 export function fetchTimeseries(ids: IdEither[]) {
@@ -37,30 +127,20 @@ export function fetchTimeseries(ids: IdEither[]) {
 }
 export function fetchTimeseriesForAssetId(assetId: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
-      assetId,
-    });
     const results = await sdk.timeseries.list({
       assetIds: [assetId],
       limit: 1000,
     });
-    dispatch({ type: SET_TIMESERIES, payload: { items: results.items } });
+    dispatch({
+      type: SET_TIMESERIES,
+      payload: { items: results.items, assetId },
+    });
   };
 }
-export function fetchAndSetTimeseries(timeseriesId: number, redirect = false) {
-  return async (dispatch: ThunkDispatch<any, any, AnyAction>) => {
-    const results = await sdk.timeseries.retrieve([{ id: timeseriesId }]);
-    dispatch({ type: SET_TIMESERIES, payload: { items: results } });
-    dispatch(setTimeseriesId(timeseriesId, redirect));
-  };
-}
+
 let searchTimeseriesId = 0;
 export function searchTimeseries(query: string, assetId?: number) {
   return async (dispatch: Dispatch<SetTimeseriesAction>) => {
-    trackUsage('Timeseries.fetchTimeseriesForAssetId', {
-      assetId,
-      query,
-    });
     searchTimeseriesId += 1;
     const id = searchTimeseriesId;
     const results = await sdk.timeseries.search({
@@ -80,97 +160,49 @@ export function searchTimeseries(query: string, assetId?: number) {
   };
 }
 
-export const removeAssetFromTimeseries = (
-  timeseriesId: number,
-  assetId: number
-) => async (
-  dispatch: ThunkDispatch<any, void, AnyAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
-    return;
-  }
-  trackUsage('Timeseries.removeAssetFromTimeseries', {
-    assetId,
-    timeseriesId,
-  });
-  await sdk.timeseries.update([
-    {
-      id: timeseriesId,
-      update: {
-        assetId: { setNull: true },
+export function addTimeseriesToState(
+  timeseriesToAdd: GetTimeSeriesMetadataDTO[]
+) {
+  return async (dispatch: Dispatch) => {
+    dispatch({
+      type: SET_TIMESERIES,
+      payload: {
+        items: timeseriesToAdd,
       },
-    },
-  ]);
-  dispatch({
-    type: REMOVE_ASSET_FROM_TIMESERIES,
-    payload: { timeseriesId },
-  });
+    });
+  };
+}
 
-  message.info(`Removed 1 timeseries from asset.`);
-};
-
-export const addTimeseriesToAsset = (
-  timeseriesIds: number[],
-  assetId: number
-) => async (
-  dispatch: ThunkDispatch<any, void, AnyAction>,
-  getState: () => RootState
+export const deleteTimeseries = (timeseriesId: number) => async (
+  dispatch: Dispatch<DeleteTimeseriesAction>
 ) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
-    return;
+  if (!canEditTimeseries()) {
+    return false;
   }
-  trackUsage('Timeseries.addTimeseriesToAsset', {
-    assetId,
-    timeseriesIds,
+  trackUsage('Timeseries.DeleteTimeseries', {
+    id: timeseriesId,
   });
+  try {
+    const results = await sdk.timeseries.delete([{ id: timeseriesId }]);
 
-  const changes = timeseriesIds.map(id => ({
-    id,
-    update: { assetId: { set: assetId } },
-  }));
-  await sdk.timeseries.update(changes);
-
-  message.info(`Mapped ${timeseriesIds.length} timeseries to asset.`);
-
-  setTimeout(() => {
-    dispatch(fetchTimeseriesForAssetId(assetId));
-    dispatch(fetchEvents(assetId));
-  }, 1000);
+    if (results) {
+      dispatch({ type: DELETE_TIMESERIES, payload: { timeseriesId } });
+    }
+    return true;
+  } catch (ex) {
+    message.error(`Could not delete timeseries.`);
+    return false;
+  }
 };
 
-export const editTimeseries = (
+export const updateTimeseries = (
   timeseriesId: number,
   update: TimeSeriesUpdate
-) => async (
-  dispatch: Dispatch<SetTimeseriesAction>,
-  getState: () => RootState
-) => {
-  if (
-    !checkForAccessPermission(
-      getState().app.groups,
-      'timeSeriesAcl',
-      'WRITE',
-      true
-    )
-  ) {
+) => async (dispatch: Dispatch<SetTimeseriesAction>) => {
+  if (!canEditTimeseries()) {
     return;
   }
-  trackUsage('Timeseries.updateTimeseries', {
+  trackUsage('Timeseries.UpdateTimeseries', {
     id: timeseriesId,
   });
 
@@ -181,49 +213,20 @@ export const editTimeseries = (
   });
 };
 
-// Reducer
-export interface TimeseriesState {
-  timeseriesData: { [key: number]: GetTimeSeriesMetadataDTO };
-}
-const initialState: TimeseriesState = { timeseriesData: {} };
-
-export default function timeseries(
-  state = initialState,
-  action: TimeseriesAction
-): TimeseriesState {
-  switch (action.type) {
-    case SET_TIMESERIES: {
-      const { items } = action.payload;
-      return {
-        ...state,
-        timeseriesData: {
-          ...state.timeseriesData,
-          ...arrayToObjectById(items),
-        },
-      };
-    }
-
-    case REMOVE_ASSET_FROM_TIMESERIES: {
-      const { timeseriesId } = action.payload;
-      const { timeseriesData } = state;
-      delete timeseriesData[timeseriesId];
-      return {
-        ...state,
-        timeseriesData,
-      };
-    }
-    default:
-      return state;
-  }
-}
-
-// Action creators
-const setTimeseries = createAction(SET_TIMESERIES);
-
-export const actions = {
-  setTimeseries,
-};
-
 // Selectors
-export const selectTimeseries = (state: RootState) =>
-  state.timeseries || { items: [] };
+export const selectTimeseriesByAssetId = (
+  state: RootState,
+  assetId: number
+) => {
+  const tsForAsset = state.timeseries.byAssetId[assetId];
+  if (tsForAsset) {
+    return tsForAsset.map(id => state.timeseries.items[id]).filter(el => !!el);
+  }
+  return tsForAsset;
+};
+export const selectTimeseriesById = (
+  state: RootState,
+  timeseriesId?: number
+) => {
+  return timeseriesId ? state.timeseries.items[timeseriesId] : undefined;
+};

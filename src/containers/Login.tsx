@@ -3,8 +3,8 @@ import { connect } from 'react-redux';
 import { TenantSelector } from '@cognite/gearbox';
 import styled from 'styled-components';
 import { bindActionCreators, Dispatch } from 'redux';
-import { sdk } from 'index';
-import { setTenant, setCdfEnv } from '../modules/app';
+import { sdk } from 'utils/SDK';
+import { updateCdfEnv, updateTenant } from '../modules/app';
 
 const Wrapper = styled.div`
   display: flex;
@@ -20,43 +20,51 @@ const TenantSelectorContainer = styled.div`
 `;
 
 type Props = {
-  doSetTenant: typeof setTenant;
-  doSetCdfEnv: typeof setCdfEnv;
+  doUpdateCdfEnv: typeof updateCdfEnv;
+  doUpdateTenant: typeof updateTenant;
 };
 
-const Login = ({ doSetTenant, doSetCdfEnv }: Props) => (
-  <Wrapper>
-    <TenantSelectorContainer>
-      <TenantSelector
-        title="Discovery"
-        onTenantSelected={(tenant, advancedOptions) => {
-          const cdfEnv = advancedOptions
-            ? (advancedOptions['CDF Environment (i.e. Greenfield)'] as string)
-            : undefined;
-          if (cdfEnv) {
-            sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
-          }
-          doSetCdfEnv(cdfEnv);
-          doSetTenant(tenant, true);
-        }}
-        header="Cognite Data Fusion project name"
-        validateTenant={(tenant, advancedOptions) => {
-          const cdfEnv = advancedOptions
-            ? advancedOptions['CDF Environment (i.e. Greenfield)']
-            : null;
-          const clusterParam = cdfEnv ? `&cluster=${cdfEnv}` : '';
-          return fetch(
-            `https://opin-api.cognite.ai/tenant?tenant=${tenant}&app=opin${clusterParam}`
-          ).then(response => response.json());
-        }}
-        loginText="Authenticate"
-        placeholder="Project name"
-        unknownMessage="The name you entered is not a valid project in Cognite Data Fusion"
-        advancedOptions={{ 'CDF Environment (i.e. Greenfield)': '' }}
-      />
-    </TenantSelectorContainer>
-  </Wrapper>
-);
+const Login = ({ doUpdateCdfEnv, doUpdateTenant }: Props) => {
+  const initialTenant =
+    window.localStorage.getItem('tenant') !== null
+      ? (window.localStorage.getItem('tenant') as string)
+      : undefined;
+  return (
+    <Wrapper>
+      <TenantSelectorContainer>
+        <TenantSelector
+          title="Discovery"
+          onTenantSelected={(tenant, advancedOptions) => {
+            const cdfEnv = advancedOptions
+              ? (advancedOptions['CDF Environment (i.e. Greenfield)'] as string)
+              : undefined;
+            if (cdfEnv) {
+              sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
+            }
+            doUpdateCdfEnv(cdfEnv);
+            window.localStorage.setItem('tenant', tenant);
+            doUpdateTenant(tenant, true);
+          }}
+          header="Cognite Data Fusion project name"
+          validateTenant={(tenant, advancedOptions) => {
+            const cdfEnv = advancedOptions
+              ? advancedOptions['CDF Environment (i.e. Greenfield)']
+              : null;
+            const clusterParam = cdfEnv ? `&cluster=${cdfEnv}` : '';
+            return fetch(
+              `https://opin-api.cognite.ai/tenant?tenant=${tenant}&app=opin${clusterParam}`
+            ).then(response => response.json());
+          }}
+          loginText="Authenticate"
+          placeholder="Project name"
+          initialTenant={initialTenant}
+          unknownMessage="The name you entered is not a valid project in Cognite Data Fusion"
+          advancedOptions={{ 'CDF Environment (i.e. Greenfield)': '' }}
+        />
+      </TenantSelectorContainer>
+    </Wrapper>
+  );
+};
 
 const mapStateToProps = () => {
   return {};
@@ -65,9 +73,8 @@ const mapStateToProps = () => {
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      doSetTenant: setTenant,
-      doSetCdfEnv: setCdfEnv,
-      doSet: setTenant,
+      doUpdateCdfEnv: updateCdfEnv,
+      doUpdateTenant: updateTenant,
     },
     dispatch
   );
