@@ -4,46 +4,31 @@ import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import queryString from 'query-string';
 import { replace } from 'connected-react-router';
-import { Layout, notification } from 'antd';
-import Header from 'containers/Header';
-import { sdk } from 'utils/SDK';
+import Main from './Main';
+import { sdk } from '../index';
 import Loader from '../components/Loader';
 import {
-  updateTenant,
+  selectApp,
+  setTenant,
   AppState,
-  updateCdfEnv,
+  setCdfEnv,
   fetchUserGroups,
-  fetchUserDetails,
 } from '../modules/app';
 import { RootState } from '../reducers/index';
-import { fetchModels } from '../modules/threed';
-import SearchPage from './SearchPage';
-import AssetPage from './AssetPage';
-import TimeseriesPage from './TimeseriesPage';
-import FilePage from './FilePage';
-import ThreeDPage from './ThreeDPage';
-import RelationshipPage from './RelationshipPage';
-import { fetchTypes } from '../modules/types';
-import { trackUsage } from '../utils/Metrics';
-import PrivacyDisclaimer from '../components/PrivacyDisclaimer/PrivacyDisclaimer';
 
 export const getCdfEnvFromUrl = () =>
   queryString.parse(window.location.search).env as string;
 
 export const getApiKeyFromUrl = () =>
-  window.localStorage.getItem('apikey') ||
-  (queryString.parse(window.location.hash).apikey as string);
+  queryString.parse(window.location.hash).apikey as string;
 
 type Props = {
   app: AppState;
   match: { params: { tenant: string }; path: string };
   history: any;
-  updateCdfEnv: typeof updateCdfEnv;
-  updateTenant: typeof updateTenant;
+  setCdfEnv: typeof setCdfEnv;
+  setTenant: typeof setTenant;
   fetchUserGroups: typeof fetchUserGroups;
-  fetchUserDetails: typeof fetchUserDetails;
-  fetchModels: typeof fetchModels;
-  fetchTypes: typeof fetchTypes;
   replace: typeof replace;
 };
 
@@ -60,6 +45,12 @@ class Auth extends React.Component<Props, State> {
     await this.verifyAuth();
   }
 
+  async componentDidUpdate() {
+    if (!this.state.auth) {
+      await this.verifyAuth();
+    }
+  }
+
   verifyAuth = async () => {
     const {
       app: { cdfEnv, tenant },
@@ -67,7 +58,7 @@ class Auth extends React.Component<Props, State> {
     const fromUrlCdfEnv = getCdfEnvFromUrl();
     const fromUrlApiKey = getApiKeyFromUrl();
     if (!cdfEnv && fromUrlCdfEnv) {
-      this.props.updateCdfEnv(fromUrlCdfEnv);
+      this.props.setCdfEnv(fromUrlCdfEnv);
     }
     if (cdfEnv && !fromUrlCdfEnv) {
       if (tenant) {
@@ -79,7 +70,7 @@ class Auth extends React.Component<Props, State> {
             ${fromUrlApiKey ? `#apikey=${fromUrlApiKey}` : ''}`,
         });
       } else {
-        this.props.updateCdfEnv(undefined);
+        this.props.setCdfEnv(undefined);
       }
     }
     const {
@@ -89,7 +80,7 @@ class Auth extends React.Component<Props, State> {
     } = this.props;
 
     if (!tenant && pathTenant) {
-      this.props.updateTenant(pathTenant);
+      this.props.setTenant(pathTenant);
     }
 
     let status;
@@ -99,121 +90,55 @@ class Auth extends React.Component<Props, State> {
         project: tenant || pathTenant,
         apiKey: fromUrlApiKey,
       });
-      try {
-        await sdk.login.status();
-        status = true;
-      } catch (e) {
-        status = false;
-      }
+      status = true;
     } else {
       await sdk.loginWithOAuth({ project: tenant || pathTenant });
       status = await sdk.authenticate();
     }
-    trackUsage('App.Load', {
-      tenant: tenant || pathTenant,
-      status: !!status,
-    });
     this.setState(
       {
-        auth: !!status,
+        auth: status !== null,
       },
       async () => {
-        if (this.state.auth) {
-          // clear `apikey`
-          const queryParameters = queryString.parse(window.location.hash);
-          delete queryParameters.apikey;
-          window.location.hash = queryString.stringify(queryParameters);
-          await this.props.fetchUserGroups();
-          await this.props.fetchUserDetails();
-          await this.props.fetchModels();
-          await this.props.fetchTypes();
-        } else {
-          notification.error({
-            message: 'Unable to authenticate',
-            description:
-              'Make sure that you are using the correct OAuth account or apikey. Make sure there is no apikey parameter in local storage.',
-          });
-        }
+        // clear `apikey`
+        const queryParameters = queryString.parse(window.location.hash);
+        delete queryParameters.apikey;
+        window.location.hash = queryString.stringify(queryParameters);
+        await this.props.fetchUserGroups();
       }
     );
   };
 
   render() {
-    // const { match } = this.props;
-    if (!this.props.app.loaded) {
+    const { match } = this.props;
+    if (!this.state.auth) {
       return <Loader />;
     }
     return (
       <>
-        <Layout style={{ height: '100vh' }}>
-          <Header />
-          <Layout>
-            <Layout.Content
-              style={{
-                height: '100vh',
-                overflow: 'auto',
-                background: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Switch>
-                <Route path="/:tenant/" exact component={SearchPage} />
-                <Route
-                  path="/:tenant/relationships"
-                  exact
-                  component={RelationshipPage}
-                />
-                <Route
-                  path="/:tenant/search/:tab"
-                  exact
-                  component={SearchPage}
-                />
-                <Route
-                  path="/:tenant/asset/:assetId"
-                  exact
-                  component={AssetPage}
-                />
-                <Route
-                  path="/:tenant/asset/:assetId/:tab"
-                  exact
-                  component={AssetPage}
-                />
-                <Route
-                  path="/:tenant/asset/:assetId/:tab/:itemId/:itemId2?/:itemId3?/"
-                  exact
-                  component={AssetPage}
-                />
-                <Route
-                  path="/:tenant/timeseries/:timeseriesId"
-                  exact
-                  component={TimeseriesPage}
-                />
-                <Route
-                  path="/:tenant/file/:fileId"
-                  exact
-                  component={FilePage}
-                />
-                <Route
-                  path="/:tenant/threed/:modelId/:revisionId/"
-                  exact
-                  component={ThreeDPage}
-                />
-                <Route
-                  path="/:tenant/threed/:modelId/:revisionId/node/:nodeId?"
-                  exact
-                  component={ThreeDPage}
-                />
-                <Route
-                  path="/:tenant/threed/:modelId/:revisionId/asset/:assetId?"
-                  exact
-                  component={ThreeDPage}
-                />
-              </Switch>
-            </Layout.Content>
-            <PrivacyDisclaimer />
-          </Layout>
-        </Layout>
+        <Switch>
+          <Route
+            path={`${match.path}/asset/:rootAssetId`}
+            exact
+            component={Main}
+          />
+          <Route
+            path={`${match.path}/asset/:rootAssetId/:assetId`}
+            exact
+            component={Main}
+          />
+          <Route
+            path={`${match.path}/models/:modelId/:revisionId`}
+            exact
+            component={Main}
+          />
+          <Route
+            path={`${match.path}/models/:modelId/:revisionId/:nodeId`}
+            exact
+            component={Main}
+          />
+          <Route component={Main} />
+        </Switch>
       </>
     );
   }
@@ -221,19 +146,16 @@ class Auth extends React.Component<Props, State> {
 
 const mapStateToProps = (state: RootState) => {
   return {
-    app: state.app,
+    app: selectApp(state),
   };
 };
 
 const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
-      updateTenant,
-      updateCdfEnv,
+      setTenant,
+      setCdfEnv,
       fetchUserGroups,
-      fetchModels,
-      fetchUserDetails,
-      fetchTypes,
       replace,
     },
     dispatch

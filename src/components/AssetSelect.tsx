@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Select, Spin } from 'antd';
-import { Asset as CogniteAsset, AssetSearchFilter } from '@cognite/sdk';
-import { sdk } from 'utils/SDK';
+import { Asset as CogniteAsset } from '@cognite/sdk';
+import { sdk } from '../index';
 
 type Props = {
   style: React.CSSProperties;
@@ -10,7 +10,6 @@ type Props = {
   disabled: boolean;
   multiple: boolean;
   selectedAssetIds?: number[];
-  filter: AssetSearchFilter;
 };
 type State = {
   fetching: boolean;
@@ -27,7 +26,6 @@ class AssetSelect extends Component<Props, State> {
     multiple: false,
     rootOnly: false,
     disabled: false,
-    filter: {},
   };
 
   constructor(props: Props) {
@@ -53,9 +51,6 @@ class AssetSelect extends Component<Props, State> {
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ selectedIds: this.props.selectedAssetIds });
     }
-    if (this.props.filter !== prevProps.filter) {
-      this.doSearch('');
-    }
   }
 
   doSearch = async (query: string) => {
@@ -64,21 +59,22 @@ class AssetSelect extends Component<Props, State> {
     const searchIndex = this.searchId;
     this.setState({ fetching: true });
     const [rootSearchResults, searchResults] = await Promise.all([
-      sdk.assets.search({
-        ...this.props.filter,
-        search: { ...(query.length > 0 && { query }) },
-        filter: {
-          ...this.props.filter.filter,
-          root: true,
+      sdk.post(`/api/v1/projects/${sdk.project}/assets/search`, {
+        data: {
+          search: { ...(query.length > 0 && { query }) },
+          filter: {
+            root: true,
+          },
+          limit: 100,
         },
-        limit: 100,
       }),
       ...(!rootOnly
         ? [
-            sdk.assets.search({
-              ...this.props.filter,
-              search: { ...(query.length > 0 && { query }) },
-              limit: 100,
+            sdk.post(`/api/v1/projects/${sdk.project}/assets/search`, {
+              data: {
+                search: { ...(query.length > 0 && { query }) },
+                limit: 100,
+              },
             }),
           ]
         : []),
@@ -87,12 +83,12 @@ class AssetSelect extends Component<Props, State> {
       this.setState({
         ...(!rootOnly
           ? {
-              searchResults: searchResults.filter(
+              searchResults: searchResults.data.items.filter(
                 (el: CogniteAsset) => el.rootId !== el.id
               ),
             }
           : { searchResults: [] }),
-        rootSearchResults,
+        rootSearchResults: rootSearchResults.data.items,
         fetching: false,
       });
     }

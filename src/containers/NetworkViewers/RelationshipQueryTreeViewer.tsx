@@ -1,10 +1,8 @@
 import React, { Component } from 'react';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { message } from 'antd';
-import { sdk } from 'utils/SDK';
 import { RootState } from '../../reducers/index';
-import { AssetsState } from '../../modules/assets';
+import { selectAssets, AssetsState } from '../../modules/assets';
 
 import {
   RelationshipResource,
@@ -12,7 +10,7 @@ import {
   postWithCursor,
 } from '../../modules/relationships';
 import TreeViewer from './TreeViewer';
-import { canReadRelationships } from '../../utils/PermissionsUtils';
+import { sdk } from '../../index';
 
 type OwnProps = { nodes: { key: string; value: string }[] };
 
@@ -41,12 +39,12 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
 
   buildLabel = (node: RelationshipResource): string => {
     const {
-      assets: { items, byExternalId },
+      assets: { all, externalIdMap },
     } = this.props;
     switch (node.resource) {
       case 'asset': {
         const asset =
-          items[byExternalId[node.resourceId] || Number(node.resourceId)];
+          all[externalIdMap[node.resourceId] || Number(node.resourceId)];
         return asset ? asset.name : 'Loading...';
       }
     }
@@ -76,11 +74,8 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
     }
   };
 
-  getData = async (): Promise<{ nodes: any[]; links: any[] }> => {
+  getData = async () => {
     const { nodes: propsNodes } = this.props;
-    if (!canReadRelationships()) {
-      return { nodes: [], links: [] };
-    }
     const results = await postWithCursor(
       `/api/playground/projects/${sdk.project}/relationships/list`,
       {
@@ -201,8 +196,6 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
         buildLabel={this.buildLabel}
         chooseNodeColor={this.chooseNodeColor}
         chooseRelationshipColor={this.chooseRelationshipColor}
-        onNodeClicked={() => message.info('Coming soon')}
-        onLinkClicked={() => message.info('Coming soon')}
       />
     );
   }
@@ -210,7 +203,7 @@ class RelationshipQueryTreeViewer extends Component<Props, State> {
 
 const mapStateToProps = (state: RootState): StateProps => {
   return {
-    assets: state.assets,
+    assets: selectAssets(state),
   };
 };
 

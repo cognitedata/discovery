@@ -1,21 +1,18 @@
 language: node_js
 env:
-  - NODE_OPTIONS=--max_old_space_size=8192
+  - NODE_OPTIONS=--max_old_space_size=4096
 node_js:
   - '10'
 sudo: false
 install:
   - yarn
-  - npm install -g codecov
 script:
   - yarn lint --max-warnings 0 || travis_terminate 1
-  - yarn test && codecov || travis_terminate 1
   - yarn build || travis_terminate 1
 deploy:
   - provider: firebase
-    on: v1_stable
+    on: explorer
     skip_cleanup: true
-    project: digital-twin-explorer
     token:
       secure: uH5KRGo89UelknWIRg6zYu1QSfXq9rnfojZwUa7qZrB3iEWEd1jWYpa95kIQu7AR0salUg9/zj7l6rcnXIA88u0jAvsp6F8h4yGhbDi+iDLy1qUZ4AiFzYip5ceZQdzgPkj+NnRF3kFRGInuHpvjoelFkjRkligVDJNUACqC0lQ7W61Gn5F3psKjRPWc409SxMV81lFgqeRU5qBKB5ta9rjx1OGefHPDVrCR+PxVvkogSGaEXPT6r/G1b42O2ngpLW172gAmZ0/yXlBDPZktgb6cGstxm2HX7ibZWxRX8TDClX7MyNWubwoUSn5x4l/PsJKbL9h9STULANQOVtKST6qkKqfwJVJGrQ9gEw4R01rHkD2usNWEi9GEgWkxVVBSfiNnDf8Ay/xGMNhEbeJhN0Xjgwg3gvLmdId8f5NpMB5QZNIfcdCqoJkBNt3lh2Vnfgc9bpa8fFEJVjTjbP3PIZ/UYyGix53XQCJIRO9UhJeehBbttRlwpgpumxNB5x+hUfvRGSln5ay7Kw92ko7Vh0dIIzW537finIoLg866Ps0zuRcv4bziCgbujfZRCg9DUAAC5jv4UY+Rf5sDSU+aK3AVjfjoqQeAt9xeSj1/pKm9YRAj8EEl5U8OyHOvAvL1Dtpkxyt2yHN8Oc7o7drR2pEQ1DJRW4+CJar2CCdfOwA=
   - provider: firebase

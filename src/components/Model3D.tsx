@@ -1,13 +1,26 @@
+// TODO is this ideal?
 import React from 'react';
-import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
-import { Slider } from 'antd';
-import debounce from 'lodash/debounce';
+import { connect } from 'react-redux';
 import { Model3DViewer, CacheObject } from '@cognite/gearbox';
+import { THREE, Cognite3DViewer, Cognite3DModel } from '@cognite/3d-viewer';
+import { Slider, message } from 'antd';
+import { Dispatch, bindActionCreators } from 'redux';
+import { Asset } from '@cognite/sdk';
 import { SliderValue } from 'antd/lib/slider';
-import { sdk } from 'utils/SDK';
 import Model3DLoadingDialog, { ProgressObject } from './Model3DLoadingDialog';
+import {
+  fetchMappingsFromNodeId,
+  selectAssetMappings,
+  fetchMappingsFromAssetId,
+  AssetMappingState,
+} from '../modules/assetmappings';
+import { selectFilteredAssets } from '../modules/filters';
+import { RootState } from '../reducers/index';
+import { ExtendedAsset } from '../modules/assets';
 
-import { trackUsage } from '../utils/Metrics';
+import { fetchNode } from '../modules/threed';
+import { sdk } from '../index';
+import { trackUsage } from '../utils/metrics';
 
 declare global {
   interface Window {
@@ -20,9 +33,16 @@ declare global {
 type Props = {
   modelId: number;
   revisionId: number;
-  nodeIds?: number[];
-  onAssetIdChange: (assetId: number, nodeId: number) => void;
-  onNodeIdChange: (nodeId: number) => void;
+  assetId: number;
+  cache?: CacheObject;
+  nodeId?: number;
+  onAssetIdChange: (assetId: number) => void;
+  onNodeIdChange: (assetId: number) => void;
+  doFetchMappingsFromNodeId: typeof fetchMappingsFromNodeId;
+  doFetchMappingsFromAssetId: typeof fetchMappingsFromAssetId;
+  doFetchNode: typeof fetchNode;
+  assetMappings: AssetMappingState;
+  filteredSearch: { items: ExtendedAsset[] };
 };
 
 type State = {
@@ -32,8 +52,6 @@ type State = {
 
 class Model3D extends React.Component<Props, State> {
   viewer?: Cognite3DViewer = undefined;
-
-  cache: CacheObject = {};
 
   hasWarnedAboutNode: { [key: string]: boolean } = {};
 
@@ -46,23 +64,63 @@ class Model3D extends React.Component<Props, State> {
   public static defaultProps = {
     assetMappings: { byNodeId: {}, byAssetId: {} },
     nodeId: undefined,
+    cache: undefined,
   };
 
-  constructor(props: Props) {
-    super(props);
-
-    this.selectNodeIds = debounce(this.selectNodeIds, 500);
-  }
-
   componentDidMount() {
-    this.selectNodeIds(this.props.nodeIds);
+    const { nodeId } = this.props;
+    if (nodeId) {
+      const assetId = this.getAssetIdForNodeId(nodeId);
+      if (assetId) {
+        this.props.onAssetIdChange(assetId);
+      }
+      this.props.doFetchNode(this.props.modelId, this.props.revisionId, nodeId);
+    }
   }
 
   componentDidUpdate(prevProps: Props) {
-    const { nodeIds } = this.props;
+    const { nodeId } = this.props;
 
-    if (prevProps.nodeIds !== nodeIds) {
-      this.selectNodeIds(nodeIds);
+    if (!nodeId) {
+      this.selectNode(undefined, true);
+    }
+
+    if (prevProps.assetMappings !== this.props.assetMappings) {
+      if (nodeId && prevProps.nodeId !== nodeId) {
+        const assetId = this.getAssetIdForNodeId(nodeId);
+        if (assetId) {
+          this.props.onAssetIdChange(assetId);
+        } else if (!this.hasWarnedAboutNode[nodeId]) {
+          message.info('Did not find any asset associated to this 3D object.');
+          setTimeout(() => {
+            this.hasWarnedAboutNode[nodeId] = true;
+          }, 10);
+        }
+      }
+    }
+
+    if (nodeId && prevProps.nodeId !== nodeId) {
+      this.props.doFetchNode(
+        this.props.modelId,
+        this.props.revisionId,
+        this.props.nodeId!
+      );
+      if (this.model) {
+        this.selectNode(nodeId, true);
+      }
+    }
+
+    if (prevProps.filteredSearch !== this.props.filteredSearch) {
+      const { assetMappings, filteredSearch, modelId, revisionId } = this.props;
+      let missing3D = filteredSearch.items.filter(
+        (asset: Asset) => assetMappings.byAssetId[asset.id] === undefined
+      );
+      // Max 20 requests
+      missing3D = missing3D.slice(0, Math.min(missing3D.length, 20));
+
+      missing3D.forEach(asset => {
+        this.props.doFetchMappingsFromAssetId(modelId, revisionId, asset.id);
+      });
     }
 
     if (prevProps.revisionId !== this.props.revisionId) {
@@ -71,19 +129,45 @@ class Model3D extends React.Component<Props, State> {
     }
   }
 
-  getAssetIdForNodeId = async (nodeId: number) => {
-    const {
-      items: [mapping],
-    } = await sdk.assetMappings3D.list(
-      this.props.modelId,
-      this.props.revisionId,
-      { nodeId }
-    );
+  // async getBoundingBoxForNodeId(nodeId) {
+  //   this.setState({ boundingBox: undefined });
+  //   const result = await sdk.ThreeD.listNodes(
+  //     this.state.modelId,
+  //     this.state.revisionId,
+  //     { nodeId }
+  //   );
+  //   if (result.items.length === 0) {
+  //     return;
+  //   }
 
-    if (mapping) {
+  //   const node = result.items[0];
+  //   const boundingBox = new THREE.Box3(
+  //     new THREE.Vector3(...node.boundingBox.min),
+  //     new THREE.Vector3(...node.boundingBox.max)
+  //   );
+  //   boundingBox.expandByVector(new THREE.Vector3(10, 10, 0));
+  //   boundingBox.min.z -= 2;
+  //   boundingBox.max.z += 2;
+  //   this.setState({ boundingBox });
+  // }
+
+  getAssetIdForNodeId = (nodeId: number) => {
+    if (!nodeId) {
+      return null;
+    }
+
+    if (this.props.assetMappings.byNodeId[nodeId]) {
+      const mapping = this.props.assetMappings.byNodeId[nodeId];
       return mapping.assetId;
     }
-    return undefined;
+
+    this.props.doFetchMappingsFromNodeId(
+      this.props.modelId,
+      this.props.revisionId,
+      nodeId
+    );
+
+    return null;
   };
 
   onProgress = (progress: ProgressObject) => {
@@ -95,11 +179,11 @@ class Model3D extends React.Component<Props, State> {
     this.setState({ progress: undefined });
   };
 
-  onClick = async (nodeId: number) => {
+  onClick = (nodeId: number) => {
     trackUsage('3DViewer.SelectNode', { nodeId });
-    const assetId = await this.getAssetIdForNodeId(nodeId);
+    const assetId = this.getAssetIdForNodeId(nodeId);
     if (assetId) {
-      this.props.onAssetIdChange(assetId, nodeId);
+      this.props.onAssetIdChange(assetId);
     } else {
       this.props.onNodeIdChange(nodeId);
     }
@@ -118,7 +202,7 @@ class Model3D extends React.Component<Props, State> {
     window.model = model;
     trackUsage('3DViewer.Ready');
 
-    const { nodeIds } = this.props;
+    const { nodeId } = this.props;
 
     if (!this.model) {
       return;
@@ -131,26 +215,21 @@ class Model3D extends React.Component<Props, State> {
       this.model!.setNodeColor(id, 170, 170, 170);
     });
 
-    this.selectNodeIds(nodeIds);
-  };
-
-  selectNodeIds = async (nodeIds?: number[]) => {
-    if (this.model) {
-      this.model.deselectAllNodes();
-      if (nodeIds && nodeIds.length > 0) {
-        const boundingBox = new THREE.Box3();
-        await Promise.all(
-          [...new Set(nodeIds)].map(async nodeId => {
-            await this.selectNode(nodeId, boundingBox);
-          })
-        );
-        this.viewer!.fitCameraToBoundingBox(boundingBox, 500);
-      }
+    if (nodeId) {
+      this.selectNode(nodeId, true);
     }
   };
 
-  selectNode = async (nodeId: number, boundingBox: THREE.Box3) => {
+  selectNode = async (
+    nodeId?: number,
+    animate: boolean = true,
+    duration: number = 500
+  ) => {
     if (!this.model) {
+      return;
+    }
+    this.model!.deselectAllNodes();
+    if (!nodeId) {
       return;
     }
 
@@ -166,49 +245,42 @@ class Model3D extends React.Component<Props, State> {
     if (!mapping) {
       return;
     }
-    const { min, max } = mapping.boundingBox;
-    [min, max].forEach(point => {
-      const pointThree = new THREE.Vector3(...point);
-      const xform = pointThree.applyMatrix4(this.model!.matrix);
-      boundingBox.expandByPoint(xform);
-    });
-    const nodeIds = await this.model.getSubtreeNodeIds(
-      nodeId,
-      mapping.subtreeSize
-    );
-    nodeIds.forEach(id => {
-      this.model!.selectNode(id);
-    });
-    // // The node may not have geometries in the scene, so we need to
-    // // find all children and select them + compute bounding box
-    // for (
-    //   let { treeIndex } = mapping;
-    //   treeIndex < mapping.treeIndex + mapping.subtreeSize;
-    //   treeIndex++
-    // ) {
-    //   // TODO, this is not allowed
-    //   // @ts-ignore
-    //   // eslint-disable-next-line no-underscore-dangle
-    //   const thisNodeId = this.model!._getNodeId(treeIndex);
-    //   if (thisNodeId) {
-    //     this.model!.selectNode(thisNodeId);
-    //     boundingBox.union(this.model!.getBoundingBox(thisNodeId));
-    //   }
-    // }
+
+    const boundingBox = new THREE.Box3();
+    // The node may not have geometries in the scene, so we need to
+    // find all children and select them + compute bounding box
+    for (
+      let { treeIndex } = mapping;
+      treeIndex < mapping.treeIndex + mapping.subtreeSize;
+      treeIndex++
+    ) {
+      // TODO, this is not allowed
+      // @ts-ignore
+      // eslint-disable-next-line no-underscore-dangle
+      const thisNodeId = this.model!._getNodeId(treeIndex);
+      if (thisNodeId) {
+        this.model!.selectNode(thisNodeId);
+        boundingBox.union(this.model!.getBoundingBox(thisNodeId));
+      }
+    }
+
+    if (animate) {
+      this.viewer!.fitCameraToBoundingBox(boundingBox, duration);
+    }
   };
 
-  // setSlicingForCurrentAsset = () => {
-  //   const boundingBox = new THREE.Box3();
-  //   this.model!.iterateSubtree(this.props.nodeId!, id => {
-  //     boundingBox.union(this.model!.getBoundingBox(id));
-  //   });
+  setSlicingForCurrentAsset = () => {
+    const boundingBox = new THREE.Box3();
+    this.model!.iterateSubtree(this.props.nodeId!, id => {
+      boundingBox.union(this.model!.getBoundingBox(id));
+    });
 
-  //   const plane = new THREE.Plane(
-  //     new THREE.Vector3(0, -1, 0),
-  //     boundingBox.max.y + 0.5
-  //   );
-  //   this.viewer!.setSlicingPlanes([plane]);
-  // };
+    const plane = new THREE.Plane(
+      new THREE.Vector3(0, -1, 0),
+      boundingBox.max.y + 0.5
+    );
+    this.viewer!.setSlicingPlanes([plane]);
+  };
 
   onSliderChange = (change: SliderValue) => {
     const changes = change as [number, number];
@@ -226,20 +298,20 @@ class Model3D extends React.Component<Props, State> {
 
     this.currentColoredNodes = [];
 
-    // // Reset color on old ones
-    // this.props.filteredSearch.items.forEach(asset => {
-    //   const mapping = this.props.assetMappings.byAssetId[asset.id];
-    //   if (mapping) {
-    //     const { nodeId } = mapping;
-    //     const didColor = this.model!.iterateSubtree(nodeId, id => {
-    //       this.model!.resetNodeColor(id);
-    //     });
+    // Reset color on old ones
+    this.props.filteredSearch.items.forEach(asset => {
+      const mapping = this.props.assetMappings.byAssetId[asset.id];
+      if (mapping) {
+        const { nodeId } = mapping;
+        const didColor = this.model!.iterateSubtree(nodeId, id => {
+          this.model!.resetNodeColor(id);
+        });
 
-    //     if (didColor) {
-    //       this.currentColoredNodes.push(nodeId);
-    //     }
-    //   }
-    // });
+        if (didColor) {
+          this.currentColoredNodes.push(nodeId);
+        }
+      }
+    });
   };
 
   renderSlider = () => {
@@ -284,11 +356,28 @@ class Model3D extends React.Component<Props, State> {
           onReady={this.onReady}
           onProgress={this.onProgress}
           onComplete={this.onComplete}
-          cache={this.cache}
+          cache={this.props.cache}
         />
       </>
     );
   }
 }
 
-export default Model3D;
+const mapStateToProps = (state: RootState) => {
+  return {
+    assetMappings: selectAssetMappings(state),
+    filteredSearch: selectFilteredAssets(state),
+  };
+};
+
+const mapDispatchToProps = (dispatch: Dispatch) =>
+  bindActionCreators(
+    {
+      doFetchMappingsFromNodeId: fetchMappingsFromNodeId,
+      doFetchMappingsFromAssetId: fetchMappingsFromAssetId,
+      doFetchNode: fetchNode,
+    },
+    dispatch
+  );
+
+export default connect(mapStateToProps, mapDispatchToProps)(Model3D);
