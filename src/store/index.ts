@@ -1,7 +1,4 @@
 import { Store, AnyAction } from 'redux';
-import { createBrowserHistory } from 'history';
-
-export const history = createBrowserHistory();
 
 const { default: store }: { default: (store?: any) => Store<any, AnyAction> } =
   process.env.NODE_ENV === 'production'

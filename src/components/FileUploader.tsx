@@ -6,7 +6,7 @@ import mime from 'mime-types';
 import { UploadFileMetadataResponse } from '@cognite/sdk';
 import styled from 'styled-components';
 import { UploadFile } from 'antd/lib/upload/interface';
-import { sdk } from 'utils/SDK';
+import { sdk } from '../index';
 
 export const GCSUploader = (
   file: Blob | UploadFile,
@@ -60,7 +60,7 @@ enum STATUS {
 }
 
 type Props = {
-  assetIds?: number[];
+  assetId?: number;
   validExtensions?: string[];
   onUploadSuccess: (file: UploadFileMetadataResponse) => void;
   onFileListChange: (fileList: UploadFile[]) => void;
@@ -184,7 +184,7 @@ class FileUploader extends React.Component<Props, State> {
   };
 
   startUpload = async () => {
-    const { assetIds } = this.props;
+    const { assetId } = this.props;
     if (this.state.uploadStatus !== STATUS.READY) {
       return;
     }
@@ -211,7 +211,7 @@ class FileUploader extends React.Component<Props, State> {
         name: file.name,
         mimeType,
         source: 'Discovery',
-        ...(assetIds && { assetIds }),
+        ...(assetId && { assetIds: [assetId] }),
       })) as UploadFileMetadataResponse;
       const { uploadUrl, id } = fileMetadata;
 

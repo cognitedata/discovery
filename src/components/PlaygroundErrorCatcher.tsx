@@ -1,5 +1,5 @@
 import React from 'react';
-import { trackUsage } from '../utils/Metrics';
+import { trackUsage } from '../utils/metrics';
 
 type Props = {};
 type State = {
