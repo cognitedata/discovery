@@ -10,6 +10,8 @@ import * as serviceWorker from './utils/serviceWorker';
 
 mixpanel.init('fb25742efb56d116b736515a0ad5f6ef', {}, 'context');
 
+window.location = `https://staging.discovery.cogniteapp.com${window.location.pathname}${window.location.search}${window.location.hash}`;
+
 render(
   <Provider store={store}>
     <Routes />
