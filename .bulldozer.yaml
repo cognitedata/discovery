@@ -28,6 +28,8 @@ merge:
     labels: ['auto-merge']
   blacklist:
     labels: ['do-not-merge']
+  required_statuses:
+    - 'continuous-integration/travis-ci/pr'
 
 update:
   whitelist:
