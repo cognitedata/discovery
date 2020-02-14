@@ -46,7 +46,7 @@ const Login = ({ doSetTenant, doSetCdfEnv }: Props) => (
             : null;
           const clusterParam = cdfEnv ? `&cluster=${cdfEnv}` : '';
           return fetch(
-            `https://opin-api.cognite.ai/tenant?tenant=${tenant}&app=opin${clusterParam}`
+            `https://apps-api.cognite.ai/tenant?tenant=${tenant}&app=opin${clusterParam}`
           ).then(response => response.json());
         }}
         loginText="Authenticate"
