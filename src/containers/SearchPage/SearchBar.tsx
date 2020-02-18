@@ -19,6 +19,7 @@ import { SearchPageTabKeys } from './SearchPage';
 import { trackUsage } from '../../utils/Metrics';
 import SearchBarTypingFilters from './SearchBarTypingFilter';
 import SearchBarAnnotationsFilter from './SearchBarAnnotationsFilter';
+import SearchBarDataSetFilter from './SearchBarDataSetFilter';
 
 const Wrapper = styled.div`
   display: block;
@@ -152,6 +153,7 @@ class SearchPage extends React.Component<Props, State> {
           }
         />
         <SearchBarTypingFilters disabled={isDisabled} />
+        <SearchBarDataSetFilter disabled={isDisabled} />
         <SearchBarAnnotationsFilter />
       </Wrapper>
     );

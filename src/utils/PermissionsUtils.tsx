@@ -127,3 +127,12 @@ export const canReadTypes = (showMessage = true) => {
 export const canEditTypes = (showMessage = true) => {
   return checkForAccessPermission('typesAcl', 'WRITE', showMessage);
 };
+
+// DataSets
+export const canReadDataSets = (showMessage = true) => {
+  return checkForAccessPermission('datasetsAcl', 'READ', showMessage);
+};
+
+export const canEditDataSets = (showMessage = true) => {
+  return checkForAccessPermission('datasetsAcl', 'WRITE', showMessage);
+};
