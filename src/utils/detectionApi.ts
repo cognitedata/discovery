@@ -59,7 +59,6 @@ export interface ExternalDetection {
   fileExternalId?: string;
   manuallyVerified?: ManualVerificationState;
 }
-
 export interface CogniteDetection extends ExternalDetection, InternalId {
   lastUpdatedTime: Date;
   createdTime: Date;
@@ -181,7 +180,7 @@ export class DetectionsAPI {
 
 interface EventPatchHack {
   update: {
-    subType?: SinglePatchString;
+    subtype?: SinglePatchString;
   };
 }
 
@@ -359,7 +358,7 @@ class DetectionMapper {
         externalId: change.update.externalId,
       },
     };
-    (eventPatch as EventPatchHack).update.subType = change.update.label;
+    (eventPatch as EventPatchHack).update.subtype = change.update.label;
     if (change.update.metadata) {
       Object.assign(eventPatch.update.metadata, change.update.metadata);
       const mapper = await this.getMetadataMapper(

@@ -24,8 +24,8 @@ import LoadingWrapper from 'components/LoadingWrapper';
 import { fetchFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
 import PNIDViewer from './PNIDViewer';
-import ImageAnnotator from './ImageAnnotator';
 import { convertPDFtoPNID, detectAssetsInDocument } from '../FileUtils';
+import ImageDetectionPreview from './ImagePreview/ImageDetectionPreview';
 import {
   canReadFiles,
   canEditFiles,
@@ -606,10 +606,10 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   renderImage = () => {
-    if (this.state.filePreviewUrl) {
+    if (this.state.filePreviewUrl && this.props.file) {
       return (
-        <ImageAnnotator
-          file={this.props.file!}
+        <ImageDetectionPreview
+          file={this.props.file}
           filePreviewUrl={this.state.filePreviewUrl!}
         />
       );
