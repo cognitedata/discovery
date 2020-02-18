@@ -179,7 +179,7 @@ const AnnotatedPnIDPreview = ({ filePreviewUrl, file }: Props) => {
         }, [] as ProposedPnIDAnnotation[])
       );
     } else {
-      message.info('Coming Soon');
+      // message.info('Coming Soon');
     }
   };
 

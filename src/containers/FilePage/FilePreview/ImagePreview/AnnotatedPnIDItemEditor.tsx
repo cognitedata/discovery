@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Input, Button, Tag } from 'antd';
 import AssetSelect from 'components/AssetSelect';
 import styled from 'styled-components';
@@ -43,6 +43,11 @@ const AnnotatedPnIDItemEditor = ({
   );
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLabel(annotation.label);
+    setAssetIds(annotation.assetId ? [annotation.assetId] : []);
+  }, [annotation]);
 
   const isNewDetection = Number.isNaN(Number(annotation.id));
 
