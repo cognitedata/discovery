@@ -2,11 +2,15 @@ import { FilesMetadata, Asset, UploadFileMetadataResponse } from '@cognite/sdk';
 import { sdk } from 'utils/SDK';
 import { trackUsage } from '../../utils/Metrics';
 import { GCSUploader } from '../../components/FileUploader';
+import { PendingPnIDAnnotation, PnIDApi } from '../../utils/PnIDApi';
+import { stripWhitespace } from '../../utils/utils';
 import {
   canReadFiles,
   canEditFiles,
   canEditRelationships,
 } from '../../utils/PermissionsUtils';
+
+const pnidApi = new PnIDApi(sdk);
 
 export const downloadFile = async (url: string) => {
   const response = await fetch(url);
@@ -174,6 +178,216 @@ export const convertPDFtoPNID = async (
     }
   }
 };
+
+export const convertPDFtoInteractivePnID = async (
+  file: FilesMetadata,
+  selectedRootAssetId: number,
+  callbacks: {
+    callbackProgress?: (progressString: string) => void;
+    callbackResult: (file: FilesMetadata) => void;
+    callbackError?: (error: any) => void;
+  }
+) => {
+  const { callbackProgress, callbackResult, callbackError } = callbacks;
+  if (!canEditFiles() || !canEditRelationships()) {
+    if (callbackError) {
+      callbackError('Missing Permissions');
+    }
+    return;
+  }
+  trackUsage('FileUtil.ConvertToP&IDNew', { fileId: file.id });
+
+  const names = await fetchAllNamesOfAssetInRoot(
+    selectedRootAssetId,
+    callbackProgress
+  );
+
+  if (callbackProgress) {
+    callbackProgress('Processing File');
+  }
+
+  let parsingJobItems: any[] = [];
+  let pngUrl: string = '';
+
+  const startParsingJob = async () => {
+    try {
+      const newJob = await sdk.post(
+        `/api/playground/projects/${sdk.project}/context/pnid/parse`,
+        {
+          data: {
+            fileId: file.id,
+            entities: [...names],
+          },
+        }
+      );
+      if (newJob.status !== 200) {
+        if (callbackError) {
+          callbackError('Unable to process file to interactive P&ID');
+        }
+      } else {
+        setTimeout(() => checkFetchJobStatus(newJob.data.jobId), 1000);
+      }
+    } catch (e) {
+      if (callbackError) {
+        callbackError('Unable to convert to P&ID, please try again');
+      }
+    }
+  };
+
+  const checkFetchJobStatus = async (jobId: number) => {
+    const parsingJob = await sdk.get(
+      `/api/playground/projects/${sdk.project}/context/pnid/${jobId}`
+    );
+    if (parsingJob.status !== 200 || parsingJob.data.status === 'Failed') {
+      if (callbackError) {
+        callbackError('Unable to parse file to interactive P&ID');
+      }
+    } else if (parsingJob.data.status === 'Completed') {
+      parsingJobItems = parsingJob.data.items;
+      await startConversionJob();
+    } else {
+      setTimeout(() => checkFetchJobStatus(jobId), 1000);
+    }
+  };
+
+  const startConversionJob = async () => {
+    if (callbackProgress) {
+      callbackProgress('Converting File');
+    }
+    const convertJob = await sdk.post(
+      `/api/playground/projects/${sdk.project}/context/pnid/convert`,
+      {
+        data: {
+          fileId: file.id,
+          items: [],
+        },
+      }
+    );
+    if (convertJob.status !== 200) {
+      if (callbackError) {
+        callbackError('Unable to process file to interactive P&ID');
+      }
+    } else {
+      setTimeout(() => checkConvertJobStatus(convertJob.data.jobId), 1000);
+    }
+  };
+
+  const checkConvertJobStatus = async (jobId: number) => {
+    const convertJob = await sdk.get(
+      `/api/playground/projects/${sdk.project}/context/pnid/convert/${jobId}`
+    );
+    if (convertJob.status !== 200 || convertJob.data.status === 'Failed') {
+      if (callbackError) {
+        callbackError('Unable to parse file to interactive P&ID');
+      }
+    } else if (convertJob.data.status === 'Completed') {
+      pngUrl = convertJob.data.pngUrl;
+      await createPnId();
+    } else {
+      setTimeout(() => checkConvertJobStatus(jobId), 1000);
+    }
+  };
+
+  const createPnId = async () => {
+    if (callbackProgress) {
+      callbackProgress('Generating Interactive P&ID');
+    }
+    const data = await downloadFile(pngUrl);
+    const annotations = await Promise.all<PendingPnIDAnnotation>(
+      parsingJobItems.map(async (el: any) => {
+        const response = await sdk.assets.list({
+          filter: { name: el.text },
+          limit: 2,
+        });
+
+        let assetId: number | undefined;
+
+        if (
+          response.items.length === 1 &&
+          stripWhitespace(el.text) === stripWhitespace(response.items[0].name)
+        ) {
+          assetId = response.items[0].id;
+        }
+        if (
+          response.items.length === 2 &&
+          stripWhitespace(el.text) ===
+            stripWhitespace(response.items[0].name) &&
+          stripWhitespace(response.items[0].name) !==
+            stripWhitespace(response.items[1].name)
+        ) {
+          assetId = response.items[0].id;
+        }
+
+        return {
+          type: 'Model Generated',
+          boundingBox: {
+            x: el.boundingBox.xMin,
+            y: el.boundingBox.yMin,
+            width: el.boundingBox.xMax - el.boundingBox.xMin,
+            height: el.boundingBox.yMax - el.boundingBox.yMin,
+          },
+          assetId,
+          label: el.text,
+        } as PendingPnIDAnnotation;
+      })
+    );
+    const assetIds = new Set<number>(file.assetIds);
+    annotations.forEach(el => {
+      if (el.assetId) {
+        assetIds.add(el.assetId);
+      }
+    });
+    // @ts-ignore
+    const newFile = await sdk.files.upload({
+      name: `Processed-${file.name.substr(0, file.name.lastIndexOf('.'))}.png`,
+      mimeType: 'image/png',
+      assetIds: [...assetIds],
+      metadata: {
+        original_file_id: `${file.id}`,
+        COGNITE_INTERACTIVE_PNID: 'true',
+      },
+    });
+
+    const uploader = await GCSUploader(
+      data,
+      (newFile as UploadFileMetadataResponse).uploadUrl!
+    );
+
+    await uploader.start();
+
+    await sdk.post(`/api/playground/projects/${sdk.project}/relationships`, {
+      data: {
+        items: [
+          {
+            source: {
+              resource: 'file',
+              resourceId: `${newFile.id}`,
+            },
+            target: {
+              resource: 'file',
+              resourceId: `${file.id}`,
+            },
+            confidence: 1,
+            dataSet: `discovery-manual-contextualization`,
+            externalId: `${file.id}-manual-pnid-${newFile.id}`,
+            relationshipType: 'belongsTo',
+          },
+        ],
+      },
+    });
+
+    pnidApi.createAnnotations(
+      annotations.map(el => ({ ...el, fileId: newFile.id }))
+    );
+
+    await setTimeout(() => {
+      callbackResult(newFile);
+    }, 1000);
+  };
+
+  await startParsingJob();
+};
+
 export const detectAssetsInDocument = async (
   file: FilesMetadata,
   callbacks: {

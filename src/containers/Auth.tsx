@@ -28,7 +28,8 @@ import { trackUsage } from '../utils/Metrics';
 import PrivacyDisclaimer from '../components/PrivacyDisclaimer/PrivacyDisclaimer';
 
 export const getCdfEnvFromUrl = () =>
-  queryString.parse(window.location.search).env as string;
+  window.localStorage.getItem('env') ||
+  (queryString.parse(window.location.search).env as string);
 
 export const getApiKeyFromUrl = () =>
   window.localStorage.getItem('apikey') ||

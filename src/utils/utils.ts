@@ -31,4 +31,7 @@ export function createAssetTitle(asset: Asset) {
 
   return assetTitle;
 }
+
 export const isInternalId = (p: any): p is InternalId => !!p.id;
+
+export const stripWhitespace = (text: string) => text.replace(/\s/g, '');

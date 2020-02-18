@@ -10,7 +10,13 @@ import { canReadRelationships } from '../utils/PermissionsUtils';
 export const GET_RELATIONSHIPS = 'relationships/GET_RELATIONSHIPS';
 
 export interface RelationshipResource {
-  resource: 'timeSeries' | 'threeD' | 'threeDRevision' | 'asset';
+  resource:
+    | 'timeSeries'
+    | 'threeD'
+    | 'threeDRevision'
+    | 'asset'
+    | 'event'
+    | 'file';
   resourceId: string;
 }
 

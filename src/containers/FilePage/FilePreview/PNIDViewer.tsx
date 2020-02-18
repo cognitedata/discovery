@@ -13,9 +13,10 @@ import { trackUsage } from 'utils/Metrics';
 import { FilesState } from 'modules/files';
 import { AssetsState } from 'modules/assets';
 import { canReadAssets } from '../../../utils/PermissionsUtils';
+import { stripWhitespace } from '../../../utils/utils';
 
 const getTextFromMetadataNode = (node: { textContent?: string }) =>
-  (node.textContent || '').replace(/\s/g, '');
+  stripWhitespace(node.textContent || '');
 
 const ViewerContainer = styled.div`
   height: 100%;

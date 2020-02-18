@@ -24,8 +24,12 @@ import LoadingWrapper from 'components/LoadingWrapper';
 import { fetchFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
 import PNIDViewer from './PNIDViewer';
-import { convertPDFtoPNID, detectAssetsInDocument } from '../FileUtils';
+import {
+  detectAssetsInDocument,
+  convertPDFtoInteractivePnID,
+} from '../FileUtils';
 import ImageDetectionPreview from './ImagePreview/ImageDetectionPreview';
+import AnnotatedPnIDPreview from './ImagePreview/AnnotatedPnIDPreview';
 import {
   canReadFiles,
   canEditFiles,
@@ -269,7 +273,7 @@ class FilePreview extends React.Component<Props, State> {
       };
       notification.open(notifConfig);
       this.setState({ runningPnID: true, convertToPDFVisible: false });
-      convertPDFtoPNID(this.props.file, pnidSelectedAssetId, {
+      convertPDFtoInteractivePnID(this.props.file, pnidSelectedAssetId, {
         callbackProgress: (progress: string) => {
           notification.open({ ...notifConfig, description: progress });
         },
@@ -606,6 +610,19 @@ class FilePreview extends React.Component<Props, State> {
   };
 
   renderImage = () => {
+    if (
+      this.state.filePreviewUrl &&
+      this.props.file &&
+      this.props.file.metadata &&
+      this.props.file.metadata.COGNITE_INTERACTIVE_PNID
+    ) {
+      return (
+        <AnnotatedPnIDPreview
+          file={this.props.file}
+          filePreviewUrl={this.state.filePreviewUrl!}
+        />
+      );
+    }
     if (this.state.filePreviewUrl && this.props.file) {
       return (
         <ImageDetectionPreview
