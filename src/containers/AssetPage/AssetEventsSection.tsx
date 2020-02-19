@@ -95,7 +95,7 @@ class AssetTimeseriesSection extends React.Component<Props, State> {
         dataIndex: 'startTime',
       },
       {
-        title: 'Start Time',
+        title: 'End Time',
         key: 'description',
         dataIndex: 'endTime',
       },
