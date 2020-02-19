@@ -42,27 +42,6 @@ const ImageAnnotator = ({
     setRealAnnotations(annotations);
   }, [annotations]);
 
-  // const onAnnotationsChange = (updatedAnnotations: IAnnotation[]) => {
-  //   if (!editCallbacks) {
-  //     return;
-  //   }
-  //   if (updatedAnnotations.length > annotations.length) {
-  //     const keys = new Set(annotations.map(el => el.id));
-  //     updatedAnnotations
-  //       .filter(el => !keys.has(el.id))
-  //       .forEach(el => editCallbacks.onCreate(el));
-  //   } else if (updatedAnnotations.length < annotations.length) {
-  //     const updatedKeys = new Set(updatedAnnotations.map(el => el.id));
-  //     annotations
-  //       .filter(el => !updatedKeys.has(el.id))
-  //       .forEach(el => editCallbacks.onDelete(el));
-  //   } else {
-  //     annotations.forEach(annotation => {
-  //       editCallbacks.onChange(annotation);
-  //     });
-  //   }
-  // };
-
   const onAnnotationSelect = (id: string | null) => {
     if (!onSelect) {
       return;

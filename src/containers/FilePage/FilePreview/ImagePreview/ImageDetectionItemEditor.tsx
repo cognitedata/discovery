@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Input, Button, Tag } from 'antd';
 import AssetSelect from 'components/AssetSelect';
 import { CogniteDetection } from 'utils/detectionApi';
 import styled from 'styled-components';
+import { useSelector } from 'utils/ReduxUtils';
 import { PendingDetection } from './ImageDetectionPreview';
-import { useSelector } from '../../../../utils/ReduxUtils';
 
 const WrappedCard = styled(Card)`
   && {
@@ -45,6 +45,12 @@ const ImageDetectionItemEditor = ({
 
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setLabel(detection.label);
+    setDescription(detection.description);
+    setAssetIds(detection.assetIds);
+  }, [detection]);
+
   const isNewDetection = Number.isNaN(Number(detection.id));
 
   if (editable) {
@@ -80,7 +86,7 @@ const ImageDetectionItemEditor = ({
               setLoading(false);
             }}
           >
-            {isNewDetection ? 'Add Detection' : 'Edit Detection'}
+            {isNewDetection ? 'Add Detection' : 'Save Changes'}
           </Button>
           <Button icon="delete" onClick={() => onDeleteDetection()} />
         </div>
