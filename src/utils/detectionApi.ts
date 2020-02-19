@@ -360,30 +360,31 @@ class DetectionMapper {
     };
     (eventPatch as EventPatchHack).update.subtype = change.update.label;
     if (change.update.metadata) {
-      Object.assign(eventPatch.update.metadata, change.update.metadata);
-      const mapper = await this.getMetadataMapper(
-        eventPatch.update.metadata,
-        async () => {
-          if (this.oldMetadataRequired(change)) {
-            return (
-              await this.sdk.events.retrieve([{ id: internalId, externalId }])
-            )[0].metadata;
-          }
-          return {};
-        }
-      );
-      eventPatch.update.metadata = mapper
-        .add(this.key('box'), () =>
-          this.boundingBoxPatchToStringPatch(change.update.box)
-        )
-        .add(this.key('file_external_id'), () => change.update.fileExternalId)
-        .add(this.key('manually_verified'), () =>
-          this.manualVerificationPatchToStringPatch(
-            change.update.manualVerificationState
-          )
-        )
-        .get();
+      eventPatch.update.metadata = change.update.metadata;
     }
+    const mapper = await this.getMetadataMapper(
+      eventPatch.update.metadata,
+      async () => {
+        if (this.oldMetadataRequired(change)) {
+          return (
+            await this.sdk.events.retrieve([{ id: internalId, externalId }])
+          )[0].metadata;
+        }
+        return {};
+      }
+    );
+    eventPatch.update.metadata = mapper
+      .add(this.key('box'), () =>
+        this.boundingBoxPatchToStringPatch(change.update.box)
+      )
+      .add(this.key('file_external_id'), () => change.update.fileExternalId)
+      .add(this.key('manually_verified'), () =>
+        this.manualVerificationPatchToStringPatch(
+          change.update.manualVerificationState
+        )
+      )
+      .get();
+
     return internalId
       ? { id: internalId, ...eventPatch }
       : { externalId, ...eventPatch };

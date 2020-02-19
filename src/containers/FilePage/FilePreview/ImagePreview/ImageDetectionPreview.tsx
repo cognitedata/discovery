@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { IAnnotation, IRectShapeData } from 'react-picture-annotation';
 import { FilesMetadata } from '@cognite/sdk';
 import { sdk } from 'utils/SDK';
+import { message } from 'antd';
 import { fetchAssets } from '../../../../modules/assets';
 import {
   DetectionsAPI,
@@ -193,6 +194,8 @@ const ImageDetectionPreview = ({ filePreviewUrl, file }: Props) => {
           return prev.concat([el]);
         }, [] as CogniteDetection[])
       );
+
+      message.success('Detection Updated');
     }
 
     // load missing asset information

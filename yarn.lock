@@ -11837,9 +11837,9 @@ react-pdf@^4.1.0:
     pdfjs-dist "2.1.266"
     prop-types "^15.6.2"
 
-react-picture-annotation@dlcognite/react-picture-annotation#86836e2ff786ec63c0580ac7a7b8fde8ae019fb2:
+react-picture-annotation@dlcognite/react-picture-annotation#e565081:
   version "0.0.0-development"
-  resolved "https://codeload.github.com/dlcognite/react-picture-annotation/tar.gz/86836e2ff786ec63c0580ac7a7b8fde8ae019fb2"
+  resolved "https://codeload.github.com/dlcognite/react-picture-annotation/tar.gz/e565081d8b455581c2406a87e3fb9b65f120399c"
   dependencies:
     "@storybook/storybook-deployer" "^2.8.1"
     prop-types "^15.7.2"
