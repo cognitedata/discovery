@@ -48,6 +48,11 @@ const Wrapper = styled.div`
   overflow: hidden;
   background-repeat: no-repeat;
   background-size: contain;
+`;
+
+const StyledPDFViewer = styled(Document)`
+  flex: 1;
+  height: 100%;
 
   && .current {
     background-color: #dfdfdf;
@@ -56,17 +61,19 @@ const Wrapper = styled.div`
     height: 100%;
     width: 100%;
   }
-`;
 
-const StyledPDFViewer = styled(Document)`
-  flex: 1;
-  height: 100%;
   && {
     position: relative;
     overflow: scroll;
     display: flex;
     background: #fafafa;
     align-items: center;
+  }
+
+  .react-pdf__Page {
+    overflow: scroll;
+    width: 100%;
+    height: 100%;
   }
 
   .react-pdf__message {

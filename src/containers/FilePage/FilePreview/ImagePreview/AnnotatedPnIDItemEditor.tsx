@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Button, Badge } from 'antd';
+import { Card, Input, Button, Tag } from 'antd';
 import AssetSelect from 'components/AssetSelect';
 import styled from 'styled-components';
 import { useSelector } from '../../../../utils/ReduxUtils';
@@ -15,9 +15,17 @@ const WrappedCard = styled(Card)`
     & > * {
       margin-left: 6px;
     }
-    & > *:first-child() {
+    & > *:nth-child(1) {
       margin-left: 0px;
     }
+  }
+  h4 {
+    margin-bottom: 0px;
+  }
+
+  .ant-tag {
+    margin-bottom: 4px;
+    white-space: normal;
   }
 `;
 
@@ -86,19 +94,16 @@ const AnnotatedPnIDItemEditor = ({
   }
   return (
     <WrappedCard>
-      <h4>
-        {annotation.assetId && (
-          <Badge
-            key={annotation.assetId}
-            text={
-              assetsMap[annotation.assetId]
-                ? assetsMap[annotation.assetId].name
-                : 'Loading...'
-            }
-          />
-        )}
-        {label}
-      </h4>
+      {annotation.assetId && (
+        <Tag key={annotation.assetId}>
+          Asset:{' '}
+          {assetsMap[annotation.assetId]
+            ? assetsMap[annotation.assetId].name
+            : 'Loading...'}
+        </Tag>
+      )}
+
+      <h4>{label}</h4>
     </WrappedCard>
   );
 };
