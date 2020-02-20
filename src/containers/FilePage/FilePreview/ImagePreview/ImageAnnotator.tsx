@@ -62,6 +62,9 @@ const ImageAnnotator = ({
           <Button onClick={() => setEditable(!editable)}>
             {editable ? 'Finish Editing' : 'Edit Annotations'}
           </Button>
+          <Button onClick={() => console.log(realAnnotations)}>
+            Console Log Annotations
+          </Button>
         </Buttons>
       )}
       <AutoSizer>
