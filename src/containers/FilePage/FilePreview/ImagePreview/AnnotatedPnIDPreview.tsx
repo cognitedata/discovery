@@ -191,7 +191,7 @@ const AnnotatedPnIDPreview = ({ filePreviewUrl, file }: Props) => {
   };
 
   const onDeleteAnnotation = async (annotation: IAnnotation) => {
-    if (!canEditEvents(true) || !canEditRelationships(true)) {
+    if (!canEditEvents(true)) {
       return;
     }
 
@@ -203,7 +203,17 @@ const AnnotatedPnIDPreview = ({ filePreviewUrl, file }: Props) => {
         pendingPnidAnnotations.filter(el => el.id !== annotation.id)
       );
     } else {
-      message.info('Coming Soon');
+      const pnidIndex = pnidAnnotations.findIndex(
+        el => `${el.id}` === annotation.id
+      );
+      if (pnidIndex > -1) {
+        pnidApi.deleteAnnotations([pnidAnnotations[pnidIndex]]);
+        setPnidAnnotations(
+          pnidAnnotations
+            .slice(0, pnidIndex)
+            .concat(pnidAnnotations.slice(pnidIndex + 1))
+        );
+      }
     }
   };
 
@@ -262,6 +272,26 @@ const AnnotatedPnIDPreview = ({ filePreviewUrl, file }: Props) => {
       ])
     );
   };
+
+  // const onDeleteAnnotation = (annotation: IAnnotation) => {
+  //   if (pendingPnidAnnotations.find(el => el.id === annotation.id)) {
+  //     setPendingPnidAnnotations(
+  //       pendingPnidAnnotations.filter(el => el.id !== annotation.id)
+  //     );
+  //   } else {
+  //     // const pnidIndex = pnidAnnotations.find(
+  //     //   el => `${el.id}` === annotation.id
+  //     // );
+  //   //   if (pnidIndex !== -1) {
+  //   //     pnidApi.deleteAnnotations([]);
+  //   //     setPnidAnnotations(
+  //   //       pnidAnnotations
+  //   //         .slice(0, pnidIndex)
+  //   //         .concat(pnidAnnotations.slice(pnidIndex + 1))
+  //   //     );
+  //   //   }
+  //   // }
+  // };
 
   const renderAnnotationOverview = () => {
     if (showDetails) {
@@ -350,7 +380,7 @@ const AnnotatedPnIDPreview = ({ filePreviewUrl, file }: Props) => {
         annotations={annotations}
         drawLabel={false}
         editCallbacks={{
-          onDelete: () => {},
+          onDelete: onDeleteAnnotation,
           onCreate: onCreateAnnotation,
           onUpdate: onUpdateAnnotation,
         }}

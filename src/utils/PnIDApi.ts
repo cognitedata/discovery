@@ -1,4 +1,10 @@
-import { CogniteClient, ExternalEvent } from '@cognite/sdk';
+import {
+  CogniteClient,
+  ExternalEvent,
+  CogniteEvent,
+  InternalId,
+  ExternalId,
+} from '@cognite/sdk';
 import { Relationship, postWithCursor } from '../modules/relationships';
 import { canEditRelationships, canReadRelationships } from './PermissionsUtils';
 
@@ -70,6 +76,27 @@ export class PnIDApi {
     })) as PnIDAnnotation[];
   };
 
+  public deleteAnnotations = async (annotations: PnIDAnnotation[]) => {
+    await this.sdk.post(
+      `/api/playground/projects/${this.sdk.project}/relationships/delete`,
+      {
+        data: {
+          items: annotations.reduce(
+            (prev, el) =>
+              prev.concat([
+                { externalId: `pnid-event-${el.id}-file-${el.fileId}` },
+                ...(el.assetId
+                  ? [{ externalId: `pnid-asset-${el.assetId}-event-${el.id}` }]
+                  : []),
+              ]),
+            [] as ExternalId[]
+          ),
+        },
+      }
+    );
+    await this.sdk.events.delete(annotations.map(el => ({ id: el.id })));
+  };
+
   private fetchAnnotationsFromRelationships = async (
     fileId: number
   ): Promise<PnIDAnnotation[]> => {
@@ -85,12 +112,13 @@ export class PnIDApi {
       }
     );
 
-    const eventIds: number[] = relationships.reduce((prev, el) => {
+    const eventIds = new Set<number>();
+
+    relationships.forEach(el => {
       if (el.source.resource === 'event') {
-        prev.push(Number(el.source.resourceId));
+        eventIds.add(Number(el.source.resourceId));
       }
-      return prev;
-    }, [] as number[]);
+    });
 
     const eventAssetMap: { [key: number]: number } = relationships.reduce(
       (prev, el) => {
@@ -103,10 +131,24 @@ export class PnIDApi {
       {} as { [key: number]: number }
     );
 
-    const events =
-      eventIds.length > 0
-        ? await this.sdk.events.retrieve(eventIds.map(id => ({ id })))
-        : [];
+    let events: CogniteEvent[] = [];
+
+    try {
+      events =
+        eventIds.size > 0
+          ? await this.sdk.events.retrieve([...eventIds].map(id => ({ id })))
+          : [];
+    } catch (ex) {
+      ex.errors.forEach((error: { missing?: InternalId[] }) => {
+        if (error.missing) {
+          error.missing.forEach((el: InternalId) => eventIds.delete(el.id));
+        }
+      });
+      events =
+        eventIds.size > 0
+          ? await this.sdk.events.retrieve([...eventIds].map(id => ({ id })))
+          : [];
+    }
 
     return events.map(event => ({
       id: event.id,
