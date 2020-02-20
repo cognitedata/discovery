@@ -1,5 +1,6 @@
 import { CogniteClient, ExternalEvent } from '@cognite/sdk';
 import { Relationship, postWithCursor } from '../modules/relationships';
+import { canEditRelationships, canReadRelationships } from './PermissionsUtils';
 
 export type PnIDAnnotationType =
   | 'Model Generated'
@@ -35,11 +36,41 @@ export class PnIDApi {
     pendingAnnotations: PendingPnIDAnnotation[]
   ) => {
     const annotations = await this.annotationsToEvents(pendingAnnotations);
-    await this.annotationsToRelationships(annotations);
+    if (canEditRelationships(false)) {
+      await this.annotationsToRelationships(annotations);
+    }
     return annotations;
   };
 
   public fetchAnnotations = async (
+    fileId: number
+  ): Promise<PnIDAnnotation[]> => {
+    if (canReadRelationships(false)) {
+      return this.fetchAnnotationsFromRelationships(fileId);
+    }
+    const events = await this.sdk.events
+      .list({
+        filter: {
+          type: 'Cognite-P&ID-Contextualization',
+          metadata: {
+            fileId: `${fileId}`,
+          },
+        },
+      })
+      .autoPagingToArray({ limit: -1 });
+
+    return events.map(event => ({
+      id: event.id,
+      type: event.subtype,
+      label: event.description,
+      assetId: event.assetIds ? event.assetIds[0] : undefined,
+      boundingBox: JSON.parse(event.metadata!.bounding_box!),
+      version: Number(event.metadata!.version),
+      fileId,
+    })) as PnIDAnnotation[];
+  };
+
+  private fetchAnnotationsFromRelationships = async (
     fileId: number
   ): Promise<PnIDAnnotation[]> => {
     const {
@@ -72,7 +103,10 @@ export class PnIDApi {
       {} as { [key: number]: number }
     );
 
-    const events = await this.sdk.events.retrieve(eventIds.map(id => ({ id })));
+    const events =
+      eventIds.length > 0
+        ? await this.sdk.events.retrieve(eventIds.map(id => ({ id })))
+        : [];
 
     return events.map(event => ({
       id: event.id,
@@ -81,6 +115,7 @@ export class PnIDApi {
       assetId: eventAssetMap[event.id],
       boundingBox: JSON.parse(event.metadata!.bounding_box!),
       version: Number(event.metadata!.version),
+      fileId,
     })) as PnIDAnnotation[];
   };
 
@@ -91,9 +126,11 @@ export class PnIDApi {
       type: 'Cognite-P&ID-Contextualization',
       subtype: el.type,
       description: el.label,
+      assetIds: el.assetId ? [el.assetId] : undefined,
       metadata: {
         bounding_box: JSON.stringify(el.boundingBox),
         version: `${el.version}`,
+        fileId: `${el.fileId}`,
       },
       source: 'Discovery',
     }));

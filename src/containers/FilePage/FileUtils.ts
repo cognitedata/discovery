@@ -380,9 +380,13 @@ export const convertPDFtoInteractivePnID = async (
       annotations.map(el => ({ ...el, fileId: newFile.id }))
     );
 
+    if (callbackProgress) {
+      callbackProgress('Final Touches...');
+    }
+
     await setTimeout(() => {
       callbackResult(newFile);
-    }, 1000);
+    }, 3000);
   };
 
   await startParsingJob();
