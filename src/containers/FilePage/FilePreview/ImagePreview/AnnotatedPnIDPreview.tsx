@@ -380,7 +380,7 @@ const AnnotatedPnIDPreview = ({ filePreviewUrl, file }: Props) => {
         annotations={annotations}
         drawLabel={false}
         editCallbacks={{
-          onDelete: onDeleteAnnotation,
+          onDelete: () => {},
           onCreate: onCreateAnnotation,
           onUpdate: onUpdateAnnotation,
         }}
