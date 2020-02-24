@@ -13,6 +13,7 @@ const Buttons = styled.div`
 
 type Props = {
   filePreviewUrl: string;
+  drawLabel?: boolean;
   annotations: IAnnotation[];
   onSelect?: (annotation?: IAnnotation) => void;
   editCallbacks?: {
@@ -30,6 +31,7 @@ type Props = {
 
 const ImageAnnotator = ({
   filePreviewUrl,
+  drawLabel = true,
   annotations,
   onSelect,
   editCallbacks,
@@ -59,7 +61,11 @@ const ImageAnnotator = ({
     <>
       {editCallbacks && (
         <Buttons>
-          <Button onClick={() => setEditable(!editable)}>
+          <Button
+            type={editable ? 'primary' : 'default'}
+            icon={editable ? 'check' : 'edit'}
+            onClick={() => setEditable(!editable)}
+          >
             {editable ? 'Finish Editing' : 'Edit Annotations'}
           </Button>
         </Buttons>
@@ -67,6 +73,7 @@ const ImageAnnotator = ({
       <AutoSizer>
         {({ height, width }) => (
           <ReactPictureAnnotation
+            drawLabel={drawLabel}
             annotationData={realAnnotations}
             onChange={setRealAnnotations}
             onSelect={onAnnotationSelect}
