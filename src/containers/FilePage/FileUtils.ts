@@ -1,12 +1,12 @@
 import { FilesMetadata, Asset, UploadFileMetadataResponse } from '@cognite/sdk';
 import { sdk } from 'utils/SDK';
-import { trackUsage } from '../../utils/Metrics';
-import { GCSUploader } from '../../components/FileUploader';
+import { trackUsage } from 'utils/Metrics';
+import { GCSUploader } from 'components/FileUploader';
 import {
   canReadFiles,
   canEditFiles,
   canEditRelationships,
-} from '../../utils/PermissionsUtils';
+} from 'utils/PermissionsUtils';
 
 export const downloadFile = async (url: string) => {
   const response = await fetch(url);
@@ -178,7 +178,7 @@ export const detectAssetsInDocument = async (
   file: FilesMetadata,
   callbacks: {
     callbackProgress?: (progressString: string) => void;
-    callbackResult: (results: { name: string; page: number }[]) => void;
+    callbackResult: (results: string[]) => void;
     callbackError?: (error: any) => void;
   },
   selectedRootAssetId?: number
@@ -199,31 +199,48 @@ export const detectAssetsInDocument = async (
   try {
     trackUsage('FilePreview.DetectAsset', { fileId: file.id });
     const response = await sdk.post(
-      `/api/playground/projects/${sdk.project}/context/entity_extraction/extract`,
+      `/api/playground/projects/${sdk.project}/context/entity_extraction/extract_new`,
       {
         data: {
-          fileId: file.id,
+          fileIds: [file.id],
           entities: [...names],
         },
       }
     );
 
-    const foundEntities: { page: number; name: string }[] = [];
-    response.data.items.forEach(
-      (match: { entity: string; pages: number[] }) => {
-        const name = match.entity;
-        match.pages.forEach(page => {
-          foundEntities.push({ page, name });
-        });
+    const fetchJobStatus = async (jobId: number) => {
+      if (callbackProgress) {
+        callbackProgress('Detecting Assets');
       }
-    );
+      const jobResponse = await sdk.get(
+        `/api/playground/projects/${sdk.project}/context/entity_extraction/${jobId}`
+      );
 
-    foundEntities.sort((a, b) => {
-      if (a.page !== b.page) return a.page - b.page;
-      return a.name.localeCompare(b.name);
-    });
+      if (jobResponse.status !== 200) {
+        throw new Error('Unable to load job status');
+      } else if (
+        jobResponse.status !== 200 ||
+        jobResponse.data.status === 'Failed'
+      ) {
+        if (callbackError) {
+          callbackError('Unable to parse file for assets');
+        }
+      } else if (jobResponse.data.status === 'Completed') {
+        if (callbackProgress) {
+          callbackProgress('Processing Results');
+        }
 
-    callbackResult(foundEntities);
+        const foundEntities: string[] = jobResponse.data.items[0].entities;
+
+        callbackResult(foundEntities);
+      } else {
+        setTimeout(() => fetchJobStatus(response.data.jobId), 1000);
+      }
+    };
+
+    if (response.status === 200) {
+      setTimeout(() => fetchJobStatus(response.data.jobId), 1000);
+    }
   } catch (e) {
     if (callbackError) {
       callbackError('Unable to process document, please try again');
