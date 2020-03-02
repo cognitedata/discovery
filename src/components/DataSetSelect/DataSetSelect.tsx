@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Select, Popover } from 'antd';
-import { canReadTypes } from '../../utils/PermissionsUtils';
-import { useSelector, useDispatch } from '../../utils/ReduxUtils';
-import { list, selectAllDataSets, DataSet } from '../../modules/datasets';
+import { canReadDataSets } from 'utils/PermissionsUtils';
+import { useSelector, useDispatch } from 'utils/ReduxUtils';
+import { list, selectAllDataSets, DataSet } from 'modules/datasets';
 
 type Props = {
   onDataSetSelected: (ids: number[]) => void;
@@ -63,11 +63,11 @@ const DataSetSelect = ({
     dispatch(list());
   }, [dispatch]);
 
-  if (!canReadTypes(false)) {
+  if (!canReadDataSets(false)) {
     return (
       <Popover
-        title="Missing TypesAcl.READ"
-        content="Go to Console to enable access to TypesAcl.READ"
+        title="Missing DataSetAcl.READ"
+        content="Go to Console to enable access to DataSetAcl.READ"
       >
         <Select style={style} disabled />
       </Popover>

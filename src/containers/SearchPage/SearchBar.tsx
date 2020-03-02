@@ -6,7 +6,7 @@ import { push } from 'connected-react-router';
 import styled from 'styled-components';
 import AssetSelect from 'components/AssetSelect';
 import { InternalId } from '@cognite/sdk';
-import { RootState } from '../../reducers/index';
+import { RootState } from 'reducers/index';
 import {
   SearchState,
   updateAssetFilter,
@@ -14,9 +14,9 @@ import {
   updateTimeseriesFilter,
   updateFileFilter,
   updateSearchByAnnotation,
-} from '../../modules/search';
+} from 'modules/search';
+import { trackUsage } from 'utils/Metrics';
 import { SearchPageTabKeys } from './SearchPage';
-import { trackUsage } from '../../utils/Metrics';
 import SearchBarTypingFilters from './SearchBarTypingFilter';
 import SearchBarAnnotationsFilter from './SearchBarAnnotationsFilter';
 import SearchBarDataSetFilter from './SearchBarDataSetFilter';

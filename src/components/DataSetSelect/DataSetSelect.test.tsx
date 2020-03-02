@@ -110,7 +110,7 @@ it('can select multiple option', () => {
 
 it('if typesAcl is missing', () => {
   // should be disabled
-  jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(false);
+  jest.spyOn(PermissionsUtils, 'canReadDataSets').mockReturnValue(false);
   // Test first render and effect
   const mockFunction = jest.fn();
   const container = mount(
@@ -129,7 +129,7 @@ it('if typesAcl is missing', () => {
 });
 
 it('if disabled', () => {
-  jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(true);
+  jest.spyOn(PermissionsUtils, 'canReadDataSets').mockReturnValue(true);
   // Test first render and effect
   const mockFunction = jest.fn();
   const container = mount(

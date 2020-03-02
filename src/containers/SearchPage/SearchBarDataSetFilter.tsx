@@ -1,8 +1,8 @@
 import React from 'react';
-import { BetaTag } from '../../components/BetaWarning';
-import { useDispatch, useSelector } from '../../utils/ReduxUtils';
-import { updateAssetFilter } from '../../modules/search';
-import DataSetSelect from '../../components/DataSetSelect/DataSetSelect';
+import { BetaTag } from 'components/BetaWarning';
+import { useDispatch, useSelector } from 'utils/ReduxUtils';
+import { updateAssetFilter } from 'modules/search';
+import DataSetSelect from 'components/DataSetSelect/DataSetSelect';
 
 const SearchBarDataSetFilter = ({
   disabled = false,

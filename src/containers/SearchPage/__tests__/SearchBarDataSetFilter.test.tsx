@@ -7,9 +7,9 @@ import * as SearchActions from 'modules/search';
 import { configure, mount } from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import DataSetSelect from 'components/DataSetSelect';
+import { SearchState } from 'modules/search';
+import { DataSetsState } from 'modules/datasets';
 import SearchBarDataSetFilter from '../SearchBarDataSetFilter';
-import { SearchState } from '../../../modules/search';
-import { DataSetsState } from '../../../modules/datasets';
 
 jest.mock('utils/PermissionsUtils');
 jest.mock('utils/Metrics');
