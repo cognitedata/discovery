@@ -190,6 +190,10 @@ class FilePreview extends React.Component<Props, State> {
 
   get type(): FileType {
     const { mimeType } = this.props.file!;
+    const extension = this.props.file!.name.split('.').pop() || '';
+    if (['png', 'jpg', 'jpeg'].indexOf(extension.toLowerCase()) !== -1) {
+      return 'images';
+    }
     if (!mimeType) {
       return 'all';
     }
