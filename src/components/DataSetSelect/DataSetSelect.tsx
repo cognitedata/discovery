@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Select, Popover } from 'antd';
 import { canReadTypes } from '../../utils/PermissionsUtils';
 import { useSelector, useDispatch } from '../../utils/ReduxUtils';
-import { fetchDataSets, getAllDataSets, DataSet } from '../../modules/datasets';
+import { list, selectAllDataSets, DataSet } from '../../modules/datasets';
 
 type Props = {
   onDataSetSelected: (ids: number[]) => void;
@@ -20,7 +20,7 @@ const DataSetSelect = ({
   selectedDataSetIds,
 }: Props) => {
   const dispatch = useDispatch();
-  const datasets = useSelector(getAllDataSets);
+  const datasets = useSelector(selectAllDataSets);
   const [searchResults, setSearchResults] = useState([] as DataSet[]);
   const [currentSelection, setCurrentSelection] = useState([] as number[]);
   const [query, setQuery] = useState('');
@@ -60,7 +60,7 @@ const DataSetSelect = ({
   }, [selectedDataSetIds]);
 
   useEffect(() => {
-    dispatch(fetchDataSets());
+    dispatch(list());
   }, [dispatch]);
 
   if (!canReadTypes(false)) {

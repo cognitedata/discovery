@@ -64,7 +64,7 @@ export default function reducer(
 }
 
 // Functions
-export function fetchDataSets() {
+export function list() {
   return async (
     dispatch: ThunkDispatch<
       any,
@@ -98,7 +98,7 @@ export function fetchDataSets() {
   };
 }
 
-export function fetchDataSetByIds(typeIds: number[]) {
+export function retrieve(typeIds: number[]) {
   return async (
     dispatch: ThunkDispatch<
       any,
@@ -135,7 +135,7 @@ export function fetchDataSetByIds(typeIds: number[]) {
 }
 
 // Selectors
-export const getAllDataSets = createSelector(
+export const selectAllDataSets = createSelector(
   (state: RootState) => state.datasets.items,
   datasets => Object.values(datasets)
 );
