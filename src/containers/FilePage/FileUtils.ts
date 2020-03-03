@@ -1,5 +1,6 @@
 import { FilesMetadata, Asset, UploadFileMetadataResponse } from '@cognite/sdk';
 import { sdk } from 'utils/SDK';
+import mime from 'mime-types';
 import { trackUsage } from '../../utils/Metrics';
 import { GCSUploader } from '../../components/FileUploader';
 import {
@@ -230,3 +231,5 @@ export const detectAssetsInDocument = async (
     }
   }
 };
+
+export const getMIMEType = (fileURI: string) => mime.lookup(fileURI);
