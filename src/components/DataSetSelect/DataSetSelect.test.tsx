@@ -8,55 +8,41 @@ import * as PermissionsUtils from 'utils/PermissionsUtils';
 import { configure, mount } from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import { Select, Popover } from 'antd';
-import TypeSelect from './TypeSelect';
+import DataSetSelect from './DataSetSelect';
 
 jest.mock('utils/PermissionsUtils');
 
 configure({ adapter: new Adapter() });
 
 const initialStoreState: Partial<RootState> = {
-  types: {
+  datasets: {
     items: {
-      '1729121837401342': {
-        externalId: 'sample-type',
-        name: "David's Type",
-        description: 'testing for david',
-        properties: [],
-        id: 1729121837401342,
-        version: 1,
-        createdTime: '2019-11-22T03:14:43.029Z',
-        lastUpdatedTime: '2019-11-22T03:14:43.029Z',
-      },
-      '4989650985264432': {
-        externalId: 'real',
-        name: 'Real',
-        properties: [
-          {
-            propertyId: 'source',
-            name: 'source',
-            description: 'source of type',
-            type: 'string',
-          },
-          {
-            propertyId: 'timeseries1',
-            name: 'time series 1',
-            description: 'Time series reference',
-            type: 'timeseriesRef',
-          },
-        ],
-        parentType: {
-          id: 1426226854338845,
-          version: 3,
-          externalId: 'number',
+      4448195087284397: {
+        externalId: '693ad162-df1f-408b-87c7-e0ffdaa5e7cf',
+        name: 'Entity Matcher Output',
+        description: 'Made in Data Studio 693ad162-df1f-408b-87c7-e0ffdaa5e7cf',
+        metadata: {
+          COGNITE__SOURCE: 'data-studio',
         },
-        id: 4989650985264432,
-        version: 2,
-        createdTime: '2020-01-20T09:59:07.508Z',
-        lastUpdatedTime: '2020-01-20T09:59:07.508Z',
+        writeProtected: false,
+        id: 4448195087284397,
+        createdTime: 1576745394155,
+        lastUpdatedTime: 1576745394155,
+      },
+      4610653613010508: {
+        externalId: '4223e48f-57f7-4823-aec1-9a6647512101',
+        name: 'Entity Matcher Output',
+        description: 'Made in Data Studio 4223e48f-57f7-4823-aec1-9a6647512101',
+        metadata: {
+          COGNITE__SOURCE: 'data-studio',
+        },
+        writeProtected: false,
+        id: 4610653613010508,
+        createdTime: 1576745154021,
+        lastUpdatedTime: 1576745154021,
       },
     },
     error: false,
-    byAssetId: {},
   },
 };
 
@@ -66,14 +52,14 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('Type Select', () => {
+describe('Data Set Select', () => {
   it('can select option', () => {
     // Test first render and effect
     const mockFunction = jest.fn();
     const container = mount(
       <Provider store={store}>
         <MemoryRouter>
-          <TypeSelect onTypeSelected={mockFunction} />
+          <DataSetSelect onDataSetSelected={mockFunction} />
         </MemoryRouter>
       </Provider>
     );
@@ -86,7 +72,9 @@ describe('Type Select', () => {
     const options = container.find('li[role="option"]');
     expect(options.length).toBe(2);
 
-    expect(options.at(0).text()).toEqual("David's Type(1729121837401342)");
+    expect(options.at(0).text()).toEqual(
+      'Entity Matcher Output(4448195087284397)'
+    );
 
     options.at(0).simulate('click');
     expect(mockFunction).toBeCalled();
@@ -101,7 +89,7 @@ describe('Type Select', () => {
     const container = mount(
       <Provider store={store}>
         <MemoryRouter>
-          <TypeSelect multiple onTypeSelected={callback} />
+          <DataSetSelect multiple onDataSetSelected={callback} />
         </MemoryRouter>
       </Provider>
     );
@@ -123,13 +111,13 @@ describe('Type Select', () => {
 
   it('if typesAcl is missing', () => {
     // should be disabled
-    jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(false);
+    jest.spyOn(PermissionsUtils, 'canReadDataSets').mockReturnValue(false);
     // Test first render and effect
     const mockFunction = jest.fn();
     const container = mount(
       <Provider store={store}>
         <MemoryRouter>
-          <TypeSelect onTypeSelected={mockFunction} />
+          <DataSetSelect onDataSetSelected={mockFunction} />
         </MemoryRouter>
       </Provider>
     );
@@ -142,13 +130,13 @@ describe('Type Select', () => {
   });
 
   it('if disabled', () => {
-    jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(true);
+    jest.spyOn(PermissionsUtils, 'canReadDataSets').mockReturnValue(true);
     // Test first render and effect
     const mockFunction = jest.fn();
     const container = mount(
       <Provider store={store}>
         <MemoryRouter>
-          <TypeSelect disabled onTypeSelected={mockFunction} />
+          <DataSetSelect disabled onDataSetSelected={mockFunction} />
         </MemoryRouter>
       </Provider>
     );

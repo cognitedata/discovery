@@ -415,11 +415,7 @@ class SearchPage extends React.Component<Props, State> {
       });
       items = await sdk.assets.retrieve([...assetIds].map(id => ({ id })));
     } else {
-      if (
-        assetFilter.extendedFilter &&
-        assetFilter.extendedFilter.types &&
-        assetFilter.extendedFilter.types.length > 0
-      ) {
+      if (assetFilter.extendedFilter) {
         try {
           const response = await sdk.post(
             `/api/playground/projects/${sdk.project}/assets/search`,

@@ -10,6 +10,7 @@ import threed from '../modules/threed';
 import assetMappings from '../modules/assetmappings';
 import app from '../modules/app';
 import search from '../modules/search';
+import datasets from '../modules/datasets';
 import relationships from '../modules/relationships';
 
 const createRootReducer = (history: History) =>
@@ -24,6 +25,7 @@ const createRootReducer = (history: History) =>
     app,
     relationships,
     search,
+    datasets,
     router: connectRouter(history),
   });
 
