@@ -21,16 +21,20 @@ import { RootState } from 'reducers/index';
 import { sdk } from 'utils/SDK';
 import { trackUsage } from 'utils/Metrics';
 import LoadingWrapper from 'components/LoadingWrapper';
-import { fetchFile } from 'modules/files';
+import { fetchFile, updateFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
-import PNIDViewer from './PNIDViewer';
-import ImageAnnotator from './ImageAnnotator';
-import { convertPDFtoPNID, detectAssetsInDocument } from '../FileUtils';
 import {
   canReadFiles,
   canEditFiles,
   canReadAssets,
-} from '../../../utils/PermissionsUtils';
+} from 'utils/PermissionsUtils';
+import PNIDViewer from './PNIDViewer';
+import ImageAnnotator from './ImageAnnotator';
+import {
+  convertPDFtoPNID,
+  detectAssetsInDocument,
+  getMIMEType,
+} from '../FileUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -133,11 +137,12 @@ type OrigProps = {
 };
 
 type Props = {
+  file?: FilesMetadata;
   assetId?: number;
   assets: AssetsState;
   threed: ThreeDState;
   fetchFile: typeof fetchFile;
-  file?: FilesMetadata;
+  updateFile: typeof updateFile;
 } & OrigProps;
 
 type State = {
@@ -175,6 +180,8 @@ class FilePreview extends React.Component<Props, State> {
     });
     if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
+    } else {
+      this.showMimeTypeCheck();
     }
     this.fetchFileUrl();
   }
@@ -182,6 +189,11 @@ class FilePreview extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
+    } else if (
+      (!prevProps.file && this.props.file) ||
+      (prevProps.file && prevProps.file.id !== this.props.file.id)
+    ) {
+      this.showMimeTypeCheck();
     }
     if (this.props.fileId !== prevProps.fileId) {
       this.fetchFileUrl();
@@ -228,6 +240,39 @@ class FilePreview extends React.Component<Props, State> {
           });
         }
       );
+    }
+  };
+
+  showMimeTypeCheck = async () => {
+    if (this.props.file) {
+      const { name, mimeType, id } = this.props.file;
+      const detectedMimeType = getMIMEType(name);
+      if (
+        detectedMimeType &&
+        mimeType !== detectedMimeType &&
+        canEditFiles(false)
+      ) {
+        notification.open({
+          message: 'Fix Mime Type',
+          description: `The current file type is ${mimeType}, however, based on the name, the file should be typed as ${detectedMimeType}`,
+          btn: (
+            <Button
+              type="primary"
+              size="small"
+              onClick={async () => {
+                await this.props.updateFile({
+                  id,
+                  update: { mimeType: { set: detectedMimeType } },
+                });
+                notification.close('fix-mimetype');
+              }}
+            >
+              Confirm Change
+            </Button>
+          ),
+          key: 'fix-mimetype',
+        });
+      }
     }
   };
 
@@ -683,6 +728,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       fetchFile,
+      updateFile,
     },
     dispatch
   );
