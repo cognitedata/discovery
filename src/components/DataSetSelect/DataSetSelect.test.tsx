@@ -5,14 +5,12 @@ import { Provider } from 'react-redux';
 import { RootState } from 'reducers';
 import { MemoryRouter } from 'react-router-dom';
 import * as PermissionsUtils from 'utils/PermissionsUtils';
-import { configure, mount } from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
+import { mount } from 'enzyme';
 import { Select, Popover } from 'antd';
 import DataSetSelect from './DataSetSelect';
 
 jest.mock('utils/PermissionsUtils');
 
-configure({ adapter: new Adapter() });
 
 const initialStoreState: Partial<RootState> = {
   datasets: {

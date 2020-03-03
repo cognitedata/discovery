@@ -4,8 +4,7 @@ import thunk from 'redux-thunk';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import * as SearchActions from 'modules/search';
-import { configure, mount } from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
+import { mount } from 'enzyme';
 import DataSetSelect from 'components/DataSetSelect';
 import { SearchState } from 'modules/search';
 import { DataSetsState } from 'modules/datasets';
@@ -13,8 +12,6 @@ import SearchBarDataSetFilter from '../SearchBarDataSetFilter';
 
 jest.mock('utils/PermissionsUtils');
 jest.mock('utils/Metrics');
-
-configure({ adapter: new Adapter() });
 
 const initialStoreState: any = {
   datasets: {
