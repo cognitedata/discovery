@@ -57,47 +57,51 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-it('can select option', () => {
-  const mockFunction = jest.fn();
-  jest.spyOn(SearchActions, 'updateAssetFilter').mockReturnValue(mockFunction);
-  // Test first render and effect
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <SearchBarDataSetFilter />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(DataSetSelect);
+describe('Search Bar - Data Set Filter', () => {
+  it('can select option', () => {
+    const mockFunction = jest.fn();
+    jest
+      .spyOn(SearchActions, 'updateAssetFilter')
+      .mockReturnValue(mockFunction);
+    // Test first render and effect
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <SearchBarDataSetFilter />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(DataSetSelect);
 
-  // Test second render and effect
-  expect(container.find('li[role="option"]').length).toBe(0);
+    // Test second render and effect
+    expect(container.find('li[role="option"]').length).toBe(0);
 
-  wrapper.simulate('click');
-  const options = container.find('li[role="option"]');
-  expect(options.length).toBe(2);
+    wrapper.simulate('click');
+    const options = container.find('li[role="option"]');
+    expect(options.length).toBe(2);
 
-  // choose an item
-  options.at(0).simulate('click');
-  expect(mockFunction).toBeCalled();
-  expect(wrapper.text()).toContain('Entity Matcher');
-});
+    // choose an item
+    options.at(0).simulate('click');
+    expect(mockFunction).toBeCalled();
+    expect(wrapper.text()).toContain('Entity Matcher');
+  });
 
-it('cannot select option if disabled', () => {
-  // Test first render and effect
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <SearchBarDataSetFilter disabled />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(DataSetSelect);
+  it('cannot select option if disabled', () => {
+    // Test first render and effect
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <SearchBarDataSetFilter disabled />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(DataSetSelect);
 
-  // Test second render and effect
-  expect(container.find('li[role="option"]').length).toBe(0);
+    // Test second render and effect
+    expect(container.find('li[role="option"]').length).toBe(0);
 
-  wrapper.simulate('click');
-  const options = container.find('li[role="option"]');
-  expect(options.length).toBe(0);
+    wrapper.simulate('click');
+    const options = container.find('li[role="option"]');
+    expect(options.length).toBe(0);
+  });
 });

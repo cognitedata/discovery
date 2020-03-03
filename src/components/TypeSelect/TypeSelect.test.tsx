@@ -66,91 +66,93 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-it('can select option', () => {
-  // Test first render and effect
-  const mockFunction = jest.fn();
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <TypeSelect onTypeSelected={mockFunction} />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(Select);
+describe('Type Select', () => {
+  it('can select option', () => {
+    // Test first render and effect
+    const mockFunction = jest.fn();
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <TypeSelect onTypeSelected={mockFunction} />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(Select);
 
-  // Test second render and effect
-  expect(container.find('li[role="option"]').length).toBe(0);
+    // Test second render and effect
+    expect(container.find('li[role="option"]').length).toBe(0);
 
-  wrapper.simulate('click');
-  const options = container.find('li[role="option"]');
-  expect(options.length).toBe(2);
+    wrapper.simulate('click');
+    const options = container.find('li[role="option"]');
+    expect(options.length).toBe(2);
 
-  expect(options.at(0).text()).toEqual("David's Type(1729121837401342)");
+    expect(options.at(0).text()).toEqual("David's Type(1729121837401342)");
 
-  options.at(0).simulate('click');
-  expect(mockFunction).toBeCalled();
-});
+    options.at(0).simulate('click');
+    expect(mockFunction).toBeCalled();
+  });
 
-it('can select multiple option', () => {
-  // Test first render and effect
-  let selectedIds: number[] = [];
-  const callback = (ids: number[]) => {
-    selectedIds = ids;
-  };
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <TypeSelect multiple onTypeSelected={callback} />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(Select);
+  it('can select multiple option', () => {
+    // Test first render and effect
+    let selectedIds: number[] = [];
+    const callback = (ids: number[]) => {
+      selectedIds = ids;
+    };
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <TypeSelect multiple onTypeSelected={callback} />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(Select);
 
-  // Test second render and effect
-  wrapper.simulate('click');
-  container
-    .find('li[role="option"]')
-    .at(0)
-    .simulate('click');
-  wrapper.simulate('click');
-  container
-    .find('li[role="option"]')
-    .at(1)
-    .simulate('click');
-  expect(selectedIds.length).toEqual(2);
-});
+    // Test second render and effect
+    wrapper.simulate('click');
+    container
+      .find('li[role="option"]')
+      .at(0)
+      .simulate('click');
+    wrapper.simulate('click');
+    container
+      .find('li[role="option"]')
+      .at(1)
+      .simulate('click');
+    expect(selectedIds.length).toEqual(2);
+  });
 
-it('if typesAcl is missing', () => {
-  // should be disabled
-  jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(false);
-  // Test first render and effect
-  const mockFunction = jest.fn();
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <TypeSelect onTypeSelected={mockFunction} />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(Select);
+  it('if typesAcl is missing', () => {
+    // should be disabled
+    jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(false);
+    // Test first render and effect
+    const mockFunction = jest.fn();
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <TypeSelect onTypeSelected={mockFunction} />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(Select);
 
-  // Test second render and effect
-  wrapper.simulate('click');
-  const options = container.find(Popover);
-  expect(options.text()).toBeDefined();
-});
+    // Test second render and effect
+    wrapper.simulate('click');
+    const options = container.find(Popover);
+    expect(options.text()).toBeDefined();
+  });
 
-it('if disabled', () => {
-  jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(true);
-  // Test first render and effect
-  const mockFunction = jest.fn();
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <TypeSelect disabled onTypeSelected={mockFunction} />
-      </MemoryRouter>
-    </Provider>
-  );
-  expect(container.find(Popover).exists()).toEqual(false);
-  expect(container.find('li[role="option"]').exists()).toEqual(false);
+  it('if disabled', () => {
+    jest.spyOn(PermissionsUtils, 'canReadTypes').mockReturnValue(true);
+    // Test first render and effect
+    const mockFunction = jest.fn();
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <TypeSelect disabled onTypeSelected={mockFunction} />
+        </MemoryRouter>
+      </Provider>
+    );
+    expect(container.find(Popover).exists()).toEqual(false);
+    expect(container.find('li[role="option"]').exists()).toEqual(false);
+  });
 });

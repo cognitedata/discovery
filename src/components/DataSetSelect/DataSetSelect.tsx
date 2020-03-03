@@ -40,17 +40,14 @@ const DataSetSelect = ({
   };
 
   useEffect(() => {
-    const doSearch = async () => {
-      setSearchResults(
-        datasets.filter(
-          el =>
-            !query ||
-            query.length === 0 ||
-            el.name.toLowerCase().indexOf(query.toLowerCase()) > -1
-        )
-      );
-    };
-    doSearch();
+    setSearchResults(
+      datasets.filter(
+        el =>
+          !query ||
+          query.length === 0 ||
+          el.name.toLowerCase().indexOf(query.toLowerCase()) > -1
+      )
+    );
   }, [query, datasets]);
 
   useEffect(() => {

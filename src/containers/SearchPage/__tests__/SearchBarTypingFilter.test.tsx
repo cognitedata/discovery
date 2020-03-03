@@ -71,47 +71,51 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-it('can select option', () => {
-  const mockFunction = jest.fn();
-  jest.spyOn(SearchActions, 'updateAssetFilter').mockReturnValue(mockFunction);
-  // Test first render and effect
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <SearchBarTypingFilter />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(TypeSelect);
+describe('Search Bar - Typing Filter', () => {
+  it('can select option', () => {
+    const mockFunction = jest.fn();
+    jest
+      .spyOn(SearchActions, 'updateAssetFilter')
+      .mockReturnValue(mockFunction);
+    // Test first render and effect
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <SearchBarTypingFilter />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(TypeSelect);
 
-  // Test second render and effect
-  expect(container.find('li[role="option"]').length).toBe(0);
+    // Test second render and effect
+    expect(container.find('li[role="option"]').length).toBe(0);
 
-  wrapper.simulate('click');
-  const options = container.find('li[role="option"]');
-  expect(options.length).toBe(2);
+    wrapper.simulate('click');
+    const options = container.find('li[role="option"]');
+    expect(options.length).toBe(2);
 
-  // choose an item
-  options.at(0).simulate('click');
-  expect(mockFunction).toBeCalled();
-  expect(wrapper.text()).toContain('David');
-});
+    // choose an item
+    options.at(0).simulate('click');
+    expect(mockFunction).toBeCalled();
+    expect(wrapper.text()).toContain('David');
+  });
 
-it('cannot select option if disabled', () => {
-  // Test first render and effect
-  const container = mount(
-    <Provider store={store}>
-      <MemoryRouter>
-        <SearchBarTypingFilter disabled />
-      </MemoryRouter>
-    </Provider>
-  );
-  const wrapper = container.find(TypeSelect);
+  it('cannot select option if disabled', () => {
+    // Test first render and effect
+    const container = mount(
+      <Provider store={store}>
+        <MemoryRouter>
+          <SearchBarTypingFilter disabled />
+        </MemoryRouter>
+      </Provider>
+    );
+    const wrapper = container.find(TypeSelect);
 
-  // Test second render and effect
-  expect(container.find('li[role="option"]').length).toBe(0);
+    // Test second render and effect
+    expect(container.find('li[role="option"]').length).toBe(0);
 
-  wrapper.simulate('click');
-  const options = container.find('li[role="option"]');
-  expect(options.length).toBe(0);
+    wrapper.simulate('click');
+    const options = container.find('li[role="option"]');
+    expect(options.length).toBe(0);
+  });
 });
