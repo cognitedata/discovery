@@ -27,8 +27,9 @@ const difference = (object: any, base: any) => {
   return changes(object, base);
 };
 
-type AssetSearchFilterWithTypes = AssetSearchFilter & {
+type AssetSearchPlaygroundFilter = AssetSearchFilter & {
   extendedFilter?: {
+    dataSetIds?: number[];
     types?: {
       type: {
         id: number;
@@ -49,7 +50,7 @@ interface SetSearchState extends Action<typeof SET_SEARCH_STATE> {
     timeseriesTable?: { items: number[]; page: number; pageSize: number };
     filesTable?: { items: number[]; page: number; pageSize: number };
     threeDTable?: { items: number[]; page: number; pageSize: number };
-    assetFilter?: AssetSearchFilterWithTypes;
+    assetFilter?: AssetSearchPlaygroundFilter;
     timeseriesFilter?: TimeSeriesSearchDTO;
     fileFilter?: FilesSearchFilter;
     query?: string;
@@ -66,7 +67,7 @@ export interface SearchState {
   timeseriesTable: { items: number[]; page: number; pageSize: number };
   filesTable: { items: number[]; page: number; pageSize: number };
   threeDTable: { items: number[]; page: number; pageSize: number };
-  assetFilter: AssetSearchFilterWithTypes;
+  assetFilter: AssetSearchPlaygroundFilter;
   timeseriesFilter: TimeSeriesSearchDTO;
   fileFilter: FilesSearchFilter;
   query: string;
@@ -201,7 +202,7 @@ export function updateSearchQuery(query: string) {
     });
   };
 }
-export function updateAssetFilter(assetFilter: AssetSearchFilterWithTypes) {
+export function updateAssetFilter(assetFilter: AssetSearchPlaygroundFilter) {
   return async (
     dispatch: ThunkDispatch<any, void, SetSearchState>,
     getState: () => RootState

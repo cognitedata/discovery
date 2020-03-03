@@ -28,7 +28,7 @@ const SearchBarTypingFilters = ({
         ...assetFilter,
         extendedFilter: {
           ...assetFilter.extendedFilter,
-          types: selectedTypes,
+          types: selectedTypes.length > 0 ? selectedTypes : undefined,
         },
       })
     );
