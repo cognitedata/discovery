@@ -2,11 +2,11 @@
 import React from 'react';
 import { Upload, Icon, Button, Modal, message } from 'antd';
 import UploadGCS from 'gcs-browser-upload';
-import mime from 'mime-types';
 import { UploadFileMetadataResponse } from '@cognite/sdk';
 import styled from 'styled-components';
 import { UploadFile } from 'antd/lib/upload/interface';
 import { sdk } from 'utils/SDK';
+import { getMIMEType } from 'containers/FilePage/FileUtils';
 
 export const GCSUploader = (
   file: Blob | UploadFile,
@@ -151,8 +151,6 @@ class FileUploader extends React.Component<Props, State> {
     return <ButtonRow>{uploaderButton}</ButtonRow>;
   }
 
-  getMIMEType = (fileURI: string) => mime.lookup(fileURI);
-
   setupFilesBeforeUpload = (file: any) => {
     if (
       this.props.validExtensions === undefined ||
@@ -199,7 +197,7 @@ class FileUploader extends React.Component<Props, State> {
     message.info('Starting Upload...');
 
     this.state.fileList.forEach(async file => {
-      const mimeType = this.getMIMEType(file.name);
+      const mimeType = getMIMEType(file.name);
       if (!mimeType) {
         this.props.onUploadFailure(
           `Unable to detect file type for ${file.name}`
