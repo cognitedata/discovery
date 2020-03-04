@@ -21,16 +21,20 @@ import { RootState } from 'reducers/index';
 import { sdk } from 'utils/SDK';
 import { trackUsage } from 'utils/Metrics';
 import LoadingWrapper from 'components/LoadingWrapper';
-import { fetchFile } from 'modules/files';
+import { fetchFile, updateFile } from 'modules/files';
 import AssetSelect from 'components/AssetSelect';
-import PNIDViewer from './PNIDViewer';
-import ImageAnnotator from './ImageAnnotator';
-import { convertPDFtoPNID, detectAssetsInDocument } from '../FileUtils';
 import {
   canReadFiles,
   canEditFiles,
   canReadAssets,
-} from '../../../utils/PermissionsUtils';
+} from 'utils/PermissionsUtils';
+import PNIDViewer from './PNIDViewer';
+import ImageAnnotator from './ImageAnnotator';
+import {
+  convertPDFtoPNID,
+  detectAssetsInDocument,
+  getMIMEType,
+} from '../FileUtils';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -133,11 +137,12 @@ type OrigProps = {
 };
 
 type Props = {
+  file?: FilesMetadata;
   assetId?: number;
   assets: AssetsState;
   threed: ThreeDState;
   fetchFile: typeof fetchFile;
-  file?: FilesMetadata;
+  updateFile: typeof updateFile;
 } & OrigProps;
 
 type State = {
@@ -149,7 +154,7 @@ type State = {
   runningPnID: boolean;
   runningDetectAssets: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
-  detectedAssetsResult?: { name: string; page: number }[];
+  detectedAssetsResult?: string[];
 };
 
 class FilePreview extends React.Component<Props, State> {
@@ -175,6 +180,8 @@ class FilePreview extends React.Component<Props, State> {
     });
     if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
+    } else {
+      this.showMimeTypeCheck();
     }
     this.fetchFileUrl();
   }
@@ -182,6 +189,11 @@ class FilePreview extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     if (!this.props.file) {
       this.props.fetchFile(this.props.fileId);
+    } else if (
+      (!prevProps.file && this.props.file) ||
+      (prevProps.file && prevProps.file.id !== this.props.file.id)
+    ) {
+      this.showMimeTypeCheck();
     }
     if (this.props.fileId !== prevProps.fileId) {
       this.fetchFileUrl();
@@ -190,6 +202,11 @@ class FilePreview extends React.Component<Props, State> {
 
   get type(): FileType {
     const { mimeType } = this.props.file!;
+    const extension = this.props.file!.name.split('.').pop() || '';
+    // check by name
+    if (['png', 'jpg', 'jpeg'].indexOf(extension.toLowerCase()) !== -1) {
+      return 'images';
+    }
     if (!mimeType) {
       return 'all';
     }
@@ -201,6 +218,7 @@ class FilePreview extends React.Component<Props, State> {
     }
     if (
       mimeType.toLowerCase().indexOf('png') !== -1 ||
+      mimeType.toLowerCase().indexOf('jpg') !== -1 ||
       mimeType.toLowerCase().indexOf('jpeg') !== -1
     ) {
       return 'images';
@@ -222,6 +240,39 @@ class FilePreview extends React.Component<Props, State> {
           });
         }
       );
+    }
+  };
+
+  showMimeTypeCheck = async () => {
+    if (this.props.file) {
+      const { name, mimeType, id } = this.props.file;
+      const detectedMimeType = getMIMEType(name);
+      if (
+        detectedMimeType &&
+        mimeType !== detectedMimeType &&
+        canEditFiles(false)
+      ) {
+        notification.open({
+          message: 'Fix Mime Type',
+          description: `The current file type is ${mimeType}, however, based on the name, the file should be typed as ${detectedMimeType}`,
+          btn: (
+            <Button
+              type="primary"
+              size="small"
+              onClick={async () => {
+                await this.props.updateFile({
+                  id,
+                  update: { mimeType: { set: detectedMimeType } },
+                });
+                notification.close('fix-mimetype');
+              }}
+            >
+              Confirm Change
+            </Button>
+          ),
+          key: 'fix-mimetype',
+        });
+      }
     }
   };
 
@@ -383,14 +434,7 @@ class FilePreview extends React.Component<Props, State> {
         </div>
         <div style={{ flex: 1, marginTop: '12px', overflow: 'auto' }}>
           <Table
-            onRow={item => ({
-              onClick: () =>
-                this.setState({ pdfState: { ...pdfState, page: item.page } }),
-            })}
             pagination={false}
-            rowClassName={item =>
-              item.page === pdfState.page ? 'current' : ''
-            }
             columns={[
               {
                 key: 'name',
@@ -400,7 +444,7 @@ class FilePreview extends React.Component<Props, State> {
                     onClick={async ev => {
                       ev.stopPropagation();
                       const [asset] = await sdk.assets.search({
-                        search: { name: item.name },
+                        search: { name: item },
                         limit: 1,
                       });
                       if (asset) {
@@ -415,15 +459,41 @@ class FilePreview extends React.Component<Props, State> {
                       }
                     }}
                   >
-                    {item.name}
+                    {item}
                     <Icon type="arrow-right" />
                   </Button>
                 ),
               },
               {
                 key: 'page',
-                title: 'Page',
-                dataIndex: 'page',
+                title: 'Action',
+                render: item => (
+                  <Button
+                    onClick={async ev => {
+                      ev.stopPropagation();
+                      const [asset] = await sdk.assets.search({
+                        search: { name: item },
+                        limit: 1,
+                      });
+                      if (asset) {
+                        trackUsage(
+                          'FilePage.FilePreview.DetectAsset.LinkAsset',
+                          {
+                            id: this.props.fileId,
+                            assetId: asset.id,
+                          }
+                        );
+                        this.props.updateFile({
+                          id: this.props.fileId,
+                          update: { assetIds: { add: [asset.id] } },
+                        });
+                      }
+                    }}
+                  >
+                    Link to Asset
+                    <Icon type="link" />
+                  </Button>
+                ),
               },
             ]}
             dataSource={detectedAssetsResult}
@@ -677,6 +747,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   bindActionCreators(
     {
       fetchFile,
+      updateFile,
     },
     dispatch
   );
