@@ -154,7 +154,7 @@ type State = {
   runningPnID: boolean;
   runningDetectAssets: boolean;
   pdfState: { numPages: number; page: number; isError: boolean };
-  detectedAssetsResult?: { name: string; page: number }[];
+  detectedAssetsResult?: string[];
 };
 
 class FilePreview extends React.Component<Props, State> {
@@ -434,14 +434,7 @@ class FilePreview extends React.Component<Props, State> {
         </div>
         <div style={{ flex: 1, marginTop: '12px', overflow: 'auto' }}>
           <Table
-            onRow={item => ({
-              onClick: () =>
-                this.setState({ pdfState: { ...pdfState, page: item.page } }),
-            })}
             pagination={false}
-            rowClassName={item =>
-              item.page === pdfState.page ? 'current' : ''
-            }
             columns={[
               {
                 key: 'name',
@@ -451,7 +444,7 @@ class FilePreview extends React.Component<Props, State> {
                     onClick={async ev => {
                       ev.stopPropagation();
                       const [asset] = await sdk.assets.search({
-                        search: { name: item.name },
+                        search: { name: item },
                         limit: 1,
                       });
                       if (asset) {
@@ -466,15 +459,41 @@ class FilePreview extends React.Component<Props, State> {
                       }
                     }}
                   >
-                    {item.name}
+                    {item}
                     <Icon type="arrow-right" />
                   </Button>
                 ),
               },
               {
                 key: 'page',
-                title: 'Page',
-                dataIndex: 'page',
+                title: 'Action',
+                render: item => (
+                  <Button
+                    onClick={async ev => {
+                      ev.stopPropagation();
+                      const [asset] = await sdk.assets.search({
+                        search: { name: item },
+                        limit: 1,
+                      });
+                      if (asset) {
+                        trackUsage(
+                          'FilePage.FilePreview.DetectAsset.LinkAsset',
+                          {
+                            id: this.props.fileId,
+                            assetId: asset.id,
+                          }
+                        );
+                        this.props.updateFile({
+                          id: this.props.fileId,
+                          update: { assetIds: { add: [asset.id] } },
+                        });
+                      }
+                    }}
+                  >
+                    Link to Asset
+                    <Icon type="link" />
+                  </Button>
+                ),
               },
             ]}
             dataSource={detectedAssetsResult}
