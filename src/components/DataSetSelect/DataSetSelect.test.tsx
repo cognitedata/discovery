@@ -11,7 +11,6 @@ import DataSetSelect from './DataSetSelect';
 
 jest.mock('utils/PermissionsUtils');
 
-
 const initialStoreState: Partial<RootState> = {
   datasets: {
     items: {
