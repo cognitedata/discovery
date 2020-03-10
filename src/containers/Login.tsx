@@ -29,6 +29,10 @@ const Login = ({ doUpdateCdfEnv, doUpdateTenant }: Props) => {
     window.localStorage.getItem('tenant') !== null
       ? (window.localStorage.getItem('tenant') as string)
       : undefined;
+  const initialEnv =
+    window.localStorage.getItem('env') !== null
+      ? (window.localStorage.getItem('env') as string)
+      : '';
   return (
     <Wrapper>
       <TenantSelectorContainer>
@@ -40,6 +44,7 @@ const Login = ({ doUpdateCdfEnv, doUpdateTenant }: Props) => {
               : undefined;
             if (cdfEnv) {
               sdk.setBaseUrl(`https://${cdfEnv}.cognitedata.com`);
+              window.localStorage.setItem('env', cdfEnv);
             }
             doUpdateCdfEnv(cdfEnv);
             window.localStorage.setItem('tenant', tenant);
@@ -59,7 +64,7 @@ const Login = ({ doUpdateCdfEnv, doUpdateTenant }: Props) => {
           placeholder="Project name"
           initialTenant={initialTenant}
           unknownMessage="The name you entered is not a valid project in Cognite Data Fusion"
-          advancedOptions={{ 'CDF Environment (i.e. Greenfield)': '' }}
+          advancedOptions={{ 'CDF Environment (i.e. Greenfield)': initialEnv }}
         />
       </TenantSelectorContainer>
     </Wrapper>
