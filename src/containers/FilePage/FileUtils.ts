@@ -201,7 +201,7 @@ export const detectAssetsInDocument = async (
   try {
     trackUsage('FilePreview.DetectAsset', { fileId: file.id });
     const response = await sdk.post(
-      `/api/playground/projects/${sdk.project}/context/entity_extraction/extract_new`,
+      `/api/playground/projects/${sdk.project}/context/entity_extraction/extract`,
       {
         data: {
           fileIds: [file.id],
