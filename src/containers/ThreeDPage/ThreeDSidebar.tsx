@@ -6,6 +6,8 @@ import { push } from 'connected-react-router';
 import { Button, Tabs, Descriptions, List } from 'antd';
 import moment from 'moment';
 import { AssetIcon } from 'assets';
+import { DescriptionList } from '@cognite/gearbox';
+import { RevealNode3D } from '@cognite/sdk';
 import { RootState } from '../../reducers/index';
 import { ThreeDModel } from '../../modules/threed';
 import {
@@ -59,6 +61,7 @@ const ButtonRow = styled.div`
 type OrigProps = {
   model: ThreeDModel;
   revisionId: number;
+  node?: RevealNode3D;
   onGoToAssetClicked: (id: number) => void;
 };
 
@@ -94,7 +97,7 @@ class TimeseriesSidebar extends React.Component<Props, State> {
   }
 
   render() {
-    const { model, revisionId } = this.props;
+    const { model, revisionId, node } = this.props;
     const revision = model.revisions
       ? model.revisions.find(el => el.id === revisionId)
       : undefined;
@@ -169,6 +172,17 @@ class TimeseriesSidebar extends React.Component<Props, State> {
           </Tabs.TabPane>
           <Tabs.TabPane tab="Metadata" key="metadata">
             <pre>{JSON.stringify(model.metadata, null, 2)}</pre>
+          </Tabs.TabPane>
+          <Tabs.TabPane
+            key="properties"
+            tab="Node Properties"
+            disabled={!node || !node.properties}
+          >
+            {node &&
+              !!node.properties &&
+              Object.keys(node.properties).map(key => (
+                <DescriptionList valueSet={node.properties![key]} />
+              ))}
           </Tabs.TabPane>
         </Tabs>
       </Wrapper>
