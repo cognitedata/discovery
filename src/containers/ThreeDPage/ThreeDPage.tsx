@@ -348,6 +348,11 @@ class ThreeDPage extends React.Component<Props, State> {
             <ThreeDSidebar
               model={model}
               revisionId={revision.id}
+              node={
+                this.state.selectedItem
+                  ? this.state.selectedItem.node
+                  : undefined
+              }
               onGoToAssetClicked={this.onGoToAssetClicked}
             />
             <ThreeDView>
