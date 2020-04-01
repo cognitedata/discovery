@@ -209,7 +209,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
             placeholder="Name"
             onChange={ev => this.setState({ name: ev.target.value })}
           />
-          <p>External IdEither</p>
+          <p>External Id</p>
           <Input
             value={externalId}
             placeholder="External ID"
