@@ -37,6 +37,7 @@ type State = {
   description?: string;
   unit?: string;
   name?: string;
+  externalId?: string;
 };
 
 class EditTimeseriesModal extends React.Component<Props, State> {
@@ -50,7 +51,14 @@ class EditTimeseriesModal extends React.Component<Props, State> {
       id: timeseries && timeseries.id,
     });
     if (timeseries) {
-      const { unit, name, description, metadata, assetId } = timeseries;
+      const {
+        unit,
+        name,
+        description,
+        metadata,
+        assetId,
+        externalId,
+      } = timeseries;
 
       if (metadata && metadata.COGNITE__SOURCE) {
         this.source = metadata.COGNITE__SOURCE;
@@ -63,6 +71,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
         description,
         unit,
         name,
+        externalId,
       };
     } else {
       this.state = {};
@@ -70,7 +79,14 @@ class EditTimeseriesModal extends React.Component<Props, State> {
   }
 
   saveChanges = async () => {
-    const { selectedAssetId, name, description, metadata, unit } = this.state;
+    const {
+      selectedAssetId,
+      name,
+      description,
+      metadata,
+      unit,
+      externalId,
+    } = this.state;
     if (!canEditTimeseries()) {
       return;
     }
@@ -98,6 +114,11 @@ class EditTimeseriesModal extends React.Component<Props, State> {
               ...(description && {
                 description: {
                   set: description,
+                },
+              }),
+              ...(externalId && {
+                externalId: {
+                  set: externalId,
                 },
               }),
               ...(unit && {
@@ -139,6 +160,7 @@ class EditTimeseriesModal extends React.Component<Props, State> {
             name,
             description,
             unit,
+            externalId,
             metadata: metadataParsed,
           },
         ]);
@@ -156,7 +178,14 @@ class EditTimeseriesModal extends React.Component<Props, State> {
 
   render() {
     const { assets, timeseries } = this.props;
-    const { selectedAssetId, name, description, unit, metadata } = this.state;
+    const {
+      selectedAssetId,
+      name,
+      description,
+      unit,
+      metadata,
+      externalId,
+    } = this.state;
     return (
       <Modal
         visible
@@ -179,6 +208,12 @@ class EditTimeseriesModal extends React.Component<Props, State> {
             value={name}
             placeholder="Name"
             onChange={ev => this.setState({ name: ev.target.value })}
+          />
+          <p>External IdEither</p>
+          <Input
+            value={externalId}
+            placeholder="External ID"
+            onChange={ev => this.setState({ externalId: ev.target.value })}
           />
           <p>
             Linked Asset:{' '}
