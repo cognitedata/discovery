@@ -221,25 +221,6 @@ class AssetDrawer extends React.Component<Props, State> {
     }
   };
 
-  renderExternalLinks = (assetId: number) => {
-    const { project } = sdk;
-
-    const opintUrl = `https://opint.cogniteapp.com/${project}/assets/${assetId}`;
-    return (
-      <Panel header={<span>External links</span>} key="links">
-        <Button
-          type="link"
-          onClick={() => {
-            window.open(opintUrl);
-            trackUsage('AssetPane.OpenInsights', {});
-          }}
-        >
-          Operational Intelligence
-        </Button>
-      </Panel>
-    );
-  };
-
   renderMetadata = () => {
     const { asset } = this;
 
@@ -481,7 +462,6 @@ class AssetDrawer extends React.Component<Props, State> {
               <EventsSection />
             </Panel>
             {this.renderMetadata()}
-            {this.renderExternalLinks(asset.id)}
             {this.state.showEditHierarchy && this.renderEdit(asset)}
           </Collapse>
           <EditHieraryToggle>
