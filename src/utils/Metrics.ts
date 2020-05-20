@@ -5,13 +5,17 @@ import { AppState } from '../modules/app';
 
 const MIXPANEL_TOKEN = 'fb25742efb56d116b736515a0ad5f6ef';
 
-const mixpanel = mixpanelConfig.init(MIXPANEL_TOKEN, {}, 'context');
+const mixpanel = mixpanelConfig.init(
+  MIXPANEL_TOKEN,
+  { persistence: 'localStorage' },
+  'context'
+);
 
 export const trackUsage = (
   event: string,
   metadata?: { [key: string]: any }
 ) => {
-  const { user, trackingEnabled } = store.getState().app as AppState;
+  const { user } = store.getState().app as AppState;
   if (window.location.host.indexOf('localhost') === -1) {
     mixpanel.track(event, {
       ...metadata,
@@ -19,7 +23,7 @@ export const trackUsage = (
       version: 1,
       appVersion: process.env.REACT_APP_VERSION,
       location: window.location.pathname,
-      user: trackingEnabled ? user : undefined,
+      user,
     });
   }
 };
