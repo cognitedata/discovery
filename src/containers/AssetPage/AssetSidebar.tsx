@@ -108,7 +108,8 @@ class AssetSidebar extends React.Component<Props, State> {
       return <Spin />;
     }
     return byAssetId[this.props.asset!.id]
-      .map(el => items[el.type.id].name)
+      .map(el => (items[el.type.id] ? items[el.type.id].name : undefined))
+      .filter(el => !!el)
       .map(type => <Button type="link">{type}</Button>);
   };
 
