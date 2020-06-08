@@ -1,7 +1,7 @@
 /* eslint no-param-reassign: ["error", { "props": false }] */
 import React from 'react';
 import { Upload, Icon, Button, Modal, message } from 'antd';
-import UploadGCS from 'gcs-browser-upload';
+import UploadGCS from '@cognite/gcs-browser-upload';
 import { UploadFileMetadataResponse } from '@cognite/sdk';
 import styled from 'styled-components';
 import { UploadFile } from 'antd/lib/upload/interface';
