@@ -31,6 +31,12 @@ type State = {
 };
 
 class Model3D extends React.Component<Props, State> {
+  // eslint-disable-next-line react/static-property-placement
+  public static defaultProps = {
+    assetMappings: { byNodeId: {}, byAssetId: {} },
+    nodeId: undefined,
+  };
+
   viewer?: Cognite3DViewer = undefined;
 
   cache: CacheObject = {};
@@ -42,11 +48,6 @@ class Model3D extends React.Component<Props, State> {
   currentColoredNodes: number[] = [];
 
   model?: Cognite3DModel = undefined;
-
-  public static defaultProps = {
-    assetMappings: { byNodeId: {}, byAssetId: {} },
-    nodeId: undefined,
-  };
 
   constructor(props: Props) {
     super(props);

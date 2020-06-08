@@ -53,11 +53,10 @@ const initialStoreState: any = {
 
 const store = configureStore([thunk])(initialStoreState);
 
-afterEach(() => {
-  jest.clearAllMocks();
-});
-
 describe('Search Bar - Data Set Filter', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   it('can select option', () => {
     const mockFunction = jest.fn();
     jest

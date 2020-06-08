@@ -15,11 +15,10 @@ jest.mock('utils/Metrics');
 
 configure({ adapter: new Adapter() });
 
-afterEach(() => {
-  jest.clearAllMocks();
-});
-
 describe('Search Bar - Annotations Filter', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   it('can toggle on and off', () => {
     const initialStoreState: any = {
       search: { searchByAnnotation: false } as Partial<SearchState>,

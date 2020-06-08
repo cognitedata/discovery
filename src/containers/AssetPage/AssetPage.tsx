@@ -374,7 +374,7 @@ class AssetPage extends React.Component<Props, State> {
                 <Tabs.TabPane
                   tab={AssetTabNames[key as AssetTabKeys]}
                   key={key}
-                ></Tabs.TabPane>
+                />
               ))}
             </Tabs>
             <div className="content">

@@ -62,11 +62,11 @@ const initialStoreState: Partial<RootState> = {
 
 const store = configureStore([thunk])(initialStoreState);
 
-afterEach(() => {
-  jest.clearAllMocks();
-});
-
 describe('Type Select', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('can select option', () => {
     // Test first render and effect
     const mockFunction = jest.fn();
@@ -109,15 +109,9 @@ describe('Type Select', () => {
 
     // Test second render and effect
     wrapper.simulate('click');
-    container
-      .find('li[role="option"]')
-      .at(0)
-      .simulate('click');
+    container.find('li[role="option"]').at(0).simulate('click');
     wrapper.simulate('click');
-    container
-      .find('li[role="option"]')
-      .at(1)
-      .simulate('click');
+    container.find('li[role="option"]').at(1).simulate('click');
     expect(selectedIds.length).toEqual(2);
   });
 

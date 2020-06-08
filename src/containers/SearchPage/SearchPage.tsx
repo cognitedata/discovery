@@ -610,7 +610,7 @@ class SearchPage extends React.Component<Props, State> {
               <Tabs.TabPane
                 key={key}
                 tab={TabValues[key as SearchPageTabKeys]}
-              ></Tabs.TabPane>
+              />
             ))}
           </Tabs>
         </TabWrapper>
