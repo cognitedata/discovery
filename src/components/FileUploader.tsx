@@ -82,6 +82,7 @@ const defaultState = {
 class FileUploader extends React.Component<Props, State> {
   currentUploads: { [key: string]: any };
 
+  // eslint-disable-next-line react/static-property-placement
   public static defaultProps = {
     onUploadSuccess: () => {},
     onUploadFailure: message.error,
@@ -156,10 +157,7 @@ class FileUploader extends React.Component<Props, State> {
       this.props.validExtensions === undefined ||
       this.props.validExtensions.length === 0 ||
       this.props.validExtensions.includes(
-        file.name
-          .split('.')
-          .pop()
-          .toLowerCase()
+        file.name.split('.').pop().toLowerCase()
       )
     ) {
       this.setState(

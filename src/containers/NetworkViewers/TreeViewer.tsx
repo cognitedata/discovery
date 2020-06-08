@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import ForceGraph from 'force-graph';
+import { ForceGraphInstance } from 'force-graph';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
@@ -213,9 +213,7 @@ type State = {
 };
 
 class RelationshipTreeViewer extends Component<Props, State> {
-  forceGraphRef: React.RefObject<
-    ForceGraph.ForceGraphInstance
-  > = React.createRef();
+  forceGraphRef: React.RefObject<ForceGraphInstance> = React.createRef();
 
   wrapperRef: React.RefObject<HTMLDivElement> = React.createRef();
 

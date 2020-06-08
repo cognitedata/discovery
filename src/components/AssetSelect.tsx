@@ -21,6 +21,7 @@ type State = {
 class AssetSelect extends Component<Props, State> {
   searchId = 0;
 
+  // eslint-disable-next-line react/static-property-placement
   public static defaultProps = {
     style: { width: '200px' },
     onAssetSelected: () => {},
