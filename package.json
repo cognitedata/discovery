@@ -62,7 +62,7 @@
     "mime-types": "^2.1.25",
     "mixpanel": "^0.11.0",
     "mixpanel-browser": "^2.31.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "prop-types": "^15.6.2",
     "query-string": "^6.9.0",
     "react": "^16.12.0",
