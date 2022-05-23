@@ -28,7 +28,7 @@ podTemplate(
                            mountPath: '/secrets/google-credentials',
                            readOnly: true),
               hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock')]) {
-    properties([buildDiscarder(logRotator(daysToKeepStr: '30', numToKeepStr: '20'))])
+    properties([])
     node('discovery') {
         def gitCommit
         stage("Checkout code") {
